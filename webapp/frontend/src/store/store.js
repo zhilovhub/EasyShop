@@ -78,10 +78,17 @@ export const Store = new Vuex.Store({
     ],
   },
   mutations: {
-    // Добавьте мутации для манипуляции данными
+    addToLocalStorage(state) {
+      if (state.itemsAddToCartArray.length>0) {
+        localStorage.setItem('itemsAddToCartArray', JSON.stringify(state.itemsAddToCartArray));
+      } else {
+        let items = localStorage.getItem('itemsAddToCartArray');
+        state.itemsAddToCartArray = JSON.parse(items) || [];
+      }
+    }
   },
   actions: {
-    // Добавьте действия для асинхронных операций
+
   },
   getters: {
     // Добавьте геттеры для получения данных из хранилища

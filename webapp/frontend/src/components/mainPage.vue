@@ -29,7 +29,6 @@
             v-else
             style="display: flex; justify-content: space-between; height: 17.5%"
         >
-
           <button
               style="background-color: #FF7171; display: flex; align-items: center; justify-content: center; width: 45%;"
               @click="decrementCount(item)"
@@ -60,7 +59,7 @@
 export default {
   name: 'mainPage',
   methods: {
-    fetchData() {
+    addCountToObject() {
       this.$store.state.items = this.$store.state.items.map(item => ({ ...item, count: 0 }));
     },
     priceComma(price) {
@@ -93,10 +92,10 @@ export default {
     },
     itemsAddToCartArray() {
       return this.$store.state.itemsAddToCartArray;
-    }
+    },
   },
   mounted() {
-    this.fetchData();
+    this.addCountToObject();
   },
 };
 </script>
@@ -110,13 +109,13 @@ export default {
 }
 
 .items-styles{
-  width: 100%;
+  width: 90%;
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(166.68px, 1fr));
   grid-column: 1;
   grid-gap: 15px;
   padding: 0;
-  margin-bottom: 50px;
+  margin: 20px auto 50px;
 
   .item-block{
     aspect-ratio: 1/1;
