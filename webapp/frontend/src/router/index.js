@@ -16,6 +16,5 @@ const router = createRouter({
       component: shoppingCart
     }
   ]
-})
-
+});
 export default router
