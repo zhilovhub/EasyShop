@@ -45,3 +45,7 @@ class DefaultLocale:
         return ("Неверный формат токена. "
                 "Он должен иметь вид:\n<code>0000000000:AaAaAaAaAaAaAaAaAaAaAaAaAaAaAaAaAaA</code>"
                 "\n\nПример:\n<code>3742584906:AAHAE1daXFuQJrmSITDrgmbP0c8C3JmQNeg</code>")
+
+    @property
+    def default_start_msg(self) -> str:
+        return "Привет, <b>{name}</b>! Для открытия магазина нажми на кнопку ниже или на опцию в меню."

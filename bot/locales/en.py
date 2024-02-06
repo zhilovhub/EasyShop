@@ -33,3 +33,7 @@ class EnglishLocale(DefaultLocale):
     @property
     def open_web_app_button(self) -> str:
         return "Open shop"
+
+    @property
+    def default_start_msg(self) -> str:
+        return "Hi, <b>{name}</b>! To open shop you can press button bellow or button in attachments menu."

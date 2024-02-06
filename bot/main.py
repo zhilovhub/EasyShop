@@ -1,3 +1,5 @@
+import os
+
 from aiogram import Bot, Dispatcher, types
 from bot import config
 from bot.utils.database import AlchemyDB
@@ -23,7 +25,6 @@ async def on_start():
 
 if __name__ == "__main__":
     from bot import handlers, filters, keyboards, states
-
     dp.include_router(handlers.users.router)
     dp.include_router(keyboards.user_kb_handlers.router)
     dp.include_router(states.user_states_handler.router)

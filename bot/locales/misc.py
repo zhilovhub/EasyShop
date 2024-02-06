@@ -1,7 +1,7 @@
 from aiogram.types import User, Chat
 
 
-def format_locales(text: str, user: User, chat: Chat, reply_to_user: User = None):
+def format_locales(text: str, user: User, chat: Chat, reply_to_user: User = None) -> str:
     data_dict = {"name": user.full_name,
                  "first_name": user.first_name,
                  "last_name": user.last_name,
