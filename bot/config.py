@@ -3,6 +3,8 @@ import sys
 from dotenv import load_dotenv
 import logging
 import logging.config
+from bot.locales.default import DefaultLocale
+from bot.locales.en import EnglishLocale
 
 # Загрузка .env файла
 load_dotenv()
@@ -17,6 +19,11 @@ STORAGE_TABLE_NAME = os.getenv("STORAGE_TABLE_NAME")
 
 # Other
 DEBUG = bool(os.getenv("DEBUG"))
+LOCALES = {
+    "default": DefaultLocale(),
+    "ru": DefaultLocale(),
+    "en": EnglishLocale(),
+}
 
 # Logging
 LOGGING_SETUP = {

@@ -16,6 +16,7 @@ class DbUser(BaseModel):
     status: str = Field(max_length=55)
     registered_at: datetime.datetime = Field(frozen=True)
     settings: dict | None = None
+    locale: str = "default"
 
 
 class AlchemyDB:
@@ -27,6 +28,7 @@ class AlchemyDB:
                            Column('status', String(55), nullable=False),
                            Column('registered_at', DateTime, nullable=False),
                            Column('settings', JSON),
+                           Column('locale', String(10), nullable=False),
                            )
         self.bots = Table('bots', self.metadata,
                           Column('bot_token', BigInteger, primary_key=True),
@@ -68,10 +70,13 @@ class AlchemyDB:
     async def add_user(self, user: DbUser) -> None:
         if not isinstance(user, DbUser):
             raise InvalidParameterFormat("user must be type of database.DbUser.")
-        if self.get_user(user_id=user.id):
-            raise InstanceAlreadyExists(f"user with {user.id} already exists in db.")
+        try:
+            if await self.get_user(user_id=user.id):
+                raise InstanceAlreadyExists(f"user with {user.id} already exists in db.")
+        except:
+            pass
         async with self.engine.begin() as conn:
-            await conn.execute(insert(self.users).values(**user.model_dump(by_alias=True)))
+            raw_res = await conn.execute(insert(self.users).values(**user.model_dump(by_alias=True)))
         await self.engine.dispose()
 
     async def update_user(self, updated_user: DbUser) -> None:

@@ -26,9 +26,10 @@ async def on_start():
 
 
 if __name__ == "__main__":
-    from bot import handlers, filters
+    from bot import handlers, filters, keyboards
 
     dp.include_router(handlers.users.router)
+    dp.include_router(keyboards.user_kb_handlers.router)
 
     for log_file in ('all.log', 'err.log'):
         with open(f'logs/{log_file}', 'a') as log:
