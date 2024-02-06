@@ -3,6 +3,11 @@ class UserNotFound(Exception):
     pass
 
 
+class BotNotFound(Exception):
+    """Raised when provided bot not found in database"""
+    pass
+
+
 class InvalidParameterFormat(Exception):
     """Raised when provided invalid data format to function"""
     pass

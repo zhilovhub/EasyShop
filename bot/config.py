@@ -13,6 +13,9 @@ load_dotenv()
 TELEGRAM_TOKEN = os.getenv("TELEGRAM_TOKEN")
 DB_URL = os.getenv("DB_URL")
 
+# WebApp variables
+WEB_APP_URL = os.getenv("WEB_APP_URL")
+
 # Telegram bot FSM storage variables
 STORAGE_DB_URL = os.getenv("STORAGE_DB_URL")
 STORAGE_TABLE_NAME = os.getenv("STORAGE_TABLE_NAME")

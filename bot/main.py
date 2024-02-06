@@ -1,4 +1,3 @@
-from pathlib import Path
 from aiogram import Bot, Dispatcher, types
 from bot import config
 from bot.utils.database import AlchemyDB
@@ -7,10 +6,7 @@ from aiogram.enums import ParseMode
 import asyncio
 from bot.config import logger
 import datetime
-from bot.utils.database import DbUser
 
-# app_dir: Path = Path(__file__).parent.parent
-# locales_dir = app_dir / "locales"
 
 bot = Bot(config.TELEGRAM_TOKEN, parse_mode=ParseMode.HTML)
 storage = AlchemyStorageAsync(config.STORAGE_DB_URL, config.STORAGE_TABLE_NAME)
@@ -26,10 +22,11 @@ async def on_start():
 
 
 if __name__ == "__main__":
-    from bot import handlers, filters, keyboards
+    from bot import handlers, filters, keyboards, states
 
     dp.include_router(handlers.users.router)
     dp.include_router(keyboards.user_kb_handlers.router)
+    dp.include_router(states.user_states_handler.router)
 
     for log_file in ('all.log', 'err.log'):
         with open(f'logs/{log_file}', 'a') as log:

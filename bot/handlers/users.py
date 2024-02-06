@@ -20,6 +20,16 @@ router = Router(name="users")
 router.message.filter(ChatTypeFilter(chat_type='private'))
 
 
+@router.message(Command(commands=['cancel', 'c'], prefix='/!'))
+async def cancel_cmd(message: Message, state: FSMContext):
+    current_state = await state.get_state()
+    if current_state is None:
+        await message.reply('Нет действия для отмены.')
+        return None
+    await message.reply(f'Действие отменено.')
+    await state.clear()
+
+
 @router.message(CommandStart())
 async def start_cmd(message: Message):
     try:
@@ -34,5 +44,5 @@ async def start_cmd(message: Message):
             user_id=message.from_user.id, registered_at=datetime.datetime.now(), status="new", locale=locale)
         )
         user = await db.get_user(message.from_user.id)
-    await message.reply(format_locales(text=config.LOCALES[user.locale].start_message, user=message.from_user,
-                                       chat=message.chat), reply_markup=kb.lang_select_keyboard)
+    await message.answer(format_locales(text=config.LOCALES[user.locale].start_message, user=message.from_user,
+                                        chat=message.chat), reply_markup=kb.lang_select_keyboard)
