@@ -118,9 +118,7 @@
   </div>
   </div>
   <input v-model="inputValue" placeholder="Добавить комментарий...">
-  <button class="btnTotalPrice">
-    {{this.totalPrice}}
-  </button>
+  <RouterLink to="/order-details"><button class="btnTotalPrice">{{this.totalPrice}}</button></RouterLink>
 </template>
 
 <style scoped lang="scss">
@@ -131,7 +129,7 @@
 *{
   box-sizing: border-box;
   font-family: 'Montserrat', sans-serif;
-  font-size: 1rem;
+  font-size: 15px;
   line-height: 18.29px;
   color: #FFFFFF;
 }
@@ -155,14 +153,14 @@
   width: 100%;
   display: grid;
   grid-column: 1;
-  grid-template-columns: repeat(auto-fill, minmax(50vw, 1fr)) ;
+  grid-template-columns: repeat(auto-fill, minmax(95vw, 1fr)) ;
   grid-gap: 15px;
   padding: 0;
   margin-bottom: 50px;
 
   .item-block{
     display: flex;
-    justify-content: space-around;
+    justify-content: space-between;
     width: 100%;
     list-style-type: none;
   }
@@ -255,21 +253,13 @@ input {
   }
 }
 
-@media (min-width: 700px) {
-  .items-styles {
-    grid-template-columns: repeat(auto-fill, minmax(40%, 1fr));
-  }
-}
 @media (min-width: 1400px) {
   .items-styles {
     grid-template-columns: repeat(auto-fill, minmax(20vw, 1fr));
     margin: 30px auto 120px;
     width: 1200px;
   }
-}
-
-@media (min-width: 1400px) {
-  button{
+  .btnTotalPrice {
     height: 100px;
   }
 }
