@@ -104,14 +104,14 @@ export default {
 *{
   box-sizing: border-box;
   font-family: 'Montserrat', sans-serif;
-  font-size: 1rem;
+  font-size: 15px;
   line-height: 18.29px;
 }
 
 .items-styles{
   width: 90%;
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(166.68px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(40vw, 1fr));
   grid-column: 1;
   grid-gap: 15px;
   padding: 0;
@@ -155,9 +155,28 @@ button {
   right: 10px;
   top: 10px;
 }
+@media (max-width: 300px) {
+  .items-styles {
+    grid-template-columns: repeat(auto-fill, minmax(95vw, 1fr));
+    margin: 10px auto 40px;
+    justify-content: center;
+  }
+}
 @media (min-width: 700px) {
   .items-styles {
-    grid-template-columns: repeat(auto-fill, minmax(40%, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(35vw, 1fr));
+    margin: 30px auto 40px;
+    justify-content: center;
+    width: 95%
+  }
+}
+@media (min-width: 950px) and (max-width: 1400px) {
+  .items-styles {
+    grid-template-columns: repeat(2, minmax(20vw, 1fr));
+    margin: 30px auto 50px;
+  }
+  .wrapper {
+    margin: 0 auto;
   }
 }
 @media (min-width: 1400px) {
