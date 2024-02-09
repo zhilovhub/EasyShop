@@ -37,3 +37,23 @@ class EnglishLocale(DefaultLocale):
     @property
     def default_start_msg(self) -> str:
         return "Hi, <b>{name}</b>! To open shop you can press button bellow or button in attachments menu."
+
+    @property
+    def you_dont_have_bots_msg(self) -> str:
+        return "You dont have bots yet."
+
+    @property
+    def my_bots_msg(self) -> str:
+        return "Choose bot from list:"
+
+    @property
+    def bot_not_found_msg(self) -> str:
+        return "Selected bot not found in database, try updating bots list."
+
+    @property
+    def selected_bot_buttons(self) -> dict:
+        return {'start_msg': "👋 Hello message", 'shop_btn': "🔤 Open shop button text"}
+
+    @property
+    def selected_bot_msg(self) -> str:
+        return "Selected bot: <b>{selected_name}</b>\nChoose option that you want to set up."

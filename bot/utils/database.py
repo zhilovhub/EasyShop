@@ -113,9 +113,12 @@ class AlchemyDB:
 
     # === Bots methods ===
 
-    async def get_bots(self) -> list[DbBot]:
+    async def get_bots(self, user_id: int | None = None) -> list[DbBot]:
         async with self.engine.begin() as conn:
-            raw_res = await conn.execute(select(self.bots))
+            if user_id:
+                raw_res = await conn.execute(select(self.bots).where(self.bots.c.created_by == user_id))
+            else:
+                raw_res = await conn.execute(select(self.bots))
         await self.engine.dispose()
         raw_res = raw_res.fetchall()
         res = []

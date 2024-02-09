@@ -22,7 +22,7 @@ STORAGE_TABLE_NAME = os.getenv("STORAGE_TABLE_NAME")
 
 # Other
 DEBUG = bool(os.getenv("DEBUG"))
-LOCALES = {
+LOCALES: dict[str, DefaultLocale] = {
     "default": DefaultLocale(),
     "ru": DefaultLocale(),
     "en": EnglishLocale(),

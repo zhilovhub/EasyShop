@@ -49,3 +49,23 @@ class DefaultLocale:
     @property
     def default_start_msg(self) -> str:
         return "Привет, <b>{name}</b>! Для открытия магазина нажми на кнопку ниже или на опцию в меню."
+
+    @property
+    def you_dont_have_bots_msg(self) -> str:
+        return "У тебя еще нет ботов."
+
+    @property
+    def my_bots_msg(self) -> str:
+        return "Выбери бота из списка:"
+
+    @property
+    def bot_not_found_msg(self) -> str:
+        return "Выбранный бот не найден в базе, попробуйте обновить список ботов."
+
+    @property
+    def selected_bot_buttons(self) -> dict:
+        return {'start_msg': "👋 Стартовое сообщение", 'shop_btn': "🔤 Текст кнопки открытия магазина"}
+
+    @property
+    def selected_bot_msg(self) -> str:
+        return "Выбран бот <b>{selected_name}</b>, выбери настройку, которую хочешь сменить."
