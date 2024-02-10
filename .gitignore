@@ -3,6 +3,8 @@ __pycache__/
 *.py[cod]
 *$py.class
 
+.idea
+
 # C extensions
 *.so
 
@@ -145,3 +147,4 @@ cython_debug/
 
 # User bots directory
 bots
+
