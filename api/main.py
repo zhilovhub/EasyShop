@@ -1,34 +1,26 @@
 import os
-import sys
+from fastapi import FastAPI
+from database.models.models import Database
 from dotenv import load_dotenv
+import datetime
 import logging
 import logging.config
-from bot.locales.default import DefaultLocale
-from bot.locales.en import EnglishLocale
 
-# Загрузка .env файла
+tags_metadata = [
+    {
+        "name": "products",
+        "description": "Operations with products.",
+    },
+]
+app = FastAPI(openapi_tags=tags_metadata)
+ROOT_PATH = "/api/"
+
 load_dotenv()
-
-# Telegram bot variables
-TELEGRAM_TOKEN = os.getenv("TELEGRAM_TOKEN")
-DB_URL = os.getenv("SQLALCHEMY_URL")
-
-# WebApp variables
-WEB_APP_URL = os.getenv("WEB_APP_URL")
-
-# Telegram bot FSM storage variables
-STORAGE_DB_URL = os.getenv("STORAGE_DB_URL")
-STORAGE_TABLE_NAME = os.getenv("STORAGE_TABLE_NAME")
-
-# Other
+ALCHEMY_URL = os.getenv("SQLALCHEMY_URL")
 DEBUG = bool(os.getenv("DEBUG"))
-LOCALES: dict[str, DefaultLocale] = {
-    "default": DefaultLocale(),
-    "ru": DefaultLocale(),
-    "en": EnglishLocale(),
-}
 
-# Logging
+db_engine = Database(ALCHEMY_URL)
+
 LOGGING_SETUP = {
     'version': 1,
     'disable_existing_loggers': False,
@@ -42,13 +34,13 @@ LOGGING_SETUP = {
         'all_file': {
             'level': 'DEBUG' if DEBUG else 'INFO',
             'class': 'logging.FileHandler',
-            'filename': 'logs/all.log',  # путь до файла логирования
+            'filename': 'api/logs/all.log',  # путь до файла логирования
             'formatter': 'log_formatter',
         },
         'error_file': {
             'level': 'WARNING',
             'class': 'logging.FileHandler',
-            'filename': 'logs/err.log',  # путь до файла логирования ошибок
+            'filename': 'api/logs/err.log',  # путь до файла логирования ошибок
             'formatter': 'log_formatter',
         },
         'console': {
@@ -67,5 +59,21 @@ LOGGING_SETUP = {
 }
 logging.config.dictConfig(LOGGING_SETUP)
 logging.basicConfig(format=u'[%(asctime)s][%(levelname)s] ::: %(filename)s(%(lineno)d) -> %(message)s',
-                    level="INFO", filename='logs/all.log')
+                    level="INFO", filename='api/logs/all.log')
 logger = logging.getLogger('logger')
+
+
+@app.get(f"{ROOT_PATH}")
+async def read_root():
+    return "You can see all available methods in rest api docs"
+
+
+for log_file in ('all.log', 'err.log'):
+    with open(f'api/logs/{log_file}', 'a') as log:
+        log.write(f'=============================\n'
+                  f'New app session\n'
+                  f'[{datetime.datetime.now()}]\n'
+                  f'=============================\n')
+
+if __name__ == "api.main":
+    import api.products
