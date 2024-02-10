@@ -1,0 +1,5 @@
+- name: send default message
+  uses: appleboy/telegram-action@master
+  with:
+    to: -4126671088
+    token: 6864143301:AAFDafe5BXNZH7Ylj2LXcGfUhNFCKt5i9w4 
