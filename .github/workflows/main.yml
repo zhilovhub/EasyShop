@@ -1,5 +1,13 @@
-- name: send default message
-  uses: appleboy/telegram-action@master
-  with:
-    to: -4126671088
-    token: 6864143301:AAFDafe5BXNZH7Ylj2LXcGfUhNFCKt5i9w4 
+name: telegram message
+on: [push]
+jobs:
+
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    steps:
+      - name: send telegram message on push
+        uses: appleboy/telegram-action@master
+        with:
+          to: -1001965731910
+          token: 6864143301:AAFDafe5BXNZH7Ylj2LXcGfUhNFCKt5i9w4 
