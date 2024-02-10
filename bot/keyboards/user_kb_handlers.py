@@ -34,7 +34,6 @@ async def create_bot_query_handler(query: CallbackQuery, state: FSMContext):
     await state.set_state(states.InputToken.input)
     await query.message.edit_text(format_locales(config.LOCALES[lang].input_token, query.from_user, query.message.chat),
                                   reply_markup=kb.create_back_to_main_menu_keyboard(lang))
-    pass
 
 
 @router.callback_query(lambda q: q.data == "main:my_bots")
