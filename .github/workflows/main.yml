@@ -10,4 +10,11 @@ jobs:
         uses: appleboy/telegram-action@master
         with:
           to: -1001965731910
-          token: 6864143301:AAFDafe5BXNZH7Ylj2LXcGfUhNFCKt5i9w4 
+          token: 6864143301:AAFDafe5BXNZH7Ylj2LXcGfUhNFCKt5i9w4
+          message: |
+            ${{ github.actor }} создал commit:
+            Commit message: ${{ github.event.commits[0].message }}
+            
+            Repository: ${{ github.repository }}
+            
+            Посмотреть изменения: https://github.com/${{ github.repository }}/commit/${{github.sha}}
