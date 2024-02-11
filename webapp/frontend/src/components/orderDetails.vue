@@ -1,65 +1,65 @@
 <script>
-  export default {
-    name: 'order-details',
-    data() {
-      return {
-        inputValue: ''
-      }
-    },
-    computed: {
-      itemsAddToCartArray() {
-        return this.$store.state.itemsAddToCartArray;
-      },
-      totalPrice() {
-        let price = this.itemsAddToCartArray.reduce((total, item) => total + item.price*item.count, 0);
-        if (price <= 0) {
-          return '0 ₽'
-        }
-        return price.toFixed(2) + ' ₽'
-      },
-      totalPriceForButton() {
-        let price = this.itemsAddToCartArray.reduce((total, item) => total + item.price*item.count, 0);
-        if (price <= 0) {
-          return 'Оплатить: 0 ₽'
-        }
-        return 'Оплатить: ' + price.toFixed(2) + ' ₽'
-      },
-      totalCount() {
-        let count = this.itemsAddToCartArray.reduce((total, item) => total + item.count, 0);
-        return count + ' товаров на сумму'
-      }
-    },
-    mounted() {
-      this.$store.commit("addToLocalStorage");
-      this.inputValue = 'г. Москва, Большой Строченовский переулок 5'
+export default {
+  name: 'order-details',
+  data() {
+    return {
+      inputValue: ''
     }
+  },
+  computed: {
+    itemsAddToCartArray() {
+      return this.$store.state.itemsAddToCartArray;
+    },
+    totalPrice() {
+      let price = this.itemsAddToCartArray.reduce((total, item) => total + item.price*item.count, 0);
+      if (price <= 0) {
+        return '0 ₽'
+      }
+      return price.toFixed(2) + ' ₽'
+    },
+    totalPriceForButton() {
+      let price = this.itemsAddToCartArray.reduce((total, item) => total + item.price*item.count, 0);
+      if (price <= 0) {
+        return 'Оплатить: 0 ₽'
+      }
+      return 'Оплатить: ' + price.toFixed(2) + ' ₽'
+    },
+    totalCount() {
+      let count = this.itemsAddToCartArray.reduce((total, item) => total + item.count, 0);
+      return count + ' товаров на сумму'
+    }
+  },
+  mounted() {
+    this.$store.commit("addToLocalStorage");
+    this.inputValue = 'г. Москва, Большой Строченовский переулок 5'
   }
+}
 </script>
 
 <template>
   <div class="main-body">
-  <div class="title-div">
-    <div style="width: 134px; height: 134px; border-radius: 7px; background-color: #293C47;"></div>
-    <div class="title-text">
-      <span style="font-size: 24px; margin-bottom: 15px">Заказ №63782</span>
-      <span style="color: #71CBFF; font-size: 15px; font-weight: 500">Название заказа</span>
+    <div class="title-div">
+      <div style="width: 134px; height: 134px; border-radius: 7px; background-color: #293C47;"></div>
+      <div class="title-text">
+        <span style="font-size: 24px; margin-bottom: 15px">Заказ №63782</span>
+        <span style="color: #71CBFF; font-size: 15px; font-weight: 500">Название заказа</span>
+      </div>
     </div>
-  </div>
 
-  <div class="address-container">
-    <span style="color: #71CBFF;">Адрес доставки</span>
-    <textarea v-model="inputValue"></textarea>
-  </div>
+    <div class="address-container">
+      <span style="color: #71CBFF;">Адрес доставки</span>
+      <textarea v-model="inputValue"></textarea>
+    </div>
 
-  <div class="pay-container">
-    <span style="color: #71CBFF;">Способы оплаты</span>
-    <select>
-      <option value="card-online">Картой онлайн</option>
-      <option value="usdt">USDT</option>
-      <option value="bitcoin">Bitcoin</option>
-      <option value="cash">Cash</option>
-    </select>
-  </div>
+    <div class="pay-container">
+      <span style="color: #71CBFF;">Способы оплаты</span>
+      <select>
+        <option value="card-online">Картой онлайн</option>
+        <option value="usdt">USDT</option>
+        <option value="bitcoin">Bitcoin</option>
+        <option value="cash">Cash</option>
+      </select>
+    </div>
   </div>
   <div class="footer">
     <div style="margin: 0 0 10px">
@@ -91,6 +91,10 @@
   color: #FFFFFF;
 }
 
+.main-body {
+  position: relative;
+}
+
 .title-div {
   background-color: #20282C;
   width: 100%;
@@ -117,28 +121,28 @@
   flex-direction: column;
   padding: 2.5% 4%;
   margin-bottom: 40px;
-    textarea {
-      background-color: #293C47;
-      width: 100%;
-      height: 65px;
-      border-radius: 7px;
-      margin: 10px auto;
-      white-space: pre-wrap;
-      resize: none;
-      color: #FFFFFF;
-      padding: 12px 20px;
-      align-items: center;
+  textarea {
+    background-color: #293C47;
+    width: 100%;
+    height: 65px;
+    border-radius: 7px;
+    margin: 10px auto;
+    white-space: pre-wrap;
+    resize: none;
+    color: #FFFFFF;
+    padding: 12px 20px;
+    align-items: center;
+    border: 1px solid #20282C;
+    font-family: 'Montserrat', sans-serif;
+    font-weight: 500;
+    font-size: 15px;
+    &::placeholder{
       border: 1px solid #20282C;
-      font-family: 'Montserrat', sans-serif;
-      font-weight: 500;
-      font-size: 15px;
-      &::placeholder{
-        border: 1px solid #20282C;
-      }
-      &:focus {
-        outline: none;
-      }
     }
+    &:focus {
+      outline: none;
+    }
+  }
 }
 
 .pay-container {
@@ -146,25 +150,25 @@
   display: flex;
   flex-direction: column;
   padding: 2.5% 4%;
-    select {
-      width: 100%;
-      height: 50px;
-      background-color: #293C47;
-      border: 1px solid #20282C;
-      border-radius: 7px;
-      -webkit-appearance: none;
-      -moz-appearance: none;
-      appearance: none;
-      background-image: url('../assets/arrow-down.png') !important;
-      background-position: center right 20px;
-      background-repeat: no-repeat;
-      background-size: auto 15%;
-      padding-left: 20px;
-      margin: 10px auto;
-      &:hover, :focus, :active {
-        outline: none;
-      }
+  select {
+    width: 100%;
+    height: 50px;
+    background-color: #293C47;
+    border: 1px solid #20282C;
+    border-radius: 7px;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+    background-image: url('../assets/arrow-down.png') !important;
+    background-position: center right 20px;
+    background-repeat: no-repeat;
+    background-size: auto 15%;
+    padding-left: 20px;
+    margin: 10px auto;
+    &:hover, :focus, :active {
+      outline: none;
     }
+  }
 }
 
 .btnTotalPrice {
@@ -192,8 +196,8 @@
   display: flex;
   width: 100%;
   flex-direction: column;
-  position: absolute;
-  bottom: 100px;
+  position: relative;
+  margin-top: 30vh;
   padding: 10px 20px;
   div {
     display: flex;
