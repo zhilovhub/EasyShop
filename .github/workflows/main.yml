@@ -24,7 +24,7 @@ jobs:
             
             • Repository: ${{ github.repository }}
             
-            • Ссылка: https://github.com/${{ github.repository }}/pulls/${{github.ref_name}}
+            • Ссылка: https://github.com/${{ github.repository }}/pull/${{github.ref_name}}
   send_push:
     name: Send commit message
     runs-on: ubuntu-latest
