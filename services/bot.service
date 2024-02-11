@@ -5,8 +5,9 @@ Wants=network.target
 After=syslog.target network-online.target
 
 [Service]
+Environment="PYTHONPATH=/root/EasyShop"
 Type=oneshot
-WorkingDirectory=/root/EasyShop/
+WorkingDirectory=/root/EasyShop/bot
 ExecStart=/root/EasyShop/venv/bin/python3 /root/EasyShop/bot/main.py
 
 [Install]
