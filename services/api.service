@@ -1,0 +1,13 @@
+[Unit]
+Description=api service
+
+Wants=network.target
+After=syslog.target network-online.target
+
+[Service]
+Type=oneshot
+WorkingDirectory=/root/EasyShop/
+ExecStart=/root/EasyShop/venv/bin/python3 -m uvicorn api.main:app --reload
+
+[Install]
+WantedBy=multi-user.target
