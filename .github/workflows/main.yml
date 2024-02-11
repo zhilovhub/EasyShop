@@ -17,14 +17,14 @@ jobs:
           token: 6864143301:AAFDafe5BXNZH7Ylj2LXcGfUhNFCKt5i9w4
           format: html
           message: |
-            🔔 Новый <b>${{ github.event_name }}</b> 
+            🔔 Новый <b>${{ github.event_name }} (Пул реквест)</b> 
             от <b>${{ github.actor }}</b>:
 
             • Branch: <code>${{ github.ref }}</code>
             
             • Repository: ${{ github.repository }}
             
-            • Ссылка: https://github.com/${{ github.repository }}/pulls/${{github.ref.name}}
+            • Ссылка: https://github.com/${{ github.repository }}/pulls/${{github.ref_name}}
   send_push:
     name: Send commit message
     runs-on: ubuntu-latest
