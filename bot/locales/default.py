@@ -1,70 +1,59 @@
 class DefaultLocale:
+    @staticmethod
+    def about_message() -> str:
+        return "Этот бот может помочь тебе создать свой собственный\nбот-магазин внутри телеграма."
 
-    @property
-    def start_message(self):
-        return "Привет <b>{name}</b>!" \
-               "\n\nДля начала выбери язык (select language)."
-
-    @property
-    def locale_set(self):
-        return "Язык установлен на 🇷🇺 \"Русский\""
-
-    @property
-    def about_message(self) -> str:
-        return "\nЭтот бот может помочь тебе создать свой собственный бот-магазин внутри телеграма." \
-               "\n\nВыбери, что хочешь сделать:"
-
-    @property
-    def main_menu_buttons(self) -> dict:
+    @staticmethod
+    def main_menu_buttons() -> dict:
         return {'add': "➕ Создать бота", 'bots': "📋 Мои боты", 'profile':  "👤 Мой профиль"}
 
-    @property
-    def input_token(self) -> str:
-        return ("Введи токен из <b>@BotFather</b> в формате:\n\n"
-                "<code>0000000000:AaAaAaAaAaAaAaAaAaAaAaAaAaAaAaAaAaA</code>")
+    @staticmethod
+    def input_token() -> str:
+        return ("Чтобы создать бота, введи токен, который ты можешь достать у <b>@BotFather</b> в формате:\n\n"
+                "<code>3742584906:AAHAE1daXFuQJrmSITDrgmbP0c8C3JmQNeg</code>")
 
-    @property
-    def back_to_menu_button(self) -> str:
+    @staticmethod
+    def back_button() -> str:
         return "🔙 Назад"
 
-    @property
-    def open_web_app_button(self) -> str:
+    @staticmethod
+    def open_web_app_button() -> str:
         return "Открыть магазин"
 
-    @property
-    def bot_will_initialize(self) -> str:
+    @staticmethod
+    def bot_will_initialize() -> str:
         return ("Твой бот с именем <b>«{}»</b>\nи id <b>@{}</b> найден!\n\nВеб магазин в нем "
                 "проиницализируется в течение <b>5 минут</b>")
 
-    @property
-    def bot_with_token_not_found(self) -> str:
+    @staticmethod
+    def bot_with_token_not_found() -> str:
         return "Бота с таким токеном не сущесвует. Скопируй токен, который тебе выслал <b>@BotFather</b>"
 
-    @property
-    def incorrect_bot_token(self) -> str:
+    @staticmethod
+    def incorrect_bot_token() -> str:
         return ("Неверный формат токена. "
-                "Он должен иметь вид:\n<code>0000000000:AaAaAaAaAaAaAaAaAaAaAaAaAaAaAaAaAaA</code>"
-                "\n\nПример:\n<code>3742584906:AAHAE1daXFuQJrmSITDrgmbP0c8C3JmQNeg</code>")
+                "Он должен иметь вид:\n<code>3742584906:AAHAE1daXFuQJrmSITDrgmbP0c8C3JmQNeg</code>")
 
-    @property
-    def default_start_msg(self) -> str:
+    @staticmethod
+    def default_start_msg() -> str:
         return "Привет, <b>{name}</b>! Для открытия магазина нажми на кнопку ниже или на опцию в меню."
 
-    @property
-    def you_dont_have_bots_msg(self) -> str:
+    @staticmethod
+    def you_dont_have_bots_msg() -> str:
         return "У тебя еще нет ботов."
 
-    @property
-    def my_bots_msg(self) -> str:
+    @staticmethod
+    def my_bots_msg() -> str:
         return "Выбери бота из списка:"
 
-    @property
-    def bot_not_found_msg(self) -> str:
+    @staticmethod
+    def bot_not_found_msg() -> str:
         return "Выбранный бот не найден в базе, попробуйте обновить список ботов."
 
     @property
     def selected_bot_buttons(self) -> dict:
-        return {'start_msg': "👋 Стартовое сообщение", 'shop_btn': "🔤 Текст кнопки открытия магазина"}
+        return {'start_msg': "👋 Стартовое сообщение", 'shop_btn': "🔤 Текст кнопки открытия магазина",
+                "add_products": "🛍 Добавить товары"}
 
     @property
     def selected_bot_msg(self) -> str:
