@@ -78,3 +78,21 @@ async def select_bot_query_handler(query: CallbackQuery, state: FSMContext):
     await query.message.edit_text(
         config.LOCALES[lang].selected_bot_msg.replace('{selected_name}', selected_bot_data.full_name),
         reply_markup=kb.create_selected_bot_keyboard(lang, token))
+
+
+@router.callback_query(lambda q: q.data.startswith('bot'))
+async def select_bot_query_handler(query: CallbackQuery, state: FSMContext):
+    token = query.data.split(':', 2)[-1]
+    option = query.data.split(':', 2)[-2]
+    user = await db.get_user(query.from_user.id)
+    lang = user.locale
+    match option:
+        case "add_products":
+            await state.set_state(states.AddProduct.input)
+            await state.set_data({'token': token})
+            return await query.message.answer("Отправь фото товара с подписью в формате: "
+                                              "<i>\n\nНазвание\nОписание\nЦена в рублях</i>"
+                                              "\n\nКогда закончишь, введи команду /finish")
+        case _:
+            return await query.answer("Ошибка. Неизвестная настройка. Попробуйте обновить список настроек.",
+                                      show_alert=True)

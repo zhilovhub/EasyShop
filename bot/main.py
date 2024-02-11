@@ -8,12 +8,16 @@ from aiogram.enums import ParseMode
 import asyncio
 from bot.config import logger
 import datetime
+from database.models.models import Database
+from database.models.order_model import OrderDao
 
 
 bot = Bot(config.TELEGRAM_TOKEN, parse_mode=ParseMode.HTML)
 storage = AlchemyStorageAsync(config.STORAGE_DB_URL, config.STORAGE_TABLE_NAME)
 dp = Dispatcher(storage=storage)
 db = AlchemyDB(config.DB_URL)
+db_engine = Database(config.DB_URL)
+products_db = db_engine.get_product_db()
 
 
 async def on_start():
