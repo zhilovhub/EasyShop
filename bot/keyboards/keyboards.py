@@ -26,6 +26,9 @@ def get_bot_menu_keyboard(web_app_info: WebAppInfo) -> ReplyKeyboardMarkup:
         ],
         [
             KeyboardButton(text="Запустить бота"),
+            KeyboardButton(text="Остановить бота")
+        ],
+        [
             KeyboardButton(text="Удалить бота")
         ]
     ], resize_keyboard=True, one_time_keyboard=False)
