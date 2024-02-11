@@ -8,6 +8,7 @@ jobs:
   send_pull_request:
     runs-on: ubuntu-latest
     name: Send pull request message
+    if: ${{ github.event_name == 'pull_request'}}
     steps:
       - name: send telegram message on pull request actions
         uses: appleboy/telegram-action@master
@@ -23,7 +24,7 @@ jobs:
             
             • Repository: ${{ github.repository }}
             
-            • Ссылка: https://github.com/${{ github.repository }}/pulls/${{github.sha}}
+            • Ссылка: https://github.com/${{ github.repository }}/pulls/${{github.ref.name}}
   send_push:
     name: Send commit message
     runs-on: ubuntu-latest
