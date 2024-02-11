@@ -1,6 +1,7 @@
 import Vuex from "vuex";
 export const Store = new Vuex.Store({
   state: {
+    orderNumber: "",
     itemsAddToCartArray: [],
     items: [
       {

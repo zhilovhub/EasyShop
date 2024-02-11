@@ -3,7 +3,8 @@ export default {
   name: 'order-details',
   data() {
     return {
-      inputValue: ''
+      inputValue: '',
+      orderNumber: this.$store.state.orderNumber
     }
   },
   computed: {
@@ -27,6 +28,17 @@ export default {
     totalCount() {
       let count = this.itemsAddToCartArray.reduce((total, item) => total + item.count, 0);
       return count + ' товаров на сумму'
+    },
+    generatedOrderNumber() {
+      let password = this.$store.state.orderNumber;
+      let charset = "123456789"
+      let length = 6;
+      for(let i = 0; i < length; ++i){
+        password += charset[
+          Math.floor(Math.random() * charset.length)
+        ];
+      }
+      return "Заказ №" + password;
     }
   },
   mounted() {
@@ -41,7 +53,7 @@ export default {
     <div class="title-div">
       <div style="width: 134px; height: 134px; border-radius: 7px; background-color: #293C47;"></div>
       <div class="title-text">
-        <span style="font-size: 24px; margin-bottom: 15px">Заказ №63782</span>
+        <span style="font-size: 24px; margin-bottom: 15px">{{generatedOrderNumber}}</span>
         <span style="color: #71CBFF; font-size: 15px; font-weight: 500">Название заказа</span>
       </div>
     </div>
