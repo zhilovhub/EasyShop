@@ -1,5 +1,3 @@
-from typing import Optional
-
 from sqlalchemy import BigInteger, Column, String, DateTime, JSON
 from sqlalchemy.ext.asyncio import AsyncEngine
 
