@@ -64,7 +64,8 @@ class DefaultLocale:
 
     @property
     def selected_bot_buttons(self) -> dict:
-        return {'start_msg': "👋 Стартовое сообщение", 'shop_btn': "🔤 Текст кнопки открытия магазина"}
+        return {'start_msg': "👋 Стартовое сообщение", 'shop_btn': "🔤 Текст кнопки открытия магазина",
+                "add_products": "🛍 Добавить товары"}
 
     @property
     def selected_bot_msg(self) -> str:

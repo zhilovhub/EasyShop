@@ -1,6 +1,6 @@
 from typing import Optional, Union
 
-from sqlalchemy import BigInteger, Column, String, LargeBinary, ForeignKey
+from sqlalchemy import BigInteger, Column, String, LargeBinary, ForeignKey, Sequence, Identity
 from sqlalchemy import select, update, insert, delete, and_
 from sqlalchemy.ext.asyncio import AsyncEngine
 
@@ -20,19 +20,27 @@ class ProductNotFound(Exception):
 class Product(Base):
     __tablename__ = "products"
 
-    id = Column(BigInteger, primary_key=True)
+    PRODUCT_ID_SEQ = Sequence('product_id_seq')
+
+    id = Column(BigInteger, primary_key=True, server_default=PRODUCT_ID_SEQ.next_value())
+    # id = Column(BigInteger, Identity(start=1, increment=1), primary_key=True)
     bot_token = Column(ForeignKey(CustomBot.bot_token), nullable=False)
     name = Column(String(55), nullable=False)
+    description = Column(String(255), nullable=False)
     price = Column(BigInteger, nullable=False)
     picture = Column(LargeBinary)
 
 
-class ProductSchema(BaseModel):
-    id: int
+class ProductWithoutId(BaseModel):
     bot_token: str = Field(frozen=True, max_length=46, min_length=46)
     name: str = Field(max_length=55)
-    price: int
+    description: str = Field(max_length=255)
+    price: float
     picture: Optional[bytes | None]
+
+
+class ProductSchema(ProductWithoutId):
+    id: int
 
 
 class ProductDao(Dao):
@@ -61,3 +69,8 @@ class ProductDao(Dao):
             raise ProductNotFound
         res = ProductSchema.model_validate(raw_res)
         return res
+
+    @validate_call
+    async def add_product(self, new_order: ProductWithoutId):
+        async with self.engine.begin() as conn:
+            await conn.execute(insert(Product).values(new_order.model_dump()))
