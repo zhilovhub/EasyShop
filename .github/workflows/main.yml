@@ -1,22 +1,25 @@
 name: telegram message
-on: [push, pull_request]
+on: [push]
 jobs:
   build:
     name: Build
     runs-on: ubuntu-latest
     steps:
-      - name: send telegram message on push
+      - name: send telegram message on commit push
         uses: appleboy/telegram-action@master
         with:
           to: -1001965731910
           token: 6864143301:AAFDafe5BXNZH7Ylj2LXcGfUhNFCKt5i9w4
           format: html
           message: |
-            Новый <b>${{ github.action }}</b> от <b>${{ github.actor }}</b>:
+            🔔 Новый <b>${{ github.event_name }}</b> 
+            от <b>${{ github.actor }}</b>:
+
+            • Branch: <code>${{ github.ref }}</code>
             
-            Commit message: ${{ github.event.commits[0].message }}
+            • Commit message: ${{ github.event.commits[0].message }}
             
-            Repository: ${{ github.repository }}
+            • Repository: ${{ github.repository }}
             
-            Посмотреть изменения: https://github.com/${{ github.repository }}/commit/${{github.sha}}
+            • Ссылка: https://github.com/${{ github.repository }}/commit/${{github.sha}}
             
