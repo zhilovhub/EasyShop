@@ -1,6 +1,6 @@
 from typing import Optional, Union
 
-from sqlalchemy import BigInteger, Column, String, LargeBinary, ForeignKey
+from sqlalchemy import BigInteger, Column, String, LargeBinary, ForeignKey, Float
 from sqlalchemy import select, update, insert, delete, and_
 from sqlalchemy.ext.asyncio import AsyncEngine
 
@@ -24,7 +24,7 @@ class Product(Base):
     bot_token = Column(ForeignKey(CustomBot.bot_token), nullable=False)
     name = Column(String(55), nullable=False)
     description = Column(String(255), nullable=False)
-    price = Column(BigInteger, nullable=False)
+    price = Column(Float, nullable=False)
     picture = Column(LargeBinary)
 
 
