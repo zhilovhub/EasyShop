@@ -40,7 +40,7 @@ jobs:
             🔔 Новый <b>${{ github.event_name }} (коммит)</b> 
             от <b>${{ github.actor }}</b>:
 
-            • Branch: <code>${{ github.ref }}</code>
+            • Branch: <code>${{ github.ref.name }}</code>
             
             • Commit message: ${{ github.event.commits[0].message }}
             
