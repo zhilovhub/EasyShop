@@ -1,0 +1,13 @@
+[Unit]
+Description=bot service
+
+Wants=network.target
+After=syslog.target network-online.target
+
+[Service]
+Type=simple
+WorkingDirectory={working_directory}
+ExecStart={working_directory}/../../../venv/bin/python3 {working_directory}/main.py
+
+[Install]
+WantedBy=multi-user.target
