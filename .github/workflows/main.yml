@@ -16,5 +16,7 @@ jobs:
             Commit message: ${{ github.event.commits[0].message }}
             
             Repository: ${{ github.repository }}
+
+            Path: ${{ github.event.path }}
             
             Посмотреть изменения: https://github.com/${{ github.repository }}/commit/${{github.sha}}
