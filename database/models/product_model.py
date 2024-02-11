@@ -1,6 +1,6 @@
 from typing import Optional, Union
 
-from sqlalchemy import BigInteger, Column, String, LargeBinary, ForeignKey, Sequence, Identity
+from sqlalchemy import BigInteger, Column, String, LargeBinary, ForeignKey
 from sqlalchemy import select, update, insert, delete, and_
 from sqlalchemy.ext.asyncio import AsyncEngine
 
@@ -20,10 +20,7 @@ class ProductNotFound(Exception):
 class Product(Base):
     __tablename__ = "products"
 
-    PRODUCT_ID_SEQ = Sequence('product_id_seq')
-
-    id = Column(BigInteger, primary_key=True, server_default=PRODUCT_ID_SEQ.next_value())
-    # id = Column(BigInteger, Identity(start=1, increment=1), primary_key=True)
+    id = Column(BigInteger, primary_key=True)
     bot_token = Column(ForeignKey(CustomBot.bot_token), nullable=False)
     name = Column(String(55), nullable=False)
     description = Column(String(255), nullable=False)
