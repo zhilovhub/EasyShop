@@ -10,8 +10,9 @@ jobs:
         with:
           to: -1001965731910
           token: 6864143301:AAFDafe5BXNZH7Ylj2LXcGfUhNFCKt5i9w4
+          format: html
           message: |
-            Новый <b>${{ github.event.name }}</b> от <b>${{ github.actor }}</b>:
+            Новый <b>${{ github.action }}</b> от <b>${{ github.actor }}</b>:
             
             Commit message: ${{ github.event.commits[0].message }}
             
