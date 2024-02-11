@@ -65,7 +65,7 @@ class OrderWithoutId(BaseModel):
     from_user: int
     ordered_at: datetime
     address: str
-    status: OrderStatusValues = Field(default=OrderStatus.BACKLOG)
+    status: OrderStatusValues
 
 
 class OrderSchema(OrderWithoutId):
@@ -123,5 +123,6 @@ class OrderDao(Dao):
 
     @validate_call
     async def delete_order(self, bot_token: str, order_id: str):
+        order = await self.get_order(bot_token, order_id)
         async with self.engine.begin() as conn:
             await conn.execute(delete(Order).where(and_(Order.bot_token == bot_token, Order.id == order_id)))
