@@ -1,9 +1,33 @@
 name: telegram message
-on: [push]
+on:
+  push:
+    
+  pull_request:
+  
 jobs:
-  build:
-    name: Build
+  send_pull_request:
     runs-on: ubuntu-latest
+    name: Send pull request message
+    steps:
+      - name: send telegram message on pull request actions
+        uses: appleboy/telegram-action@master
+        with:
+          to: -1001965731910
+          token: 6864143301:AAFDafe5BXNZH7Ylj2LXcGfUhNFCKt5i9w4
+          format: html
+          message: |
+            🔔 Новый <b>${{ github.event_name }}</b> 
+            от <b>${{ github.actor }}</b>:
+
+            • Branch: <code>${{ github.ref }}</code>
+            
+            • Repository: ${{ github.repository }}
+            
+            • Ссылка: https://github.com/${{ github.repository }}/pulls/${{github.sha}}
+  send_push:
+    name: Send commit message
+    runs-on: ubuntu-latest
+    if: ${{ github.event_name == 'push'}}
     steps:
       - name: send telegram message on commit push
         uses: appleboy/telegram-action@master
@@ -12,7 +36,7 @@ jobs:
           token: 6864143301:AAFDafe5BXNZH7Ylj2LXcGfUhNFCKt5i9w4
           format: html
           message: |
-            🔔 Новый <b>${{ github.event_name }}</b> 
+            🔔 Новый <b>${{ github.event_name }} (коммит)</b> 
             от <b>${{ github.actor }}</b>:
 
             • Branch: <code>${{ github.ref }}</code>
