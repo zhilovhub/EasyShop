@@ -1,10 +1,52 @@
 <script>
+<<<<<<< HEAD
 export default {
   name: 'order-details',
   data() {
     return {
       inputValue: '',
       orderNumber: this.$store.state.orderNumber
+=======
+  export default {
+    name: 'order-details',
+    data() {
+      return {
+        inputValue: ''
+      }
+    },
+    computed: {
+      itemsAddToCartArray() {
+        return this.$store.state.itemsAddToCartArray;
+      },
+      totalPrice() {
+        let price = this.itemsAddToCartArray.reduce((total, item) => total + item.price*item.count, 0);
+        if (price <= 0) {
+          return '0 ₽'
+        }
+        return price.toFixed(2) + ' ₽'
+      },
+      totalPriceForButton() {
+        let price = this.itemsAddToCartArray.reduce((total, item) => total + item.price*item.count, 0);
+        if (price <= 0) {
+          return 'Оплатить: 0 ₽'
+        }
+        return 'Оплатить: ' + price.toFixed(2) + ' ₽'
+      },
+      totalCount() {
+        let count = this.itemsAddToCartArray.reduce((total, item) => total + item.count, 0);
+        return count + ' товаров на сумму'
+      }
+    },
+    mounted() {
+      this.$store.commit("addToLocalStorage");
+      this.inputValue = 'г. Москва, Большой Строченовский переулок 5'
+    },
+    methods: {
+      orderBtnClicked() {
+        this.$store.state.address = this.inputValue;
+        this.$store.commit("postData");
+      }
+>>>>>>> b520d673458eec733a7976e706ce6c58fc7448c0
     }
   },
   computed: {
@@ -91,7 +133,7 @@ export default {
       <span>0,00 ₽</span>
     </div>
   </div>
-  <button class="btnTotalPrice">{{this.totalPriceForButton}}</button>
+  <button @click="orderBtnClicked()" class="btnTotalPrice">{{this.totalPriceForButton}}</button>
 </template>
 
 <style scoped lang="scss">
