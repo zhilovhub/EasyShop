@@ -46,6 +46,12 @@ async def send_new_order_notify(order: OrderSchema):
                                                 f"\n\nСписок товаров: {products_text}")
 
 
+async def send_order_change_status_notify(order: OrderSchema):
+    user_bot = await db.get_bot(order.bot_token)
+    await bot.send_message(user_bot.created_by, f"Новый статус заказ <b>#{order.id}</b>\n"
+                                                f"<b>{order.status}</b>")
+
+
 @router.message(CommandStart())
 async def start_command_handler(message: Message, state: FSMContext):
     try:
