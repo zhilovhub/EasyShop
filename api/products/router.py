@@ -8,7 +8,8 @@ db = db_engine.get_product_db()
 
 
 @app.get(PATH + "/get_all_products/{token}", tags=['products'])
-async def get_all_products_api(token: str):
+async def get_all_products_api(token: str) -> list[ProductSchema]:
+    token = token.replace('_', ':')
     try:
         products = await db.get_all_products(token)
     except Exception:
@@ -18,7 +19,8 @@ async def get_all_products_api(token: str):
 
 
 @app.get(PATH + "/get_product/{token}/{product_id}", tags=['products'])
-async def get_product_api(token: str, product_id: int):
+async def get_product_api(token: str, product_id: int) -> ProductSchema:
+    token = token.replace('_', ':')
     try:
         product = await db.get_product(token, product_id)
     except ProductNotFound:

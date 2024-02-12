@@ -21,11 +21,11 @@ class Product(Base):
     __tablename__ = "products"
 
     id = Column(BigInteger, primary_key=True)
-    bot_token = Column(ForeignKey(CustomBot.bot_token), nullable=False)
+    bot_token = Column(ForeignKey(CustomBot.bot_token, ondelete="CASCADE"), nullable=False)
     name = Column(String(55), nullable=False)
     description = Column(String(255), nullable=False)
     price = Column(Float, nullable=False)
-    picture = Column(LargeBinary)
+    picture = Column(String)
 
 
 class ProductWithoutId(BaseModel):
@@ -33,7 +33,7 @@ class ProductWithoutId(BaseModel):
     name: str = Field(max_length=55)
     description: str = Field(max_length=255)
     price: float
-    picture: Optional[bytes | None]
+    picture: Optional[str | None]
 
 
 class ProductSchema(ProductWithoutId):
@@ -44,7 +44,7 @@ class ProductDao(Dao):
     def __init__(self, engine: AsyncEngine) -> None:
         super().__init__(engine)
 
-    @validate_call
+    @validate_call(validate_return=True)
     async def get_all_products(self, bot_token: str) -> list[ProductSchema]:
         async with self.engine.begin() as conn:
             raw_res = await conn.execute(select(Product).where(Product.bot_token == bot_token))
@@ -52,22 +52,26 @@ class ProductDao(Dao):
         raw_res = raw_res.fetchall()
         res = []
         for product in raw_res:
-            res.append(ProductSchema.model_validate(product))
+            res.append(ProductSchema(**product._mapping))
         return res
 
-    @validate_call
+    @validate_call(validate_return=True)
     async def get_product(self, bot_token: str, product_id: int) -> ProductSchema:
         async with self.engine.begin() as conn:
             raw_res = await conn.execute(select(Product).where(and_(Product.bot_token == bot_token,
                                                                     Product.id == product_id)))
         await self.engine.dispose()
-        raw_res = raw_res.fetchall()
+        raw_res = raw_res.fetchone()
         if not raw_res:
             raise ProductNotFound
-        res = ProductSchema.model_validate(raw_res)
-        return res
+        return ProductSchema(**raw_res._mapping)
 
     @validate_call
     async def add_product(self, new_order: ProductWithoutId):
         async with self.engine.begin() as conn:
             await conn.execute(insert(Product).values(new_order.model_dump()))
+
+    @validate_call
+    async def delete_product(self, product_id: int):
+        async with self.engine.begin() as conn:
+            await conn.execute(delete(Product).where(Product.id == product_id))
