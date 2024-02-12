@@ -20,7 +20,6 @@ export const Store = new Vuex.Store({
       const apiUrl = 'http://92.118.114.106:8000'
       async function fetchItems() {
         try {
-          token = "1843147988_AAGpwpOZSn8SLAEnWPQwWo7MjoTZR2aBv0o";
           const response =  await fetch(`${apiUrl}/api/products/get_all_products/${token}`,
             {
               method: 'GET',
@@ -41,7 +40,6 @@ export const Store = new Vuex.Store({
       }
       fetchItems().then(data => {
         if (data) {
-          console.log(data)
           console.log('Data received')
           Store.state.items = data
           Store.state.items = Store.state.items.map(item => ({ ...item, count: 0 }));
