@@ -32,6 +32,12 @@
     mounted() {
       this.$store.commit("addToLocalStorage");
       this.inputValue = 'г. Москва, Большой Строченовский переулок 5'
+    },
+    methods: {
+      orderBtnClicked() {
+        this.$store.state.address = this.inputValue;
+        this.$store.commit("postData");
+      }
     }
   }
 </script>
@@ -79,7 +85,7 @@
       <span>0,00 ₽</span>
     </div>
   </div>
-  <button class="btnTotalPrice">{{this.totalPriceForButton}}</button>
+  <button @click="orderBtnClicked()" class="btnTotalPrice">{{this.totalPriceForButton}}</button>
 </template>
 
 <style scoped lang="scss">

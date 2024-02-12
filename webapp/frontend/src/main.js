@@ -10,10 +10,6 @@ app.use(router)
 app.use(Vuex)
 app.use(Store)
 app.mount('#app')
-let tg = window.Telegram.WebApp;
-tg.expand();
-
-
 
 
 
