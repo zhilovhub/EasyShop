@@ -25,7 +25,7 @@ class Product(Base):
     name = Column(String(55), nullable=False)
     description = Column(String(255), nullable=False)
     price = Column(Float, nullable=False)
-    picture = Column(LargeBinary)
+    picture = Column(String)
 
 
 class ProductWithoutId(BaseModel):
@@ -33,7 +33,7 @@ class ProductWithoutId(BaseModel):
     name: str = Field(max_length=55)
     description: str = Field(max_length=255)
     price: float
-    picture: Optional[bytes | None]
+    picture: Optional[str | None]
 
 
 class ProductSchema(ProductWithoutId):

@@ -148,7 +148,7 @@ async def bot_menu_photo_handler(message: Message, state: FSMContext):
                                    name=params[0],
                                    description="",
                                    price=price,
-                                   picture=photo_bytes)
+                                   picture=f"bot/Files/img/{state_data['token']}__{params[0]}.jpg")
     await db_engine.get_product_db().add_product(new_product)
     await message.answer("Товар добавлен. Можно добавить ещё")
 
