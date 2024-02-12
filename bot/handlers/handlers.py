@@ -180,6 +180,8 @@ async def bot_menu_handler(message: Message, state: FSMContext):
                       f"bot{state_data['token'].replace(':', '___')}.service")
             await message.answer("Твой бот приостановлен ❌")
         case "Удалить бота":
+            os.system(f"echo -e {os.getenv('PASSWORD')} | sudo -S -k systemctl stop "
+                      f"bot{state_data['token'].replace(':', '___')}.service")
             await message.answer("Бот удалится вместе со всей базой продуктов безвозвратно.\n"
                                  "Напиши ПОДТВЕРДИТЬ для подтверждения удаления", reply_markup=get_back_keyboard())
             await state.set_state(States.DELETE_BOT)
