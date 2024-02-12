@@ -1,81 +1,9 @@
-import Vuex from "vuex";
+import Vuex from 'vuex'
+
 export const Store = new Vuex.Store({
   state: {
     itemsAddToCartArray: [],
-    items: [
-      {
-        name: "Название товара",
-        price: 1050.09,
-        id: 1,
-        img: null,
-      },
-      {
-        name: "Название товара",
-        price: 5025.40,
-        id: 2,
-        img: null
-      },
-      {
-        name: "Название товара",
-        price: 3200.10,
-        id: 3,
-        img: null
-      },
-      {
-        name: "Название товара",
-        price: 400.10,
-        id: 4,
-        img: null
-      },
-      {
-        name: "Название товара",
-        price: 15000.77,
-        id: 1,
-        img: null
-      },
-      {
-        name: "Название товара",
-        price: 2000.10,
-        id: 2,
-        img: null
-      },
-      {
-        name: "Название товара",
-        price: 1200.10,
-        id: 3,
-        img: null
-      },
-      {
-        name: "Название товара",
-        price: 500.00,
-        id: 4,
-        img: null
-      },
-      {
-        name: "Название товара",
-        price: 5020.00,
-        id: 1,
-        img: null
-      },
-      {
-        name: "Название товара",
-        price: 5200.00,
-        id: 2,
-        img: null
-      },
-      {
-        name: "Название товара",
-        price: 1200.10,
-        id: 3,
-        img: null
-      },
-      {
-        name: "Название товара",
-        price: 6100.00,
-        id: 4,
-        img: null
-      }
-    ],
+    items: [],
   },
   mutations: {
     addToLocalStorage(state) {
@@ -85,12 +13,47 @@ export const Store = new Vuex.Store({
         let items = localStorage.getItem('itemsAddToCartArray');
         state.itemsAddToCartArray = JSON.parse(items) || [];
       }
+    },
+    itemsInit() {
+      const url = new URL(window.location.href);
+      let token = url.searchParams.get('token');
+      const apiUrl = 'http://92.118.114.106:8000'
+      async function fetchItems() {
+        try {
+          token = "1843147988_AAGpwpOZSn8SLAEnWPQwWo7MjoTZR2aBv0o";
+          const response =  await fetch(`${apiUrl}/api/products/get_all_products/${token}`,
+            {
+              method: 'GET',
+              headers: {
+                'Content-Type': 'application/json',
+                'Access-Control-Allow-Origin': '*'
+              }
+            });
+          console.log(response)
+          if(!response.ok) {
+            new Error('Network response was not ok')
+          }
+          return await response.json()
+        } catch (error) {
+          console.error('There was a problem with the fetch operation:', error);
+          return null;
+        }
+      }
+      fetchItems().then(data => {
+        if (data) {
+          console.log(data)
+          console.log('Data received')
+          Store.state.items = data
+          Store.state.items = Store.state.items.map(item => ({ ...item, count: 0 }));
+        } else {
+          console.log('No data received');
+        }
+      });
     }
   },
   actions: {
 
   },
   getters: {
-    // Добавьте геттеры для получения данных из хранилища
   }
 });
