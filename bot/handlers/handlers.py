@@ -135,7 +135,9 @@ async def bot_menu_photo_handler(message: Message, state: FSMContext):
     if len(params) != 2:
         return await message.answer("Чтобы добавить товар, прикрепи его картинку и отправь сообщение в виде:"
                                     "\n\nНазвание\nЦена в рублях")
-    if not params[-1].replace(',', '.').isdecimal():
+    try:
+        price = float(params[-1].replace(",", "."))
+    except ValueError:
         return await message.answer("Цена должна быть в формате: <b>100.00</b>")
 
     await bot.download(photo_file_id, destination=f"Files/img/{state_data['token']}__{params[0]}.jpg")
@@ -145,7 +147,7 @@ async def bot_menu_photo_handler(message: Message, state: FSMContext):
     new_product = ProductWithoutId(bot_token=state_data['token'],
                                    name=params[0],
                                    description="",
-                                   price=float(params[1]),
+                                   price=price,
                                    picture=photo_bytes)
     await db_engine.get_product_db().add_product(new_product)
     await message.answer("Товар добавлен. Можно добавить ещё")
