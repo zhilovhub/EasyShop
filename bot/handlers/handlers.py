@@ -48,8 +48,9 @@ async def send_new_order_notify(order: OrderSchema):
 
 async def send_order_change_status_notify(order: OrderSchema):
     user_bot = await db.get_bot(order.bot_token)
-    await bot.send_message(user_bot.created_by, f"Новый статус заказ <b>#{order.id}</b>\n"
-                                                f"<b>{order.status}</b>")
+    text = f"Новый статус заказ <b>#{order.id}</b>\n<b>{order.status}</b>"
+    await bot.send_message(user_bot.created_by, text)
+    await bot.send_message(order.from_user, text)
 
 
 @router.message(CommandStart())
