@@ -20,7 +20,7 @@ jobs:
             🔔 Новый <b>${{ github.event_name }} (Пул реквест)</b> 
             от <b>${{ github.actor }}</b>:
 
-            • Branch: <code>${{ github.ref }}</code>
+            • Pull Request: <code>${{ github.ref_name }}</code>
             
             • Repository: ${{ github.repository }}
             

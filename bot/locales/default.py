@@ -50,11 +50,11 @@ class DefaultLocale:
     def bot_not_found_msg() -> str:
         return "Выбранный бот не найден в базе, попробуйте обновить список ботов."
 
-    @property
-    def selected_bot_buttons(self) -> dict:
+    @staticmethod
+    def selected_bot_buttons() -> dict:
         return {'start_msg': "👋 Стартовое сообщение", 'shop_btn': "🔤 Текст кнопки открытия магазина",
                 "add_products": "🛍 Добавить товары"}
 
-    @property
-    def selected_bot_msg(self) -> str:
+    @staticmethod
+    def selected_bot_msg() -> str:
         return "Выбран бот <b>{selected_name}</b>, выбери настройку, которую хочешь сменить."

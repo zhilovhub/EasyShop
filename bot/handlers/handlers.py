@@ -6,7 +6,7 @@ from distutils.dir_util import copy_tree
 from bot.main import bot, db_engine
 
 from aiogram import Router, Bot
-from aiogram.types import Message, MenuButtonWebApp, WebAppInfo, ReplyKeyboardRemove
+from aiogram.types import Message, MenuButtonWebApp, WebAppInfo, ReplyKeyboardRemove, BufferedInputFile, CallbackQuery
 from aiogram.filters import CommandStart
 from aiogram.exceptions import TelegramUnauthorizedError
 from aiogram.fsm.context import FSMContext
@@ -15,12 +15,14 @@ from bot import config
 from bot.main import db
 from bot.utils import DbUser, DbBot
 from bot.config import logger
-from bot.keyboards import get_bot_menu_keyboard, get_back_keyboard
+from bot.keyboards import get_bot_menu_keyboard, get_back_keyboard, get_inline_delete_button
 from bot.states.states import States
 from bot.locales.default import DefaultLocale
 from bot.filters.chat_type import ChatTypeFilter
 from bot.exceptions.exceptions import *
 from database.models.product_model import ProductWithoutId
+
+from magic_filter import F
 
 router = Router(name="users")
 router.message.filter(ChatTypeFilter(chat_type='private'))
@@ -38,9 +40,18 @@ async def start_command_handler(message: Message, state: FSMContext):
         )
 
     await message.answer(DefaultLocale.about_message())
-    await message.answer(DefaultLocale.input_token())
 
-    await state.set_state(States.WAITING_FOR_TOKEN)
+    user_bots = await db.get_bots(message.from_user.id)
+    if not user_bots:
+        await message.answer(DefaultLocale.input_token())
+        await state.set_state(States.WAITING_FOR_TOKEN)
+    else:
+        user_bot = Bot(user_bots[0].token)
+        user_bot_data = await user_bot.get_me()
+        await message.answer(DefaultLocale.selected_bot_msg().replace("{selected_name}", user_bot_data.full_name),
+                             reply_markup=get_bot_menu_keyboard(WebAppInfo(url=config.WEB_APP_URL)))
+        await state.set_state(States.BOT_MENU)
+        await state.set_data({'token': user_bots[0].token})
 
 
 @router.message(States.WAITING_FOR_TOKEN)  # TODO remove all replace(":", "___") of tokens
@@ -63,6 +74,7 @@ async def waiting_for_the_token_handler(message: Message, state: FSMContext):
                                 created_at=datetime.utcnow(),
                                 created_by=message.from_user.id,
                                 settings={"start_msg": DefaultLocale.default_start_msg(),
+                                          "default_msg": "Привет, этот бот создан с помощью @here_should_be_bot",
                                           "web_app_button": DefaultLocale.open_web_app_button()},
                                 locale=lang)
 
@@ -75,7 +87,8 @@ async def waiting_for_the_token_handler(message: Message, state: FSMContext):
                                   f"\nWEB_APP_URL={config.WEB_APP_URL}")
                 logger.info(f'successfully .env sub bot file in directory bots/bot{token.replace(":", "___")}/.env')
                 with open(f'{working_directory}/bots/bot{token.replace(":", "___")}/bot.service', 'r') as servicefile:
-                    txt = servicefile.read().replace('{working_directory}', f'{working_directory}/bots/bot{token.replace(":", "___")}')
+                    txt = servicefile.read().replace('{working_directory}',
+                                                     f'{working_directory}/bots/bot{token.replace(":", "___")}')
                 with open(f'{working_directory}/bots/bot{token.replace(":", "___")}/bot.service', 'w') as servicefile:
                     servicefile.write(txt)
 
@@ -86,16 +99,18 @@ async def waiting_for_the_token_handler(message: Message, state: FSMContext):
 
                 logger.debug("added web_app button to bot menu.")
                 os.system(
-                    f"echo {os.getenv('password')} | sudo -S cp {working_directory}/bots/bot{token.replace(':', '___')}/bot.service "
+                    f"echo -e {os.getenv('PASSWORD')} | "
+                    f"sudo -S cp {working_directory}/bots/bot{token.replace(':', '___')}/bot.service "
                     f"/etc/systemd/system/bot{token.replace(':', '___')}.service")
-                os.system(f"echo {os.getenv('password')} | sudo -S systemctl daemon-reload")
-                os.system(f"echo {os.getenv('password')} | sudo -S systemctl start bot{token.replace(':', '___')}.service")
+                os.system(f"echo -e {os.getenv('PASSWORD')} | sudo -S -k systemctl daemon-reload")
+                os.system(f"echo -e {os.getenv('PASSWORD')} | "
+                          f"sudo -S -k systemctl start bot{token.replace(':', '___')}.service")
 
                 await db.add_bot(new_bot)
 
                 await message.answer(
                     DefaultLocale.bot_will_initialize().format(bot_fullname, bot_username),
-                    reply_markup=get_bot_menu_keyboard(WebAppInfo(url="https://zhilovhub.github.io/qwerty/"))
+                    reply_markup=get_bot_menu_keyboard(WebAppInfo(url=config.WEB_APP_URL))
                 )
                 await state.set_state(States.BOT_MENU)
                 await state.set_data({"token": token})
@@ -111,57 +126,84 @@ async def waiting_for_the_token_handler(message: Message, state: FSMContext):
         await message.answer(DefaultLocale.incorrect_bot_token())
 
 
+@router.message(States.BOT_MENU, F.photo)
+async def bot_menu_photo_handler(message: Message, state: FSMContext):
+    state_data = await state.get_data()
+    photo_file_id = message.photo[-1].file_id
+    params = message.caption.strip().split('\n')
+
+    if len(params) != 2:
+        return await message.answer("Чтобы добавить товар, прикрепи его картинку и отправь сообщение в виде:"
+                                    "\n\nНазвание\nЦена в рублях")
+    try:
+        price = float(params[-1].replace(",", "."))
+    except ValueError:
+        return await message.answer("Цена должна быть в формате: <b>100.00</b>")
+
+    await bot.download(photo_file_id, destination=f"Files/img/{state_data['token']}__{params[0]}.jpg")
+    with open(f"Files/img/{state_data['token']}__{params[0]}.jpg", 'rb') as photo_file:
+        photo_bytes = photo_file.read()
+
+    new_product = ProductWithoutId(bot_token=state_data['token'],
+                                   name=params[0],
+                                   description="",
+                                   price=price,
+                                   picture=photo_bytes)
+    await db_engine.get_product_db().add_product(new_product)
+    await message.answer("Товар добавлен. Можно добавить ещё")
+
+
 @router.message(States.BOT_MENU)
 async def bot_menu_handler(message: Message, state: FSMContext):
     state_data = await state.get_data()
 
-    if message.photo and message.caption:
-        photo_file_id = message.photo[-1].file_id
-        params = message.caption.strip().split('\n')
-
-        if len(params) != 2:
-            return await message.answer("Чтобы добавить товар, прикрепи его картинку и отправь сообщение в виде:"
-                                "\n\nНазвание\nЦена в рублях")
-        if not params[-1].replace(',', '.').isdecimal():
-            return await message.answer("Цена должна быть в формате: <b>100.00</b>")
-
-        await bot.download(photo_file_id, destination=f"Files/img/{state_data['token']}__{params[0]}.jpg")
-        with open(f"Files/img/{state_data['token']}__{params[0]}.jpg", 'rb') as photo_file:
-            photo_bytes = photo_file.read()
-
-        new_product = ProductWithoutId(bot_token=state_data['token'],
-                                       name=params[0],
-                                       description="",
-                                       price=float(params[1]),
-                                       picture=photo_bytes)
-        await db_engine.get_product_db().add_product(new_product)
-        await message.answer("Товар добавлен. Можно добавить ещё")
-
-    else:
-        match message.text:
-            case "Стартовое сообщение":
-                await message.answer("Пришли текст, который должен присылаться пользователям, "
-                                     "когда они твоему боту отправляют /start", reply_markup=get_back_keyboard())
-                await state.set_state(States.EDITING_START_MESSAGE)
-                await state.set_data(state_data)
-            case "Сообщение затычка":
-                pass
-            case "Посмотреть магазин":
-                pass  # should be pass, it's nice
-            case "Добавить товар":
-                await message.reply("Чтобы добавить товар, прикрепи его картинку и отправь сообщение в виде:"
-                                    "\n\nНазвание\nЦена в рублях")
-            case "Запустить бота":
-                pass
-            case "Удалить бота":
-                await message.answer("Бот удалится вместе со всей базой продуктов безвозвратно.\n"
-                                     "Напиши ПОДТВЕРДИТЬ для подтверждения удаления", reply_markup=get_back_keyboard())
-                await state.set_state(States.DELETE_BOT)
-                await state.set_data(state_data)
-            case _:
-                await message.answer(
-                    "Для навигации используй кнопки 👇",
-                    reply_markup=get_bot_menu_keyboard(WebAppInfo(url="https://zhilovhub.github.io/qwerty/")))
+    match message.text:
+        case "Стартовое сообщение":
+            await message.answer("Пришли текст, который должен присылаться пользователям, "
+                                 "когда они твоему боту отправляют /start", reply_markup=get_back_keyboard())
+            await state.set_state(States.EDITING_START_MESSAGE)
+            await state.set_data(state_data)
+        case "Сообщение затычка":
+            await message.answer("Пришли текст, который должен присылаться пользователям "
+                                 "на их любые обычные сообщения", reply_markup=get_back_keyboard())
+            await state.set_state(States.EDITING_DEFAULT_MESSAGE)
+            await state.set_data(state_data)
+        case "Магазин":
+            pass  # should be pass, it's nice
+        case "Список товаров":
+            products = await db_engine.get_product_db().get_all_products(state_data["token"])
+            if not products:
+                await message.answer("Список товаров твоего магазина пуст")
+            else:
+                await message.answer("Список товаров твоего магазина 👇\nЧтобы удалить товар, нажми на тег рядом с ним")
+                for product in products:
+                    await message.answer_photo(
+                        photo=BufferedInputFile(product.picture, ""),
+                        caption=f"<b>{product.name}</b>\n\n"
+                                f"Цена: <b>{float(product.price)}₽</b>",
+                        reply_markup=get_inline_delete_button(product.id))
+        case "Добавить товар":
+            await message.answer("Чтобы добавить товар, прикрепи его картинку и отправь сообщение в виде:"
+                                 "\n\nНазвание\nЦена в рублях")
+        case "Запустить бота":
+            os.system(f"echo -e {os.getenv('PASSWORD')} | sudo -S -k systemctl restart "
+                      f"bot{state_data['token'].replace(':', '___')}.service")
+            await message.answer("Твой бот запущен ✅")
+        case "Остановить бота":
+            os.system(f"echo -e {os.getenv('PASSWORD')} | sudo -S -k systemctl stop "
+                      f"bot{state_data['token'].replace(':', '___')}.service")
+            await message.answer("Твой бот приостановлен ❌")
+        case "Удалить бота":
+            os.system(f"echo -e {os.getenv('PASSWORD')} | sudo -S -k systemctl stop "
+                      f"bot{state_data['token'].replace(':', '___')}.service")
+            await message.answer("Бот удалится вместе со всей базой продуктов безвозвратно.\n"
+                                 "Напиши ПОДТВЕРДИТЬ для подтверждения удаления", reply_markup=get_back_keyboard())
+            await state.set_state(States.DELETE_BOT)
+            await state.set_data(state_data)
+        case _:
+            await message.answer(
+                "Для навигации используй кнопки 👇",
+                reply_markup=get_bot_menu_keyboard(WebAppInfo(url=config.WEB_APP_URL)))
 
 
 @router.message(States.EDITING_START_MESSAGE)
@@ -172,22 +214,52 @@ async def editing_start_message_handler(message: Message, state: FSMContext):
         if message_text == "🔙 Назад":
             await message.answer(
                 "Возвращемся в меню...",
-                reply_markup=get_bot_menu_keyboard(WebAppInfo(url="https://zhilovhub.github.io/qwerty/")))
+                reply_markup=get_bot_menu_keyboard(WebAppInfo(url=config.WEB_APP_URL)))
             await state.set_state(States.BOT_MENU)
             await state.set_data(state_data)
         else:
-            bot = await db.get_bot(state_data["token"])
-            if bot.settings:
-                bot.settings["start_msg"] = message_text
-                await db.update_bot(bot)
+            user_bot = await db.get_bot(state_data["token"])
+            if user_bot.settings:
+                user_bot.settings["start_msg"] = message_text
+            else:
+                user_bot.settings = {"start_msg": message_text}
+            await db.update_bot(user_bot)
 
             await message.answer(
                 "Стартовое сообщение изменено!",
-                reply_markup=get_bot_menu_keyboard(WebAppInfo(url="https://zhilovhub.github.io/qwerty/")))
+                reply_markup=get_bot_menu_keyboard(WebAppInfo(url=config.WEB_APP_URL)))
             await state.set_state(States.BOT_MENU)
             await state.set_data(state_data)
     else:
         await message.answer("Стартовое сообщение должно содержать текст")
+
+
+@router.message(States.EDITING_DEFAULT_MESSAGE)
+async def editing_default_message_handler(message: Message, state: FSMContext):
+    message_text = message.text
+    if message_text:
+        state_data = await state.get_data()
+        if message_text == "🔙 Назад":
+            await message.answer(
+                "Возвращемся в меню...",
+                reply_markup=get_bot_menu_keyboard(WebAppInfo(url=config.WEB_APP_URL)))
+            await state.set_state(States.BOT_MENU)
+            await state.set_data(state_data)
+        else:
+            user_bot = await db.get_bot(state_data["token"])
+            if user_bot.settings:
+                user_bot.settings["default_msg"] = message_text
+            else:
+                user_bot.settings = {"default_msg": message_text}
+            await db.update_bot(user_bot)
+
+            await message.answer(
+                "Сообщение-затычка изменена!",
+                reply_markup=get_bot_menu_keyboard(WebAppInfo(url=config.WEB_APP_URL)))
+            await state.set_state(States.BOT_MENU)
+            await state.set_data(state_data)
+    else:
+        await message.answer("Сообщение-затычка должна содержать текст")
 
 
 @router.message(States.DELETE_BOT)
@@ -195,18 +267,25 @@ async def delete_bot_handler(message: Message, state: FSMContext):
     message_text = message.text
     state_data = await state.get_data()
     if message_text == "ПОДТВЕРДИТЬ":
-            await db.del_bot(state_data["token"])
+        await db.del_bot(state_data["token"])
 
-            await message.answer(
-                "Бот удален",
-                reply_markup=ReplyKeyboardRemove())
-            await message.answer(DefaultLocale.input_token())
-            await state.set_state(States.WAITING_FOR_TOKEN)
+        await message.answer(
+            "Бот удален",
+            reply_markup=ReplyKeyboardRemove())
+        await message.answer(DefaultLocale.input_token())
+        await state.set_state(States.WAITING_FOR_TOKEN)
     elif message_text == "🔙 Назад":
-            await message.answer(
-                "Возвращемся в меню...",
-                reply_markup=get_bot_menu_keyboard(WebAppInfo(url="https://zhilovhub.github.io/qwerty/")))
-            await state.set_state(States.BOT_MENU)
-            await state.set_data(state_data)
+        await message.answer(
+            "Возвращемся в меню...",
+            reply_markup=get_bot_menu_keyboard(WebAppInfo(url=config.WEB_APP_URL)))
+        await state.set_state(States.BOT_MENU)
+        await state.set_data(state_data)
     else:
         await message.answer("Напиши ПОДТВЕРДИТЬ для подтверждения удаления или вернись назад")
+
+
+@router.callback_query(lambda q: q.data.startswith('product:delete'))
+async def delete_product_handler(query: CallbackQuery):
+    product_id = int(query.data.split("_")[-1])
+    await db_engine.get_product_db().delete_product(product_id)
+    await query.message.delete()
