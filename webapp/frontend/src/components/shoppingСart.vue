@@ -58,6 +58,10 @@
           return 'Оплатить: 0 ₽'
         }
         return 'Оплатить: ' + price.toFixed(2) + ' ₽'
+      },
+      shortenName(name) {
+        if (!name) return '';
+        return name.length > 15 ? name.substring(0, 12) + '...' : name;
       }
     }
   }
@@ -89,7 +93,7 @@
         <img v-if="item.img" :src="item.img" alt="img">
         <div v-else style="width: 67px; height: 67px; border-radius: 7px; background-color: #293C47;"></div>
         <div class="text-block">
-          <span style="color: #71CBFF; font-size: 15px;">{{item.name}}</span>
+          <span style="color: #71CBFF; font-size: 15px;">{{ shortenName(item.name) }}</span>
           <span style="font-weight: 600; color: #FFFFFF; font-size: 15px;">{{priceComma(item.price)}}</span>
         </div>
         <div class="buttons">
