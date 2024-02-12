@@ -9,7 +9,7 @@ db = db_engine.get_order_dao()
 
 
 @app.get(PATH + "/get_all_orders/{token}", tags=['orders'])
-async def get_all_orders_api(token: str):
+async def get_all_orders_api(token: str) -> list[OrderSchema]:
     try:
         orders = await db.get_all_orders(token)
     except ValidationError:
@@ -21,9 +21,9 @@ async def get_all_orders_api(token: str):
 
 
 @app.get(PATH + "/get_order/{token}/{order_id}", tags=['orders'])
-async def get_order_api(token: str, order_id: str):
+async def get_order_api(token: str, order_id: str) -> OrderSchema:
     try:
-        product = await db.get_order(token, order_id)
+        order = await db.get_order(token, order_id)
     except OrderNotFound:
         raise HTTPException(status_code=404, detail="Product not found.")
     except ValidationError:
@@ -31,7 +31,7 @@ async def get_order_api(token: str, order_id: str):
     except Exception:
         logger.error("Error while execute get_order db_method", exc_info=True)
         raise HTTPException(status_code=500, detail="Internal error.")
-    return product
+    return order
 
 
 @app.post(PATH + "/add_order", tags=['orders'])
@@ -47,7 +47,7 @@ async def add_order_api(new_order: OrderWithoutId) -> OrderSchema:
 
 
 @app.post(PATH + "/update_order", tags=['orders'])
-async def update_order_api(updated_order: OrderWithoutId):
+async def update_order_api(updated_order: OrderWithoutId) -> str:
     try:
         order = await db.update_order(updated_order)
     except OrderNotFound:
@@ -61,7 +61,7 @@ async def update_order_api(updated_order: OrderWithoutId):
 
 
 @app.delete(PATH + "/delete_order/{token}/{order_id}", tags=['orders'])
-async def delete_order_api(bot_token: str, order_id: str):
+async def delete_order_api(bot_token: str, order_id: str) -> str:
     try:
         await db.delete_order(bot_token, order_id)
     except OrderNotFound:
