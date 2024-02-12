@@ -102,12 +102,12 @@ class OrderDao(Dao):
     @validate_call
     async def add_order(self, new_order: OrderWithoutId) -> OrderSchema:
         s = string.digits + string.ascii_letters
-        day_id = ''.join(random.sample(s, 6))
+        date = new_order.ordered_at.strftime("%d%m%y")
+        day_id = ''.join(random.sample(s, 5))
         try:
-            await self.get_order(new_order.bot_token, )
+            await self.get_order(new_order.bot_token, f"{date}_{day_id}")
             return await self.add_order(new_order)
         except OrderNotFound:
-            date = new_order.ordered_at.strftime("%d%m%y")
             order = OrderSchema(**new_order.model_dump(), id=f"{date}_{day_id}")
         async with self.engine.begin() as conn:
             await conn.execute(insert(Order).values(order.model_dump()))
