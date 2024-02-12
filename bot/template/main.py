@@ -1,19 +1,22 @@
 import os
-from aiogram import Bot, Dispatcher, types, Router
-from aiogram.types import Message, CallbackQuery, Chat, User
-from aiogram.fsm.storage.memory import MemoryStorage
-from aiogram.filters import CommandStart, Command
-from aiogram.enums import ParseMode
 import asyncio
 import datetime
 import logging
 import dotenv
+
 from re import fullmatch
-from sqlalchemy import select
-from sqlalchemy import Table, Column, Integer, String, JSON, BigInteger, DateTime
+
 from sqlalchemy import MetaData
+from sqlalchemy import Table, Column, String, JSON, BigInteger, DateTime
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import create_async_engine
-from aiogram.utils.keyboard import InlineKeyboardMarkup, InlineKeyboardButton, CallbackData
+
+from aiogram import Bot, Dispatcher, Router
+from aiogram.enums import ParseMode
+from aiogram.types import Message, Chat, User
+from aiogram.filters import CommandStart, StateFilter
+from aiogram.utils.keyboard import InlineKeyboardMarkup, InlineKeyboardButton
+from aiogram.fsm.storage.memory import MemoryStorage
 from aiogram.types.web_app_info import WebAppInfo
 
 dotenv.load_dotenv()
@@ -102,6 +105,12 @@ async def start_cmd(message: Message):
         ]
     ])
     return await message.reply(format_locales(start_msg, message.from_user, message.chat), reply_markup=kb)
+
+
+@router.message(StateFilter(None))
+async def default_cmd(message: Message):
+    default_msg = await get_option("default_msg")
+    return await message.answer(format_locales(default_msg, message.from_user, message.chat))
 
 
 async def on_start():
