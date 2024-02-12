@@ -8,19 +8,16 @@ from database.models.models import Database
 from bot import config
 from bot.config import logger
 from bot.utils.storage import AlchemyStorageAsync
-from bot.utils.database import AlchemyDB
 
 bot = Bot(config.TELEGRAM_TOKEN, parse_mode=ParseMode.HTML)
 storage = AlchemyStorageAsync(config.STORAGE_DB_URL, config.STORAGE_TABLE_NAME)
 dp = Dispatcher(storage=storage)
-db = AlchemyDB(config.DB_URL)
 db_engine = Database(config.DB_URL)
 
 
 async def on_start():
     logger.info("Bot online.")
     await storage.connect()
-    await db.connect()
     await dp.start_polling(bot)
 
 

@@ -12,8 +12,6 @@ from aiogram.exceptions import TelegramUnauthorizedError
 from aiogram.fsm.context import FSMContext
 
 from bot import config
-from bot.main import db
-from bot.utils import DbBot
 from bot.config import logger
 from bot.keyboards import get_bot_menu_keyboard, get_back_keyboard, get_inline_delete_button
 from bot.states.states import States
@@ -21,6 +19,7 @@ from bot.locales.default import DefaultLocale
 from bot.filters.chat_type import ChatTypeFilter
 from bot.exceptions.exceptions import *
 
+from database.models.bot_model import BotSchema
 from database.models.user_model import UserSchema
 from database.models.product_model import ProductWithoutId
 
@@ -43,7 +42,7 @@ async def start_command_handler(message: Message, state: FSMContext):
 
     await message.answer(DefaultLocale.about_message())
 
-    user_bots = await db.get_bots(message.from_user.id)
+    user_bots = await db_engine.get_bot_dao().get_bots(message.from_user.id)
     if not user_bots:
         await message.answer(DefaultLocale.input_token())
         await state.set_state(States.WAITING_FOR_TOKEN)
@@ -66,12 +65,12 @@ async def waiting_for_the_token_handler(message: Message, state: FSMContext):
             found_bot = Bot(token)
             found_bot_data = await found_bot.get_me()
             try:
-                await db.get_bot(token)  # TODO сделать список ботов после MVP
+                await db_engine.get_bot_dao().get_bot(token)  # TODO сделать список ботов после MVP
                 await message.answer("Бот с таким токеном в системе уже найден.\n"
                                      "Введи другой токен или перейди в список ботов и поищи своего бота там")
             except Exception:
                 bot_fullname, bot_username = found_bot_data.full_name, found_bot_data.username
-                new_bot = DbBot(bot_token=token,
+                new_bot = BotSchema(bot_token=token,
                                 status="new",
                                 created_at=datetime.utcnow(),
                                 created_by=message.from_user.id,
@@ -108,7 +107,7 @@ async def waiting_for_the_token_handler(message: Message, state: FSMContext):
                 os.system(f"echo -e {os.getenv('PASSWORD')} | "
                           f"sudo -S -k systemctl start bot{token.replace(':', '___')}.service")
 
-                await db.add_bot(new_bot)
+                await db_engine.get_bot_dao().add_bot(new_bot)
 
                 await message.answer(
                     DefaultLocale.bot_will_initialize().format(bot_fullname, bot_username),
@@ -220,12 +219,12 @@ async def editing_start_message_handler(message: Message, state: FSMContext):
             await state.set_state(States.BOT_MENU)
             await state.set_data(state_data)
         else:
-            user_bot = await db.get_bot(state_data["token"])
+            user_bot = await db_engine.get_bot_dao().get_bot(state_data["token"])
             if user_bot.settings:
                 user_bot.settings["start_msg"] = message_text
             else:
                 user_bot.settings = {"start_msg": message_text}
-            await db.update_bot(user_bot)
+            await db_engine.get_bot_dao().update_bot(user_bot)
 
             await message.answer(
                 "Стартовое сообщение изменено!",
@@ -248,12 +247,12 @@ async def editing_default_message_handler(message: Message, state: FSMContext):
             await state.set_state(States.BOT_MENU)
             await state.set_data(state_data)
         else:
-            user_bot = await db.get_bot(state_data["token"])
+            user_bot = await db_engine.get_bot_dao().get_bot(state_data["token"])
             if user_bot.settings:
                 user_bot.settings["default_msg"] = message_text
             else:
                 user_bot.settings = {"default_msg": message_text}
-            await db.update_bot(user_bot)
+            await db_engine.get_bot_dao().update_bot(user_bot)
 
             await message.answer(
                 "Сообщение-затычка изменена!",
@@ -269,7 +268,7 @@ async def delete_bot_handler(message: Message, state: FSMContext):
     message_text = message.text
     state_data = await state.get_data()
     if message_text == "ПОДТВЕРДИТЬ":
-        await db.del_bot(state_data["token"])
+        await db_engine.get_bot_dao().del_bot(state_data["token"])
 
         await message.answer(
             "Бот удален",

@@ -1,15 +1,15 @@
-from typing import Optional, Union
+from typing import Optional
 
-from sqlalchemy import BigInteger, Column, String, LargeBinary, ForeignKey, Float
-from sqlalchemy import select, update, insert, delete, and_
+from sqlalchemy import BigInteger, Column, String, ForeignKey, Float
+from sqlalchemy import select, insert, delete, and_
 from sqlalchemy.ext.asyncio import AsyncEngine
 
-from pydantic import BaseModel, Field, field_validator, validate_call
+from pydantic import BaseModel, Field, validate_call
 
 from database.models import Base
 from database.models.dao import Dao
 
-from .custom_bot_model import CustomBotSchema, CustomBot
+from .bot_model import Bot
 
 
 class ProductNotFound(Exception):
@@ -21,7 +21,7 @@ class Product(Base):
     __tablename__ = "products"
 
     id = Column(BigInteger, primary_key=True)
-    bot_token = Column(ForeignKey(CustomBot.bot_token, ondelete="CASCADE"), nullable=False)
+    bot_token = Column(ForeignKey(Bot.bot_token, ondelete="CASCADE"), nullable=False)
     name = Column(String(55), nullable=False)
     description = Column(String(255), nullable=False)
     price = Column(Float, nullable=False)
