@@ -6,7 +6,7 @@ from distutils.dir_util import copy_tree
 from bot.main import bot, db_engine
 
 from aiogram import Router, Bot
-from aiogram.types import Message, MenuButtonWebApp, WebAppInfo, ReplyKeyboardRemove, BufferedInputFile
+from aiogram.types import Message, MenuButtonWebApp, WebAppInfo, ReplyKeyboardRemove, BufferedInputFile, CallbackQuery
 from aiogram.filters import CommandStart
 from aiogram.exceptions import TelegramUnauthorizedError
 from aiogram.fsm.context import FSMContext
@@ -15,7 +15,7 @@ from bot import config
 from bot.main import db
 from bot.utils import DbUser, DbBot
 from bot.config import logger
-from bot.keyboards import get_bot_menu_keyboard, get_back_keyboard
+from bot.keyboards import get_bot_menu_keyboard, get_back_keyboard, get_inline_delete_button
 from bot.states.states import States
 from bot.locales.default import DefaultLocale
 from bot.filters.chat_type import ChatTypeFilter
@@ -178,7 +178,8 @@ async def bot_menu_handler(message: Message, state: FSMContext):
                     await message.answer_photo(
                         photo=BufferedInputFile(product.picture, ""),
                         caption=f"<b>{product.name}</b>\n\n"
-                                f"Цена: <b>{float(product.price)}₽</b>")
+                                f"Цена: <b>{float(product.price)}₽</b>",
+                        reply_markup=get_inline_delete_button(product.id))
         case "Добавить товар":
             await message.answer("Чтобы добавить товар, прикрепи его картинку и отправь сообщение в виде:"
                                  "\n\nНазвание\nЦена в рублях")
@@ -279,3 +280,10 @@ async def delete_bot_handler(message: Message, state: FSMContext):
         await state.set_data(state_data)
     else:
         await message.answer("Напиши ПОДТВЕРДИТЬ для подтверждения удаления или вернись назад")
+
+
+@router.callback_query(lambda q: q.data.startswith('product:delete'))
+async def delete_product_handler(query: CallbackQuery):
+    product_id = int(query.data.split("_")[-1])
+    await db_engine.get_product_db().delete_product(product_id)
+    await query.message.delete()

@@ -70,3 +70,8 @@ class ProductDao(Dao):
     async def add_product(self, new_order: ProductWithoutId):
         async with self.engine.begin() as conn:
             await conn.execute(insert(Product).values(new_order.model_dump()))
+
+    @validate_call
+    async def delete_product(self, product_id: int):
+        async with self.engine.begin() as conn:
+            await conn.execute(delete(Product).where(Product.id == product_id))
