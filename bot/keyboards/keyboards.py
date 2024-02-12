@@ -19,7 +19,8 @@ def get_bot_menu_keyboard(web_app_info: WebAppInfo) -> ReplyKeyboardMarkup:
             KeyboardButton(text="Сообщение затычка")
         ],
         [
-            KeyboardButton(text="Посмотреть магазин", web_app=web_app_info)
+            KeyboardButton(text="Магазин", web_app=web_app_info),
+            KeyboardButton(text="Список товаров")
         ],
         [
             KeyboardButton(text="Добавить товар")

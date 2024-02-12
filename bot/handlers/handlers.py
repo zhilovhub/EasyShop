@@ -6,7 +6,7 @@ from distutils.dir_util import copy_tree
 from bot.main import bot, db_engine
 
 from aiogram import Router, Bot
-from aiogram.types import Message, MenuButtonWebApp, WebAppInfo, ReplyKeyboardRemove
+from aiogram.types import Message, MenuButtonWebApp, WebAppInfo, ReplyKeyboardRemove, BufferedInputFile
 from aiogram.filters import CommandStart
 from aiogram.exceptions import TelegramUnauthorizedError
 from aiogram.fsm.context import FSMContext
@@ -166,8 +166,19 @@ async def bot_menu_handler(message: Message, state: FSMContext):
                                  "на их любые обычные сообщения", reply_markup=get_back_keyboard())
             await state.set_state(States.EDITING_DEFAULT_MESSAGE)
             await state.set_data(state_data)
-        case "Посмотреть магазин":
+        case "Магазин":
             pass  # should be pass, it's nice
+        case "Список товаров":
+            products = await db_engine.get_product_db().get_all_products(state_data["token"])
+            if not products:
+                await message.answer("Список товаров твоего магазина пуст")
+            else:
+                await message.answer("Список товаров твоего магазина 👇\nЧтобы удалить товар, нажми на тег рядом с ним")
+                for product in products:
+                    await message.answer_photo(
+                        photo=BufferedInputFile(product.picture, ""),
+                        caption=f"<b>{product.name}</b>\n\n"
+                                f"Цена: <b>{float(product.price)}₽</b>")
         case "Добавить товар":
             await message.answer("Чтобы добавить товар, прикрепи его картинку и отправь сообщение в виде:"
                                  "\n\nНазвание\nЦена в рублях")

@@ -44,7 +44,7 @@ class ProductDao(Dao):
     def __init__(self, engine: AsyncEngine) -> None:
         super().__init__(engine)
 
-    @validate_call
+    @validate_call(validate_return=True)
     async def get_all_products(self, bot_token: str) -> list[ProductSchema]:
         async with self.engine.begin() as conn:
             raw_res = await conn.execute(select(Product).where(Product.bot_token == bot_token))
@@ -52,20 +52,19 @@ class ProductDao(Dao):
         raw_res = raw_res.fetchall()
         res = []
         for product in raw_res:
-            res.append(ProductSchema.model_validate(product))
+            res.append(ProductSchema(**product._mapping))
         return res
 
-    @validate_call
+    @validate_call(validate_return=True)
     async def get_product(self, bot_token: str, product_id: int) -> ProductSchema:
         async with self.engine.begin() as conn:
             raw_res = await conn.execute(select(Product).where(and_(Product.bot_token == bot_token,
                                                                     Product.id == product_id)))
         await self.engine.dispose()
-        raw_res = raw_res.fetchall()
+        raw_res = raw_res.fetchone()
         if not raw_res:
             raise ProductNotFound
-        res = ProductSchema.model_validate(raw_res)
-        return res
+        return ProductSchema(**raw_res._mapping)
 
     @validate_call
     async def add_product(self, new_order: ProductWithoutId):
