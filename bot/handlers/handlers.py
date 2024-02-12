@@ -13,13 +13,15 @@ from aiogram.fsm.context import FSMContext
 
 from bot import config
 from bot.main import db
-from bot.utils import DbUser, DbBot
+from bot.utils import DbBot
 from bot.config import logger
 from bot.keyboards import get_bot_menu_keyboard, get_back_keyboard, get_inline_delete_button
 from bot.states.states import States
 from bot.locales.default import DefaultLocale
 from bot.filters.chat_type import ChatTypeFilter
 from bot.exceptions.exceptions import *
+
+from database.models.user_model import UserSchema
 from database.models.product_model import ProductWithoutId
 
 from magic_filter import F
@@ -31,11 +33,11 @@ router.message.filter(ChatTypeFilter(chat_type='private'))
 @router.message(CommandStart())
 async def start_command_handler(message: Message, state: FSMContext):
     try:
-        await db.get_user(message.from_user.id)
+        await db_engine.get_user_dao().get_user(message.from_user.id)
     except UserNotFound:
         logger.info(f"user {message.from_user.id} not found in db, creating new instance...")
 
-        await db.add_user(DbUser(
+        await db_engine.get_user_dao().add_user(UserSchema(
             user_id=message.from_user.id, registered_at=datetime.utcnow(), status="new", locale="default")
         )
 
@@ -56,7 +58,7 @@ async def start_command_handler(message: Message, state: FSMContext):
 
 @router.message(States.WAITING_FOR_TOKEN)  # TODO remove all replace(":", "___") of tokens
 async def waiting_for_the_token_handler(message: Message, state: FSMContext):
-    user = await db.get_user(message.from_user.id)
+    user = await db_engine.get_user_dao().get_user(message.from_user.id)
     lang = user.locale
     token = message.text
     if fullmatch(r"\d{10}:\w{35}", token):

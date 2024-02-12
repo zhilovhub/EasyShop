@@ -1,1 +1,1 @@
-from .database import DbBot, DbUser
+from .database import DbBot
