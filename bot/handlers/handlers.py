@@ -20,12 +20,30 @@ from bot.states.states import States
 from bot.locales.default import DefaultLocale
 from bot.filters.chat_type import ChatTypeFilter
 from bot.exceptions.exceptions import *
-from database.models.product_model import ProductWithoutId
+from database.models.product_model import ProductWithoutId, ProductDao
+from database.models.order_model import OrderSchema, OrderDao
 
 from magic_filter import F
 
 router = Router(name="users")
 router.message.filter(ChatTypeFilter(chat_type='private'))
+
+product_db = ProductDao(db)
+
+
+async def send_new_order_notify(order: OrderSchema):
+    user_bot = await db.get_bot(order.bot_token)
+    bot_object = Bot(user_bot.token)
+    order_user_data = await bot_object.get_chat(order.from_user)
+    products = []
+    for product_id in order.products_id:
+        product = await product_db.get_product(order.bot_token, product_id)
+        product.append(product.name)
+    products_text = '\n'.join(products)
+    await bot.send_message(user_bot.created_by, f"Новый заказ <b>#{order.id}</b>\n"
+                                                f"от пользователя "
+                                                f"<b>{'@' + order_user_data.username if order_user_data.username else order_user_data.full_name}</b>"
+                                                f"\n\nСписок товаров: {products_text}")
 
 
 @router.message(CommandStart())
