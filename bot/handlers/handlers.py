@@ -74,6 +74,7 @@ async def waiting_for_the_token_handler(message: Message, state: FSMContext):
                                 created_at=datetime.utcnow(),
                                 created_by=message.from_user.id,
                                 settings={"start_msg": DefaultLocale.default_start_msg(),
+                                          "default_msg": "Привет, этот бот создан с помощью @here_should_be_bot",
                                           "web_app_button": DefaultLocale.open_web_app_button()},
                                 locale=lang)
 
@@ -161,7 +162,10 @@ async def bot_menu_handler(message: Message, state: FSMContext):
             await state.set_state(States.EDITING_START_MESSAGE)
             await state.set_data(state_data)
         case "Сообщение затычка":
-            pass
+            await message.answer("Пришли текст, который должен присылаться пользователям "
+                                 "на их любые обычные сообщения", reply_markup=get_back_keyboard())
+            await state.set_state(States.EDITING_DEFAULT_MESSAGE)
+            await state.set_data(state_data)
         case "Посмотреть магазин":
             pass  # should be pass, it's nice
         case "Добавить товар":
@@ -183,7 +187,7 @@ async def bot_menu_handler(message: Message, state: FSMContext):
         case _:
             await message.answer(
                 "Для навигации используй кнопки 👇",
-                reply_markup=get_bot_menu_keyboard(WebAppInfo(url="https://zhilovhub.github.io/qwerty/")))
+                reply_markup=get_bot_menu_keyboard(WebAppInfo(url=config.WEB_APP_URL)))
 
 
 @router.message(States.EDITING_START_MESSAGE)
@@ -194,7 +198,7 @@ async def editing_start_message_handler(message: Message, state: FSMContext):
         if message_text == "🔙 Назад":
             await message.answer(
                 "Возвращемся в меню...",
-                reply_markup=get_bot_menu_keyboard(WebAppInfo(url="https://zhilovhub.github.io/qwerty/")))
+                reply_markup=get_bot_menu_keyboard(WebAppInfo(url=config.WEB_APP_URL)))
             await state.set_state(States.BOT_MENU)
             await state.set_data(state_data)
         else:
@@ -207,11 +211,39 @@ async def editing_start_message_handler(message: Message, state: FSMContext):
 
             await message.answer(
                 "Стартовое сообщение изменено!",
-                reply_markup=get_bot_menu_keyboard(WebAppInfo(url="https://zhilovhub.github.io/qwerty/")))
+                reply_markup=get_bot_menu_keyboard(WebAppInfo(url=config.WEB_APP_URL)))
             await state.set_state(States.BOT_MENU)
             await state.set_data(state_data)
     else:
         await message.answer("Стартовое сообщение должно содержать текст")
+
+
+@router.message(States.EDITING_DEFAULT_MESSAGE)
+async def editing_default_message_handler(message: Message, state: FSMContext):
+    message_text = message.text
+    if message_text:
+        state_data = await state.get_data()
+        if message_text == "🔙 Назад":
+            await message.answer(
+                "Возвращемся в меню...",
+                reply_markup=get_bot_menu_keyboard(WebAppInfo(url=config.WEB_APP_URL)))
+            await state.set_state(States.BOT_MENU)
+            await state.set_data(state_data)
+        else:
+            user_bot = await db.get_bot(state_data["token"])
+            if user_bot.settings:
+                user_bot.settings["default_msg"] = message_text
+            else:
+                user_bot.settings = {"default_msg": message_text}
+            await db.update_bot(user_bot)
+
+            await message.answer(
+                "Сообщение-затычка изменена!",
+                reply_markup=get_bot_menu_keyboard(WebAppInfo(url=config.WEB_APP_URL)))
+            await state.set_state(States.BOT_MENU)
+            await state.set_data(state_data)
+    else:
+        await message.answer("Сообщение-затычка должна содержать текст")
 
 
 @router.message(States.DELETE_BOT)
@@ -229,7 +261,7 @@ async def delete_bot_handler(message: Message, state: FSMContext):
     elif message_text == "🔙 Назад":
         await message.answer(
             "Возвращемся в меню...",
-            reply_markup=get_bot_menu_keyboard(WebAppInfo(url="https://zhilovhub.github.io/qwerty/")))
+            reply_markup=get_bot_menu_keyboard(WebAppInfo(url=config.WEB_APP_URL)))
         await state.set_state(States.BOT_MENU)
         await state.set_data(state_data)
     else:

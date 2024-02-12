@@ -21,7 +21,7 @@ class Product(Base):
     __tablename__ = "products"
 
     id = Column(BigInteger, primary_key=True)
-    bot_token = Column(ForeignKey(CustomBot.bot_token), nullable=False)
+    bot_token = Column(ForeignKey(CustomBot.bot_token, ondelete="CASCADE"), nullable=False)
     name = Column(String(55), nullable=False)
     description = Column(String(255), nullable=False)
     price = Column(Float, nullable=False)
