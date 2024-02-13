@@ -1,9 +1,16 @@
 import Vuex from 'vuex'
+let tg = window.Telegram.WebApp;
+tg.expand();
+const url = new URL(window.location.href);
+const token = url.searchParams.get('token');
+const apiUrl = 'http://92.118.114.106:8000'
 
 export const Store = new Vuex.Store({
   state: {
+    token: "",
     itemsAddToCartArray: [],
     items: [],
+    address: ''
   },
   mutations: {
     addToLocalStorage(state) {
@@ -15,9 +22,6 @@ export const Store = new Vuex.Store({
       }
     },
     itemsInit() {
-      const url = new URL(window.location.href);
-      let token = url.searchParams.get('token');
-      const apiUrl = 'http://92.118.114.106:8000'
       async function fetchItems() {
         try {
           const response =  await fetch(`${apiUrl}/api/products/get_all_products/${token}`,
@@ -28,7 +32,6 @@ export const Store = new Vuex.Store({
                 'Access-Control-Allow-Origin': '*'
               }
             });
-          console.log(response)
           if(!response.ok) {
             new Error('Network response was not ok')
           }
@@ -47,7 +50,47 @@ export const Store = new Vuex.Store({
           console.log('No data received');
         }
       });
-    }
+      Store.state.token = token;
+    },
+    postData() {
+      let data = {
+        "order_id": Number
+      };
+      async function fetchData() {
+        try {
+          const response = await fetch(`${apiUrl}/api/orders/add_order`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+              'bot_token': Store.state.token,
+              'from_user': 0,
+              'products_id': Store.state.itemsAddToCartArray.map(item => item.id),
+              'ordered_at': new Date().toISOString(),
+              'address': Store.state.address,
+              'status': 'backlog',
+            })
+          });
+          if (!response.ok) {
+            new Error('Network response was not ok');
+          }
+          return await response.json();
+        } catch (error) {
+          console.error('There was a problem with the fetch operation:', error);
+          return null;
+        }
+      }
+      fetchData().then(response => {
+        if (response) {
+          data.order_id = response.id;
+          tg.sendData(JSON.stringify(data));
+          tg.close();
+        } else {
+          console.log('No data received');
+        }
+      });
+    },
   },
   actions: {
 
