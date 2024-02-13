@@ -1,0 +1,14 @@
+[Unit]
+Description=webapp service
+
+Wants=network.target   
+After=syslog.target network-online.target
+
+[Service]
+Type=oneshot
+WorkingDirectory=/root/EasyShop/webapp/frontend
+ExecStart=npm run preview --https -- --host 0.0.0.0 --port 443
+
+[Install]
+WantedBy=multi-user.target
+
