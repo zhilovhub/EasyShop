@@ -6,7 +6,7 @@ from distutils.dir_util import copy_tree
 from bot.main import bot, db_engine
 
 from aiogram import Router, Bot
-from aiogram.types import Message, MenuButtonWebApp, WebAppInfo, ReplyKeyboardRemove, BufferedInputFile, CallbackQuery
+from aiogram.types import Message, MenuButtonWebApp, WebAppInfo, ReplyKeyboardRemove, FSInputFile, CallbackQuery
 from aiogram.filters import CommandStart
 from aiogram.exceptions import TelegramUnauthorizedError
 from aiogram.fsm.context import FSMContext
@@ -60,7 +60,7 @@ async def waiting_for_the_token_handler(message: Message, state: FSMContext):
     user = await db_engine.get_user_dao().get_user(message.from_user.id)
     lang = user.locale
     token = message.text
-    if fullmatch(r"\d{10}:\w{35}", token):
+    if fullmatch(r"\d{10}:[\w|-]{35}", token.replace("_", "a")):
         try:
             found_bot = Bot(token)
             found_bot_data = await found_bot.get_me()
@@ -179,7 +179,7 @@ async def bot_menu_handler(message: Message, state: FSMContext):
                 await message.answer("Список товаров твоего магазина 👇\nЧтобы удалить товар, нажми на тег рядом с ним")
                 for product in products:
                     await message.answer_photo(
-                        photo=BufferedInputFile(product.picture, ""),
+                        photo=FSInputFile("../" + product.picture),
                         caption=f"<b>{product.name}</b>\n\n"
                                 f"Цена: <b>{float(product.price)}₽</b>",
                         reply_markup=get_inline_delete_button(product.id))
