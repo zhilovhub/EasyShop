@@ -20,15 +20,16 @@ from bot.states.states import States
 from bot.locales.default import DefaultLocale
 from bot.filters.chat_type import ChatTypeFilter
 from bot.exceptions.exceptions import *
-from database.models.product_model import ProductWithoutId, ProductDao
-from database.models.order_model import OrderSchema, OrderDao
+from database.models.product_model import ProductWithoutId
+from database.models.order_model import OrderSchema, OrderNotFound
 
 from magic_filter import F
 
 router = Router(name="users")
 router.message.filter(ChatTypeFilter(chat_type='private'))
 
-product_db = ProductDao(db)
+product_db = db_engine.get_product_db()
+order_db = db_engine.get_order_dao()
 
 
 async def send_new_order_notify(order: OrderSchema):
@@ -51,6 +52,15 @@ async def send_order_change_status_notify(order: OrderSchema):
     text = f"Новый статус заказ <b>#{order.id}</b>\n<b>{order.status}</b>"
     await bot.send_message(user_bot.created_by, text)
     await bot.send_message(order.from_user, text)
+
+
+@router.message(F.web_app_data)
+async def process_web_app_request(event: Message):
+    try:
+        order = await order_db.get_order(event.web_app_data.order_id)
+    except OrderNotFound:
+        return
+    await send_new_order_notify(order)
 
 
 @router.message(CommandStart())
