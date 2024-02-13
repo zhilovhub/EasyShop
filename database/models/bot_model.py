@@ -5,7 +5,7 @@ from sqlalchemy import BigInteger, Column, String, DateTime, JSON
 from sqlalchemy import select, update, delete, insert
 from sqlalchemy.ext.asyncio import AsyncEngine
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ConfigDict
 
 from database.models import Base
 from database.models.dao import Dao
@@ -26,6 +26,8 @@ class Bot(Base):
 
 
 class BotSchema(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     token: str = Field(alias="bot_token", frozen=True, max_length=46, min_length=46)
     status: str = Field(max_length=55)
     created_at: datetime = Field(frozen=True)
@@ -49,7 +51,7 @@ class BotDao(Dao):
         raw_res = raw_res.fetchall()
         res = []
         for bot in raw_res:
-            res.append(BotSchema(**bot._mapping))
+            res.append(BotSchema.model_validate(bot))
 
         return res
 
@@ -66,7 +68,7 @@ class BotDao(Dao):
         if res is None:
             raise BotNotFound(f"token {bot_token} not found in database.")
 
-        return BotSchema(**res._mapping)
+        return BotSchema.model_validate(res)
 
     async def add_bot(self, bot: BotSchema) -> None:
         if not isinstance(bot, BotSchema):

@@ -4,7 +4,7 @@ from sqlalchemy import BigInteger, Column, String, DateTime, JSON
 from sqlalchemy import select, update, delete, insert
 from sqlalchemy.ext.asyncio import AsyncEngine
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ConfigDict
 
 from database.models import Base
 from database.models.dao import Dao
@@ -24,6 +24,8 @@ class User(Base):
 
 
 class UserSchema(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     id: int = Field(alias="user_id", frozen=True)
     status: str = Field(max_length=55)
     registered_at: datetime = Field(frozen=True)
@@ -43,7 +45,7 @@ class UserDao(Dao):
         raw_res = raw_res.fetchall()
         res = []
         for user in raw_res:
-            res.append(UserSchema(**user._mapping))
+            res.append(UserSchema.model_validate(user))
             
         return res
     
@@ -59,7 +61,7 @@ class UserDao(Dao):
         if res is None:
             raise UserNotFound(f"id {user_id} not found in database.")
         
-        return UserSchema(**res._mapping)
+        return UserSchema.model_validate(res)
 
     async def add_user(self, user: UserSchema) -> None:
         if not isinstance(user, UserSchema):
