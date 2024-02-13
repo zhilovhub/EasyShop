@@ -22,11 +22,47 @@ from bot.exceptions.exceptions import *
 from database.models.bot_model import BotSchema
 from database.models.user_model import UserSchema
 from database.models.product_model import ProductWithoutId
+from database.models.order_model import OrderSchema, OrderNotFound
 
 from magic_filter import F
 
 router = Router(name="users")
 router.message.filter(ChatTypeFilter(chat_type='private'))
+
+product_db = db_engine.get_product_db()
+order_db = db_engine.get_order_dao()
+bot_db = db_engine.get_bot_dao()
+
+
+async def send_new_order_notify(order: OrderSchema):
+    user_bot = await bot_db.get_bot(order.bot_token)
+    bot_object = Bot(user_bot.token)
+    order_user_data = await bot_object.get_chat(order.from_user)
+    products = []
+    for product_id in order.products_id:
+        product = await product_db.get_product(order.bot_token, product_id)
+        product.append(product.name)
+    products_text = '\n'.join(products)
+    await bot.send_message(user_bot.created_by, f"Новый заказ <b>#{order.id}</b>\n"
+                                                f"от пользователя "
+                                                f"<b>{'@' + order_user_data.username if order_user_data.username else order_user_data.full_name}</b>"
+                                                f"\n\nСписок товаров: {products_text}")
+
+
+async def send_order_change_status_notify(order: OrderSchema):
+    user_bot = await bot_db.get_bot(order.bot_token)
+    text = f"Новый статус заказ <b>#{order.id}</b>\n<b>{order.status}</b>"
+    await bot.send_message(user_bot.created_by, text)
+    await bot.send_message(order.from_user, text)
+
+
+@router.message(F.web_app_data)
+async def process_web_app_request(event: Message):
+    try:
+        order = await order_db.get_order(event.web_app_data.order_id)
+    except OrderNotFound:
+        return
+    await send_new_order_notify(order)
 
 
 @router.message(CommandStart())
@@ -44,13 +80,14 @@ async def start_command_handler(message: Message, state: FSMContext):
 
     user_bots = await db_engine.get_bot_dao().get_bots(message.from_user.id)
     if not user_bots:
-        await message.answer(DefaultLocale.input_token())
         await state.set_state(States.WAITING_FOR_TOKEN)
+        await message.answer(DefaultLocale.input_token())
     else:
         user_bot = Bot(user_bots[0].token)
         user_bot_data = await user_bot.get_me()
         await message.answer(DefaultLocale.selected_bot_msg().replace("{selected_name}", user_bot_data.full_name),
-                             reply_markup=get_bot_menu_keyboard(WebAppInfo(url=config.WEB_APP_URL)))
+                             reply_markup=get_bot_menu_keyboard(WebAppInfo(
+                                 url=config.WEB_APP_URL + '?token=' + user_bot.token.replace(':', '_'))))
         await state.set_state(States.BOT_MENU)
         await state.set_data({'token': user_bots[0].token})
 
@@ -71,13 +108,13 @@ async def waiting_for_the_token_handler(message: Message, state: FSMContext):
             except Exception:
                 bot_fullname, bot_username = found_bot_data.full_name, found_bot_data.username
                 new_bot = BotSchema(bot_token=token,
-                                status="new",
-                                created_at=datetime.utcnow(),
-                                created_by=message.from_user.id,
-                                settings={"start_msg": DefaultLocale.default_start_msg(),
-                                          "default_msg": "Привет, этот бот создан с помощью @here_should_be_bot",
-                                          "web_app_button": DefaultLocale.open_web_app_button()},
-                                locale=lang)
+                                    status="new",
+                                    created_at=datetime.utcnow(),
+                                    created_by=message.from_user.id,
+                                    settings={"start_msg": DefaultLocale.default_start_msg(),
+                                              "default_msg": "Привет, этот бот создан с помощью @here_should_be_bot",
+                                              "web_app_button": DefaultLocale.open_web_app_button()},
+                                    locale=lang)
 
                 working_directory = os.getcwd()
                 copy_tree(f'{working_directory}/template', f'{working_directory}/bots/bot{token.replace(":", "___")}')
@@ -95,7 +132,8 @@ async def waiting_for_the_token_handler(message: Message, state: FSMContext):
 
                 await found_bot.set_chat_menu_button(
                     menu_button=MenuButtonWebApp(text=DefaultLocale.open_web_app_button(),
-                                                 web_app=WebAppInfo(url=config.WEB_APP_URL))
+                                                 web_app=WebAppInfo(
+                                                     url=config.WEB_APP_URL + '?token=' + token.replace(':', '_')))
                 )
 
                 logger.debug("added web_app button to bot menu.")
@@ -111,7 +149,8 @@ async def waiting_for_the_token_handler(message: Message, state: FSMContext):
 
                 await message.answer(
                     DefaultLocale.bot_will_initialize().format(bot_fullname, bot_username),
-                    reply_markup=get_bot_menu_keyboard(WebAppInfo(url=config.WEB_APP_URL))
+                    reply_markup=get_bot_menu_keyboard(WebAppInfo(
+                        url=config.WEB_APP_URL + '?token=' + token.replace(':', '_')))
                 )
                 await state.set_state(States.BOT_MENU)
                 await state.set_data({"token": token})
@@ -204,7 +243,8 @@ async def bot_menu_handler(message: Message, state: FSMContext):
         case _:
             await message.answer(
                 "Для навигации используй кнопки 👇",
-                reply_markup=get_bot_menu_keyboard(WebAppInfo(url=config.WEB_APP_URL)))
+                reply_markup=get_bot_menu_keyboard(
+                    WebAppInfo(url=config.WEB_APP_URL + f"?token={state_data['token']}")))
 
 
 @router.message(States.EDITING_START_MESSAGE)
@@ -215,7 +255,8 @@ async def editing_start_message_handler(message: Message, state: FSMContext):
         if message_text == "🔙 Назад":
             await message.answer(
                 "Возвращемся в меню...",
-                reply_markup=get_bot_menu_keyboard(WebAppInfo(url=config.WEB_APP_URL)))
+                reply_markup=get_bot_menu_keyboard(WebAppInfo(
+                    url=config.WEB_APP_URL + '?token=' + state_data['token'].replace(':', '_'))))
             await state.set_state(States.BOT_MENU)
             await state.set_data(state_data)
         else:
@@ -228,7 +269,8 @@ async def editing_start_message_handler(message: Message, state: FSMContext):
 
             await message.answer(
                 "Стартовое сообщение изменено!",
-                reply_markup=get_bot_menu_keyboard(WebAppInfo(url=config.WEB_APP_URL)))
+                reply_markup=get_bot_menu_keyboard(WebAppInfo(
+                    url=config.WEB_APP_URL + '?token=' + state_data['token'].replace(':', '_'))))
             await state.set_state(States.BOT_MENU)
             await state.set_data(state_data)
     else:
@@ -243,7 +285,8 @@ async def editing_default_message_handler(message: Message, state: FSMContext):
         if message_text == "🔙 Назад":
             await message.answer(
                 "Возвращемся в меню...",
-                reply_markup=get_bot_menu_keyboard(WebAppInfo(url=config.WEB_APP_URL)))
+                reply_markup=get_bot_menu_keyboard(WebAppInfo(
+                    url=config.WEB_APP_URL + '?token=' + state_data['token'].replace(':', '_'))))
             await state.set_state(States.BOT_MENU)
             await state.set_data(state_data)
         else:
@@ -256,7 +299,8 @@ async def editing_default_message_handler(message: Message, state: FSMContext):
 
             await message.answer(
                 "Сообщение-затычка изменена!",
-                reply_markup=get_bot_menu_keyboard(WebAppInfo(url=config.WEB_APP_URL)))
+                reply_markup=get_bot_menu_keyboard(WebAppInfo(
+                    url=config.WEB_APP_URL + '?token=' + state_data['token'].replace(':', '_'))))
             await state.set_state(States.BOT_MENU)
             await state.set_data(state_data)
     else:
@@ -278,7 +322,7 @@ async def delete_bot_handler(message: Message, state: FSMContext):
     elif message_text == "🔙 Назад":
         await message.answer(
             "Возвращемся в меню...",
-            reply_markup=get_bot_menu_keyboard(WebAppInfo(url=config.WEB_APP_URL)))
+            reply_markup=get_bot_menu_keyboard(WebAppInfo(url=config.WEB_APP_URL + f"?token={state_data['token']}")))
         await state.set_state(States.BOT_MENU)
         await state.set_data(state_data)
     else:
