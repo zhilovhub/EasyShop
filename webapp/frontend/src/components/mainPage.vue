@@ -7,10 +7,10 @@
           class="item-block"
           style="position: relative;"
       >
-        <img v-if="item.img" :src="item.img" alt="img">
+        <img v-if="item.picture" :src="item.picture" alt="img">
         <div style="margin-bottom: 10px">
         <span style="color: #71CBFF; font-size: 15px;">
-          {{item.name}}
+          {{ shortenName(item.name) }}
         </span>
           <br>
           <span style="font-weight: 600; color: #FFFFFF; font-size: 15px;">
@@ -59,9 +59,6 @@
 export default {
   name: 'mainPage',
   methods: {
-    addCountToObject() {
-      this.$store.state.items = this.$store.state.items.map(item => ({ ...item, count: 0 }));
-    },
     priceComma(price) {
       let priceString = price.toFixed(2)
       return priceString.replace('.', ',') + ' ₽'
@@ -84,6 +81,10 @@ export default {
     },
     itemsAddToCart() {
       this.$store.state.itemsAddToCartArray = this.$store.state.items.filter(item => item.count > 0);
+    },
+    shortenName(name) {
+      if (!name) return '';
+      return name.length > 15 ? name.substring(0, 15) + '...' : name;;
     }
   },
   computed: {
@@ -95,8 +96,8 @@ export default {
     },
   },
   mounted() {
-    this.addCountToObject();
-  },
+    this.$store.commit('itemsInit');
+  }
 };
 </script>
 

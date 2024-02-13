@@ -1,15 +1,15 @@
-from typing import Optional, Union
+from typing import Optional
 
-from sqlalchemy import BigInteger, Column, String, LargeBinary, ForeignKey, Float
-from sqlalchemy import select, update, insert, delete, and_
+from sqlalchemy import BigInteger, Column, String, ForeignKey, Float
+from sqlalchemy import select, insert, delete, and_
 from sqlalchemy.ext.asyncio import AsyncEngine
 
-from pydantic import BaseModel, Field, field_validator, validate_call
+from pydantic import BaseModel, Field, validate_call, ConfigDict
 
 from database.models import Base
 from database.models.dao import Dao
 
-from .custom_bot_model import CustomBotSchema, CustomBot
+from .bot_model import Bot
 
 
 class ProductNotFound(Exception):
@@ -21,7 +21,7 @@ class Product(Base):
     __tablename__ = "products"
 
     id = Column(BigInteger, primary_key=True)
-    bot_token = Column(ForeignKey(CustomBot.bot_token, ondelete="CASCADE"), nullable=False)
+    bot_token = Column(ForeignKey(Bot.bot_token, ondelete="CASCADE"), nullable=False)
     name = Column(String(55), nullable=False)
     description = Column(String(255), nullable=False)
     price = Column(Float, nullable=False)
@@ -29,6 +29,8 @@ class Product(Base):
 
 
 class ProductWithoutId(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     bot_token: str = Field(frozen=True, max_length=46, min_length=46)
     name: str = Field(max_length=55)
     description: str = Field(max_length=255)
@@ -52,7 +54,7 @@ class ProductDao(Dao):
         raw_res = raw_res.fetchall()
         res = []
         for product in raw_res:
-            res.append(ProductSchema(**product._mapping))
+            res.append(ProductSchema.model_validate(product))
         return res
 
     @validate_call(validate_return=True)
@@ -64,7 +66,7 @@ class ProductDao(Dao):
         raw_res = raw_res.fetchone()
         if not raw_res:
             raise ProductNotFound
-        return ProductSchema(**raw_res._mapping)
+        return ProductSchema.model_validate(raw_res)
 
     @validate_call
     async def add_product(self, new_order: ProductWithoutId):

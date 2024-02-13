@@ -1,9 +1,7 @@
-from aiogram import Bot
 from aiogram.types import WebAppInfo
 from aiogram.utils.keyboard import InlineKeyboardMarkup, InlineKeyboardButton, ReplyKeyboardMarkup, KeyboardButton
 
 from bot.locales import DefaultLocale
-from bot.utils.database import DbBot
 
 
 def get_back_keyboard() -> ReplyKeyboardMarkup:

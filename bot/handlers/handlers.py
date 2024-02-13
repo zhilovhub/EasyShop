@@ -6,20 +6,21 @@ from distutils.dir_util import copy_tree
 from bot.main import bot, db_engine
 
 from aiogram import Router, Bot
-from aiogram.types import Message, MenuButtonWebApp, WebAppInfo, ReplyKeyboardRemove, BufferedInputFile, CallbackQuery
+from aiogram.types import Message, MenuButtonWebApp, WebAppInfo, ReplyKeyboardRemove, FSInputFile, CallbackQuery
 from aiogram.filters import CommandStart
 from aiogram.exceptions import TelegramUnauthorizedError
 from aiogram.fsm.context import FSMContext
 
 from bot import config
-from bot.main import db
-from bot.utils import DbUser, DbBot
 from bot.config import logger
 from bot.keyboards import get_bot_menu_keyboard, get_back_keyboard, get_inline_delete_button
 from bot.states.states import States
 from bot.locales.default import DefaultLocale
 from bot.filters.chat_type import ChatTypeFilter
 from bot.exceptions.exceptions import *
+
+from database.models.bot_model import BotSchema
+from database.models.user_model import UserSchema
 from database.models.product_model import ProductWithoutId
 from database.models.order_model import OrderSchema, OrderNotFound
 
@@ -66,17 +67,17 @@ async def process_web_app_request(event: Message):
 @router.message(CommandStart())
 async def start_command_handler(message: Message, state: FSMContext):
     try:
-        await db.get_user(message.from_user.id)
+        await db_engine.get_user_dao().get_user(message.from_user.id)
     except UserNotFound:
         logger.info(f"user {message.from_user.id} not found in db, creating new instance...")
 
-        await db.add_user(DbUser(
+        await db_engine.get_user_dao().add_user(UserSchema(
             user_id=message.from_user.id, registered_at=datetime.utcnow(), status="new", locale="default")
         )
 
     await message.answer(DefaultLocale.about_message())
 
-    user_bots = await db.get_bots(message.from_user.id)
+    user_bots = await db_engine.get_bot_dao().get_bots(message.from_user.id)
     if not user_bots:
         await state.set_state(States.WAITING_FOR_TOKEN)
         await message.answer(DefaultLocale.input_token())
@@ -91,20 +92,20 @@ async def start_command_handler(message: Message, state: FSMContext):
 
 @router.message(States.WAITING_FOR_TOKEN)  # TODO remove all replace(":", "___") of tokens
 async def waiting_for_the_token_handler(message: Message, state: FSMContext):
-    user = await db.get_user(message.from_user.id)
+    user = await db_engine.get_user_dao().get_user(message.from_user.id)
     lang = user.locale
     token = message.text
-    if fullmatch(r"\d{10}:\w{35}", token):
+    if fullmatch(r"\d{10}:[\w|-]{35}", token.replace("_", "a")):
         try:
             found_bot = Bot(token)
             found_bot_data = await found_bot.get_me()
             try:
-                await db.get_bot(token)  # TODO сделать список ботов после MVP
+                await db_engine.get_bot_dao().get_bot(token)  # TODO сделать список ботов после MVP
                 await message.answer("Бот с таким токеном в системе уже найден.\n"
                                      "Введи другой токен или перейди в список ботов и поищи своего бота там")
             except Exception:
                 bot_fullname, bot_username = found_bot_data.full_name, found_bot_data.username
-                new_bot = DbBot(bot_token=token,
+                new_bot = BotSchema(bot_token=token,
                                 status="new",
                                 created_at=datetime.utcnow(),
                                 created_by=message.from_user.id,
@@ -141,7 +142,7 @@ async def waiting_for_the_token_handler(message: Message, state: FSMContext):
                 os.system(f"echo -e {os.getenv('PASSWORD')} | "
                           f"sudo -S -k systemctl start bot{token.replace(':', '___')}.service")
 
-                await db.add_bot(new_bot)
+                await db_engine.get_bot_dao().add_bot(new_bot)
 
                 await message.answer(
                     DefaultLocale.bot_will_initialize().format(bot_fullname, bot_username),
@@ -213,7 +214,7 @@ async def bot_menu_handler(message: Message, state: FSMContext):
                 await message.answer("Список товаров твоего магазина 👇\nЧтобы удалить товар, нажми на тег рядом с ним")
                 for product in products:
                     await message.answer_photo(
-                        photo=BufferedInputFile(product.picture, ""),
+                        photo=FSInputFile("../" + product.picture),
                         caption=f"<b>{product.name}</b>\n\n"
                                 f"Цена: <b>{float(product.price)}₽</b>",
                         reply_markup=get_inline_delete_button(product.id))
@@ -253,12 +254,12 @@ async def editing_start_message_handler(message: Message, state: FSMContext):
             await state.set_state(States.BOT_MENU)
             await state.set_data(state_data)
         else:
-            user_bot = await db.get_bot(state_data["token"])
+            user_bot = await db_engine.get_bot_dao().get_bot(state_data["token"])
             if user_bot.settings:
                 user_bot.settings["start_msg"] = message_text
             else:
                 user_bot.settings = {"start_msg": message_text}
-            await db.update_bot(user_bot)
+            await db_engine.get_bot_dao().update_bot(user_bot)
 
             await message.answer(
                 "Стартовое сообщение изменено!",
@@ -281,12 +282,12 @@ async def editing_default_message_handler(message: Message, state: FSMContext):
             await state.set_state(States.BOT_MENU)
             await state.set_data(state_data)
         else:
-            user_bot = await db.get_bot(state_data["token"])
+            user_bot = await db_engine.get_bot_dao().get_bot(state_data["token"])
             if user_bot.settings:
                 user_bot.settings["default_msg"] = message_text
             else:
                 user_bot.settings = {"default_msg": message_text}
-            await db.update_bot(user_bot)
+            await db_engine.get_bot_dao().update_bot(user_bot)
 
             await message.answer(
                 "Сообщение-затычка изменена!",
@@ -302,7 +303,7 @@ async def delete_bot_handler(message: Message, state: FSMContext):
     message_text = message.text
     state_data = await state.get_data()
     if message_text == "ПОДТВЕРДИТЬ":
-        await db.del_bot(state_data["token"])
+        await db_engine.get_bot_dao().del_bot(state_data["token"])
 
         await message.answer(
             "Бот удален",

@@ -1,5 +1,6 @@
 import os
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from database.models.models import Database
 from dotenv import load_dotenv
 import datetime
@@ -18,6 +19,15 @@ tags_metadata = [
 ]
 app = FastAPI(openapi_tags=tags_metadata)
 ROOT_PATH = "/api/"
+
+origins = ["*"]
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 load_dotenv()
 ALCHEMY_URL = os.getenv("SQLALCHEMY_URL")

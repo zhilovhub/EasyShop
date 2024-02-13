@@ -39,9 +39,11 @@ async def get_order_api(token: str, order_id: str) -> OrderSchema:
 @app.post(PATH + "/add_order", tags=['orders'])
 async def add_order_api(new_order: OrderWithoutId) -> OrderSchema:
     try:
+        new_order.ordered_at = new_order.ordered_at.replace(tzinfo=None)
         order = await db.add_order(new_order)
-    except ValidationError:
-        raise HTTPException(status_code=400, detail="Incorrect input data.")
+    except ValidationError as ex:
+        logger.warning("incorrect data in request", exc_info=True)
+        raise HTTPException(status_code=400, detail=f"Incorrect input data.\n{str(ex)}")
     except Exception:
         logger.error("Error while execute add_order db_method", exc_info=True)
         raise HTTPException(status_code=500, detail="Internal error.")
@@ -54,8 +56,8 @@ async def update_order_api(updated_order: OrderWithoutId) -> str:
         order = await db.update_order(updated_order)
     except OrderNotFound:
         raise HTTPException(status_code=404, detail="Product not found.")
-    except ValidationError:
-        raise HTTPException(status_code=400, detail="Incorrect input data.")
+    except ValidationError as ex:
+        raise HTTPException(status_code=400, detail="Incorrect input data.\n{str(ex)}")
     except Exception:
         logger.error("Error while execute add_order db_method", exc_info=True)
         raise HTTPException(status_code=500, detail="Internal error.")
