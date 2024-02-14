@@ -18,6 +18,7 @@ db_engine = Database(config.DB_URL)
 async def on_start():
     logger.info("Bot online.")
     await storage.connect()
+    await db_engine.connect()
     await dp.start_polling(bot)
 
 

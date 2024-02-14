@@ -69,9 +69,9 @@ class ProductDao(Dao):
         return ProductSchema.model_validate(raw_res)
 
     @validate_call
-    async def add_product(self, new_order: ProductWithoutId):
+    async def add_product(self, new_product: ProductWithoutId):
         async with self.engine.begin() as conn:
-            await conn.execute(insert(Product).values(new_order.model_dump()))
+            await conn.execute(insert(Product).values(new_product.model_dump()))
 
     @validate_call
     async def delete_product(self, product_id: int):

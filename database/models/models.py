@@ -1,10 +1,11 @@
 from sqlalchemy.ext.asyncio import create_async_engine
 
-from database.models.user_model import UserDao
+from database.models import Base
 from database.models.bot_model import BotDao
+from database.models.user_model import UserDao
+from database.models.order_model import OrderDao
 from database.models.product_model import ProductDao
 from database.models.custom_bot_user_model import CustomBotUserDao
-from database.models.order_model import OrderDao
 
 
 class Database:
@@ -15,6 +16,10 @@ class Database:
         self.product_dao = ProductDao(self.engine)
         self.custom_bot_user_dao = CustomBotUserDao(self.engine)
         self.order_dao = OrderDao(self.engine)
+
+    async def connect(self) -> None:
+        async with self.engine.begin() as conn:
+            await conn.run_sync(Base.metadata.create_all)
 
     def get_user_dao(self) -> UserDao:
         return self.user_dao

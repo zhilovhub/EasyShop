@@ -19,8 +19,7 @@ from aiogram.utils.keyboard import InlineKeyboardMarkup, InlineKeyboardButton
 from aiogram.fsm.storage.memory import MemoryStorage
 from aiogram.types.web_app_info import WebAppInfo
 
-from magic_filters import F
-import json
+from magic_filter import F
 
 dotenv.load_dotenv()
 

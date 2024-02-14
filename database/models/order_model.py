@@ -4,7 +4,7 @@ from typing import Optional
 import string
 import random
 
-from sqlalchemy import BigInteger, Column, String, ForeignKey, TypeDecorator, Unicode, Dialect, ARRAY, DateTime
+from sqlalchemy import BigInteger, Column, String, TypeDecorator, Unicode, Dialect, ARRAY, DateTime
 from sqlalchemy import select, update, delete, insert, and_
 from sqlalchemy.ext.asyncio import AsyncEngine
 
@@ -12,8 +12,6 @@ from pydantic import BaseModel, Field, validate_call, ConfigDict
 
 from database.models import Base
 from database.models.dao import Dao
-from database.models.product_model import Product
-from database.models.custom_bot_user_model import CustomBotUser
 
 
 class OrderStatusValues(Enum):
@@ -53,7 +51,7 @@ class Order(Base):
     id = Column(String(13), primary_key=True)
     bot_token = Column(String(46))
     products_id = Column(ARRAY(BigInteger))
-    from_user = Column(ForeignKey(CustomBotUser.user_id))
+    from_user = Column(BigInteger, nullable=False)  # TODO make it Foreign
     ordered_at = Column(DateTime, default=datetime.now())
     address = Column(String)
     status = Column(OrderStatus)
