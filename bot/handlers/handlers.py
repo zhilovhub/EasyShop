@@ -129,7 +129,7 @@ async def waiting_for_the_token_handler(message: Message, state: FSMContext):
                 with open(f'{working_directory}/bots/bot{token.replace(":", "___")}/.env', 'w') as envfile:
                     envfile.write(f"TELEGRAM_TOKEN={token}"
                                   f"\nDB_URL={config.DB_URL}"
-                                  f"\nWEB_APP_URL={config.WEB_APP_URL}?token={token}")
+                                  f"\nWEB_APP_URL={config.WEB_APP_URL}?token={token.replace(':', '_')}")
                 logger.info(f'successfully .env sub bot file in directory bots/bot{token.replace(":", "___")}/.env')
                 with open(f'{working_directory}/bots/bot{token.replace(":", "___")}/bot.service', 'r') as servicefile:
                     txt = servicefile.read().replace('{working_directory}',
@@ -251,7 +251,7 @@ async def bot_menu_handler(message: Message, state: FSMContext):
             await message.answer(
                 "Для навигации используй кнопки 👇",
                 reply_markup=get_bot_menu_keyboard(
-                    WebAppInfo(url=config.WEB_APP_URL + f"?token={state_data['token']}")))
+                    WebAppInfo(url=config.WEB_APP_URL + f"?token={state_data['token']}".replace(":", "_"))))
 
 
 @router.message(States.EDITING_START_MESSAGE)
