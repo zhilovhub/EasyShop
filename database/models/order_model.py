@@ -8,7 +8,7 @@ from sqlalchemy import BigInteger, Column, String, ForeignKey, TypeDecorator, Un
 from sqlalchemy import select, update, delete, insert, and_
 from sqlalchemy.ext.asyncio import AsyncEngine
 
-from pydantic import BaseModel, Field, validate_call
+from pydantic import BaseModel, Field, validate_call, ConfigDict
 
 from database.models import Base
 from database.models.dao import Dao
@@ -60,6 +60,8 @@ class Order(Base):
 
 
 class OrderWithoutId(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     bot_token: str = Field(max_length=46, min_length=46, frozen=True)
     products_id: list[int]
     from_user: int

@@ -3,7 +3,7 @@ let tg = window.Telegram.WebApp;
 tg.expand();
 const url = new URL(window.location.href);
 const token = url.searchParams.get('token');
-const apiUrl = 'http://92.118.114.106:8000'
+const apiUrl = 'https://ezbots.ru:8080'
 
 export const Store = new Vuex.Store({
   state: {
@@ -54,7 +54,8 @@ export const Store = new Vuex.Store({
     },
     postData() {
       let data = {
-        "order_id": Number
+        "order_id": Number,
+	"token": String
       };
       async function fetchData() {
         try {
@@ -84,6 +85,7 @@ export const Store = new Vuex.Store({
       fetchData().then(response => {
         if (response) {
           data.order_id = response.id;
+	  data.token = token;
           tg.sendData(JSON.stringify(data));
           tg.close();
         } else {

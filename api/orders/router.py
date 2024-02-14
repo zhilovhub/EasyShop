@@ -13,8 +13,9 @@ async def get_all_orders_api(token: str) -> list[OrderSchema]:
     token = token.replace('_', ':')
     try:
         orders = await db.get_all_orders(token)
-    except ValidationError:
-        raise HTTPException(status_code=400, detail="Incorrect input data.")
+    except ValidationError as ex:
+        logger.warning("validation error", exc_info=True)
+        raise HTTPException(status_code=400, detail=f"Incorrect input data.\n{str(ex)}")
     except Exception:
         logger.error("Error while execute get_all_orders db_method", exc_info=True)
         raise HTTPException(status_code=500, detail="Internal error.")
@@ -28,8 +29,8 @@ async def get_order_api(token: str, order_id: str) -> OrderSchema:
         order = await db.get_order(token, order_id)
     except OrderNotFound:
         raise HTTPException(status_code=404, detail="Product not found.")
-    except ValidationError:
-        raise HTTPException(status_code=400, detail="Incorrect input data.")
+    except ValidationError as ex:
+        raise HTTPException(status_code=400, detail=f"Incorrect input data.\n{str(ex)}")
     except Exception:
         logger.error("Error while execute get_order db_method", exc_info=True)
         raise HTTPException(status_code=500, detail="Internal error.")

@@ -26,6 +26,8 @@ from database.models.order_model import OrderSchema, OrderNotFound
 
 from magic_filter import F
 
+import json
+
 router = Router(name="users")
 router.message.filter(ChatTypeFilter(chat_type='private'))
 
@@ -59,8 +61,12 @@ async def send_order_change_status_notify(order: OrderSchema):
 @router.message(F.web_app_data)
 async def process_web_app_request(event: Message):
     try:
-        order = await order_db.get_order(event.web_app_data.order_id)
+        data = json.loads(event.web_app_data.data)
+        logger.info(f"recieve web app data: {data}")
+        order = await order_db.get_order(data['token'].replace("_", ":"), data['order_id'])
+        logger.info(f"order founded")
     except OrderNotFound:
+        logger.info("order_not_found")
         return
     await send_new_order_notify(order)
 
@@ -118,11 +124,12 @@ async def waiting_for_the_token_handler(message: Message, state: FSMContext):
 
                 working_directory = os.getcwd()
                 copy_tree(f'{working_directory}/template', f'{working_directory}/bots/bot{token.replace(":", "___")}')
+                os.system(f"mkdir {working_directory}/bots/bot{token.replace(':', '___')}/logs")
                 logger.info(f'successfully create new sub bot files in directory bots/bot{token.replace(":", "___")}')
                 with open(f'{working_directory}/bots/bot{token.replace(":", "___")}/.env', 'w') as envfile:
                     envfile.write(f"TELEGRAM_TOKEN={token}"
                                   f"\nDB_URL={config.DB_URL}"
-                                  f"\nWEB_APP_URL={config.WEB_APP_URL}")
+                                  f"\nWEB_APP_URL={config.WEB_APP_URL}?token={token}")
                 logger.info(f'successfully .env sub bot file in directory bots/bot{token.replace(":", "___")}/.env')
                 with open(f'{working_directory}/bots/bot{token.replace(":", "___")}/bot.service', 'r') as servicefile:
                     txt = servicefile.read().replace('{working_directory}',

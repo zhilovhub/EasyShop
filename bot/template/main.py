@@ -19,6 +19,9 @@ from aiogram.utils.keyboard import InlineKeyboardMarkup, InlineKeyboardButton
 from aiogram.fsm.storage.memory import MemoryStorage
 from aiogram.types.web_app_info import WebAppInfo
 
+from magic_filters import F
+import json
+
 dotenv.load_dotenv()
 
 TOKEN = os.getenv("TELEGRAM_TOKEN")
@@ -105,6 +108,12 @@ async def start_cmd(message: Message):
         ]
     ])
     return await message.reply(format_locales(start_msg, message.from_user, message.chat), reply_markup=kb)
+
+
+@router.message(F.web_app_data)
+async def process_data_from_web_app(event: Message):
+    # TODO
+    pass
 
 
 @router.message(StateFilter(None))

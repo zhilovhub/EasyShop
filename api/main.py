@@ -35,6 +35,10 @@ DEBUG = bool(os.getenv("DEBUG"))
 
 db_engine = Database(ALCHEMY_URL)
 
+try:
+    os.system("mkdir logs")
+except:
+    pass
 LOGGING_SETUP = {
     'version': 1,
     'disable_existing_loggers': False,
@@ -48,13 +52,13 @@ LOGGING_SETUP = {
         'all_file': {
             'level': 'DEBUG' if DEBUG else 'INFO',
             'class': 'logging.FileHandler',
-            'filename': 'api/logs/all.log',  # путь до файла логирования
+            'filename': 'logs/all.log',  # путь до файла логирования
             'formatter': 'log_formatter',
         },
         'error_file': {
             'level': 'WARNING',
             'class': 'logging.FileHandler',
-            'filename': 'api/logs/err.log',  # путь до файла логирования ошибок
+            'filename': 'logs/err.log',  # путь до файла логирования ошибок
             'formatter': 'log_formatter',
         },
         'console': {
@@ -83,7 +87,7 @@ async def read_root():
 
 
 for log_file in ('all.log', 'err.log'):
-    with open(f'api/logs/{log_file}', 'a') as log:
+    with open(f'logs/{log_file}', 'a') as log:
         log.write(f'=============================\n'
                   f'New app session\n'
                   f'[{datetime.datetime.now()}]\n'
