@@ -329,7 +329,7 @@ async def delete_bot_handler(message: Message, state: FSMContext):
     elif message_text == "🔙 Назад":
         await message.answer(
             "Возвращемся в меню...",
-            reply_markup=get_bot_menu_keyboard(WebAppInfo(url=config.WEB_APP_URL + f"?token={state_data['token']}")))
+            reply_markup=get_bot_menu_keyboard(WebAppInfo(url=config.WEB_APP_URL + f"?token={state_data['token']}".replace(":", "_"))))
         await state.set_state(States.BOT_MENU)
         await state.set_data(state_data)
     else:
