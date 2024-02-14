@@ -103,7 +103,7 @@ async def start_cmd(message: Message):
     web_app_button = await get_option("web_app_button")
     kb = InlineKeyboardMarkup(inline_keyboard=[
         [
-            InlineKeyboardButton(text=web_app_button, web_app=WebAppInfo(url=WEB_APP_URL))
+            InlineKeyboardButton(text=web_app_button, web_app=WebAppInfo(url=WEB_APP_URL.replace(":", "_")))
         ]
     ])
     return await message.reply(format_locales(start_msg, message.from_user, message.chat), reply_markup=kb)
