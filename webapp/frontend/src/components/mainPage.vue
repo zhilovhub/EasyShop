@@ -7,7 +7,7 @@
           class="item-block"
           style="position: relative;"
       >
-        <img v-if="item.picture" :src="item.picture" alt="img">
+        <img style="border-radius: 10px; width: 100%; margin: 5px auto; " v-if="item.picture" :src="item.picture" alt="img">
         <div style="margin-bottom: 10px">
         <span style="color: #71CBFF; font-size: 15px;">
           {{ shortenName(item.name) }}
@@ -21,7 +21,7 @@
             type="button"
             v-if="item.count === 0"
             @click="incrementCount(item)"
-            style="height: 17.5%"
+            style="height: 17.5%;"
         >
           Добавить
         </button>
@@ -147,8 +147,8 @@ button {
 .circle {
   border-radius: 100%;
   background-color: #71CBFF;
-  width: 17.5%;
-  height: 17.5%;
+  width: 30px;
+  height: 30px;
   display: flex;
   justify-content: center;
   align-items: center;

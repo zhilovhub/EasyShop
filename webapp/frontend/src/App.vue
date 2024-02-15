@@ -29,7 +29,6 @@ export default defineComponent({
   border: none;
   font-size: 24px;
   font-weight: 600;
-  padding: 20px;
   font-family: 'Montserrat', sans-serif;
   z-index: 10;
   &:hover{
