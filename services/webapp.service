@@ -5,9 +5,12 @@ Wants=network.target
 After=syslog.target network-online.target
 
 [Service]
-Type=oneshot
+Type=simple
 WorkingDirectory=/root/EasyShop/webapp/frontend
 ExecStart=npm run preview --https -- --host 0.0.0.0 --port 443
+KillMode=process
+Restart=always
+RestartSec=10
 
 [Install]
 WantedBy=multi-user.target
