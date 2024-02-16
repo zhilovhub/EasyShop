@@ -1,3 +1,4 @@
+import json
 import os
 import asyncio
 import datetime
@@ -15,25 +16,33 @@ from aiogram import Bot, Dispatcher, Router
 from aiogram.enums import ParseMode
 from aiogram.types import Message, Chat, User
 from aiogram.filters import CommandStart, StateFilter
-from aiogram.utils.keyboard import InlineKeyboardMarkup, InlineKeyboardButton
+from aiogram.utils.keyboard import ReplyKeyboardMarkup, KeyboardButton
 from aiogram.fsm.storage.memory import MemoryStorage
 from aiogram.types.web_app_info import WebAppInfo
 
 from magic_filter import F
 
+from database.models.models import Database
+from database.models.order_model import OrderNotFound
+
 dotenv.load_dotenv()
 
+MAIN_TELEGRAM_TOKEN = os.getenv("MAIN_TELEGRAM_TOKEN")
 TOKEN = os.getenv("TELEGRAM_TOKEN")
 DB_URL = os.getenv("DB_URL")
 WEB_APP_URL = os.getenv("WEB_APP_URL")
 
 bot = Bot(TOKEN, parse_mode=ParseMode.HTML)
-# storage = AlchemyStorageAsync(config.STORAGE_DB_URL, config.STORAGE_TABLE_NAME)
 storage = MemoryStorage()
 dp = Dispatcher(storage=storage)
-# db = AlchemyDB(DB_URL)
+db_engine = Database(sqlalchemy_url=DB_URL)
+bot_db = db_engine.get_bot_dao()
+product_db = db_engine.get_product_db()
+order_db = db_engine.get_order_dao()
+
 logging.basicConfig(format=u'[%(asctime)s][%(levelname)s] ::: %(filename)s(%(lineno)d) -> %(message)s',
                     level="INFO", filename='logs/all.log')
+logger = logging.getLogger('logger')
 
 metadata = MetaData()
 bots = Table('bots', metadata,
@@ -47,19 +56,6 @@ bots = Table('bots', metadata,
 engine = create_async_engine(DB_URL, echo=False)
 
 router = Router(name="users")
-
-
-async def get_bot(bot_token: str):
-    if not isinstance(bot_token, str) and fullmatch(r"\d{10}:\w{35}", bot_token):
-        raise Exception(
-            "bot_token must be type of str with format 0000000000:AaAaAaAaAaAaAaAaAaAaAaAaAaAaAaAaAaA.")
-    async with engine.begin() as conn:
-        raw_res = await conn.execute(select(bots).where(bots.c.bot_token == bot_token))
-    await engine.dispose()
-    res = raw_res.fetchone()
-    if res is None:
-        raise Exception(f"token {bot_token} not found in database.")
-    return res._mapping
 
 
 def format_locales(text: str, user: User, chat: Chat, reply_to_user: User = None) -> str:
@@ -88,8 +84,8 @@ def format_locales(text: str, user: User, chat: Chat, reply_to_user: User = None
 
 
 async def get_option(param: str):
-    bot_info = await get_bot(TOKEN)
-    options = bot_info['settings']
+    bot_info = await bot_db.get_bot(TOKEN)
+    options = bot_info.settings
     if options is None:
         return None
     if param in options:
@@ -101,24 +97,61 @@ async def get_option(param: str):
 async def start_cmd(message: Message):
     start_msg = await get_option("start_msg")
     web_app_button = await get_option("web_app_button")
-    kb = InlineKeyboardMarkup(inline_keyboard=[
+    kb = ReplyKeyboardMarkup(keyboard=[
         [
-            InlineKeyboardButton(text=web_app_button, web_app=WebAppInfo(url=WEB_APP_URL))
+            KeyboardButton(text=web_app_button, web_app=WebAppInfo(url=WEB_APP_URL))
         ]
-    ])
+    ], resize_keyboard=True)
     return await message.reply(format_locales(start_msg, message.from_user, message.chat), reply_markup=kb)
 
 
 @router.message(F.web_app_data)
-async def process_data_from_web_app(event: Message):
-    # TODO
-    pass
+async def process_web_app_request(event: Message):
+    user_id = event.from_user.id
+    order_user_data = await bot.get_chat(user_id)
+
+    try:
+        data = json.loads(event.web_app_data.data)
+        logger.info(f"recieve web app data: {data}")
+
+        order = await order_db.get_order(data['order_id'])
+        order.from_user = user_id
+        await order_db.update_order(order)
+
+        logger.info(f"order found")
+    except OrderNotFound:
+        logger.info("order_not_found")
+        return
+
+    products = [await product_db.get_product(product_id) for product_id in order.products_id]
+    username = "@" + order_user_data.username if order_user_data.username else order_user_data.full_name
+    admin_id = (await bot_db.get_bot(TOKEN)).created_by
+    await Bot(MAIN_TELEGRAM_TOKEN, parse_mode=ParseMode.HTML).send_message(
+        admin_id, order.convert_to_notification_text(
+            products,
+            username,
+            True
+        )
+    )
+    await bot.send_message(
+        user_id, order.convert_to_notification_text(
+            products,
+            username,
+            False
+        )
+    )
 
 
 @router.message(StateFilter(None))
 async def default_cmd(message: Message):
+    web_app_button = await get_option("web_app_button")
+    kb = ReplyKeyboardMarkup(keyboard=[
+        [
+            KeyboardButton(text=web_app_button, web_app=WebAppInfo(url=WEB_APP_URL))
+        ]
+    ], resize_keyboard=True)
     default_msg = await get_option("default_msg")
-    return await message.answer(format_locales(default_msg, message.from_user, message.chat))
+    await message.answer(format_locales(default_msg, message.from_user, message.chat), reply_markup=kb)
 
 
 async def on_start():

@@ -39,16 +39,14 @@ bot_db = db_engine.get_bot_dao()
 async def send_new_order_notify(order: OrderSchema, user_id: int):
     order_user_data = await bot.get_chat(order.from_user)
 
-    products = []
-    for product_id in order.products_id:
-        product = await product_db.get_product(product_id)
-        products.append(product.name)
-    products_text = '\n'.join(products)
     await bot.send_message(user_id, f"Так будет выглядеть у тебя уведомление о новом заказе 👇")
-    await bot.send_message(user_id, f"Новый заказ <b>#{order.id}</b>\n"
-                                    f"от пользователя "
-                                    f"<b>{'@' + order_user_data.username if order_user_data.username else order_user_data.full_name}</b> "
-                                    f"\n\nСписок товаров: {products_text}")
+    await bot.send_message(
+        user_id, order.convert_to_notification_text(
+            [await product_db.get_product(product_id) for product_id in order.products_id],
+            "@" + order_user_data.username if order_user_data.username else order_user_data.full_name,
+            True
+        )
+    )
     await order_db.delete_order(order.id)
 
 
@@ -70,7 +68,7 @@ async def process_web_app_request(event: Message):
         order.from_user = user_id
         await order_db.update_order(order)
 
-        logger.info(f"order founded")
+        logger.info(f"order found")
     except OrderNotFound:
         logger.info("order_not_found")
         return
@@ -137,7 +135,8 @@ async def waiting_for_the_token_handler(message: Message, state: FSMContext):
                 os.system(f"mkdir {working_directory}/bots/bot{token.replace(':', '___')}/logs")
                 logger.info(f'successfully create new sub bot files in directory bots/bot{token.replace(":", "___")}')
                 with open(f'{working_directory}/bots/bot{token.replace(":", "___")}/.env', 'w') as envfile:
-                    envfile.write(f"TELEGRAM_TOKEN={token}"
+                    envfile.write(f"MAIN_TELEGRAM_TOKEN={config.TELEGRAM_TOKEN}"
+                                  f"\nTELEGRAM_TOKEN={token}"
                                   f"\nDB_URL={config.DB_URL}"
                                   f"\nWEB_APP_URL={config.WEB_APP_URL}?token={token.replace(':', '_')}")
                 logger.info(f'successfully .env sub bot file in directory bots/bot{token.replace(":", "___")}/.env')

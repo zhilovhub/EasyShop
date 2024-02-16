@@ -12,6 +12,7 @@ from pydantic import BaseModel, Field, validate_call, ConfigDict
 
 from database.models import Base
 from database.models.dao import Dao
+from database.models.product_model import ProductSchema
 
 
 class OrderStatusValues(Enum):
@@ -70,6 +71,28 @@ class OrderWithoutId(BaseModel):
 
 class OrderSchema(OrderWithoutId):
     id: str = Field(max_length=12, frozen=True)
+
+    def convert_to_notification_text(self, products: list[ProductSchema], username: str, is_admin: bool) -> str:
+        products_converted = []
+        total_price = 0
+        for ind, product in enumerate(products, start=1):
+            products_converted.append(f"{ind}. {product.convert_to_notification_text()}")
+            total_price += product.price
+
+        products_text = "\n".join(products_converted)
+
+        return f"Твой заказ <b>#{self.id}</b>\n\n" \
+               f"Список товаров:\n\n" \
+               f"{products_text}\n\n" \
+               f"Итого: <b>{total_price}₽</b>\n\n" \
+               f"Адрес: <b>{self.address}</b>" if not is_admin \
+            else f"Новый заказ <b>#{self.id}</b>\n" \
+                 f"от пользователя " \
+                 f"<b>{username}</b>\n\n" \
+                 f"Список товаров:\n\n" \
+                 f"{products_text}\n\n" \
+                 f"Итого: <b>{total_price}₽</b>\n\n" \
+                 f"Адрес: <b>{self.address}</b>"
 
 
 class OrderDao(Dao):

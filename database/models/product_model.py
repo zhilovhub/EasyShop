@@ -41,6 +41,9 @@ class ProductWithoutId(BaseModel):
 class ProductSchema(ProductWithoutId):
     id: int
 
+    def convert_to_notification_text(self) -> str:
+        return f"<b>{self.name} {self.price}₽</b>"
+
 
 class ProductDao(Dao):
     def __init__(self, engine: AsyncEngine) -> None:
