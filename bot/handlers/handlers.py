@@ -352,8 +352,3 @@ async def delete_product_handler(query: CallbackQuery):
     product_id = int(query.data.split("_")[-1])
     await db_engine.get_product_db().delete_product(product_id)
     await query.message.delete()
-
-
-@router.message(F.web_app_data)
-async def process_data_from_web_app(event: Message):
-    print(event.web_app_data)
