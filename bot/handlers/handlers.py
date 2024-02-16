@@ -75,10 +75,6 @@ async def process_web_app_request(event: Message):
         logger.info("order_not_found")
         return
 
-    except Exception as e:
-        logger.info(e)
-        return
-
     try:
         await send_new_order_notify(order, user_id)
     except Exception as e:
