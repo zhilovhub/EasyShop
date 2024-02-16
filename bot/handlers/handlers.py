@@ -25,6 +25,7 @@ from database.models.product_model import ProductWithoutId
 from database.models.order_model import OrderSchema, OrderNotFound
 
 from magic_filter import F
+from urllib.parse import quote_plus, unquote_plus
 
 import json
 
@@ -34,8 +35,6 @@ router.message.filter(ChatTypeFilter(chat_type='private'))
 product_db = db_engine.get_product_db()
 order_db = db_engine.get_order_dao()
 bot_db = db_engine.get_bot_dao()
-
-from urllib.parse import quote_plus
 
 
 async def send_new_order_notify(order: OrderSchema, user_id: int):
@@ -198,8 +197,8 @@ async def bot_menu_photo_handler(message: Message, state: FSMContext):
     except ValueError:
         return await message.answer("Цена должна быть в формате: <b>100.00</b>")
 
-    path = f"img/{state_data['token']}__{params[0]}.jpg"
-    await bot.download(photo_file_id, destination=f"Files/img/{state_data['token']}__{params[0]}.jpg")
+    path = f"img/{state_data['token']}__{params[0]}.jpg".replace(":", "_")
+    await bot.download(photo_file_id, destination=f"Files/img/{state_data['token'].replace(':', '_')}__{params[0]}.jpg")
     # with open(f"../Files/{path}", 'rb') as photo_file:
     #     photo_bytes = photo_file.read()
 
@@ -237,7 +236,7 @@ async def bot_menu_handler(message: Message, state: FSMContext):
                 await message.answer("Список товаров твоего магазина 👇\nЧтобы удалить товар, нажми на тег рядом с ним")
                 for product in products:
                     await message.answer_photo(
-                        photo=FSInputFile("../" + product.picture),
+                        photo=FSInputFile("Files/" + unquote_plus(product.picture)),
                         caption=f"<b>{product.name}</b>\n\n"
                                 f"Цена: <b>{float(product.price)}₽</b>",
                         reply_markup=get_inline_delete_button(product.id))
