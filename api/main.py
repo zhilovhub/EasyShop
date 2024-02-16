@@ -16,6 +16,10 @@ tags_metadata = [
         "name": "orders",
         "description": "Operations with orders.",
     },
+    {
+        "name": "files",
+        "description": "Operations with project files.",
+    }
 ]
 app = FastAPI(openapi_tags=tags_metadata)
 ROOT_PATH = "/api/"
@@ -96,3 +100,4 @@ for log_file in ('all.log', 'err.log'):
 if __name__ == "api.main":
     import api.products
     import api.orders
+    import api.files
