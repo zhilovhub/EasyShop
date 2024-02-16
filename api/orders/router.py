@@ -24,9 +24,8 @@ async def get_all_orders_api(token: str) -> list[OrderSchema]:
 
 @app.get(PATH + "/get_order/{token}/{order_id}", tags=['orders'])
 async def get_order_api(token: str, order_id: str) -> OrderSchema:
-    token = token.replace('_', ':', 1)
     try:
-        order = await db.get_order(token, order_id)
+        order = await db.get_order(order_id)
     except OrderNotFound:
         raise HTTPException(status_code=404, detail="Product not found.")
     except ValidationError as ex:
@@ -66,10 +65,9 @@ async def update_order_api(updated_order: OrderWithoutId) -> str:
 
 
 @app.delete(PATH + "/delete_order/{token}/{order_id}", tags=['orders'])
-async def delete_order_api(bot_token: str, order_id: str) -> str:
-    bot_token = bot_token.replace('_', ':', 1)
+async def delete_order_api(token: str, order_id: str) -> str:
     try:
-        await db.delete_order(bot_token, order_id)
+        await db.delete_order(order_id)
     except OrderNotFound:
         raise HTTPException(status_code=404, detail="Product not found.")
     except ValidationError:

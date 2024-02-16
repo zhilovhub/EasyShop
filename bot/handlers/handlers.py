@@ -36,19 +36,20 @@ order_db = db_engine.get_order_dao()
 bot_db = db_engine.get_bot_dao()
 
 
-async def send_new_order_notify(order: OrderSchema):
-    user_bot = await bot_db.get_bot(order.bot_token)
-    bot_object = Bot(user_bot.token)
-    order_user_data = await bot_object.get_chat(order.from_user)
+async def send_new_order_notify(order: OrderSchema, user_id: int):
+    order_user_data = await bot.get_chat(order.from_user)
+
     products = []
     for product_id in order.products_id:
-        product = await product_db.get_product(order.bot_token, product_id)
-        product.append(product.name)
+        product = await product_db.get_product(product_id)
+        products.append(product.name)
     products_text = '\n'.join(products)
-    await bot.send_message(user_bot.created_by, f"Новый заказ <b>#{order.id}</b>\n"
-                                                f"от пользователя "
-                                                f"<b>{'@' + order_user_data.username if order_user_data.username else order_user_data.full_name}</b>"
-                                                f"\n\nСписок товаров: {products_text}")
+    await bot.send_message(user_id, f"Так будет выглядеть у тебя уведомление о новом заказе 👇")
+    await bot.send_message(user_id, f"Новый заказ <b>#{order.id}</b>\n"
+                                    f"от пользователя "
+                                    f"<b>{'@' + order_user_data.username if order_user_data.username else order_user_data.full_name}</b> "
+                                    f"\n\nСписок товаров: {products_text}")
+    await order_db.delete_order(order.id)
 
 
 async def send_order_change_status_notify(order: OrderSchema):
@@ -60,15 +61,24 @@ async def send_order_change_status_notify(order: OrderSchema):
 
 @router.message(F.web_app_data)
 async def process_web_app_request(event: Message):
+    user_id = event.from_user.id
     try:
         data = json.loads(event.web_app_data.data)
         logger.info(f"recieve web app data: {data}")
-        order = await order_db.get_order(data['token'].replace("_", ":"), data['order_id'])
+
+        order = await order_db.get_order(data['order_id'])
+        order.from_user = user_id
+        await order_db.update_order(order)
+
         logger.info(f"order founded")
     except OrderNotFound:
         logger.info("order_not_found")
         return
-    await send_new_order_notify(order)
+
+    try:
+        await send_new_order_notify(order, user_id)
+    except Exception as e:
+        logger.info(e)
 
 
 @router.message(CommandStart())
@@ -329,7 +339,8 @@ async def delete_bot_handler(message: Message, state: FSMContext):
     elif message_text == "🔙 Назад":
         await message.answer(
             "Возвращемся в меню...",
-            reply_markup=get_bot_menu_keyboard(WebAppInfo(url=config.WEB_APP_URL + f"?token={state_data['token']}".replace(":", "_"))))
+            reply_markup=get_bot_menu_keyboard(
+                WebAppInfo(url=config.WEB_APP_URL + f"?token={state_data['token']}".replace(":", "_"))))
         await state.set_state(States.BOT_MENU)
         await state.set_data(state_data)
     else:

@@ -54,8 +54,7 @@ export const Store = new Vuex.Store({
     },
     postData() {
       let data = {
-        "order_id": Number,
-	"token": String
+        "order_id": Number
       };
       async function fetchData() {
         try {
@@ -85,7 +84,6 @@ export const Store = new Vuex.Store({
       fetchData().then(response => {
         if (response) {
           data.order_id = response.id;
-	  data.token = token;
           tg.sendData(JSON.stringify(data));
           tg.close();
         } else {
