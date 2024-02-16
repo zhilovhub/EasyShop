@@ -84,13 +84,15 @@ class OrderSchema(OrderWithoutId):
         return f"Твой заказ <b>#{self.id}</b>\n\n" \
                f"Список товаров:\n\n" \
                f"{products_text}\n\n" \
-               f"Итого: <b>{total_price}₽</b>" if not is_admin \
+               f"Итого: <b>{total_price}₽</b>\n\n" \
+               f"Адрес: <b>{self.address}</b>" if not is_admin \
             else f"Новый заказ <b>#{self.id}</b>\n" \
                  f"от пользователя " \
                  f"<b>{username}</b>\n\n" \
                  f"Список товаров:\n\n" \
                  f"{products_text}\n\n" \
-                 f"Итого: <b>{total_price}₽</b>"
+                 f"Итого: <b>{total_price}₽</b>\n\n" \
+                 f"Адрес: <b>{self.address}</b>"
 
 
 class OrderDao(Dao):

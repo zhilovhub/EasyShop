@@ -85,7 +85,7 @@ def format_locales(text: str, user: User, chat: Chat, reply_to_user: User = None
 
 async def get_option(param: str):
     bot_info = await bot_db.get_bot(TOKEN)
-    options = bot_info['settings']
+    options = bot_info.settings
     if options is None:
         return None
     if param in options:
