@@ -72,7 +72,7 @@ class OrderWithoutId(BaseModel):
 class OrderSchema(OrderWithoutId):
     id: str = Field(max_length=12, frozen=True)
 
-    def convert_to_notification_text(self, products: list[ProductSchema], user_name: str, is_admin: bool) -> str:
+    def convert_to_notification_text(self, products: list[ProductSchema], username: str, is_admin: bool) -> str:
         products_converted = []
         total_price = 0
         for ind, product in enumerate(products, start=1):
@@ -87,7 +87,7 @@ class OrderSchema(OrderWithoutId):
                f"Итого: <b>{total_price}₽</b>" if not is_admin \
             else f"Новый заказ <b>#{self.id}</b>\n" \
                  f"от пользователя " \
-                 f"<b>{user_name}</b>\n\n" \
+                 f"<b>{username}</b>\n\n" \
                  f"Список товаров:\n\n" \
                  f"{products_text}\n\n" \
                  f"Итого: <b>{total_price}₽</b>"

@@ -27,6 +27,7 @@ from database.models.order_model import OrderNotFound
 
 dotenv.load_dotenv()
 
+MAIN_TELEGRAM_TOKEN = os.getenv("MAIN_TELEGRAM_TOKEN")
 TOKEN = os.getenv("TELEGRAM_TOKEN")
 DB_URL = os.getenv("DB_URL")
 WEB_APP_URL = os.getenv("WEB_APP_URL")
@@ -35,6 +36,7 @@ bot = Bot(TOKEN, parse_mode=ParseMode.HTML)
 storage = MemoryStorage()
 dp = Dispatcher(storage=storage)
 db_engine = Database(sqlalchemy_url=DB_URL)
+bot_db = db_engine.get_bot_dao()
 product_db = db_engine.get_product_db()
 order_db = db_engine.get_order_dao()
 
@@ -54,19 +56,6 @@ bots = Table('bots', metadata,
 engine = create_async_engine(DB_URL, echo=False)
 
 router = Router(name="users")
-
-
-async def get_bot(bot_token: str):
-    if not isinstance(bot_token, str) and fullmatch(r"\d{10}:\w{35}", bot_token):
-        raise Exception(
-            "bot_token must be type of str with format 0000000000:AaAaAaAaAaAaAaAaAaAaAaAaAaAaAaAaAaA.")
-    async with engine.begin() as conn:
-        raw_res = await conn.execute(select(bots).where(bots.c.bot_token == bot_token))
-    await engine.dispose()
-    res = raw_res.fetchone()
-    if res is None:
-        raise Exception(f"token {bot_token} not found in database.")
-    return res._mapping
 
 
 def format_locales(text: str, user: User, chat: Chat, reply_to_user: User = None) -> str:
@@ -95,7 +84,7 @@ def format_locales(text: str, user: User, chat: Chat, reply_to_user: User = None
 
 
 async def get_option(param: str):
-    bot_info = await get_bot(TOKEN)
+    bot_info = await bot_db.get_bot(TOKEN)
     options = bot_info['settings']
     if options is None:
         return None
@@ -134,10 +123,20 @@ async def process_web_app_request(event: Message):
         logger.info("order_not_found")
         return
 
+    products = [await product_db.get_product(product_id) for product_id in order.products_id]
+    username = "@" + order_user_data.username if order_user_data.username else order_user_data.full_name
+    admin_id = (await bot_db.get_bot(TOKEN)).created_by
+    await Bot(MAIN_TELEGRAM_TOKEN, parse_mode=ParseMode.HTML).send_message(
+        admin_id, order.convert_to_notification_text(
+            products,
+            username,
+            True
+        )
+    )
     await bot.send_message(
         user_id, order.convert_to_notification_text(
-            [await product_db.get_product(product_id) for product_id in order.products_id],
-            "@" + order_user_data.username if order_user_data.username else order_user_data.full_name,
+            products,
+            username,
             False
         )
     )
