@@ -1,7 +1,7 @@
 from typing import Optional
 
 from sqlalchemy import BigInteger, Column, String, ForeignKey, Float
-from sqlalchemy import select, insert, delete, and_
+from sqlalchemy import select, insert, delete
 from sqlalchemy.ext.asyncio import AsyncEngine
 
 from pydantic import BaseModel, Field, validate_call, ConfigDict
@@ -58,14 +58,15 @@ class ProductDao(Dao):
         return res
 
     @validate_call(validate_return=True)
-    async def get_product(self, bot_token: str, product_id: int) -> ProductSchema:
+    async def get_product(self, product_id: int) -> ProductSchema:
         async with self.engine.begin() as conn:
-            raw_res = await conn.execute(select(Product).where(and_(Product.bot_token == bot_token,
-                                                                    Product.id == product_id)))
+            raw_res = await conn.execute(select(Product).where(Product.id == product_id))
         await self.engine.dispose()
+
         raw_res = raw_res.fetchone()
         if not raw_res:
             raise ProductNotFound
+
         return ProductSchema.model_validate(raw_res)
 
     @validate_call

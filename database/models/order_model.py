@@ -5,7 +5,7 @@ import string
 import random
 
 from sqlalchemy import BigInteger, Column, String, TypeDecorator, Unicode, Dialect, ARRAY, DateTime
-from sqlalchemy import select, update, delete, insert, and_
+from sqlalchemy import select, update, delete, insert
 from sqlalchemy.ext.asyncio import AsyncEngine
 
 from pydantic import BaseModel, Field, validate_call, ConfigDict
@@ -81,48 +81,46 @@ class OrderDao(Dao):
         async with self.engine.begin() as conn:
             raw_res = await conn.execute(select(Order).where(Order.bot_token == bot_token))
         await self.engine.dispose()
+
         raw_res = raw_res.fetchall()
         res = []
         for order in raw_res:
             res.append(OrderSchema.model_validate(order))
+
         return res
 
     @validate_call
-    async def get_order(self, bot_token: str, order_id: str) -> OrderSchema:
+    async def get_order(self, order_id: str) -> OrderSchema:
         async with self.engine.begin() as conn:
-            raw_res = await conn.execute(select(Order).where(and_(Order.bot_token == bot_token,
-                                                                  Order.id == order_id)))
+            raw_res = await conn.execute(select(Order).where(Order.id == order_id))
         await self.engine.dispose()
-        raw_res = raw_res.fetchall()
+
+        raw_res = raw_res.fetchone()
         if not raw_res:
             raise OrderNotFound
+
         res = OrderSchema.model_validate(raw_res)
         return res
 
     @validate_call
     async def add_order(self, new_order: OrderWithoutId) -> OrderSchema:
-        s = string.digits + string.ascii_letters
         date = new_order.ordered_at.strftime("%d%m%y")
-        day_id = ''.join(random.sample(s, 5))
-        try:
-            await self.get_order(new_order.bot_token, f"{date}_{day_id}")
-            return await self.add_order(new_order)
-        except OrderNotFound:
-            order = OrderSchema(**new_order.model_dump(), id=f"{date}_{day_id}")
+        random_string = ''.join(random.sample(string.digits + string.ascii_letters, 5))
+        order = OrderSchema(**new_order.model_dump(), id=f"{date}_{random_string}")
+
         async with self.engine.begin() as conn:
             await conn.execute(insert(Order).values(order.model_dump()))
+
         return order
 
     @validate_call
     async def update_order(self, updated_order: OrderSchema):
-        old_order = await self.get_order(updated_order.bot_token, updated_order.id)
+        await self.get_order(updated_order.id)
         async with self.engine.begin() as conn:
-            await conn.execute(update(Order).where(and_(Order.bot_token == updated_order.bot_token,
-                                                        Order.id == updated_order.id))
-                               .values(updated_order.model_dump()))
+            await conn.execute(update(Order).where(Order.id == updated_order.id).values(updated_order.model_dump()))
 
     @validate_call
-    async def delete_order(self, bot_token: str, order_id: str):
-        order = await self.get_order(bot_token, order_id)
+    async def delete_order(self, order_id: str):
+        await self.get_order(order_id)
         async with self.engine.begin() as conn:
-            await conn.execute(delete(Order).where(and_(Order.bot_token == bot_token, Order.id == order_id)))
+            await conn.execute(delete(Order).where(Order.id == order_id))
