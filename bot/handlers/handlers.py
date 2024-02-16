@@ -1,4 +1,6 @@
 import os
+import string
+from random import sample
 from re import fullmatch
 from datetime import datetime
 from distutils.dir_util import copy_tree
@@ -188,6 +190,7 @@ async def bot_menu_photo_handler(message: Message, state: FSMContext):
     state_data = await state.get_data()
     photo_file_id = message.photo[-1].file_id
     params = message.caption.strip().split('\n')
+    filename = "".join(sample(string.ascii_letters + string.digits, k=5)) + ".jpg"
 
     if len(params) != 2:
         return await message.answer("Чтобы добавить товар, прикрепи его картинку и отправь сообщение в виде:"
@@ -197,8 +200,8 @@ async def bot_menu_photo_handler(message: Message, state: FSMContext):
     except ValueError:
         return await message.answer("Цена должна быть в формате: <b>100.00</b>")
 
-    path = f"img/{state_data['token']}__{params[0]}.jpg".replace(":", "_")
-    await bot.download(photo_file_id, destination=f"Files/img/{state_data['token'].replace(':', '_')}__{params[0]}.jpg")
+    path = f"img/{filename}"
+    await bot.download(photo_file_id, destination=f"Files/{path}")
     # with open(f"../Files/{path}", 'rb') as photo_file:
     #     photo_bytes = photo_file.read()
 
