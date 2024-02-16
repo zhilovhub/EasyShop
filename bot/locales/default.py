@@ -36,7 +36,7 @@ class DefaultLocale:
 
     @staticmethod
     def default_start_msg() -> str:
-        return "Привет, <b>{name}</b>! Для открытия магазина нажми на кнопку ниже или на опцию в меню."
+        return "Привет, <b>{name}</b>! Для открытия магазина нажми на кнопку магазин."
 
     @staticmethod
     def you_dont_have_bots_msg() -> str:
