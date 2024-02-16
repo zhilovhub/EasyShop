@@ -28,7 +28,7 @@ from database.models.order_model import OrderNotFound
 dotenv.load_dotenv()
 
 MAIN_TELEGRAM_TOKEN = os.getenv("MAIN_TELEGRAM_TOKEN")
-TOKEN = os.getenv("TELEGRAM_TOKEN")
+TOKEN = os.getenv("CUSTOM_TELEGRAM_TOKEN")
 DB_URL = os.getenv("DB_URL")
 WEB_APP_URL = os.getenv("WEB_APP_URL")
 
