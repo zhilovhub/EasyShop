@@ -19,7 +19,7 @@ async def get_all_products_api(token: str) -> list[ProductSchema]:
 
 
 @app.get(PATH + "/get_product/{token}/{product_id}", tags=['products'])
-async def get_product_api(product_id: int) -> ProductSchema:
+async def get_product_api(token: str, product_id: int) -> ProductSchema:
     try:
         product = await db.get_product(product_id)
     except ProductNotFound:
