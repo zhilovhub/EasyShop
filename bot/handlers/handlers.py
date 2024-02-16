@@ -35,6 +35,8 @@ product_db = db_engine.get_product_db()
 order_db = db_engine.get_order_dao()
 bot_db = db_engine.get_bot_dao()
 
+from urllib.parse import quote_plus
+
 
 async def send_new_order_notify(order: OrderSchema, user_id: int):
     order_user_data = await bot.get_chat(order.from_user)
@@ -196,15 +198,16 @@ async def bot_menu_photo_handler(message: Message, state: FSMContext):
     except ValueError:
         return await message.answer("Цена должна быть в формате: <b>100.00</b>")
 
+    path = f"img/{state_data['token']}__{params[0]}.jpg"
     await bot.download(photo_file_id, destination=f"Files/img/{state_data['token']}__{params[0]}.jpg")
-    with open(f"Files/img/{state_data['token']}__{params[0]}.jpg", 'rb') as photo_file:
-        photo_bytes = photo_file.read()
+    # with open(f"../Files/{path}", 'rb') as photo_file:
+    #     photo_bytes = photo_file.read()
 
     new_product = ProductWithoutId(bot_token=state_data['token'],
                                    name=params[0],
                                    description="",
                                    price=price,
-                                   picture=f"bot/Files/img/{state_data['token']}__{params[0]}.jpg")
+                                   picture=quote_plus(path))
     await db_engine.get_product_db().add_product(new_product)
     await message.answer("Товар добавлен. Можно добавить ещё")
 
