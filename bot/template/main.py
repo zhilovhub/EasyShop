@@ -30,7 +30,7 @@ dotenv.load_dotenv()
 MAIN_TELEGRAM_TOKEN = os.getenv("MAIN_TELEGRAM_TOKEN")
 TOKEN = os.getenv("CUSTOM_TELEGRAM_TOKEN")
 DB_URL = os.getenv("DB_URL")
-WEB_APP_URL = os.getenv("WEB_APP_URL")
+WEB_APP_URL = os.getenv("CUSTOM_WEB_APP_URL")
 
 bot = Bot(TOKEN, parse_mode=ParseMode.HTML)
 storage = MemoryStorage()
