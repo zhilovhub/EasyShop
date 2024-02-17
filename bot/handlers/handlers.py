@@ -27,7 +27,6 @@ from database.models.product_model import ProductWithoutId
 from database.models.order_model import OrderSchema, OrderNotFound
 
 from magic_filter import F
-from urllib.parse import quote_plus, unquote_plus
 
 import json
 
@@ -200,8 +199,7 @@ async def bot_menu_photo_handler(message: Message, state: FSMContext):
     except ValueError:
         return await message.answer("Цена должна быть в формате: <b>100.00</b>")
 
-    path = f"img/{filename}"
-    await bot.download(photo_file_id, destination=f"Files/{path}")
+    await bot.download(photo_file_id, destination=f"Files/{filename}")
     # with open(f"../Files/{path}", 'rb') as photo_file:
     #     photo_bytes = photo_file.read()
 
@@ -209,7 +207,7 @@ async def bot_menu_photo_handler(message: Message, state: FSMContext):
                                    name=params[0],
                                    description="",
                                    price=price,
-                                   picture=quote_plus(path))
+                                   picture=filename)
     await db_engine.get_product_db().add_product(new_product)
     await message.answer("Товар добавлен. Можно добавить ещё")
 
@@ -239,7 +237,7 @@ async def bot_menu_handler(message: Message, state: FSMContext):
                 await message.answer("Список товаров твоего магазина 👇\nЧтобы удалить товар, нажми на тег рядом с ним")
                 for product in products:
                     await message.answer_photo(
-                        photo=FSInputFile("Files/" + unquote_plus(product.picture)),
+                        photo=FSInputFile("Files/" + product.picture),
                         caption=f"<b>{product.name}</b>\n\n"
                                 f"Цена: <b>{float(product.price)}₽</b>",
                         reply_markup=get_inline_delete_button(product.id))
