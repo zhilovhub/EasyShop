@@ -61,8 +61,7 @@ export default {
   name: 'mainPage',
   methods: {
     priceComma(price) {
-      let priceString = price.toFixed(2)
-      return priceString.replace('.', ',') + ' ₽'
+      return price + ' ₽'
     },
     incrementCount(item) {
       if (item && typeof item.count === 'number') {
