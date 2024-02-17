@@ -15,14 +15,14 @@
         if (price <= 0) {
           return '0 ₽'
         }
-        return price.toFixed(2) + ' ₽'
+        return price + ' ₽'
       },
       totalPriceForButton() {
         let price = this.itemsAddToCartArray.reduce((total, item) => total + item.price*item.count, 0);
         if (price <= 0) {
           return 'Оплатить: 0 ₽'
         }
-        return 'Оплатить: ' + price.toFixed(2) + ' ₽'
+        return 'Оплатить: ' + price + ' ₽'
       },
       totalCount() {
         let count = this.itemsAddToCartArray.reduce((total, item) => total + item.count, 0);
@@ -78,11 +78,11 @@
     </div>
     <div>
       <span>Скидка</span>
-      <span>0,00 ₽</span>
+      <span>0 ₽</span>
     </div>
     <div>
       <span>Доставка</span>
-      <span>0,00 ₽</span>
+      <span>0 ₽</span>
     </div>
   </div>
   <button @click="orderBtnClicked()" class="btnTotalPrice">{{this.totalPriceForButton}}</button>
