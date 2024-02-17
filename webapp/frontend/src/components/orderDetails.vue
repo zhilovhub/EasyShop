@@ -20,9 +20,9 @@
       totalPriceForButton() {
         let price = this.itemsAddToCartArray.reduce((total, item) => total + item.price*item.count, 0);
         if (price <= 0) {
-          return 'Оплатить: 0 ₽'
+          return 'Заказать: 0 ₽'
         }
-        return 'Оплатить: ' + price + ' ₽'
+        return 'Заказать: ' + price + ' ₽'
       },
       totalCount() {
         let count = this.itemsAddToCartArray.reduce((total, item) => total + item.count, 0);
