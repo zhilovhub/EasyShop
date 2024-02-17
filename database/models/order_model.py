@@ -72,7 +72,20 @@ class OrderWithoutId(BaseModel):
 class OrderSchema(OrderWithoutId):
     id: str = Field(max_length=12, frozen=True)
 
-    def convert_to_notification_text(self, products: list[ProductSchema], username: str, is_admin: bool) -> str:
+    def translate_order_status(self) -> str:
+        match self.status:
+            case OrderStatusValues.BACKLOG:
+                return "⏳ В обработке."
+            case OrderStatusValues.CANCELLED:
+                return "❌ Отменен."
+            case OrderStatusValues.PROCESSING:
+                return "🚛 Выполняется."
+            case OrderStatusValues.FINISHED.value:
+                return "✅ Завершен."
+            case _:
+                return "❓ Неизвестен."
+
+    def convert_to_notification_text(self, products: list[ProductSchema], username: str = '@username', is_admin: bool = False) -> str:
         products_converted = []
         total_price = 0
         for ind, product in enumerate(products, start=1):
@@ -85,14 +98,16 @@ class OrderSchema(OrderWithoutId):
                f"Список товаров:\n\n" \
                f"{products_text}\n\n" \
                f"Итого: <b>{total_price}₽</b>\n\n" \
-               f"Адрес: <b>{self.address}</b>" if not is_admin \
+               f"Адрес: <b>{self.address}</b>\n\n" \
+               f"Статус: <b>{self.translate_order_status()}</b>" if not is_admin \
             else f"Новый заказ <b>#{self.id}</b>\n" \
                  f"от пользователя " \
                  f"<b>{username}</b>\n\n" \
                  f"Список товаров:\n\n" \
                  f"{products_text}\n\n" \
                  f"Итого: <b>{total_price}₽</b>\n\n" \
-                 f"Адрес: <b>{self.address}</b>"
+                 f"Адрес: <b>{self.address}</b>\n\n" \
+                 f"Статус: <b>{self.translate_order_status()}</b>"
 
 
 class OrderDao(Dao):

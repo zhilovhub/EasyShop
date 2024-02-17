@@ -14,16 +14,18 @@ from sqlalchemy.ext.asyncio import create_async_engine
 
 from aiogram import Bot, Dispatcher, Router
 from aiogram.enums import ParseMode
-from aiogram.types import Message, Chat, User
+from aiogram.types import Message, Chat, User, CallbackQuery
 from aiogram.filters import CommandStart, StateFilter
 from aiogram.utils.keyboard import ReplyKeyboardMarkup, KeyboardButton
 from aiogram.fsm.storage.memory import MemoryStorage
 from aiogram.types.web_app_info import WebAppInfo
 
-from magic_filter import F
+from aiogram import F
 
 from database.models.models import Database
-from database.models.order_model import OrderNotFound
+from database.models.order_model import OrderNotFound, OrderStatusValues
+
+from bot.keyboards import keyboards
 
 dotenv.load_dotenv()
 
@@ -39,6 +41,7 @@ db_engine = Database(sqlalchemy_url=DB_URL)
 bot_db = db_engine.get_bot_dao()
 product_db = db_engine.get_product_db()
 order_db = db_engine.get_order_dao()
+PREV_ORDER_MSGS = {}
 
 logging.basicConfig(format=u'[%(asctime)s][%(levelname)s] ::: %(filename)s(%(lineno)d) -> %(message)s',
                     level="INFO", filename='logs/all.log')
@@ -126,19 +129,25 @@ async def process_web_app_request(event: Message):
     products = [await product_db.get_product(product_id) for product_id in order.products_id]
     username = "@" + order_user_data.username if order_user_data.username else order_user_data.full_name
     admin_id = (await bot_db.get_bot(TOKEN)).created_by
-    await Bot(MAIN_TELEGRAM_TOKEN, parse_mode=ParseMode.HTML).send_message(
+    main_msg = await Bot(MAIN_TELEGRAM_TOKEN, parse_mode=ParseMode.HTML).send_message(
         admin_id, order.convert_to_notification_text(
             products,
             username,
             True
-        )
-    )
-    await bot.send_message(
+        ))
+
+    PREV_ORDER_MSGS[order.id] = (main_msg.chat.id, main_msg.message_id)
+    msg = await bot.send_message(
         user_id, order.convert_to_notification_text(
             products,
             username,
             False
-        )
+        ), reply_markup=keyboards.create_cancel_order_kb(order.id)
+    )
+    await Bot(MAIN_TELEGRAM_TOKEN, parse_mode=ParseMode.HTML).edit_message_reply_markup(
+        main_msg.chat.id,
+        main_msg.message_id,
+        reply_markup=keyboards.create_cancel_order_kb(order.id, msg.message_id, msg.chat.id)
     )
 
 
@@ -152,6 +161,36 @@ async def default_cmd(message: Message):
     ], resize_keyboard=True)
     default_msg = await get_option("default_msg")
     await message.answer(format_locales(default_msg, message.from_user, message.chat), reply_markup=kb)
+
+
+@router.callback_query(lambda q: q.data.startswith("order_"))
+async def handle_callback(query: CallbackQuery):
+    data = query.data.split(":")
+    try:
+        order = await order_db.get_order(data[1])
+    except OrderNotFound:
+        await query.answer("Ошибка при работе с заказом, возможно статус уже изменился.", show_alert=True)
+        return await query.message.edit_reply_markup(None)
+    match data[0]:
+        case "order_pre_cancel":
+            await query.message.edit_reply_markup(reply_markup=keyboards.create_cancel_confirm_kb(data[1]))
+        case "order_back_to_order":
+            await query.message.edit_reply_markup(reply_markup=keyboards.create_cancel_order_kb(data[1]))
+        case "order_cancel":
+            order.status = OrderStatusValues.CANCELLED
+            await order_db.update_order(order)
+            products = [await product_db.get_product(product_id) for product_id in order.products_id]
+            await query.message.edit_text(order.convert_to_notification_text(products=products), reply_markup=None)
+            await Bot(MAIN_TELEGRAM_TOKEN, parse_mode=ParseMode.HTML).edit_message_text(
+                text=order.convert_to_notification_text(
+                    products=products,
+                    username="@" + query.from_user.username if query.from_user.username else query.from_user.full_name,
+                    is_admin=True
+                ), chat_id=PREV_ORDER_MSGS[order.id][0], message_id=PREV_ORDER_MSGS[order.id][1], reply_markup=None)
+            await Bot(MAIN_TELEGRAM_TOKEN, parse_mode=ParseMode.HTML).send_message(
+                chat_id=PREV_ORDER_MSGS[order.id][0],
+                text=f"Новый статус заказа <b>#{order.id}</b>\n<b>{order.translate_order_status()}</b>")
+            del PREV_ORDER_MSGS[order.id]
 
 
 async def on_start():

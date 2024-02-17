@@ -4,6 +4,25 @@ from aiogram.utils.keyboard import InlineKeyboardMarkup, InlineKeyboardButton, R
 from bot.locales import DefaultLocale
 
 
+def create_cancel_order_kb(order_id: str, msg_id: int = 0, chat_id: int = 0) -> InlineKeyboardMarkup:
+    return InlineKeyboardMarkup(inline_keyboard=[
+        [
+            InlineKeyboardButton(text="Отменить заказ", callback_data=f"order_pre_cancel:{order_id}:{msg_id}:{chat_id}")
+        ]
+    ])
+
+
+def create_cancel_confirm_kb(order_id: str, msg_id: int = 0, chat_id: int = 0) -> InlineKeyboardMarkup:
+    return InlineKeyboardMarkup(inline_keyboard=[
+        [
+            InlineKeyboardButton(text="Точно отменить", callback_data=f"order_cancel:{order_id}:{msg_id}:{chat_id}")
+        ],
+        [
+            InlineKeyboardButton(text="Назад", callback_data=f"order_back_to_order:{order_id}:{msg_id}:{chat_id}")
+        ]
+    ])
+
+
 def get_back_keyboard() -> ReplyKeyboardMarkup:
     return ReplyKeyboardMarkup(keyboard=[
         [KeyboardButton(text=DefaultLocale.back_button())]
