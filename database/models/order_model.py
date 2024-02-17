@@ -5,13 +5,14 @@ import string
 import random
 
 from sqlalchemy import BigInteger, Column, String, TypeDecorator, Unicode, Dialect, ARRAY, DateTime
-from sqlalchemy import select, update, delete, insert, and_
+from sqlalchemy import select, update, delete, insert
 from sqlalchemy.ext.asyncio import AsyncEngine
 
 from pydantic import BaseModel, Field, validate_call, ConfigDict
 
 from database.models import Base
 from database.models.dao import Dao
+from database.models.product_model import ProductSchema
 
 
 class OrderStatusValues(Enum):
@@ -71,6 +72,28 @@ class OrderWithoutId(BaseModel):
 class OrderSchema(OrderWithoutId):
     id: str = Field(max_length=12, frozen=True)
 
+    def convert_to_notification_text(self, products: list[ProductSchema], username: str, is_admin: bool) -> str:
+        products_converted = []
+        total_price = 0
+        for ind, product in enumerate(products, start=1):
+            products_converted.append(f"{ind}. {product.convert_to_notification_text()}")
+            total_price += product.price
+
+        products_text = "\n".join(products_converted)
+
+        return f"Твой заказ <b>#{self.id}</b>\n\n" \
+               f"Список товаров:\n\n" \
+               f"{products_text}\n\n" \
+               f"Итого: <b>{total_price}₽</b>\n\n" \
+               f"Адрес: <b>{self.address}</b>" if not is_admin \
+            else f"Новый заказ <b>#{self.id}</b>\n" \
+                 f"от пользователя " \
+                 f"<b>{username}</b>\n\n" \
+                 f"Список товаров:\n\n" \
+                 f"{products_text}\n\n" \
+                 f"Итого: <b>{total_price}₽</b>\n\n" \
+                 f"Адрес: <b>{self.address}</b>"
+
 
 class OrderDao(Dao):
     def __init__(self, engine: AsyncEngine) -> None:
@@ -81,48 +104,46 @@ class OrderDao(Dao):
         async with self.engine.begin() as conn:
             raw_res = await conn.execute(select(Order).where(Order.bot_token == bot_token))
         await self.engine.dispose()
+
         raw_res = raw_res.fetchall()
         res = []
         for order in raw_res:
             res.append(OrderSchema.model_validate(order))
+
         return res
 
     @validate_call
-    async def get_order(self, bot_token: str, order_id: str) -> OrderSchema:
+    async def get_order(self, order_id: str) -> OrderSchema:
         async with self.engine.begin() as conn:
-            raw_res = await conn.execute(select(Order).where(and_(Order.bot_token == bot_token,
-                                                                  Order.id == order_id)))
+            raw_res = await conn.execute(select(Order).where(Order.id == order_id))
         await self.engine.dispose()
-        raw_res = raw_res.fetchall()
+
+        raw_res = raw_res.fetchone()
         if not raw_res:
             raise OrderNotFound
+
         res = OrderSchema.model_validate(raw_res)
         return res
 
     @validate_call
     async def add_order(self, new_order: OrderWithoutId) -> OrderSchema:
-        s = string.digits + string.ascii_letters
         date = new_order.ordered_at.strftime("%d%m%y")
-        day_id = ''.join(random.sample(s, 5))
-        try:
-            await self.get_order(new_order.bot_token, f"{date}_{day_id}")
-            return await self.add_order(new_order)
-        except OrderNotFound:
-            order = OrderSchema(**new_order.model_dump(), id=f"{date}_{day_id}")
+        random_string = ''.join(random.sample(string.digits + string.ascii_letters, 5))
+        order = OrderSchema(**new_order.model_dump(), id=f"{date}_{random_string}")
+
         async with self.engine.begin() as conn:
             await conn.execute(insert(Order).values(order.model_dump()))
+
         return order
 
     @validate_call
     async def update_order(self, updated_order: OrderSchema):
-        old_order = await self.get_order(updated_order.bot_token, updated_order.id)
+        await self.get_order(updated_order.id)
         async with self.engine.begin() as conn:
-            await conn.execute(update(Order).where(and_(Order.bot_token == updated_order.bot_token,
-                                                        Order.id == updated_order.id))
-                               .values(updated_order.model_dump()))
+            await conn.execute(update(Order).where(Order.id == updated_order.id).values(updated_order.model_dump()))
 
     @validate_call
-    async def delete_order(self, bot_token: str, order_id: str):
-        order = await self.get_order(bot_token, order_id)
+    async def delete_order(self, order_id: str):
+        await self.get_order(order_id)
         async with self.engine.begin() as conn:
-            await conn.execute(delete(Order).where(and_(Order.bot_token == bot_token, Order.id == order_id)))
+            await conn.execute(delete(Order).where(Order.id == order_id))

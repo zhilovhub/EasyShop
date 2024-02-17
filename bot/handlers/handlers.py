@@ -1,4 +1,6 @@
 import os
+import string
+from random import sample
 from re import fullmatch
 from datetime import datetime
 from distutils.dir_util import copy_tree
@@ -36,19 +38,18 @@ order_db = db_engine.get_order_dao()
 bot_db = db_engine.get_bot_dao()
 
 
-async def send_new_order_notify(order: OrderSchema):
-    user_bot = await bot_db.get_bot(order.bot_token)
-    bot_object = Bot(user_bot.token)
-    order_user_data = await bot_object.get_chat(order.from_user)
-    products = []
-    for product_id in order.products_id:
-        product = await product_db.get_product(order.bot_token, product_id)
-        product.append(product.name)
-    products_text = '\n'.join(products)
-    await bot.send_message(user_bot.created_by, f"Новый заказ <b>#{order.id}</b>\n"
-                                                f"от пользователя "
-                                                f"<b>{'@' + order_user_data.username if order_user_data.username else order_user_data.full_name}</b>"
-                                                f"\n\nСписок товаров: {products_text}")
+async def send_new_order_notify(order: OrderSchema, user_id: int):
+    order_user_data = await bot.get_chat(order.from_user)
+
+    await bot.send_message(user_id, f"Так будет выглядеть у тебя уведомление о новом заказе 👇")
+    await bot.send_message(
+        user_id, order.convert_to_notification_text(
+            [await product_db.get_product(product_id) for product_id in order.products_id],
+            "@" + order_user_data.username if order_user_data.username else order_user_data.full_name,
+            True
+        )
+    )
+    await order_db.delete_order(order.id)
 
 
 async def send_order_change_status_notify(order: OrderSchema):
@@ -60,15 +61,24 @@ async def send_order_change_status_notify(order: OrderSchema):
 
 @router.message(F.web_app_data)
 async def process_web_app_request(event: Message):
+    user_id = event.from_user.id
     try:
         data = json.loads(event.web_app_data.data)
         logger.info(f"recieve web app data: {data}")
-        order = await order_db.get_order(data['token'].replace("_", ":"), data['order_id'])
-        logger.info(f"order founded")
+
+        order = await order_db.get_order(data['order_id'])
+        order.from_user = user_id
+        await order_db.update_order(order)
+
+        logger.info(f"order found")
     except OrderNotFound:
         logger.info("order_not_found")
         return
-    await send_new_order_notify(order)
+
+    try:
+        await send_new_order_notify(order, user_id)
+    except Exception as e:
+        logger.info(e)
 
 
 @router.message(CommandStart())
@@ -127,9 +137,10 @@ async def waiting_for_the_token_handler(message: Message, state: FSMContext):
                 os.system(f"mkdir {working_directory}/bots/bot{token.replace(':', '___')}/logs")
                 logger.info(f'successfully create new sub bot files in directory bots/bot{token.replace(":", "___")}')
                 with open(f'{working_directory}/bots/bot{token.replace(":", "___")}/.env', 'w') as envfile:
-                    envfile.write(f"TELEGRAM_TOKEN={token}"
+                    envfile.write(f"MAIN_TELEGRAM_TOKEN={config.TELEGRAM_TOKEN}"
+                                  f"\nCUSTOM_TELEGRAM_TOKEN={token}"
                                   f"\nDB_URL={config.DB_URL}"
-                                  f"\nWEB_APP_URL={config.WEB_APP_URL}?token={token.replace(':', '_')}")
+                                  f"\nCUSTOM_WEB_APP_URL={config.WEB_APP_URL}?token={token.replace(':', '_')}")
                 logger.info(f'successfully .env sub bot file in directory bots/bot{token.replace(":", "___")}/.env')
                 with open(f'{working_directory}/bots/bot{token.replace(":", "___")}/bot.service', 'r') as servicefile:
                     txt = servicefile.read().replace('{working_directory}',
@@ -178,6 +189,7 @@ async def bot_menu_photo_handler(message: Message, state: FSMContext):
     state_data = await state.get_data()
     photo_file_id = message.photo[-1].file_id
     params = message.caption.strip().split('\n')
+    filename = "".join(sample(string.ascii_letters + string.digits, k=5)) + ".jpg"
 
     if len(params) != 2:
         return await message.answer("Чтобы добавить товар, прикрепи его картинку и отправь сообщение в виде:"
@@ -187,15 +199,15 @@ async def bot_menu_photo_handler(message: Message, state: FSMContext):
     except ValueError:
         return await message.answer("Цена должна быть в формате: <b>100.00</b>")
 
-    await bot.download(photo_file_id, destination=f"Files/img/{state_data['token']}__{params[0]}.jpg")
-    with open(f"Files/img/{state_data['token']}__{params[0]}.jpg", 'rb') as photo_file:
-        photo_bytes = photo_file.read()
+    await bot.download(photo_file_id, destination=f"Files/{filename}")
+    # with open(f"../Files/{path}", 'rb') as photo_file:
+    #     photo_bytes = photo_file.read()
 
     new_product = ProductWithoutId(bot_token=state_data['token'],
                                    name=params[0],
                                    description="",
                                    price=price,
-                                   picture=f"bot/Files/img/{state_data['token']}__{params[0]}.jpg")
+                                   picture=filename)
     await db_engine.get_product_db().add_product(new_product)
     await message.answer("Товар добавлен. Можно добавить ещё")
 
@@ -225,7 +237,7 @@ async def bot_menu_handler(message: Message, state: FSMContext):
                 await message.answer("Список товаров твоего магазина 👇\nЧтобы удалить товар, нажми на тег рядом с ним")
                 for product in products:
                     await message.answer_photo(
-                        photo=FSInputFile("../" + product.picture),
+                        photo=FSInputFile("Files/" + product.picture),
                         caption=f"<b>{product.name}</b>\n\n"
                                 f"Цена: <b>{float(product.price)}₽</b>",
                         reply_markup=get_inline_delete_button(product.id))
@@ -329,7 +341,8 @@ async def delete_bot_handler(message: Message, state: FSMContext):
     elif message_text == "🔙 Назад":
         await message.answer(
             "Возвращемся в меню...",
-            reply_markup=get_bot_menu_keyboard(WebAppInfo(url=config.WEB_APP_URL + f"?token={state_data['token']}".replace(":", "_"))))
+            reply_markup=get_bot_menu_keyboard(
+                WebAppInfo(url=config.WEB_APP_URL + f"?token={state_data['token']}".replace(":", "_"))))
         await state.set_state(States.BOT_MENU)
         await state.set_data(state_data)
     else:

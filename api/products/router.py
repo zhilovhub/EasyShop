@@ -20,9 +20,8 @@ async def get_all_products_api(token: str) -> list[ProductSchema]:
 
 @app.get(PATH + "/get_product/{token}/{product_id}", tags=['products'])
 async def get_product_api(token: str, product_id: int) -> ProductSchema:
-    token = token.replace('_', ':', 1)
     try:
-        product = await db.get_product(token, product_id)
+        product = await db.get_product(product_id)
     except ProductNotFound:
         raise HTTPException(status_code=404, detail="Product not found.")
     except Exception:

@@ -56,7 +56,7 @@ class BotDao(Dao):
         return res
 
     async def get_bot(self, bot_token: str) -> BotSchema:
-        if not isinstance(bot_token, str) and fullmatch(r"\d{10}:\w{35}", bot_token):
+        if not isinstance(bot_token, str) and fullmatch(r"\d{10}:[\w|-]{35}", bot_token):
             raise InvalidParameterFormat(
                 "bot_token must be type of str with format 0000000000:AaAaAaAaAaAaAaAaAaAaAaAaAaAaAaAaAaA.")
 

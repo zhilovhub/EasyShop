@@ -5,10 +5,13 @@ Wants=network.target
 After=syslog.target network-online.target
 
 [Service]
-Type=oneshot
+Type=simple
 Environment="PYTHONPATH=/root/EasyShop"
 WorkingDirectory=/root/EasyShop/api
 ExecStart=/root/EasyShop/venv/bin/python3 -m uvicorn api.main:app --reload --host 0.0.0.0 --port 8080 --ssl-keyfile /root/.certs/key.pem --ssl-certfile /root/.certs/cert.pem
+KillMode=process
+Restart=always
+RestartSec=10
 
 [Install]
 WantedBy=multi-user.target
