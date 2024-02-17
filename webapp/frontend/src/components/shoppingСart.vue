@@ -16,9 +16,9 @@
       totalPrice() {
         let price = this.itemsAddToCartArray.reduce((total, item) => total + item.price*item.count, 0);
         if (price <= 0) {
-          return 'Оплатить: 0 ₽'
+          return 'Заказать: 0 ₽'
         }
-        return 'Оплатить: ' + price + ' ₽'
+        return 'Заказать: ' + price + ' ₽'
       }
     },
     methods: {
@@ -54,9 +54,9 @@
       totalPriceCalc() {
         let price = this.itemsAddToCartArray.reduce((total, item) => total + item.price*item.count, 0);
         if (price <= 0) {
-          return 'Оплатить: 0 ₽'
+          return 'Закать: 0 ₽'
         }
-        return 'Оплатить: ' + price.toFixed(2) + ' ₽'
+        return 'Заказать: ' + price.toFixed(2) + ' ₽'
       },
       shortenName(name) {
         if (!name) return '';
