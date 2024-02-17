@@ -195,10 +195,10 @@ async def bot_menu_photo_handler(message: Message, state: FSMContext):
     if len(params) != 2:
         return await message.answer("Чтобы добавить товар, прикрепи его картинку и отправь сообщение в виде:"
                                     "\n\nНазвание\nЦена в рублях")
-    try:
-        price = float(params[-1].replace(",", "."))
-    except ValueError:
-        return await message.answer("Цена должна быть в формате: <b>100.00</b>")
+    if params[-1].isdigit():
+        price = int(params[-1])
+    else:
+        return await message.answer("Цена должна быть <b>целым числом</b>")
 
     path = f"img/{filename}"
     await bot.download(photo_file_id, destination=f"Files/{path}")
