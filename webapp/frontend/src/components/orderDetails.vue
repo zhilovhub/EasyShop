@@ -15,14 +15,14 @@
         if (price <= 0) {
           return '0 ₽'
         }
-        return price.toFixed(2) + ' ₽'
+        return price + ' ₽'
       },
       totalPriceForButton() {
         let price = this.itemsAddToCartArray.reduce((total, item) => total + item.price*item.count, 0);
         if (price <= 0) {
-          return 'Оплатить: 0 ₽'
+          return 'Заказать: 0 ₽'
         }
-        return 'Оплатить: ' + price.toFixed(2) + ' ₽'
+        return 'Заказать: ' + price + ' ₽'
       },
       totalCount() {
         let count = this.itemsAddToCartArray.reduce((total, item) => total + item.count, 0);
@@ -78,11 +78,11 @@
     </div>
     <div>
       <span>Скидка</span>
-      <span>0,00 ₽</span>
+      <span>0 ₽</span>
     </div>
     <div>
       <span>Доставка</span>
-      <span>0,00 ₽</span>
+      <span>0 ₽</span>
     </div>
   </div>
   <button @click="orderBtnClicked()" class="btnTotalPrice">{{this.totalPriceForButton}}</button>
@@ -95,6 +95,10 @@
   font-size: 15px;
   line-height: 18.29px;
   color: #FFFFFF;
+}
+
+.main-body {
+  position: relative;
 }
 
 .title-div {
@@ -123,28 +127,28 @@
   flex-direction: column;
   padding: 2.5% 4%;
   margin-bottom: 40px;
-    textarea {
-      background-color: #293C47;
-      width: 100%;
-      height: 65px;
-      border-radius: 7px;
-      margin: 10px auto;
-      white-space: pre-wrap;
-      resize: none;
-      color: #FFFFFF;
-      padding: 12px 20px;
-      align-items: center;
+  textarea {
+    background-color: #293C47;
+    width: 100%;
+    height: 65px;
+    border-radius: 7px;
+    margin: 10px auto;
+    white-space: pre-wrap;
+    resize: none;
+    color: #FFFFFF;
+    padding: 12px 20px;
+    align-items: center;
+    border: 1px solid #20282C;
+    font-family: 'Montserrat', sans-serif;
+    font-weight: 500;
+    font-size: 15px;
+    &::placeholder{
       border: 1px solid #20282C;
-      font-family: 'Montserrat', sans-serif;
-      font-weight: 500;
-      font-size: 15px;
-      &::placeholder{
-        border: 1px solid #20282C;
-      }
-      &:focus {
-        outline: none;
-      }
     }
+    &:focus {
+      outline: none;
+    }
+  }
 }
 
 .pay-container {
@@ -152,25 +156,25 @@
   display: flex;
   flex-direction: column;
   padding: 2.5% 4%;
-    select {
-      width: 100%;
-      height: 50px;
-      background-color: #293C47;
-      border: 1px solid #20282C;
-      border-radius: 7px;
-      -webkit-appearance: none;
-      -moz-appearance: none;
-      appearance: none;
-      background-image: url('../assets/arrow-down.png') !important;
-      background-position: center right 20px;
-      background-repeat: no-repeat;
-      background-size: auto 15%;
-      padding-left: 20px;
-      margin: 10px auto;
-      &:hover, :focus, :active {
-        outline: none;
-      }
+  select {
+    width: 100%;
+    height: 50px;
+    background-color: #293C47;
+    border: 1px solid #20282C;
+    border-radius: 7px;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+    background-image: url('../assets/arrow-down.png') !important;
+    background-position: center right 20px;
+    background-repeat: no-repeat;
+    background-size: auto 15%;
+    padding-left: 20px;
+    margin: 10px auto;
+    &:hover, :focus, :active {
+      outline: none;
     }
+  }
 }
 
 .btnTotalPrice {
@@ -198,8 +202,8 @@
   display: flex;
   width: 100%;
   flex-direction: column;
-  position: absolute;
-  bottom: 100px;
+  position: relative;
+  margin-top: 30vh;
   padding: 10px 20px;
   div {
     display: flex;

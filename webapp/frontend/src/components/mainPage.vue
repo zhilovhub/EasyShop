@@ -7,7 +7,7 @@
           class="item-block"
           style="position: relative;"
       >
-        <img style="border-radius: 10px; width: 100%; margin: 5px auto; " v-if="item.picture" :src="item.picture" alt="img">
+        <img style="border-radius: 10px; width: 100%; height: 100%; object-fit: cover; margin: 5px auto;" v-if="item.picture" :src="'https://ezbots.ru:8080/files/' + item.picture" alt="img">
         <div style="margin-bottom: 10px">
         <span style="color: #71CBFF; font-size: 15px;">
           {{ shortenName(item.name) }}
@@ -56,12 +56,12 @@
 </template>
 
 <script>
+
 export default {
   name: 'mainPage',
   methods: {
     priceComma(price) {
-      let priceString = price.toFixed(2)
-      return priceString.replace('.', ',') + ' ₽'
+      return price + ' ₽'
     },
     incrementCount(item) {
       if (item && typeof item.count === 'number') {
@@ -88,6 +88,9 @@ export default {
     }
   },
   computed: {
+    https() {
+      return https
+    },
     items() {
       return this.$store.state.items;
     },
@@ -120,6 +123,7 @@ export default {
 
   .item-block{
     aspect-ratio: 1/1;
+    white-space: nowrap;
     background-color: #293C47;
     list-style-type: none;
     display: flex;

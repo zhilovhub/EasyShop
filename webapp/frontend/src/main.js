@@ -1,3 +1,6 @@
+let tg = window.Telegram.WebApp;
+tg.expand();
+
 import './assets/main.css'
 import { createApp } from 'vue'
 import App from './App.vue'
@@ -10,6 +13,8 @@ app.use(router)
 app.use(Vuex)
 app.use(Store)
 app.mount('#app')
+
+
 
 
 

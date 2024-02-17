@@ -16,15 +16,14 @@
       totalPrice() {
         let price = this.itemsAddToCartArray.reduce((total, item) => total + item.price*item.count, 0);
         if (price <= 0) {
-          return 'Оплатить: 0 ₽'
+          return 'Заказать: 0 ₽'
         }
-        return 'Оплатить: ' + price.toFixed(2) + ' ₽'
+        return 'Заказать: ' + price + ' ₽'
       }
     },
     methods: {
-      priceComma(price) {
-        let priceString = price.toFixed(2)
-        return priceString.replace('.', ',') + ' ₽'
+      priceRub(price) {
+        return price + ' ₽'
       },
       incrementCount(item) {
         if (item && typeof item.count === 'number') {
@@ -55,9 +54,9 @@
       totalPriceCalc() {
         let price = this.itemsAddToCartArray.reduce((total, item) => total + item.price*item.count, 0);
         if (price <= 0) {
-          return 'Оплатить: 0 ₽'
+          return 'Закать: 0 ₽'
         }
-        return 'Оплатить: ' + price.toFixed(2) + ' ₽'
+        return 'Заказать: ' + price.toFixed(2) + ' ₽'
       },
       shortenName(name) {
         if (!name) return '';
@@ -90,11 +89,11 @@
         :key="item.id"
         class="item-block"
       >
-        <img v-if="item.img" :src="item.img" alt="img">
+        <img style="border-radius: 7px; width: 67px; height: 67px; object-fit: cover;" v-if="item.picture" :src="'https://ezbots.ru:8080/files/' + item.picture" alt="img">
         <div v-else style="width: 67px; height: 67px; border-radius: 7px; background-color: #293C47;"></div>
         <div class="text-block">
           <span style="color: #71CBFF; font-size: 15px;">{{ shortenName(item.name) }}</span>
-          <span style="font-weight: 600; color: #FFFFFF; font-size: 15px;">{{priceComma(item.price)}}</span>
+          <span style="font-weight: 600; color: #FFFFFF; font-size: 15px;">{{priceRub(item.price)}}</span>
         </div>
         <div class="buttons">
           <div class="countDivBtn">{{item.count}} шт.</div>
