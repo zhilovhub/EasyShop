@@ -97,6 +97,10 @@
   color: #FFFFFF;
 }
 
+.main-body {
+  position: relative;
+}
+
 .title-div {
   background-color: #20282C;
   width: 100%;
@@ -123,28 +127,28 @@
   flex-direction: column;
   padding: 2.5% 4%;
   margin-bottom: 40px;
-    textarea {
-      background-color: #293C47;
-      width: 100%;
-      height: 65px;
-      border-radius: 7px;
-      margin: 10px auto;
-      white-space: pre-wrap;
-      resize: none;
-      color: #FFFFFF;
-      padding: 12px 20px;
-      align-items: center;
+  textarea {
+    background-color: #293C47;
+    width: 100%;
+    height: 65px;
+    border-radius: 7px;
+    margin: 10px auto;
+    white-space: pre-wrap;
+    resize: none;
+    color: #FFFFFF;
+    padding: 12px 20px;
+    align-items: center;
+    border: 1px solid #20282C;
+    font-family: 'Montserrat', sans-serif;
+    font-weight: 500;
+    font-size: 15px;
+    &::placeholder{
       border: 1px solid #20282C;
-      font-family: 'Montserrat', sans-serif;
-      font-weight: 500;
-      font-size: 15px;
-      &::placeholder{
-        border: 1px solid #20282C;
-      }
-      &:focus {
-        outline: none;
-      }
     }
+    &:focus {
+      outline: none;
+    }
+  }
 }
 
 .pay-container {
@@ -152,25 +156,25 @@
   display: flex;
   flex-direction: column;
   padding: 2.5% 4%;
-    select {
-      width: 100%;
-      height: 50px;
-      background-color: #293C47;
-      border: 1px solid #20282C;
-      border-radius: 7px;
-      -webkit-appearance: none;
-      -moz-appearance: none;
-      appearance: none;
-      background-image: url('../assets/arrow-down.png') !important;
-      background-position: center right 20px;
-      background-repeat: no-repeat;
-      background-size: auto 15%;
-      padding-left: 20px;
-      margin: 10px auto;
-      &:hover, :focus, :active {
-        outline: none;
-      }
+  select {
+    width: 100%;
+    height: 50px;
+    background-color: #293C47;
+    border: 1px solid #20282C;
+    border-radius: 7px;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+    background-image: url('../assets/arrow-down.png') !important;
+    background-position: center right 20px;
+    background-repeat: no-repeat;
+    background-size: auto 15%;
+    padding-left: 20px;
+    margin: 10px auto;
+    &:hover, :focus, :active {
+      outline: none;
     }
+  }
 }
 
 .btnTotalPrice {
@@ -198,8 +202,8 @@
   display: flex;
   width: 100%;
   flex-direction: column;
-  position: absolute;
-  bottom: 100px;
+  position: relative;
+  margin-top: 30vh;
   padding: 10px 20px;
   div {
     display: flex;
