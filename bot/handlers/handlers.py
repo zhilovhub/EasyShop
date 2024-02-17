@@ -12,10 +12,11 @@ from aiogram.types import Message, MenuButtonWebApp, WebAppInfo, ReplyKeyboardRe
 from aiogram.filters import CommandStart
 from aiogram.exceptions import TelegramUnauthorizedError
 from aiogram.fsm.context import FSMContext
+from aiogram.enums import ParseMode
 
 from bot import config
 from bot.config import logger
-from bot.keyboards import get_bot_menu_keyboard, get_back_keyboard, get_inline_delete_button
+from bot.keyboards import get_bot_menu_keyboard, get_back_keyboard, get_inline_delete_button, create_cancel_confirm_kb, create_cancel_order_kb
 from bot.states.states import States
 from bot.locales.default import DefaultLocale
 from bot.filters.chat_type import ChatTypeFilter
@@ -24,9 +25,9 @@ from bot.exceptions.exceptions import *
 from database.models.bot_model import BotSchema
 from database.models.user_model import UserSchema
 from database.models.product_model import ProductWithoutId
-from database.models.order_model import OrderSchema, OrderNotFound
+from database.models.order_model import OrderSchema, OrderNotFound, OrderStatusValues
 
-from magic_filter import F
+from aiogram import F
 from urllib.parse import quote_plus, unquote_plus
 
 import json
@@ -58,6 +59,41 @@ async def send_order_change_status_notify(order: OrderSchema):
     text = f"Новый статус заказ <b>#{order.id}</b>\n<b>{order.status}</b>"
     await bot.send_message(user_bot.created_by, text)
     await bot.send_message(order.from_user, text)
+
+
+@router.callback_query(lambda q: q.data.startswith("order_"))
+async def handle_callback(query: CallbackQuery, state: FSMContext):
+    state_data = await state.get_data()
+    data = query.data.split(":")
+    print(data)
+    try:
+        order = await order_db.get_order(data[1])
+    except OrderNotFound:
+        await query.answer("Ошибка при работе с заказом, возможно статус уже изменился.", show_alert=True)
+        return await query.message.edit_reply_markup(None)
+    match data[0]:
+        case "order_pre_cancel":
+            await query.message.edit_reply_markup(reply_markup=create_cancel_confirm_kb(data[1], data[2], data[3]))
+        case "order_back_to_order":
+            await query.message.edit_reply_markup(reply_markup=create_cancel_order_kb(data[1], data[2], data[3]))
+        case "order_cancel":
+            order.status = OrderStatusValues.CANCELLED
+            await order_db.update_order(order)
+            products = [await product_db.get_product(product_id) for product_id in order.products_id]
+            await Bot(state_data['token'], parse_mode=ParseMode.HTML).edit_message_text(
+                order.convert_to_notification_text(products=products),
+                reply_markup=None,
+                chat_id=data[3],
+                message_id=int(data[2]))
+            await query.message.edit_text(
+                text=order.convert_to_notification_text(
+                    products=products,
+                    username="@" + query.from_user.username if query.from_user.username else query.from_user.full_name,
+                    is_admin=True
+                ), reply_markup=None)
+            await Bot(state_data['token'], parse_mode=ParseMode.HTML).send_message(
+                chat_id=data[3],
+                text=f"Новый статус заказа <b>#{order.id}</b>\n<b>{order.translate_order_status()}</b>")
 
 
 @router.message(F.web_app_data)
@@ -134,18 +170,24 @@ async def waiting_for_the_token_handler(message: Message, state: FSMContext):
                                     locale=lang)
 
                 working_directory = os.getcwd()
+
                 copy_tree(f'{working_directory}/template', f'{working_directory}/bots/bot{token.replace(":", "___")}')
                 os.system(f"mkdir {working_directory}/bots/bot{token.replace(':', '___')}/logs")
+
                 logger.info(f'successfully create new sub bot files in directory bots/bot{token.replace(":", "___")}')
+
                 with open(f'{working_directory}/bots/bot{token.replace(":", "___")}/.env', 'w') as envfile:
                     envfile.write(f"MAIN_TELEGRAM_TOKEN={config.TELEGRAM_TOKEN}"
                                   f"\nCUSTOM_TELEGRAM_TOKEN={token}"
                                   f"\nDB_URL={config.DB_URL}"
                                   f"\nCUSTOM_WEB_APP_URL={config.WEB_APP_URL}?token={token.replace(':', '_')}")
+
                 logger.info(f'successfully .env sub bot file in directory bots/bot{token.replace(":", "___")}/.env')
+
                 with open(f'{working_directory}/bots/bot{token.replace(":", "___")}/bot.service', 'r') as servicefile:
                     txt = servicefile.read().replace('{working_directory}',
                                                      f'{working_directory}/bots/bot{token.replace(":", "___")}')
+
                 with open(f'{working_directory}/bots/bot{token.replace(":", "___")}/bot.service', 'w') as servicefile:
                     servicefile.write(txt)
 
