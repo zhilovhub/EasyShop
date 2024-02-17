@@ -1,5 +1,6 @@
 import Vuex from 'vuex'
 let tg = window.Telegram.WebApp;
+tg.expand();
 const url = new URL(window.location.href);
 const token = url.searchParams.get('token');
 const apiUrl = 'https://ezbots.ru:8080'
@@ -43,7 +44,6 @@ export const Store = new Vuex.Store({
       fetchItems().then(data => {
         if (data) {
           console.log('Data received')
-          console.log(data)
           Store.state.items = data
           Store.state.items = Store.state.items.map(item => ({ ...item, count: 0 }));
         } else {
@@ -51,22 +51,10 @@ export const Store = new Vuex.Store({
         }
       });
       Store.state.token = token;
-      for(i in Thi)
-      this.imageInit();
-    },
-    imageInit() {
-      async function fetchImage(item) {
-        try {
-          const response =  await fetch(`${apiUrl}api/files/{item.img}`)
-        } catch (error) {
-
-        }
-      }
     },
     postData() {
       let data = {
-        "order_id": Number,
-	"token": String
+        "order_id": Number
       };
       async function fetchData() {
         try {
@@ -96,7 +84,6 @@ export const Store = new Vuex.Store({
       fetchData().then(response => {
         if (response) {
           data.order_id = response.id;
-	        data.token = token;
           tg.sendData(JSON.stringify(data));
           tg.close();
         } else {
