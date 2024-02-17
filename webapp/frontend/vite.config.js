@@ -15,5 +15,10 @@ export default defineConfig({
     alias: {
       '@': fileURLToPath(new URL('./src', import.meta.url))
     }
-  }
+  },
+  server: {
+  https: {
+    key: fs.readFileSync('/root/.certs/key.pem'),
+    cert: fs.readFileSync('/root/.certs/cert.pem')
+  }}
 })
