@@ -1,6 +1,6 @@
 from typing import Optional
 
-from sqlalchemy import BigInteger, Column, String, ForeignKey, Float
+from sqlalchemy import BigInteger, Column, String, ForeignKey, Integer
 from sqlalchemy import select, insert, delete
 from sqlalchemy.ext.asyncio import AsyncEngine
 
@@ -24,7 +24,7 @@ class Product(Base):
     bot_token = Column(ForeignKey(Bot.bot_token, ondelete="CASCADE"), nullable=False)
     name = Column(String(55), nullable=False)
     description = Column(String(255), nullable=False)
-    price = Column(Float, nullable=False)
+    price = Column(Integer, nullable=False)
     picture = Column(String)
 
 
@@ -34,7 +34,7 @@ class ProductWithoutId(BaseModel):
     bot_token: str = Field(frozen=True, max_length=46, min_length=46)
     name: str = Field(max_length=55)
     description: str = Field(max_length=255)
-    price: float
+    price: int
     picture: Optional[str | None]
 
 
