@@ -115,7 +115,7 @@ async def process_web_app_request(event: Message):
 
     try:
         data = json.loads(event.web_app_data.data)
-        logger.info(f"recieve web app data: {data}")
+        logger.info(f"receive web app data: {data}")
 
         data["from_user"] = user_id
         data["status"] = "backlog"
@@ -127,7 +127,7 @@ async def process_web_app_request(event: Message):
 
         logger.info(f"order with id #{order.id} created")
     except Exception:
-        logger.info("error while creating order", exc_info=True)
+        logger.error("error while creating order", exc_info=True)
         return await event.answer("Произошла ошибка при создании заказа, попробуйте еще раз.")
 
     products = [await product_db.get_product(product_id) for product_id in order.products_id]

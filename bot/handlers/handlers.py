@@ -64,7 +64,6 @@ async def send_order_change_status_notify(order: OrderSchema):
 async def handle_callback(query: CallbackQuery, state: FSMContext):
     state_data = await state.get_data()
     data = query.data.split(":")
-    print(data)
     try:
         order = await order_db.get_order(data[1])
     except OrderNotFound:
@@ -109,21 +108,22 @@ async def process_web_app_request(event: Message):
     user_id = event.from_user.id
     try:
         data = json.loads(event.web_app_data.data)
-        logger.info(f"recieve web app data: {data}")
+        logger.info(f"receive web app data: {data}")
 
-        order = await order_db.get_order(data['order_id'])
-        order.from_user = user_id
-        await order_db.update_order(order)
+        data["from_user"] = user_id
+        data["status"] = "backlog"
 
-        logger.info(f"order found")
-    except OrderNotFound:
-        logger.info("order_not_found")
-        return
+        order = OrderSchema(**data)
+
+        logger.info(f"order with id #{order.id} created")
+    except Exception:
+        logger.warning("error while creating order", exc_info=True)
+        return await event.answer("Произошла ошибка при создании заказа, попробуйте еще раз.")
 
     try:
         await send_new_order_notify(order, user_id)
-    except Exception as e:
-        logger.info(e)
+    except Exception as ex:
+        logger.warning("error while sending test order notification", exc_info=True)
 
 
 @router.message(CommandStart())
