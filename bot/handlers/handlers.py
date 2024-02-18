@@ -239,6 +239,11 @@ async def waiting_for_the_token_handler(message: Message, state: FSMContext):
 async def bot_menu_photo_handler(message: Message, state: FSMContext):
     state_data = await state.get_data()
     photo_file_id = message.photo[-1].file_id
+
+    if message.caption is None:
+        return await message.answer("Чтобы добавить товар, прикрепи его картинку и отправь сообщение в виде:"
+                                    "\n\nНазвание\nЦена в рублях")
+
     params = message.caption.strip().split('\n')
     filename = "".join(sample(string.ascii_letters + string.digits, k=5)) + ".jpg"
 
