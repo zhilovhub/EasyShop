@@ -1,13 +1,18 @@
 from database.models.product_model import ProductSchema, ProductDao, ProductNotFound
-from ..main import db_engine, app, logger
-from fastapi import HTTPException
+from loader import db_engine, logger
+from fastapi import HTTPException, APIRouter
 
 
 PATH = "/api/products"
+router = APIRouter(
+    prefix=PATH,
+    tags=["products"],
+    responses={404: {"description": "Product not found"}},
+)
 db = db_engine.get_product_db()
 
 
-@app.get(PATH + "/get_all_products/{token}", tags=['products'])
+@router.get("/get_all_products/{token}")
 async def get_all_products_api(token: str) -> list[ProductSchema]:
     token = token.replace('_', ':', 1)
     try:
@@ -18,14 +23,14 @@ async def get_all_products_api(token: str) -> list[ProductSchema]:
     return products
 
 
-@app.get(PATH + "/get_product/{token}/{product_id}", tags=['products'])
+@router.get("/get_product/{token}/{product_id}")
 async def get_product_api(token: str, product_id: int) -> ProductSchema:
     try:
         product = await db.get_product(product_id)
     except ProductNotFound:
         raise HTTPException(status_code=404, detail="Product not found.")
     except Exception:
-        logger.error("Error while execute get_all_products db_method", exc_info=True)
+        logger.error("Error while execute get_product db_method", exc_info=True)
         raise HTTPException(status_code=500, detail="Internal error.")
     return product
 

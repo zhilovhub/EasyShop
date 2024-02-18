@@ -1,14 +1,20 @@
-from database.models.order_model import OrderSchema, OrderWithoutId, OrderDao, OrderNotFound
-from ..main import db_engine, app, logger
-from fastapi import HTTPException
+from database.models.order_model import OrderSchema, OrderWithoutId, OrderNotFound
+from loader import db_engine, logger
+from fastapi import HTTPException, APIRouter
 from pydantic import ValidationError
 
 
 PATH = "/api/orders"
+router = APIRouter(
+    prefix=PATH,
+    tags=["orders"],
+    responses={404: {"description": "Order not found"}},
+)
+
 db = db_engine.get_order_dao()
 
 
-@app.get(PATH + "/get_all_orders/{token}", tags=['orders'])
+@router.get("/get_all_orders/{token}")
 async def get_all_orders_api(token: str) -> list[OrderSchema]:
     token = token.replace('_', ':', 1)
     try:
@@ -22,7 +28,7 @@ async def get_all_orders_api(token: str) -> list[OrderSchema]:
     return orders
 
 
-@app.get(PATH + "/get_order/{token}/{order_id}", tags=['orders'])
+@router.get("/get_order/{token}/{order_id}")
 async def get_order_api(token: str, order_id: str) -> OrderSchema:
     try:
         order = await db.get_order(order_id)
@@ -36,7 +42,7 @@ async def get_order_api(token: str, order_id: str) -> OrderSchema:
     return order
 
 
-@app.post(PATH + "/add_order", tags=['orders'])
+@router.post("/add_order")
 async def add_order_api(new_order: OrderWithoutId) -> OrderSchema:
     try:
         new_order.ordered_at = new_order.ordered_at.replace(tzinfo=None)
@@ -50,7 +56,7 @@ async def add_order_api(new_order: OrderWithoutId) -> OrderSchema:
     return order
 
 
-@app.post(PATH + "/update_order", tags=['orders'])
+@router.post("/update_order")
 async def update_order_api(updated_order: OrderWithoutId) -> str:
     try:
         order = await db.update_order(updated_order)
@@ -64,7 +70,7 @@ async def update_order_api(updated_order: OrderWithoutId) -> str:
     return "updated"
 
 
-@app.delete(PATH + "/delete_order/{token}/{order_id}", tags=['orders'])
+@router.delete("/delete_order/{token}/{order_id}")
 async def delete_order_api(token: str, order_id: str) -> str:
     try:
         await db.delete_order(order_id)
