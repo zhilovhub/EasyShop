@@ -3,7 +3,8 @@
     name: 'order-details',
     data() {
       return {
-        inputValue: ''
+        inputValue: '',
+        imageSrc: ''
       }
     },
     computed: {
@@ -30,6 +31,10 @@
       }
     },
     mounted() {
+      if (this.$store.state.itemsAddToCartArray && this.$store.state.itemsAddToCartArray.length > 0) {
+        // Если условие выполняется, присваиваем imageSrc значение первой картинки в массиве
+        this.imageSrc = this.$store.state.items[0][0].picture;
+      }
       this.$store.commit("addToLocalStorage");
       this.inputValue = 'г. Москва, Большой Строченовский переулок 5'
     },
@@ -45,7 +50,7 @@
 <template>
   <div class="main-body">
   <div class="title-div">
-    <div style="width: 134px; height: 134px; border-radius: 7px; background-color: #293C47;"></div>
+    <img style="width: 134px; height: 134px; border-radius: 7px;" src="../../src/assets/logo.png" alt="image">
     <div class="title-text">
       <span style="font-size: 24px; margin-bottom: 15px">Заказ №63782</span>
       <span style="color: #71CBFF; font-size: 15px; font-weight: 500">Название заказа</span>
