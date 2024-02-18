@@ -1,11 +1,11 @@
 import os
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from database.models.models import Database
 from dotenv import load_dotenv
 import datetime
-import logging
-import logging.config
+from orders.router import router as order_router
+from products.router import router as product_router
+from files.router import router as files_router
 
 tags_metadata = [
     {
@@ -22,6 +22,10 @@ tags_metadata = [
     }
 ]
 app = FastAPI(openapi_tags=tags_metadata)
+app.include_router(order_router)
+app.include_router(product_router)
+app.include_router(files_router)
+
 ROOT_PATH = "/api/"
 
 origins = ["*"]
@@ -34,55 +38,6 @@ app.add_middleware(
 )
 
 load_dotenv()
-ALCHEMY_URL = os.getenv("SQLALCHEMY_URL")
-DEBUG = bool(os.getenv("DEBUG"))
-
-db_engine = Database(ALCHEMY_URL)
-
-try:
-    os.system("mkdir logs")
-except:
-    pass
-LOGGING_SETUP = {
-    'version': 1,
-    'disable_existing_loggers': False,
-    'formatters': {
-        'log_formatter': {
-            'format': '[{asctime}][{levelname}] ::: {filename}({lineno}) -> {message}',
-            'style': '{',
-        },
-    },
-    'handlers': {
-        'all_file': {
-            'level': 'DEBUG' if DEBUG else 'INFO',
-            'class': 'logging.FileHandler',
-            'filename': 'logs/all.log',  # путь до файла логирования
-            'formatter': 'log_formatter',
-        },
-        'error_file': {
-            'level': 'WARNING',
-            'class': 'logging.FileHandler',
-            'filename': 'logs/err.log',  # путь до файла логирования ошибок
-            'formatter': 'log_formatter',
-        },
-        'console': {
-            'level': 'DEBUG' if DEBUG else 'INFO',
-            'class': 'logging.StreamHandler',
-            'formatter': 'log_formatter',
-        },
-    },
-    'loggers': {
-        'logger': {
-            'handlers': ['all_file', 'error_file', 'console'],
-            'level': 'DEBUG',
-            'propagate': False,
-        },
-    }
-}
-logging.config.dictConfig(LOGGING_SETUP)
-logging.basicConfig(format=u'[%(asctime)s][%(levelname)s] ::: %(filename)s(%(lineno)d) -> %(message)s',
-                    level="INFO", filename='api/logs/all.log')
-logger = logging.getLogger('logger')
 
 
 @app.get(f"{ROOT_PATH}")
@@ -90,13 +45,34 @@ async def read_root():
     return "You can see all available methods in rest api docs"
 
 
-for log_file in ('all.log', 'err.log'):
-    with open(f'logs/{log_file}', 'a') as log:
-        log.write(f'=============================\n'
-                  f'New app session\n'
-                  f'[{datetime.datetime.now()}]\n'
-                  f'=============================\n')
+# Start uvicorn from python
+if __name__ == "__main__":
+    import uvicorn
+    from loader import LOGGING_SETUP
 
+    try:
+        os.system("mkdir logs")
+    except:
+        pass
+
+    for log_file in ('all.log', 'err.log'):
+        with open(f'logs/{log_file}', 'a') as log:
+            log.write(f'=============================\n'
+                      f'New app session\n'
+                      f'[{datetime.datetime.now()}]\n'
+                      f'=============================\n')
+
+    protocol = os.getenv("API_PROTOCOL")
+    if protocol == "http":
+        uvicorn.run("main:app", host=os.getenv("API_HOST"), port=int(os.getenv("API_PORT")), log_level="info",
+                    log_config=LOGGING_SETUP)
+    elif protocol == "https":
+        uvicorn.run("main:app", host=os.getenv("API_HOST"), port=int(os.getenv("API_PORT")), log_level="info",
+                    ssl_keyfile=os.getenv("SSL_KEY_PATH"), ssl_certfile=os.getenv("SSL_CERT_PATH"),
+                    log_config=LOGGING_SETUP)
+
+
+# Start uvicorn from cli (no logs)
 if __name__ == "api.main":
     import api.products
     import api.orders

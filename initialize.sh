@@ -12,6 +12,8 @@ echo "Creating systemd services..."
 cp services/api.service /etc/systemd/system/api.service
 cp services/bot.service /etc/systemd/system/bot.service
 cp services/webapp.service /etc/systemd/system/webapp.service
+echo "Restarting systemd daemon..."
+systemctl daemon-reload
 echo "Services created."
 echo "Trying upgrade migrations..."
 alembic upgrade head
