@@ -74,7 +74,7 @@ async def handle_callback(query: CallbackQuery, state: FSMContext):
         case "order_pre_cancel":
             await query.message.edit_reply_markup(reply_markup=create_cancel_confirm_kb(data[1], data[2], data[3]))
         case "order_back_to_order":
-            await query.message.edit_reply_markup(reply_markup=create_cancel_order_kb(data[1], data[2], data[3]))
+            await query.message.edit_reply_markup(reply_markup=create_change_order_status_kb(data[1], data[2], data[3]))
         case "order_finish" | "order_cancel" | "order_process" | "order_backlog":
             order.status, is_processing = {
                 "order_cancel": (OrderStatusValues.CANCELLED, False),
