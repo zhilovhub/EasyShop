@@ -50,7 +50,6 @@ async def send_new_order_notify(order: OrderSchema, user_id: int):
             True
         )
     )
-    await order_db.delete_order(order.id)
 
 
 async def send_order_change_status_notify(order: OrderSchema):
