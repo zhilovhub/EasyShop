@@ -1,3 +1,5 @@
+import os
+
 from sqlalchemy.ext.asyncio import create_async_engine
 
 from database.models import Base
@@ -7,10 +9,14 @@ from database.models.order_model import OrderDao
 from database.models.product_model import ProductDao
 from database.models.custom_bot_user_model import CustomBotUserDao
 
+from dotenv import load_dotenv
+
+load_dotenv()
+
 
 class Database:
     def __init__(self, sqlalchemy_url: str) -> None:
-        self.engine = create_async_engine(sqlalchemy_url)
+        self.engine = create_async_engine(sqlalchemy_url, echo=bool(int(os.getenv("DEBUG"))))
         self.user_dao = UserDao(self.engine)
         self.bot_dao = BotDao(self.engine)
         self.product_dao = ProductDao(self.engine)
