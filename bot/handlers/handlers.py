@@ -72,9 +72,11 @@ async def handle_callback(query: CallbackQuery, state: FSMContext):
         return await query.message.edit_reply_markup(None)
     match data[0]:
         case "order_pre_cancel":
-            await query.message.edit_reply_markup(reply_markup=create_cancel_confirm_kb(data[1], data[2], data[3]))
+            await query.message.edit_reply_markup(reply_markup=create_cancel_confirm_kb(
+                data[1], int(data[2]), int(data[3])))
         case "order_back_to_order":
-            await query.message.edit_reply_markup(reply_markup=create_change_order_status_kb(data[1], data[2], data[3]))
+            await query.message.edit_reply_markup(reply_markup=create_change_order_status_kb(
+                data[1], int(data[2]), int(data[3])))
         case "order_finish" | "order_cancel" | "order_process" | "order_backlog":
             order.status, is_processing = {
                 "order_cancel": (OrderStatusValues.CANCELLED, False),
@@ -88,7 +90,8 @@ async def handle_callback(query: CallbackQuery, state: FSMContext):
             products = [await product_db.get_product(product_id) for product_id in order.products_id]
             await Bot(state_data['token'], parse_mode=ParseMode.HTML).edit_message_text(
                 order.convert_to_notification_text(products=products),
-                reply_markup=None if data[0] in ("order_finish", "order_cancel") else create_cancel_order_kb(order.id, int(data[2]), data[3]),
+                reply_markup=None if data[0] in ("order_finish", "order_cancel") else
+                create_cancel_order_kb(order.id, int(data[2]), int(data[3])),
                 chat_id=data[3],
                 message_id=int(data[2]))
 
@@ -97,7 +100,8 @@ async def handle_callback(query: CallbackQuery, state: FSMContext):
                     products=products,
                     username="@" + query.from_user.username if query.from_user.username else query.from_user.full_name,
                     is_admin=True
-                ), reply_markup=None if data[0] in ("order_finish", "order_cancel") else create_change_order_status_kb(order.id, is_processing, int(data[2]), data[3]))
+                ), reply_markup=None if data[0] in ("order_finish", "order_cancel") else
+                create_change_order_status_kb(order.id, int(data[2]), int(data[3]), is_processing))
 
             await Bot(state_data['token'], parse_mode=ParseMode.HTML).send_message(
                 chat_id=data[3],
