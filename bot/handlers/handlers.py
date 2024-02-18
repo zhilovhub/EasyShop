@@ -16,7 +16,7 @@ from aiogram.enums import ParseMode
 
 from bot import config
 from bot.config import logger
-from bot.keyboards import get_bot_menu_keyboard, get_back_keyboard, get_inline_delete_button, create_cancel_confirm_kb, create_cancel_order_kb
+from bot.keyboards import *
 from bot.states.states import States
 from bot.locales.default import DefaultLocale
 from bot.filters.chat_type import ChatTypeFilter
@@ -75,21 +75,30 @@ async def handle_callback(query: CallbackQuery, state: FSMContext):
             await query.message.edit_reply_markup(reply_markup=create_cancel_confirm_kb(data[1], data[2], data[3]))
         case "order_back_to_order":
             await query.message.edit_reply_markup(reply_markup=create_cancel_order_kb(data[1], data[2], data[3]))
-        case "order_cancel":
-            order.status = OrderStatusValues.CANCELLED
+        case "order_finish" | "order_cancel" | "order_process" | "order_backlog":
+            order.status, is_processing = {
+                "order_cancel": (OrderStatusValues.CANCELLED, False),
+                "order_finish": (OrderStatusValues.FINISHED, False),
+                "order_process": (OrderStatusValues.PROCESSING, True),
+                "order_backlog": (OrderStatusValues.BACKLOG, False),
+            }[data[0]]
+
             await order_db.update_order(order)
+
             products = [await product_db.get_product(product_id) for product_id in order.products_id]
             await Bot(state_data['token'], parse_mode=ParseMode.HTML).edit_message_text(
                 order.convert_to_notification_text(products=products),
-                reply_markup=None,
+                reply_markup=None if data[0] in ("order_finish", "order_cancel") else create_cancel_order_kb(order.id, int(data[2]), data[3]),
                 chat_id=data[3],
                 message_id=int(data[2]))
+
             await query.message.edit_text(
                 text=order.convert_to_notification_text(
                     products=products,
                     username="@" + query.from_user.username if query.from_user.username else query.from_user.full_name,
                     is_admin=True
-                ), reply_markup=None)
+                ), reply_markup=None if data[0] in ("order_finish", "order_cancel") else create_change_order_status_kb(order.id, is_processing, int(data[2]), data[3]))
+
             await Bot(state_data['token'], parse_mode=ParseMode.HTML).send_message(
                 chat_id=data[3],
                 text=f"Новый статус заказа <b>#{order.id}</b>\n<b>{order.translate_order_status()}</b>")

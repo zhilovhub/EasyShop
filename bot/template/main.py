@@ -147,7 +147,7 @@ async def process_web_app_request(event: Message):
     await Bot(MAIN_TELEGRAM_TOKEN, parse_mode=ParseMode.HTML).edit_message_reply_markup(
         main_msg.chat.id,
         main_msg.message_id,
-        reply_markup=keyboards.create_cancel_order_kb(order.id, msg.message_id, msg.chat.id)
+        reply_markup=keyboards.create_change_order_status_kb(order.id, False, msg.message_id, msg.chat.id)
     )
 
 

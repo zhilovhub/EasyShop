@@ -75,15 +75,15 @@ class OrderSchema(OrderWithoutId):
     def translate_order_status(self) -> str:
         match self.status:
             case OrderStatusValues.BACKLOG:
-                return "⏳ В обработке."
+                return "⏳ В обработке"
             case OrderStatusValues.CANCELLED:
-                return "❌ Отменен."
+                return "❌ Отменен"
             case OrderStatusValues.PROCESSING:
-                return "🚛 Выполняется."
-            case OrderStatusValues.FINISHED.value:
-                return "✅ Завершен."
+                return "🚛 Выполняется"
+            case OrderStatusValues.FINISHED:
+                return "✅ Завершен"
             case _:
-                return "❓ Неизвестен."
+                return "❓ Неизвестен"
 
     def convert_to_notification_text(self, products: list[ProductSchema], username: str = '@username', is_admin: bool = False) -> str:
         products_converted = []
