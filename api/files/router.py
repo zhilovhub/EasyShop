@@ -19,7 +19,6 @@ FILES_ROOT = os.getenv("FILES_PATH")
 @router.get("/{file_name}")
 async def get_file(file_name: str) -> FileResponse:
     try:
-        print(FILES_ROOT + file_name)
         with open(FILES_ROOT + file_name, 'rb') as file:
             pass
     except FileNotFoundError:
