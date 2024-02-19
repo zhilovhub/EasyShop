@@ -70,7 +70,7 @@ class OrderWithoutId(BaseModel):
 
 
 class OrderSchema(OrderWithoutId):
-    id: str = Field(max_length=12, frozen=True)
+    id: str = Field(max_length=12, frozen=True, alias="order_id")
 
     def translate_order_status(self) -> str:
         match self.status:
