@@ -53,6 +53,13 @@ export const Store = new Vuex.Store({
       });
       Store.state.token = token;
     },
+    checkOrderId() {
+      if (Store.state.generatedOrderId !== '') {
+        localStorage.setItem('generatedOrderId', Store.state.generatedOrderId);
+      } else {
+        Store.state.generatedOrderId = localStorage.getItem('generatedOrderId');
+      }
+    },
     fetchOrderId() {
       async function fetchData () {
         try{
@@ -82,43 +89,15 @@ export const Store = new Vuex.Store({
     },
     postData() {
       let data = {
-        "order_id": Number
+        'order_id': Store.state.generatedOrderId,
+        'bot_token': Store.state.token,
+        'products_id': Store.state.itemsAddToCartArray.map(item => item.id),
+        'ordered_at': new Date().toISOString(),
+        'address': Store.state.address
       };
-      async function fetchData() {
-        try {
-          const response = await fetch(`${apiUrl}/api/orders/add_order`, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-              'bot_token': Store.state.token,
-              'from_user': 0,
-              'products_id': Store.state.itemsAddToCartArray.map(item => item.id),
-              'ordered_at': new Date().toISOString(),
-              'address': Store.state.address,
-              'status': 'backlog',
-            })
-          });
-          if (!response.ok) {
-            new Error('Network response was not ok');
-          }
-          return await response.json();
-        } catch (error) {
-          console.error('There was a problem with the fetch operation:', error);
-          return null;
-        }
-      }
-      fetchData().then(response => {
-        if (response) {
-          data.order_id = response.id;
-          tg.sendData(JSON.stringify(data), Store.state.generatedOrderId);
-          tg.close();
-        } else {
-          console.log('No data received');
-        }
-      });
-    },
+      tg.sendData(JSON.stringify(data));
+      tg.close();
+    }
   },
   actions: {
 

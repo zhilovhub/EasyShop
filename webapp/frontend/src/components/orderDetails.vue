@@ -30,12 +30,8 @@
         return count + ' товаров на сумму'
       },
       orderId () {
-        if (this.$store.state.generatedOrderId !== '') {
-          localStorage.setItem('generatedOrderId', this.$store.state.generatedOrderId);
-          return this.$store.state.generatedOrderId
-        } else {
-          return localStorage.getItem('generatedOrderId');
-        }
+        this.$store.commit("checkOrderId");
+        return this.$store.state.generatedOrderId
       }
     },
     mounted() {

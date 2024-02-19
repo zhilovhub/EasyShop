@@ -49,7 +49,7 @@
         }
       },
       itemsAddToCart() {
-        this.$store.commit("fetchOrderId");
+        this.$store.commit("addToLocalStorage");
       },
       totalPriceCalc() {
         let price = this.itemsAddToCartArray.reduce((total, item) => total + item.price*item.count, 0);
@@ -64,6 +64,7 @@
       },
       generateOrderId() {
         this.$store.commit("fetchOrderId");
+        this.$store.commit("checkOrderId");
       }
     }
   }
