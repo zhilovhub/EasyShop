@@ -10,6 +10,7 @@ export const Store = new Vuex.Store({
     token: "",
     itemsAddToCartArray: [],
     items: [],
+    generatedOrderId: '',
     address: ''
   },
   mutations: {
@@ -52,6 +53,33 @@ export const Store = new Vuex.Store({
       });
       Store.state.token = token;
     },
+    fetchOrderId() {
+      async function fetchData () {
+        try{
+          const response = await fetch(`${apiUrl}/api/orders/generate_order_id`, {
+            method: 'GET',
+            headers: {
+              'Content-Type': 'application/json',
+              'Access-Control-Allow-Origin': '*'
+            }
+          });
+          if(!response.ok) {
+            new Error('Network response was not ok')
+          }
+          return await response.json()
+        } catch (error) {
+          console.error('There was a problem with the fetch operation:', error);
+          return null;
+        }
+      }
+      fetchData().then(data => {
+        if (data) {
+          Store.state.generatedOrderId = data;
+        } else {
+          console.log('No generatedOrderId received');
+        }
+      })
+    },
     postData() {
       let data = {
         "order_id": Number
@@ -84,7 +112,7 @@ export const Store = new Vuex.Store({
       fetchData().then(response => {
         if (response) {
           data.order_id = response.id;
-          tg.sendData(JSON.stringify(data));
+          tg.sendData(JSON.stringify(data), Store.state.generatedOrderId);
           tg.close();
         } else {
           console.log('No data received');

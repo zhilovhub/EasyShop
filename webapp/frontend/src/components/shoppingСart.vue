@@ -49,7 +49,7 @@
         }
       },
       itemsAddToCart() {
-        this.$store.commit("addToLocalStorage");
+        this.$store.commit("fetchOrderId");
       },
       totalPriceCalc() {
         let price = this.itemsAddToCartArray.reduce((total, item) => total + item.price*item.count, 0);
@@ -61,6 +61,9 @@
       shortenName(name) {
         if (!name) return '';
         return name.length > 15 ? name.substring(0, 12) + '...' : name;
+      },
+      generateOrderId() {
+        this.$store.commit("fetchOrderId");
       }
     }
   }
@@ -121,7 +124,7 @@
   </div>
   </div>
   <input v-model="inputValue" placeholder="Добавить комментарий...">
-  <RouterLink to="/order-details"><button class="btnTotalPrice">{{this.totalPrice}}</button></RouterLink>
+  <RouterLink to="/order-details"><button @click="generateOrderId()" class="btnTotalPrice">{{this.totalPrice}}</button></RouterLink>
 </template>
 
 <style scoped lang="scss">
