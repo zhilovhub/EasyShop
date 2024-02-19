@@ -65,6 +65,10 @@
       generateOrderId() {
         this.$store.commit("fetchOrderId");
         this.$store.commit("checkOrderId");
+        this.commentInit();
+      },
+      commentInit() {
+        this.$store.state.comment = this.inputValue
       }
     }
   }

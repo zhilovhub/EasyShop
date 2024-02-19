@@ -11,7 +11,8 @@ export const Store = new Vuex.Store({
     itemsAddToCartArray: [],
     items: [],
     generatedOrderId: '',
-    address: ''
+    address: '',
+    comment: ''
   },
   mutations: {
     addToLocalStorage(state) {
@@ -93,7 +94,8 @@ export const Store = new Vuex.Store({
         'bot_token': Store.state.token,
         'products_id': Store.state.itemsAddToCartArray.map(item => item.id),
         'ordered_at': new Date().toISOString(),
-        'address': Store.state.address
+        'address': Store.state.address,
+        'comment': Store.state.comment
       };
       tg.sendData(JSON.stringify(data));
       tg.close();
