@@ -141,15 +141,9 @@ class OrderDao(Dao):
         return res
 
     @validate_call
-    async def add_order(self, new_order: OrderWithoutId) -> OrderSchema:
-        date = new_order.ordered_at.strftime("%d%m%y")
-        random_string = ''.join(random.sample(string.digits + string.ascii_letters, 5))
-        order = OrderSchema(**new_order.model_dump(), id=f"{date}_{random_string}")
-
+    async def add_order(self, new_order: OrderSchema):
         async with self.engine.begin() as conn:
-            await conn.execute(insert(Order).values(order.model_dump()))
-
-        return order
+            await conn.execute(insert(Order).values(new_order.model_dump()))
 
     @validate_call
     async def update_order(self, updated_order: OrderSchema):

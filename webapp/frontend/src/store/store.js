@@ -10,7 +10,9 @@ export const Store = new Vuex.Store({
     token: "",
     itemsAddToCartArray: [],
     items: [],
-    address: ''
+    generatedOrderId: '',
+    address: '',
+    comment: ''
   },
   mutations: {
     addToLocalStorage(state) {
@@ -52,45 +54,52 @@ export const Store = new Vuex.Store({
       });
       Store.state.token = token;
     },
-    postData() {
-      let data = {
-        "order_id": Number
-      };
-      async function fetchData() {
-        try {
-          const response = await fetch(`${apiUrl}/api/orders/add_order`, {
-            method: 'POST',
+    checkOrderId() {
+      if (Store.state.generatedOrderId !== '') {
+        localStorage.setItem('generatedOrderId', Store.state.generatedOrderId);
+      } else {
+        Store.state.generatedOrderId = localStorage.getItem('generatedOrderId');
+      }
+    },
+    fetchOrderId() {
+      async function fetchData () {
+        try{
+          const response = await fetch(`${apiUrl}/api/orders/generate_order_id`, {
+            method: 'GET',
             headers: {
-              'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-              'bot_token': Store.state.token,
-              'from_user': 0,
-              'products_id': Store.state.itemsAddToCartArray.map(item => item.id),
-              'ordered_at': new Date().toISOString(),
-              'address': Store.state.address,
-              'status': 'backlog',
-            })
+              'Content-Type': 'application/json',
+              'Access-Control-Allow-Origin': '*'
+            }
           });
-          if (!response.ok) {
-            new Error('Network response was not ok');
+          if(!response.ok) {
+            new Error('Network response was not ok')
           }
-          return await response.json();
+          return await response.json()
         } catch (error) {
           console.error('There was a problem with the fetch operation:', error);
           return null;
         }
       }
-      fetchData().then(response => {
-        if (response) {
-          data.order_id = response.id;
-          tg.sendData(JSON.stringify(data));
-          tg.close();
+      fetchData().then(data => {
+        if (data) {
+          Store.state.generatedOrderId = data;
         } else {
-          console.log('No data received');
+          console.log('No generatedOrderId received');
         }
-      });
+      })
     },
+    postData() {
+      let data = {
+        'order_id': Store.state.generatedOrderId,
+        'bot_token': Store.state.token,
+        'products_id': Store.state.itemsAddToCartArray.map(item => item.id),
+        'ordered_at': new Date().toISOString(),
+        'address': Store.state.address,
+        'comment': Store.state.comment
+      };
+      tg.sendData(JSON.stringify(data));
+      tg.close();
+    }
   },
   actions: {
 

@@ -17,7 +17,7 @@ STORAGE_DB_URL = os.getenv("STORAGE_DB_URL")
 STORAGE_TABLE_NAME = os.getenv("STORAGE_TABLE_NAME")
 
 # Other
-DEBUG = bool(os.getenv("DEBUG"))
+DEBUG = bool(int(os.getenv("DEBUG")))
 
 # Logging
 LOGGING_SETUP = {

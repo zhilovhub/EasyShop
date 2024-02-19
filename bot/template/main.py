@@ -23,7 +23,7 @@ from aiogram.types.web_app_info import WebAppInfo
 from aiogram import F
 
 from database.models.models import Database
-from database.models.order_model import OrderNotFound, OrderStatusValues
+from database.models.order_model import OrderNotFound, OrderStatusValues, OrderSchema
 
 from bot.keyboards import keyboards
 
@@ -115,16 +115,20 @@ async def process_web_app_request(event: Message):
 
     try:
         data = json.loads(event.web_app_data.data)
-        logger.info(f"recieve web app data: {data}")
+        logger.info(f"receive web app data: {data}")
 
-        order = await order_db.get_order(data['order_id'])
+        data["from_user"] = user_id
+        data["status"] = "backlog"
+
+        order = OrderSchema(**data)
+
         order.from_user = user_id
-        await order_db.update_order(order)
+        await order_db.add_order(order)
 
-        logger.info(f"order found")
-    except OrderNotFound:
-        logger.info("order_not_found")
-        return
+        logger.info(f"order with id #{order.id} created")
+    except Exception:
+        logger.error("error while creating order", exc_info=True)
+        return await event.answer("Произошла ошибка при создании заказа, попробуйте еще раз.")
 
     products = [await product_db.get_product(product_id) for product_id in order.products_id]
     username = "@" + order_user_data.username if order_user_data.username else order_user_data.full_name
