@@ -4,7 +4,8 @@ from aiogram.utils.keyboard import InlineKeyboardMarkup, InlineKeyboardButton, R
 from bot.locales import DefaultLocale
 
 
-def create_change_order_status_kb(order_id: str, is_processing: bool, msg_id: int = 0, chat_id: int = 0) -> InlineKeyboardMarkup:
+def create_change_order_status_kb(order_id: str, msg_id: int = 0, chat_id: int = 0, is_processing: bool = True) \
+        -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(inline_keyboard=[
         [
             InlineKeyboardButton(text="Ожидание" if is_processing else "Ожидание 🔸" , callback_data=f"order_backlog:{order_id}:{msg_id}:{chat_id}"),

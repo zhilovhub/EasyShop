@@ -221,11 +221,6 @@
   }
 }
 
-@media (max-width: 600px) {
-  .footer {
-    bottom: 70px;
-  }
-}
 @media (max-width: 300px) {
   .footer {
     bottom: 50px;
@@ -239,4 +234,15 @@
     height: 100px;
   }
 }
+@media (max-height: 1000px) {
+  .footer {
+    margin-top: 10vh;
+  }
+}
+@media (max-height: 700px) {
+  .footer {
+    margin-top: 5vh;
+  }
+}
+
 </style>

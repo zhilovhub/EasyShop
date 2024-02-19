@@ -6,7 +6,6 @@ from datetime import datetime
 import random
 import string
 
-
 PATH = "/api/orders"
 router = APIRouter(
     prefix=PATH,
