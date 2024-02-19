@@ -2,7 +2,9 @@ from database.models.order_model import OrderSchema, OrderWithoutId, OrderNotFou
 from loader import db_engine, logger
 from fastapi import HTTPException, APIRouter
 from pydantic import ValidationError
-
+from datetime import datetime
+import random
+import string
 
 PATH = "/api/orders"
 router = APIRouter(
@@ -12,6 +14,19 @@ router = APIRouter(
 )
 
 db = db_engine.get_order_dao()
+
+
+@router.get("/generate_order_id")
+async def generate_order_id_api() -> str:
+    date = datetime.now().strftime("%d%m%y")
+    random_string = ''.join(random.sample(string.digits + string.ascii_letters, 5))
+    order_id = date + random_string
+    try:
+        await db.get_order(order_id)
+    except OrderNotFound:
+        return random_string
+    logger.info("generated order_id already exist, regenerating...")
+    await generate_order_id_api()
 
 
 @router.get("/get_all_orders/{token}")
