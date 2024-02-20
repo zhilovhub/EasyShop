@@ -391,7 +391,8 @@ async def delete_bot_handler(message: Message, state: FSMContext):
         logger.info(f"Disabling bot {state_data['token']} [1/3] setting deleted status to db...")
         user_bot = await bot_db.get_bot(state_data["token"])
         user_bot.status = "Deleted"
-        await bot_db.update_bot(user_bot)
+        # await bot_db.update_bot(user_bot) TODO after change primary key from token to bot id
+        await bot_db.del_bot(user_bot.token)
 
         logger.info(f"Disabling bot {state_data['token']} [2/3] disabling service and deleting it...")
         os.system(f"echo -e {os.getenv('PASSWORD')} | sudo -S -k systemctl disable --now "
