@@ -137,7 +137,15 @@ class OrderDao(Dao):
         if not raw_res:
             raise OrderNotFound
 
-        res = OrderSchema.model_validate(raw_res)
+        res = OrderSchema.model_validate({
+            "order_id": raw_res[0],
+            "bot_token": raw_res[1],
+            "products_id": raw_res[2],
+            "from_user": raw_res[3],
+            "ordered_at": raw_res[4],
+            "address": raw_res[5],
+            "status": raw_res[6]
+        })
         return res
 
     @validate_call

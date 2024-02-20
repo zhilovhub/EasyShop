@@ -123,6 +123,7 @@ async def process_web_app_request(event: Message):
         order = OrderSchema(**data)
 
         order.from_user = user_id
+        order.ordered_at = order.ordered_at.replace(tzinfo=None)
         await order_db.add_order(order)
 
         logger.info(f"order with id #{order.id} created")
@@ -151,7 +152,7 @@ async def process_web_app_request(event: Message):
     await Bot(MAIN_TELEGRAM_TOKEN, parse_mode=ParseMode.HTML).edit_message_reply_markup(
         main_msg.chat.id,
         main_msg.message_id,
-        reply_markup=keyboards.create_change_order_status_kb(order.id, False, msg.message_id, msg.chat.id)
+        reply_markup=keyboards.create_change_order_status_kb(order.id, msg.message_id, msg.chat.id, False)
     )
 
 
