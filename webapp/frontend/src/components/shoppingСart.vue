@@ -61,15 +61,12 @@
       shortenName(name) {
         if (!name) return '';
         return name.length > 15 ? name.substring(0, 12) + '...' : name;
-      },
-      generateOrderId() {
-        this.$store.commit("fetchOrderId");
-        this.$store.commit("checkOrderId");
-        this.commentInit();
-      },
-      commentInit() {
-        this.$store.state.comment = this.inputValue
       }
+    },
+    beforeUnmount() {
+      this.$store.commit("fetchOrderId");
+      this.$store.commit("checkOrderId");
+      this.$store.state.comment = this.inputValue
     }
   }
 </script>
@@ -129,7 +126,7 @@
   </div>
   </div>
   <input v-model="inputValue" placeholder="Добавить комментарий...">
-  <RouterLink to="/order-details"><button @click="generateOrderId()" class="btnTotalPrice">{{this.totalPrice}}</button></RouterLink>
+  <RouterLink to="/order-details"><button class="btnTotalPrice">{{this.totalPrice}}</button></RouterLink>
 </template>
 
 <style scoped lang="scss">
