@@ -111,8 +111,8 @@ class OrderSchema(OrderWithoutId):
 
 
 class OrderDao(Dao):
-    def __init__(self, engine: AsyncEngine) -> None:
-        super().__init__(engine)
+    def __init__(self, engine: AsyncEngine, logger) -> None:
+        super().__init__(engine, logger)
 
     @validate_call
     async def get_all_orders(self, bot_token: str) -> list[OrderSchema]:
@@ -125,6 +125,7 @@ class OrderDao(Dao):
         for order in raw_res:
             res.append(OrderSchema.model_validate(order))
 
+        self.logger.info(f"get_all_orders method with token: {bot_token} success.")
         return res
 
     @validate_call
@@ -146,21 +147,26 @@ class OrderDao(Dao):
             "address": raw_res[5],
             "status": raw_res[6]
         })
+
+        self.logger.info(f"get_order method with order_id: {order_id} success.")
         return res
 
     @validate_call
     async def add_order(self, new_order: OrderSchema):
         async with self.engine.begin() as conn:
             await conn.execute(insert(Order).values(new_order.model_dump()))
+        self.logger.info(f"successfully add order with id {new_order.id} to db.")
 
     @validate_call
     async def update_order(self, updated_order: OrderSchema):
         await self.get_order(updated_order.id)
         async with self.engine.begin() as conn:
             await conn.execute(update(Order).where(Order.id == updated_order.id).values(updated_order.model_dump()))
+        self.logger.info(f"successfully update order with id {updated_order.id} at db.")
 
     @validate_call
     async def delete_order(self, order_id: str):
         await self.get_order(order_id)
         async with self.engine.begin() as conn:
             await conn.execute(delete(Order).where(Order.id == order_id))
+        self.logger.info(f"deleted order with id {order_id}")

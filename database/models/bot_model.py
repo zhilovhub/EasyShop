@@ -10,7 +10,6 @@ from pydantic import BaseModel, Field, ConfigDict
 from database.models import Base
 from database.models.dao import Dao
 
-from bot.config import logger
 from bot.exceptions.exceptions import *
 
 
@@ -37,8 +36,8 @@ class BotSchema(BaseModel):
 
 
 class BotDao(Dao):
-    def __init__(self, engine: AsyncEngine) -> None:
-        super().__init__(engine)
+    def __init__(self, engine: AsyncEngine, logger) -> None:
+        super().__init__(engine, logger)
 
     async def get_bots(self, user_id: int | None = None) -> list[BotSchema]:
         async with self.engine.begin() as conn:
@@ -52,7 +51,7 @@ class BotDao(Dao):
         res = []
         for bot in raw_res:
             res.append(BotSchema.model_validate(bot))
-
+        self.logger.info(f"get_bots method for user {user_id} success.")
         return res
 
     async def get_bot(self, bot_token: str) -> BotSchema:
@@ -68,6 +67,7 @@ class BotDao(Dao):
         if res is None:
             raise BotNotFound(f"token {bot_token} not found in database.")
 
+        self.logger.info(f"get_bot method token: {bot_token} success.")
         return BotSchema.model_validate(res)
 
     async def add_bot(self, bot: BotSchema) -> None:
@@ -83,7 +83,7 @@ class BotDao(Dao):
             raw_res = await conn.execute(insert(Bot).values(**bot.model_dump(by_alias=True)))
         await self.engine.dispose()
 
-        logger.debug(f"successfully add bot with token {bot.token} to db.")
+        self.logger.info(f"successfully add bot with token {bot.token} to db.")
 
     async def update_bot(self, updated_bot: BotSchema) -> None:
         if not isinstance(updated_bot, BotSchema):
@@ -94,7 +94,7 @@ class BotDao(Dao):
                                values(**updated_bot.model_dump(by_alias=True)))
         await self.engine.dispose()
 
-        logger.debug(f"successfully update bot with token {updated_bot.token} in db.")
+        self.logger.info(f"successfully update bot with token {updated_bot.token} in db.")
 
     async def del_bot(self, bot_token: str) -> None:
         if not isinstance(bot_token, str) and fullmatch(r"\d{10}:\w{35}", bot_token):
@@ -105,5 +105,5 @@ class BotDao(Dao):
 
         await self.engine.dispose()
 
-        logger.debug(f"successfully delete bot with token {bot_token} from db.")
+        self.logger.info(f"successfully delete bot with token {bot_token} from db.")
 
