@@ -312,8 +312,6 @@ async def bot_menu_handler(message: Message, state: FSMContext):
                       f"bot{state_data['token'].replace(':', '___')}.service")
             await message.answer("Твой бот приостановлен ❌")
         case "Удалить бота":
-            os.system(f"echo -e {os.getenv('PASSWORD')} | sudo -S -k systemctl stop "
-                      f"bot{state_data['token'].replace(':', '___')}.service")
             await message.answer("Бот удалится вместе со всей базой продуктов безвозвратно.\n"
                                  "Напиши ПОДТВЕРДИТЬ для подтверждения удаления", reply_markup=get_back_keyboard())
             await state.set_state(States.DELETE_BOT)
@@ -390,7 +388,19 @@ async def delete_bot_handler(message: Message, state: FSMContext):
     message_text = message.text
     state_data = await state.get_data()
     if message_text == "ПОДТВЕРДИТЬ":
-        await db_engine.get_bot_dao().del_bot(state_data["token"])
+        logger.info(f"Disabling bot {state_data['token']} [1/3] setting deleted status to db...")
+        user_bot = await bot_db.get_bot(state_data["token"])
+        user_bot.status = "Deleted"
+        await bot_db.update_bot(user_bot)
+
+        logger.info(f"Disabling bot {state_data['token']} [2/3] disabling service and deleting it...")
+        os.system(f"echo -e {os.getenv('PASSWORD')} | sudo -S -k systemctl disable --now "
+                  f"bot{state_data['token'].replace(':', '___')}.service")
+        os.remove(f"/etc/systemd/system/bot{state_data['token'].replace(':', '___')}.service")
+
+        logger.info(f"Disabling bot {state_data['token']} [3/3] clearing data in bot folder expect logs...")
+        bot_folder = f"./bots/bot{state_data['token'].replace(':', '___')}"
+        os.system(f"find {bot_folder} -mindepth 1 ! -regex '^{bot_folder}/logs\\(/.*\\)?' -delete")
 
         await message.answer(
             "Бот удален",
