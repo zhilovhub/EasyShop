@@ -401,6 +401,8 @@ async def delete_bot_handler(message: Message, state: FSMContext):
         logger.info(f"Disabling bot {state_data['token']} [3/3] clearing data in bot folder expect logs...")
         bot_folder = f"./bots/bot{state_data['token'].replace(':', '___')}"
         os.system(f"find {bot_folder} -mindepth 1 ! -regex '^{bot_folder}/logs\\(/.*\\)?' -delete")
+        with open(bot_folder + '/logs/all.log', 'a') as file:
+            file.write(f"=== [{datetime.now()}] BOT DELETED ===")
 
         await message.answer(
             "Бот удален",
