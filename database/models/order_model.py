@@ -1,8 +1,6 @@
 from datetime import datetime
 from enum import Enum
 from typing import Optional
-import string
-import random
 
 from sqlalchemy import BigInteger, Column, String, TypeDecorator, Unicode, Dialect, ARRAY, DateTime
 from sqlalchemy import select, update, delete, insert
@@ -56,10 +54,11 @@ class Order(Base):
     ordered_at = Column(DateTime, default=datetime.now())
     address = Column(String)
     status = Column(OrderStatus)
+    comment = Column(String)
 
 
 class OrderWithoutId(BaseModel):
-    model_config = ConfigDict(from_attributes=True)
+    model_config = ConfigDict(from_attributes=True, populate_by_name=True)
 
     bot_token: str = Field(max_length=46, min_length=46, frozen=True)
     products_id: list[int]
@@ -67,6 +66,7 @@ class OrderWithoutId(BaseModel):
     ordered_at: datetime
     address: str
     status: OrderStatusValues
+    comment: str
 
 
 class OrderSchema(OrderWithoutId):
@@ -96,17 +96,19 @@ class OrderSchema(OrderWithoutId):
 
         return f"Твой заказ <b>#{self.id}</b>\n\n" \
                f"Список товаров:\n\n" \
-               f"{products_text}\n\n" \
+               f"{products_text}\n" \
                f"Итого: <b>{total_price}₽</b>\n\n" \
-               f"Адрес: <b>{self.address}</b>\n\n" \
+               f"Адрес: <b>{self.address}</b>\n" \
+               f"Комментарий: <b>{self.comment}</b>\n\n" \
                f"Статус: <b>{self.translate_order_status()}</b>" if not is_admin \
             else f"Новый заказ <b>#{self.id}</b>\n" \
                  f"от пользователя " \
                  f"<b>{username}</b>\n\n" \
                  f"Список товаров:\n\n" \
-                 f"{products_text}\n\n" \
+                 f"{products_text}\n" \
                  f"Итого: <b>{total_price}₽</b>\n\n" \
-                 f"Адрес: <b>{self.address}</b>\n\n" \
+                 f"Адрес: <b>{self.address}</b>\n" \
+                 f"Комментарий: <b>{self.comment}</b>\n\n" \
                  f"Статус: <b>{self.translate_order_status()}</b>"
 
 
@@ -138,17 +140,7 @@ class OrderDao(Dao):
         if not raw_res:
             raise OrderNotFound
 
-        res = OrderSchema.model_validate({
-            "order_id": raw_res[0],
-            "bot_token": raw_res[1],
-            "products_id": raw_res[2],
-            "from_user": raw_res[3],
-            "ordered_at": raw_res[4],
-            "address": raw_res[5],
-            "status": raw_res[6]
-        })
-
-        self.logger.info(f"get_order method with order_id: {order_id} success.")
+        res = OrderSchema.model_validate(raw_res)
         return res
 
     @validate_call
