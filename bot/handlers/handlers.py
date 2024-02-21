@@ -202,11 +202,11 @@ async def waiting_for_the_token_handler(message: Message, state: FSMContext):
                 with open(f'{working_directory}/bots/bot{token.replace(":", "___")}/bot.service', 'w') as servicefile:
                     servicefile.write(txt)
 
-                await found_bot.set_chat_menu_button(
-                    menu_button=MenuButtonWebApp(text=DefaultLocale.open_web_app_button(),
-                                                 web_app=WebAppInfo(
-                                                     url=config.WEB_APP_URL + '?token=' + token.replace(':', '_')))
-                )
+                # await found_bot.set_chat_menu_button(
+                #     menu_button=MenuButtonWebApp(text=DefaultLocale.open_web_app_button(),
+                #                                  web_app=WebAppInfo(
+                #                                      url=config.WEB_APP_URL + '?token=' + token.replace(':', '_')))
+                # )  TODO come up with idea how to send data to the bot with this button
 
                 logger.debug("added web_app button to bot menu.")
                 os.system(
