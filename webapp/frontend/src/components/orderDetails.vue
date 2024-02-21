@@ -36,12 +36,32 @@
     },
     mounted() {
       this.$store.commit("addToLocalStorage");
-      this.inputValue = 'г. Москва, Большой Строченовский переулок 5'
     },
     methods: {
       orderBtnClicked() {
+        const addressInput = document.getElementById('addressInput');
+        if (addressInput.value === '') {
+          addressInput.style.border = '1px solid #ff003c';
+          addressInput.placeholder = 'Поле адрес не может быть пустым';
+          addressInput.classList.add('red-placeholder');
+          return
+        }
         this.$store.state.address = this.inputValue;
         this.$store.commit("postData");
+      }
+    },
+    watch: {
+      inputValue(newValue) {
+        const addressInput = document.getElementById('addressInput');
+        if (newValue === '') {
+          addressInput.style.border = '1px solid #ff003c';
+          addressInput.placeholder = 'Поле адрес не может быть пустым';
+          addressInput.classList.add('red-placeholder');
+        } else {
+          addressInput.style.border = '';
+          addressInput.placeholder = '';
+          addressInput.classList.remove('placeholder');
+        }
       }
     }
   }
@@ -59,16 +79,13 @@
 
   <div class="address-container">
     <span style="color: #71CBFF;">Адрес доставки</span>
-    <textarea v-model="inputValue"></textarea>
+    <textarea placeholder="г. Москва, Большой Строченовский переулок 5" id="addressInput" v-model="inputValue"></textarea>
   </div>
 
   <div class="pay-container">
     <span style="color: #71CBFF;">Способы оплаты</span>
     <select>
       <option value="card-online">Картой онлайн</option>
-      <option value="usdt">USDT</option>
-      <option value="bitcoin">Bitcoin</option>
-      <option value="cash">Cash</option>
     </select>
   </div>
   </div>
@@ -140,20 +157,20 @@
     margin: 10px auto;
     white-space: pre-wrap;
     resize: none;
-    color: #FFFFFF;
     padding: 12px 20px;
     align-items: center;
     border: 1px solid #20282C;
     font-family: 'Montserrat', sans-serif;
     font-weight: 500;
     font-size: 15px;
-    &::placeholder{
-      border: 1px solid #20282C;
-    }
     &:focus {
       outline: none;
     }
   }
+}
+
+.red-placeholder::placeholder{
+  color: #ff003c;
 }
 
 .pay-container {
@@ -181,6 +198,7 @@
     }
   }
 }
+
 
 .btnTotalPrice {
   width: 100%;
