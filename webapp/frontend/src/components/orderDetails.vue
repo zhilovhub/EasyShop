@@ -40,12 +40,15 @@
     methods: {
       orderBtnClicked() {
         const addressInput = document.getElementById('addressInput');
+        const paymentMethod = document.getElementById('payment-method')
+        const selectedOption = paymentMethod.options[paymentMethod.selectedIndex].value
         if (addressInput.value === '') {
           addressInput.style.border = '1px solid #ff003c';
           addressInput.placeholder = 'Поле адрес не может быть пустым';
           addressInput.classList.add('red-placeholder');
           return
         }
+        this.$store.state.paymentMethod = selectedOption;
         this.$store.state.address = this.inputValue;
         this.$store.commit("postData");
       }
@@ -84,7 +87,7 @@
 
   <div class="pay-container">
     <span style="color: #71CBFF;">Способы оплаты</span>
-    <select>
+    <select id="payment-method">
       <option value="card-online">Картой онлайн</option>
     </select>
   </div>
