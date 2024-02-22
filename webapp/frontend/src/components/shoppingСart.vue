@@ -125,7 +125,7 @@
     </ul>
   </div>
   </div>
-  <input v-model="inputValue" placeholder="Добавить комментарий...">
+  <textarea v-model="inputValue" placeholder="Добавить комментарий..."/>
   <RouterLink to="/order-details"><button class="btnTotalPrice">{{this.totalPrice}}</button></RouterLink>
 </template>
 
@@ -242,22 +242,27 @@ button {
   border-radius: 5px;
 }
 
-input {
-  margin: 20px 0 40px;
-  width: 100%;
+textarea {
   background-color: #20282C;
-  color: #46738D;
-  padding-left: 20px;
-  border: 1px solid #20282C;
+  width: 100%;
   height: 53px;
+  margin: 20px 0 40px;
+  white-space: pre-wrap;
+  resize: none;
+  padding: 10px 20px;
+  align-items: center;
+  border: 1px solid #20282C;
+  color: #46738D;
   font-family: 'Montserrat', sans-serif;
   font-weight: 500;
   font-size: 15px;
-  &::placeholder{
-    border: 1px solid #20282C;
-  }
+  position: relative;
   &:focus {
     outline: none;
+  }
+  &::placeholder{
+    border: 1px solid #20282C;
+    color: #46738D;
   }
 }
 
