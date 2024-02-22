@@ -6,6 +6,14 @@
 <script>
 import { defineComponent } from 'vue'
 
+const buttons = document.querySelectorAll('button');
+buttons.forEach(button => {
+  button.addEventListener('click', function(event) {
+    if (event.detail === 2) {
+      event.preventDefault();
+    }
+  });
+});
 export default defineComponent({
   computed: {
     itemsAddToCartArray() {
