@@ -1,4 +1,4 @@
-if [ ! -d "venv" ]; then
+if [ ! -d "/root/DebugEasyShop/venv" ]; then
   echo "venv does not exist creating..."
   python -m venv /root/DebugEasyShop/venv
 else echo "venv directory found."
