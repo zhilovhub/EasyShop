@@ -11,9 +11,4 @@ systemctl restart bot.service &
 sleep 3
 systemctl status bot.service | grep Loaded
 systemctl status bot.service | grep Active
-echo "Starting WebApp service... [Step 3/3]"
-systemctl enable webapp.service 
-systemctl restart webapp.service &
-sleep 3
-systemctl status webapp.service | grep Loaded
-systemctl status webapp.service | grep Active
+
