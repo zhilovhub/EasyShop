@@ -190,7 +190,7 @@ async def waiting_for_the_token_handler(message: Message, state: FSMContext):
                 with open(f'{working_directory}/bots/bot{token.replace(":", "___")}/.env', 'w') as envfile:
                     envfile.write(f"MAIN_TELEGRAM_TOKEN={config.TELEGRAM_TOKEN}"
                                   f"\nCUSTOM_TELEGRAM_TOKEN={token}"
-                                  f"\nDB_URL={config.DB_URL}"
+                                  f"\nDB_URL={config.SQLALCHEMY_URL}"
                                   f"\nCUSTOM_WEB_APP_URL={config.WEB_APP_URL}?token={token.replace(':', '_')}")
 
                 logger.info(f'successfully .env sub bot file in directory bots/bot{token.replace(":", "___")}/.env')

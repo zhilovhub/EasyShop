@@ -31,13 +31,13 @@ dotenv.load_dotenv()
 
 MAIN_TELEGRAM_TOKEN = os.getenv("MAIN_TELEGRAM_TOKEN")
 TOKEN = os.getenv("CUSTOM_TELEGRAM_TOKEN")
-DB_URL = os.getenv("DB_URL")
+SQLALCHEMY_URL = os.getenv("SQLALCHEMY_URL")
 WEB_APP_URL = os.getenv("CUSTOM_WEB_APP_URL")
 
 bot = Bot(TOKEN, parse_mode=ParseMode.HTML)
 storage = MemoryStorage()
 dp = Dispatcher(storage=storage)
-db_engine = Database(sqlalchemy_url=DB_URL)
+db_engine = Database(sqlalchemy_url=SQLALCHEMY_URL)
 bot_db = db_engine.get_bot_dao()
 product_db = db_engine.get_product_db()
 order_db = db_engine.get_order_dao()
@@ -56,7 +56,7 @@ bots = Table('bots', metadata,
              Column('settings', JSON),
              Column('locale', String(10), nullable=False),
              )
-engine = create_async_engine(DB_URL, echo=False)
+engine = create_async_engine(SQLALCHEMY_URL, echo=False)
 
 router = Router(name="users")
 
