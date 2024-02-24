@@ -6,7 +6,7 @@ do
   fi
   echo "copying from template to $d"
   cp -T -r bot/template/ $d/
-  work_dir=/root/EasyShop/$d
+  work_dir=/root/DebugEasyShop/$d
   echo changing working dir in service to $work_dir
   python -c "file = open('$d/bot.service', 'r'); file_text = file.read().strip().replace('{working_directory}', '$work_dir'); file.close(); file = open('$d/bot.service', 'w'); file.write(file_text)"
   echo copying service to /etc/systemd/system/
