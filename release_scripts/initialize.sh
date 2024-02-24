@@ -3,7 +3,7 @@ if [ ! -d "/root/EasyShop/venv" ]; then
   python -m venv /root/EasyShop/venv
 else echo "venv directory found."
 fi
-source root/EasyShop/venv/bin/activate
+source /root/EasyShop/venv/bin/activate
 echo "Installing python requirements..."
 pip install -r /root/EasyShop/api/requirements.txt
 pip install -r /root/EasyShop/bot/requirements.txt

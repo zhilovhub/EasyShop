@@ -3,7 +3,7 @@ if [ ! -d "/root/DebugEasyShop/venv" ]; then
   python -m venv /root/DebugEasyShop/venv
 else echo "venv directory found."
 fi
-source root/DebugEasyShop/venv/bin/activate
+source /root/DebugEasyShop/venv/bin/activate
 echo "Installing python requirements..."
 pip install -r /root/DebugEasyShop/api/requirements.txt
 pip install -r /root/DebugEasyShop/bot/requirements.txt
