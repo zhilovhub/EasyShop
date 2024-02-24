@@ -78,8 +78,8 @@ class ProductDao(Dao):
     @validate_call
     async def add_product(self, new_product: ProductWithoutId):
         async with self.engine.begin() as conn:
-            await conn.execute(insert(Product).values(new_product.model_dump()))
-        self.logger.info(f"successfully add product with id {new_product.id} to db.")
+            product_id = await conn.execute(insert(Product).values(new_product.model_dump()))
+        self.logger.info(f"successfully add product with id {product_id} to db.")
 
     @validate_call
     async def update_product(self, updated_product: ProductSchema):
