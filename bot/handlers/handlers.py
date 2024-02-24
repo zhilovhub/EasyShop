@@ -258,9 +258,7 @@ async def bot_menu_photo_handler(message: Message, state: FSMContext):
     else:
         return await message.answer("Цена должна быть <b>целым числом</b>")
 
-    await bot.download(photo_file_id, destination=f"Files/{filename}")
-    # with open(f"../Files/{path}", 'rb') as photo_file:
-    #     photo_bytes = photo_file.read()
+    await bot.download(photo_file_id, destination=f"{os.getenv('FILES_PATH')}{filename}")
 
     new_product = ProductWithoutId(bot_token=state_data['token'],
                                    name=params[0],
@@ -296,7 +294,7 @@ async def bot_menu_handler(message: Message, state: FSMContext):
                 await message.answer("Список товаров твоего магазина 👇\nЧтобы удалить товар, нажми на тег рядом с ним")
                 for product in products:
                     await message.answer_photo(
-                        photo=FSInputFile("Files/" + product.picture),
+                        photo=FSInputFile(os.getenv('FILES_PATH') + product.picture),
                         caption=f"<b>{product.name}</b>\n\n"
                                 f"Цена: <b>{float(product.price)}₽</b>",
                         reply_markup=get_inline_delete_button(product.id))
