@@ -11,6 +11,7 @@ echo "Complete."
 echo "Creating systemd services..."
 cp /root/EasyShop/release_services/release_api.service /etc/systemd/system/release_api.service
 cp /root/EasyShop/release_services/release_bot.service /etc/systemd/system/release_bot.service
+cp /root/EasyShop/release_services/release_multibot.service /etc/systemd/system/release_multibot.service
 echo "Restarting systemd daemon..."
 systemctl daemon-reload
 echo "Services created."

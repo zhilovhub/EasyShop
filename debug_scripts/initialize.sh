@@ -11,6 +11,7 @@ echo "Complete."
 echo "Creating systemd services..."
 cp /root/DebugEasyShop/debug_services/debug_api.service /etc/systemd/system/debug_api.service
 cp /root/DebugEasyShop/debug_services/debug_bot.service /etc/systemd/system/debug_bot.service
+cp /root/DebugEasyShop/debug_services/debug_multibot.service /etc/systemd/system/debug_multibot.service
 echo "Restarting systemd daemon..."
 systemctl daemon-reload
 echo "Services created."

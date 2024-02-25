@@ -13,6 +13,10 @@ SQLALCHEMY_URL = os.getenv("SQLALCHEMY_URL")
 WEB_APP_URL = os.getenv("WEB_APP_URL")
 WEB_APP_PORT = os.getenv("WEB_APP_PORT")
 
+# Local MultiBots Api
+LOCAL_API_SERVER_HOST = os.getenv("WEBHOOK_LOCAL_API_URL")
+LOCAL_API_SERVER_PORT = int(os.getenv("WEBHOOK_LOCAL_API_PORT"))
+
 # Telegram bot FSM storage variables
 STORAGE_TABLE_NAME = os.getenv("STORAGE_TABLE_NAME")
 

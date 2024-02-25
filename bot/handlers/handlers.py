@@ -13,6 +13,10 @@ from aiogram.filters import CommandStart
 from aiogram.exceptions import TelegramUnauthorizedError
 from aiogram.fsm.context import FSMContext
 from aiogram.enums import ParseMode
+from aiogram.utils.token import TokenValidationError, validate_token
+
+import aiohttp
+from aiohttp.client_exceptions import ClientConnectorError
 
 from bot import config
 from bot.config import logger
@@ -37,6 +41,24 @@ router.message.filter(ChatTypeFilter(chat_type='private'))
 product_db = db_engine.get_product_db()
 order_db = db_engine.get_order_dao()
 bot_db = db_engine.get_bot_dao()
+
+
+async def start_custom_bot(token: str):
+    async with (aiohttp.ClientSession() as session):
+        async with session.get(
+                f"http://{config.LOCAL_API_SERVER_HOST}:{config.LOCAL_API_SERVER_PORT}/start_bot/{token}") as response:
+            if response.status != 200:
+                raise LocalAPIException(f"API returned {response.status} status code "
+                                        f"with text {await response.text()}")
+
+
+async def stop_custom_bot(token: str):
+    async with (aiohttp.ClientSession() as session):
+        async with session.get(
+                f"http://{config.LOCAL_API_SERVER_HOST}:{config.LOCAL_API_SERVER_PORT}/stop_bot/{token}") as response:
+            if response.status != 200:
+                raise LocalAPIException(f"API returned {response.status} status code "
+                                        f"with text {await response.text()}")
 
 
 async def send_new_order_notify(order: OrderSchema, user_id: int):
@@ -164,81 +186,47 @@ async def waiting_for_the_token_handler(message: Message, state: FSMContext):
     user = await db_engine.get_user_dao().get_user(message.from_user.id)
     lang = user.locale
     token = message.text
-    if fullmatch(r"\d{10}:[\w|-]{35}", token.replace("_", "a")):
-        try:
-            found_bot = Bot(token)
-            found_bot_data = await found_bot.get_me()
-            try:
-                await db_engine.get_bot_dao().get_bot(token)  # TODO сделать список ботов после MVP
-                await message.answer("Бот с таким токеном в системе уже найден.\n"
-                                     "Введи другой токен или перейди в список ботов и поищи своего бота там")
-            except Exception:
-                bot_fullname, bot_username = found_bot_data.full_name, found_bot_data.username
-                new_bot = BotSchema(bot_token=token,
-                                    status="new",
-                                    created_at=datetime.utcnow(),
-                                    created_by=message.from_user.id,
-                                    settings={"start_msg": DefaultLocale.default_start_msg(),
-                                              "default_msg": "Привет, этот бот создан с помощью @here_should_be_bot",
-                                              "web_app_button": DefaultLocale.open_web_app_button()},
-                                    locale=lang)
+    try:
+        validate_token(token)
 
-                working_directory = os.getcwd()
+        found_bot = Bot(token)
+        found_bot_data = await found_bot.get_me()
+        bot_fullname, bot_username = found_bot_data.full_name, found_bot_data.username
 
-                copy_tree(f'{working_directory}/template', f'{working_directory}/bots/bot{token.replace(":", "___")}')
-                os.system(f"mkdir {working_directory}/bots/bot{token.replace(':', '___')}/logs")
+        new_bot = BotSchema(bot_token=token,
+                            status="new",
+                            created_at=datetime.utcnow(),
+                            created_by=message.from_user.id,
+                            settings={"start_msg": DefaultLocale.default_start_msg(),
+                                      "default_msg":
+                                          f"Привет, этот бот создан с помощью @{(await bot.get_me()).username}",
+                                      "web_app_button": DefaultLocale.open_web_app_button()},
+                            locale=lang)
 
-                logger.info(f'successfully create new sub bot files in directory bots/bot{token.replace(":", "___")}')
-
-                with open(f'{working_directory}/bots/bot{token.replace(":", "___")}/.env', 'w') as envfile:
-                    envfile.write(f"MAIN_TELEGRAM_TOKEN={config.TELEGRAM_TOKEN}"
-                                  f"\nCUSTOM_TELEGRAM_TOKEN={token}"
-                                  f"\nDB_URL={config.SQLALCHEMY_URL}"
-                                  f"\nCUSTOM_WEB_APP_URL={config.WEB_APP_URL}:{config.WEB_APP_PORT}?token={token.replace(':', '_')}")
-
-                logger.info(f'successfully .env sub bot file in directory bots/bot{token.replace(":", "___")}/.env')
-
-                with open(f'{working_directory}/bots/bot{token.replace(":", "___")}/bot.service', 'r') as servicefile:
-                    txt = servicefile.read().replace('{working_directory}',
-                                                     f'{working_directory}/bots/bot{token.replace(":", "___")}')
-
-                with open(f'{working_directory}/bots/bot{token.replace(":", "___")}/bot.service', 'w') as servicefile:
-                    servicefile.write(txt)
-
-                # await found_bot.set_chat_menu_button(
-                #     menu_button=MenuButtonWebApp(text=DefaultLocale.open_web_app_button(),
-                #                                  web_app=WebAppInfo(
-                #                                      url=config.WEB_APP_URL + '?token=' + token.replace(':', '_')))
-                # )  TODO come up with idea how to send data to the bot with this button
-
-                logger.debug("added web_app button to bot menu.")
-                os.system(
-                    f"echo -e {os.getenv('PASSWORD')} | "
-                    f"sudo -S cp {working_directory}/bots/bot{token.replace(':', '___')}/bot.service "
-                    f"/etc/systemd/system/bot{token.replace(':', '___')}.service")
-                os.system(f"echo -e {os.getenv('PASSWORD')} | sudo -S -k systemctl daemon-reload")
-                os.system(f"echo -e {os.getenv('PASSWORD')} | "
-                          f"sudo -S -k systemctl start bot{token.replace(':', '___')}.service")
-
-                await db_engine.get_bot_dao().add_bot(new_bot)
-
-                await message.answer(
-                    DefaultLocale.bot_will_initialize().format(bot_fullname, bot_username),
-                    reply_markup=get_bot_menu_keyboard(WebAppInfo(
-                        url=config.WEB_APP_URL + f":{config.WEB_APP_PORT}" + '?token=' + token.replace(':', '_')))
-                )
-                await state.set_state(States.BOT_MENU)
-                await state.set_data({"token": token})
-
-        except TelegramUnauthorizedError:
-            await message.answer(DefaultLocale.bot_with_token_not_found())
-
-        except Exception:
-            logger.error(f"Error while adding new bot wit token {token} from user {message.from_user.id}",
-                         exc_info=True)
-            await message.answer("Unknown error while adding bot")
-    else:
-        await message.answer(DefaultLocale.incorrect_bot_token())
+        await bot_db.add_bot(new_bot)
+        await start_custom_bot(token)
+    except TokenValidationError:
+        return await message.answer(DefaultLocale.incorrect_bot_token())
+    except TelegramUnauthorizedError:
+        return await message.answer(DefaultLocale.bot_with_token_not_found())
+    except InstanceAlreadyExists:
+        return await message.answer("Бот с таким токеном в системе уже найден.\n"
+                                    "Введи другой токен или перейди в список ботов и поищи своего бота там")
+    except ClientConnectorError:
+        logger.error("Cant connect to local api host (maybe service is offline)")
+        return await message.answer("Сервис в данный момент недоступен, попробуй еще раз позже.")
+    except Exception:
+        logger.error(
+            f"Unexpected error while adding new bot with token {token} from user {message.from_user.id}", exc_info=True
+        )
+        return await message.answer(":( Произошла ошибка при добавлении бота, попробуй еще раз позже.")
+    await message.answer(
+        DefaultLocale.bot_will_initialize().format(bot_fullname, bot_username),
+        reply_markup=get_bot_menu_keyboard(WebAppInfo(
+            url=config.WEB_APP_URL + '?token=' + token.replace(':', '_')))
+    )
+    await state.set_state(States.BOT_MENU)
+    await state.set_data({"token": token})
 
 
 @router.message(States.BOT_MENU, F.photo)
@@ -305,12 +293,10 @@ async def bot_menu_handler(message: Message, state: FSMContext):
             await message.answer("Чтобы добавить товар, прикрепи его картинку и отправь сообщение в виде:"
                                  "\n\nНазвание\nЦена в рублях")
         case "Запустить бота":
-            os.system(f"echo -e {os.getenv('PASSWORD')} | sudo -S -k systemctl restart "
-                      f"bot{state_data['token'].replace(':', '___')}.service")
+            await start_custom_bot(state_data['token'])
             await message.answer("Твой бот запущен ✅")
         case "Остановить бота":
-            os.system(f"echo -e {os.getenv('PASSWORD')} | sudo -S -k systemctl stop "
-                      f"bot{state_data['token'].replace(':', '___')}.service")
+            await stop_custom_bot(state_data['token'])
             await message.answer("Твой бот приостановлен ❌")
         case "Удалить бота":
             await message.answer("Бот удалится вместе со всей базой продуктов безвозвратно.\n"
@@ -389,22 +375,11 @@ async def delete_bot_handler(message: Message, state: FSMContext):
     message_text = message.text
     state_data = await state.get_data()
     if message_text == "ПОДТВЕРДИТЬ":
-        logger.info(f"Disabling bot {state_data['token']} [1/3] setting deleted status to db...")
+        logger.info(f"Disabling bot {state_data['token']}, setting deleted status to db...")
         user_bot = await bot_db.get_bot(state_data["token"])
         user_bot.status = "Deleted"
         # await bot_db.update_bot(user_bot) TODO after change primary key from token to bot id
         await bot_db.del_bot(user_bot.token)
-
-        logger.info(f"Disabling bot {state_data['token']} [2/3] disabling service and deleting it...")
-        os.system(f"echo -e {os.getenv('PASSWORD')} | sudo -S -k systemctl disable --now "
-                  f"bot{state_data['token'].replace(':', '___')}.service")
-        os.remove(f"/etc/systemd/system/bot{state_data['token'].replace(':', '___')}.service")
-
-        logger.info(f"Disabling bot {state_data['token']} [3/3] clearing data in bot folder expect logs...")
-        bot_folder = f"./bots/bot{state_data['token'].replace(':', '___')}"
-        os.system(f"find {bot_folder} -mindepth 1 ! -regex '^{bot_folder}/logs\\(/.*\\)?' -delete")
-        with open(bot_folder + '/logs/all.log', 'a') as file:
-            file.write(f"=== [{datetime.now()}] BOT DELETED ===")
 
         await message.answer(
             "Бот удален",
