@@ -5,13 +5,6 @@ import datetime
 import logging
 import dotenv
 
-from re import fullmatch
-
-from sqlalchemy import MetaData
-from sqlalchemy import Table, Column, String, JSON, BigInteger, DateTime
-from sqlalchemy import select
-from sqlalchemy.ext.asyncio import create_async_engine
-
 from aiogram import Bot, Dispatcher, Router
 from aiogram.enums import ParseMode
 from aiogram.types import Message, Chat, User, CallbackQuery
@@ -30,6 +23,7 @@ from bot.keyboards import keyboards
 dotenv.load_dotenv()
 
 MAIN_TELEGRAM_TOKEN = os.getenv("MAIN_TELEGRAM_TOKEN")
+BOT_ID = int(os.getenv("BOT_ID"))
 TOKEN = os.getenv("CUSTOM_TELEGRAM_TOKEN")
 SQLALCHEMY_URL = os.getenv("SQLALCHEMY_URL")
 WEB_APP_URL = os.getenv("CUSTOM_WEB_APP_URL")
@@ -46,17 +40,6 @@ PREV_ORDER_MSGS = {}
 logging.basicConfig(format=u'[%(asctime)s][%(levelname)s] ::: %(filename)s(%(lineno)d) -> %(message)s',
                     level="INFO", filename='logs/all.log')
 logger = logging.getLogger('logger')
-
-metadata = MetaData()
-bots = Table('bots', metadata,
-             Column('bot_token', String(46), primary_key=True),
-             Column('status', String(55), nullable=False),
-             Column('created_at', DateTime, nullable=False),
-             Column('created_by', BigInteger, nullable=False),
-             Column('settings', JSON),
-             Column('locale', String(10), nullable=False),
-             )
-engine = create_async_engine(SQLALCHEMY_URL, echo=False)
 
 router = Router(name="users")
 
@@ -87,7 +70,7 @@ def format_locales(text: str, user: User, chat: Chat, reply_to_user: User = None
 
 
 async def get_option(param: str):
-    bot_info = await bot_db.get_bot(TOKEN)
+    bot_info = await bot_db.get_bot(BOT_ID)
     options = bot_info.settings
     if options is None:
         return None
@@ -134,7 +117,7 @@ async def process_web_app_request(event: Message):
     products = [(await product_db.get_product(product_id), product_count)
                 for product_id, product_count in order.products.items()]
     username = "@" + order_user_data.username if order_user_data.username else order_user_data.full_name
-    admin_id = (await bot_db.get_bot(TOKEN)).created_by
+    admin_id = (await bot_db.get_bot(BOT_ID)).created_by
     main_msg = await Bot(MAIN_TELEGRAM_TOKEN, parse_mode=ParseMode.HTML).send_message(
         admin_id, order.convert_to_notification_text(
             products,
