@@ -6,7 +6,16 @@
 <script>
 import { defineComponent } from 'vue'
 
+const buttons = document.querySelectorAll('button');
 const textarea = document.querySelectorAll('textarea');
+
+buttons.forEach(button => {
+  button.addEventListener('click', function(event) {
+    if (event.detail === 2) {
+      event.preventDefault();
+    }
+  });
+});
 
 textarea.forEach(textarea => {
   textarea.addEventListener('blur', function() {
@@ -26,6 +35,7 @@ function isKeyboardEvent(event) {
   // Например, на мобильных устройствах, клавиатурные события имеют 0 координат для event.clientX и event.clientY
   return event.clientX === 0 && event.clientY === 0;
 }
+
 export default defineComponent({
   computed: {
     itemsAddToCartArray() {
