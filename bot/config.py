@@ -11,6 +11,7 @@ SQLALCHEMY_URL = os.getenv("SQLALCHEMY_URL")
 
 # WebApp variables
 WEB_APP_URL = os.getenv("WEB_APP_URL")
+WEB_APP_PORT = os.getenv("WEB_APP_PORT")
 
 # Telegram bot FSM storage variables
 STORAGE_TABLE_NAME = os.getenv("STORAGE_TABLE_NAME")
