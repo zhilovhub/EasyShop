@@ -90,7 +90,7 @@ class BotDao(Dao):
         self.logger.info(f"get_bot method token: {bot_token} success.")
         return BotSchema.model_validate(res)
 
-    async def add_bot(self, bot: BotSchemaWithoutId) -> None:
+    async def add_bot(self, bot: BotSchemaWithoutId) -> int:
         if not isinstance(bot, BotSchemaWithoutId):
             raise InvalidParameterFormat("bot must be type of BotSchemaWithoutId")
         try:
@@ -104,6 +104,7 @@ class BotDao(Dao):
         await self.engine.dispose()
 
         self.logger.info(f"successfully add bot with bot_id {bot_id} to db.")
+        return bot_id
 
     async def update_bot(self, updated_bot: BotSchema) -> None:
         if not isinstance(updated_bot, BotSchema):
