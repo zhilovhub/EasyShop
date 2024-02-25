@@ -293,14 +293,11 @@ async def main():
     ssl_context.load_cert_chain(getenv('SSL_CERT_PATH'), getenv('SSL_KEY_PATH'))
 
     logger.info(f"setting up local api server on {LOCAL_API_SERVER_HOST}:{LOCAL_API_SERVER_PORT}")
-    local_app_runner = web.AppRunner(local_app, host=LOCAL_API_SERVER_HOST, port=LOCAL_API_SERVER_PORT)
-    await local_app_runner.setup()
-
     logger.info(f"setting up webhook server on {WEBHOOK_SERVER_HOST}:{WEBHOOK_SERVER_PORT}")
-    webhook_app_runner = web.AppRunner(app, host=WEBHOOK_SERVER_HOST, port=WEBHOOK_SERVER_PORT, ssl_context=ssl_context)
-    await webhook_app_runner.setup()
-
-    await asyncio.Event().wait()
+    await asyncio.gather(
+        web._run_app(local_app, host=LOCAL_API_SERVER_HOST, port=LOCAL_API_SERVER_PORT),
+        web._run_app(app, host=WEBHOOK_SERVER_HOST, port=WEBHOOK_SERVER_PORT, ssl_context=ssl_context)
+    )
 
 
 if __name__ == "__main__":
