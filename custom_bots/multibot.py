@@ -5,6 +5,7 @@ from typing import Any, Dict, Union
 from datetime import datetime
 
 from aiohttp import web
+from aiojobs.aiohttp import setup, spawn
 import ssl
 
 from aiogram import Bot, Dispatcher, F, Router
@@ -32,13 +33,18 @@ import json
 
 app = web.Application()
 
+local_app = web.Application()
+
 routes = web.RouteTableDef()
 
 load_dotenv()
 
 main_router = Router()
 
-BASE_URL = getenv("WEBHOOK_URL") + ":" + getenv("WEBHOOK_PORT")
+WEBHOOK_SERVER_HOST = getenv("WEBHOOK_URL")
+WEBHOOK_SERVER_PORT = int(getenv("WEBHOOK_PORT"))
+
+BASE_URL = f"{WEBHOOK_SERVER_HOST}:{WEBHOOK_SERVER_PORT}"
 OTHER_BOTS_PATH = "/webhook/bot/{bot_token}"
 
 session = AiohttpSession()
@@ -51,8 +57,8 @@ OTHER_BOTS_URL = f"{BASE_URL}{OTHER_BOTS_PATH}"
 
 WEB_APP_URL = f"{getenv('WEB_APP_URL')}?[token]"
 
-WEB_SERVER_HOST = getenv("WEBHOOK_LOCAL_API_URL")
-WEB_SERVER_PORT = int(getenv("WEBHOOK_LOCAL_API_PORT"))
+LOCAL_API_SERVER_HOST = getenv("WEBHOOK_LOCAL_API_URL")
+LOCAL_API_SERVER_PORT = int(getenv("WEBHOOK_LOCAL_API_PORT"))
 
 db_engine = Database(sqlalchemy_url=getenv("SQLALCHEMY_URL"))
 bot_db = db_engine.get_bot_dao()
@@ -275,12 +281,13 @@ def main():
 
     setup_application(app, multibot_dispatcher)
 
-    app.add_routes(routes)
+    local_app.add_routes(routes)
 
     ssl_context = ssl.create_default_context(ssl.Purpose.CLIENT_AUTH)
     ssl_context.load_cert_chain(getenv('SSL_CERT_PATH'), getenv('SSL_KEY_PATH'))
 
-    web.run_app(app, host=WEB_SERVER_HOST, port=WEB_SERVER_PORT, ssl_context=ssl_context)
+    setup(local_app, host=LOCAL_API_SERVER_HOST, port=LOCAL_API_SERVER_PORT)
+    setup(app, host=WEBHOOK_SERVER_HOST, port=WEBHOOK_SERVER_PORT, ssl_context=ssl_context)
 
 
 if __name__ == "__main__":

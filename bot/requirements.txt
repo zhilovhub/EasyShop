@@ -2,3 +2,4 @@ aiogram
 asyncpg
 SQLAlchemy
 python-dotenv
+aiojobs
