@@ -6,16 +6,7 @@
 <script>
 import { defineComponent } from 'vue'
 
-const buttons = document.querySelectorAll('button');
 const textarea = document.querySelectorAll('textarea');
-
-buttons.forEach(button => {
-  button.addEventListener('click', function(event) {
-    if (event.detail === 2) {
-      event.preventDefault();
-    }
-  });
-});
 
 textarea.forEach(textarea => {
   textarea.addEventListener('blur', function() {
