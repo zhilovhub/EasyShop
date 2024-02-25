@@ -5,6 +5,7 @@ from typing import Any, Dict, Union
 from datetime import datetime
 
 from aiohttp import web
+import ssl
 
 from aiogram import Bot, Dispatcher, F, Router
 from aiogram.client.session.aiohttp import AiohttpSession
@@ -276,7 +277,10 @@ def main():
 
     app.add_routes(routes)
 
-    web.run_app(app, host=WEB_SERVER_HOST, port=WEB_SERVER_PORT)
+    ssl_context = ssl.create_default_context(ssl.Purpose.CLIENT_AUTH)
+    ssl_context.load_cert_chain(getenv('SSL_CERT_PATH'), getenv('SSL_KEY_PATH'))
+
+    web.run_app(app, host=WEB_SERVER_HOST, port=WEB_SERVER_PORT, ssl_context=ssl_context)
 
 
 if __name__ == "__main__":
