@@ -16,3 +16,8 @@ class InvalidParameterFormat(Exception):
 class InstanceAlreadyExists(Exception):
     """Raised when trying to add already existed db instance"""
     pass
+
+
+class LocalAPIException(Exception):
+    """Raise when local api dont return success status code"""
+    pass
