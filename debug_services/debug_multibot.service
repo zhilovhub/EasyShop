@@ -1,0 +1,17 @@
+[Unit]
+Description=debug multibot service
+
+Wants=network.target
+After=syslog.target network-online.target
+
+[Service]
+Environment="PYTHONPATH=/root/DebugEasyShop"
+Type=simple
+WorkingDirectory=/root/DebugEasyShop/custom_bots
+ExecStart=/root/DebugEasyShop/venv/bin/python3 /root/DebugEasyShop/custom_bots/multibot.py
+KillMode=process
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target
