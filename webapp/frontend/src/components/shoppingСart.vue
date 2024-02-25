@@ -64,9 +64,7 @@
       }
     },
     beforeUnmount() {
-      this.$store.commit("fetchOrderId");
-      this.$store.commit("checkOrderId");
-      this.$store.state.comment = this.inputValue
+      this.$store.state.comment = this.inputValue;
     }
   }
 </script>

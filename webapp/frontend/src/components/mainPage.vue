@@ -99,6 +99,8 @@ export default {
     },
   },
   mounted() {
+    this.$store.commit("fetchOrderId");
+    this.$store.commit("checkOrderId");
     this.$store.commit('itemsInit');
   }
 };
