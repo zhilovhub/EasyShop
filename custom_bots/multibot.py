@@ -4,6 +4,8 @@ from os import getenv
 from typing import Any, Dict, Union
 from datetime import datetime
 
+import asyncio
+
 from aiohttp import web
 from aiojobs.aiohttp import setup, spawn
 import ssl
@@ -41,10 +43,11 @@ load_dotenv()
 
 main_router = Router()
 
-WEBHOOK_SERVER_HOST = getenv("WEBHOOK_URL")
+WEBHOOK_SERVER_URL = getenv("WEBHOOK_URL")
+WEBHOOK_SERVER_HOST = getenv("WEBHOOK_HOST")
 WEBHOOK_SERVER_PORT = int(getenv("WEBHOOK_PORT"))
 
-BASE_URL = f"{WEBHOOK_SERVER_HOST}:{WEBHOOK_SERVER_PORT}"
+BASE_URL = f"{WEBHOOK_SERVER_URL}:{WEBHOOK_SERVER_PORT}"
 OTHER_BOTS_PATH = "/webhook/bot/{bot_token}"
 
 session = AiohttpSession()
@@ -267,7 +270,7 @@ async def handle_callback(query: CallbackQuery):
             del PREV_ORDER_MSGS[order.id]
 
 
-def main():
+async def main():
     logging.basicConfig(level=logging.INFO, stream=sys.stdout)
 
     multibot_dispatcher = Dispatcher(storage=storage)
@@ -283,11 +286,21 @@ def main():
 
     local_app.add_routes(routes)
 
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
+
     ssl_context = ssl.create_default_context(ssl.Purpose.CLIENT_AUTH)
     ssl_context.load_cert_chain(getenv('SSL_CERT_PATH'), getenv('SSL_KEY_PATH'))
 
-    setup(local_app, host=LOCAL_API_SERVER_HOST, port=LOCAL_API_SERVER_PORT)
-    setup(app, host=WEBHOOK_SERVER_HOST, port=WEBHOOK_SERVER_PORT, ssl_context=ssl_context)
+    logger.info(f"setting up local api server on {LOCAL_API_SERVER_HOST}:{LOCAL_API_SERVER_PORT}")
+    local_app_runner = web.AppRunner(local_app, host=LOCAL_API_SERVER_HOST, port=LOCAL_API_SERVER_PORT)
+    await local_app_runner.setup()
+
+    logger.info(f"setting up webhook server on {WEBHOOK_SERVER_HOST}:{WEBHOOK_SERVER_PORT}")
+    webhook_app_runner = web.AppRunner(app, host=WEBHOOK_SERVER_HOST, port=WEBHOOK_SERVER_PORT, ssl_context=ssl_context)
+    await webhook_app_runner.setup()
+
+    await asyncio.Event().wait()
 
 
 if __name__ == "__main__":
@@ -297,4 +310,4 @@ if __name__ == "__main__":
                       f'New multibot app session\n'
                       f'[{datetime.now()}]\n'
                       f'=============================\n')
-    main()
+    asyncio.run(main())
