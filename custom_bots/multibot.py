@@ -19,7 +19,8 @@ from aiogram.filters import CommandStart, StateFilter
 from aiogram.utils.keyboard import ReplyKeyboardMarkup, KeyboardButton
 from aiogram.utils.token import TokenValidationError, validate_token
 from aiogram.exceptions import TelegramUnauthorizedError
-from dotenv import load_dotenv
+from aiogram.client.default import DefaultBotProperties
+
 from aiogram.webhook.aiohttp_server import (
     TokenBasedRequestHandler,
     setup_application,
@@ -32,6 +33,8 @@ from database.models.order_model import OrderSchema, OrderStatusValues, OrderNot
 from bot.keyboards import keyboards
 
 import json
+
+from dotenv import load_dotenv
 
 app = web.Application()
 
@@ -54,7 +57,7 @@ session = AiohttpSession()
 bot_settings = {"session": session, "parse_mode": ParseMode.HTML}
 
 MAIN_TELEGRAM_TOKEN = getenv("TELEGRAM_TOKEN")
-main_bot = Bot(MAIN_TELEGRAM_TOKEN, **bot_settings)
+main_bot = Bot(MAIN_TELEGRAM_TOKEN, default=DefaultBotProperties(**bot_settings))
 
 OTHER_BOTS_URL = f"{BASE_URL}{OTHER_BOTS_PATH}"
 
