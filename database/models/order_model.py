@@ -2,11 +2,11 @@ from datetime import datetime
 from enum import Enum
 from typing import Optional
 
-from sqlalchemy import BigInteger, Column, String, TypeDecorator, Unicode, Dialect, ARRAY, DateTime
+from sqlalchemy import BigInteger, Column, String, TypeDecorator, Unicode, Dialect, ARRAY, DateTime, JSON
 from sqlalchemy import select, update, delete, insert
 from sqlalchemy.ext.asyncio import AsyncEngine
 
-from pydantic import BaseModel, Field, validate_call, ConfigDict
+from pydantic import BaseModel, Field, validate_call, ConfigDict, Json
 
 from database.models import Base
 from database.models.dao import Dao
@@ -49,8 +49,9 @@ class Order(Base):
 
     id = Column(String(13), primary_key=True)
     bot_token = Column(String(46))
-    products_id = Column(ARRAY(BigInteger))
+    products = Column(JSON)
     from_user = Column(BigInteger, nullable=False)  # TODO make it Foreign
+    payment_method = Column(String, nullable=False)
     ordered_at = Column(DateTime, default=datetime.now())
     address = Column(String)
     status = Column(OrderStatus)
@@ -61,8 +62,9 @@ class OrderWithoutId(BaseModel):
     model_config = ConfigDict(from_attributes=True, populate_by_name=True)
 
     bot_token: str = Field(max_length=46, min_length=46, frozen=True)
-    products_id: list[int]
+    products: dict[int, int]
     from_user: int
+    payment_method: str
     ordered_at: datetime
     address: str
     status: OrderStatusValues
@@ -85,12 +87,12 @@ class OrderSchema(OrderWithoutId):
             case _:
                 return "❓ Неизвестен"
 
-    def convert_to_notification_text(self, products: list[ProductSchema], username: str = '@username', is_admin: bool = False) -> str:
+    def convert_to_notification_text(self, products: list[tuple[ProductSchema, int]], username: str = '@username', is_admin: bool = False) -> str:
         products_converted = []
         total_price = 0
-        for ind, product in enumerate(products, start=1):
-            products_converted.append(f"{ind}. {product.convert_to_notification_text()}")
-            total_price += product.price
+        for ind, product_item in enumerate(products, start=1):
+            products_converted.append(f"{ind}. {product_item[0].convert_to_notification_text(product_item[1])}")
+            total_price += product_item[0].price * product_item[1]
 
         products_text = "\n".join(products_converted)
 
@@ -99,6 +101,7 @@ class OrderSchema(OrderWithoutId):
                f"{products_text}\n" \
                f"Итого: <b>{total_price}₽</b>\n\n" \
                f"Адрес: <b>{self.address}</b>\n" \
+               f"Способ оплаты: <b>{self.payment_method}</b>\n" \
                f"Комментарий: <b>{self.comment}</b>\n\n" \
                f"Статус: <b>{self.translate_order_status()}</b>" if not is_admin \
             else f"Новый заказ <b>#{self.id}</b>\n" \
@@ -108,6 +111,7 @@ class OrderSchema(OrderWithoutId):
                  f"{products_text}\n" \
                  f"Итого: <b>{total_price}₽</b>\n\n" \
                  f"Адрес: <b>{self.address}</b>\n" \
+                 f"Способ оплаты: <b>{self.payment_method}</b>\n" \
                  f"Комментарий: <b>{self.comment}</b>\n\n" \
                  f"Статус: <b>{self.translate_order_status()}</b>"
 

@@ -131,7 +131,8 @@ async def process_web_app_request(event: Message):
         logger.error("error while creating order", exc_info=True)
         return await event.answer("Произошла ошибка при создании заказа, попробуйте еще раз.")
 
-    products = [await product_db.get_product(product_id) for product_id in order.products_id]
+    products = [(await product_db.get_product(product_id), product_count)
+                for product_id, product_count in order.products.items()]
     username = "@" + order_user_data.username if order_user_data.username else order_user_data.full_name
     admin_id = (await bot_db.get_bot(TOKEN)).created_by
     main_msg = await Bot(MAIN_TELEGRAM_TOKEN, parse_mode=ParseMode.HTML).send_message(

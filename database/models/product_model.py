@@ -41,8 +41,8 @@ class ProductWithoutId(BaseModel):
 class ProductSchema(ProductWithoutId):
     id: int
 
-    def convert_to_notification_text(self) -> str:
-        return f"<b>{self.name} {self.price}₽</b>"
+    def convert_to_notification_text(self, count: int) -> str:
+        return f"<b>{self.name} {self.price}₽ x {count}шт</b>"
 
 
 class ProductDao(Dao):

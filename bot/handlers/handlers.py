@@ -8,7 +8,7 @@ from distutils.dir_util import copy_tree
 from bot.main import bot, db_engine
 
 from aiogram import Router, Bot
-from aiogram.types import Message, MenuButtonWebApp, WebAppInfo, ReplyKeyboardRemove, FSInputFile, CallbackQuery
+from aiogram.types import Message, ReplyKeyboardRemove, FSInputFile, CallbackQuery
 from aiogram.filters import CommandStart
 from aiogram.exceptions import TelegramUnauthorizedError
 from aiogram.fsm.context import FSMContext
@@ -41,11 +41,13 @@ bot_db = db_engine.get_bot_dao()
 
 async def send_new_order_notify(order: OrderSchema, user_id: int):
     order_user_data = await bot.get_chat(order.from_user)
+    products = [(await product_db.get_product(product_id), product_count)
+                for product_id, product_count in order.products.items()]
 
     await bot.send_message(user_id, f"Так будет выглядеть у тебя уведомление о новом заказе 👇")
     await bot.send_message(
         user_id, order.convert_to_notification_text(
-            [await product_db.get_product(product_id) for product_id in order.products_id],
+            products,
             "@" + order_user_data.username if order_user_data.username else order_user_data.full_name,
             True
         )
@@ -85,7 +87,8 @@ async def handle_callback(query: CallbackQuery, state: FSMContext):
 
             await order_db.update_order(order)
 
-            products = [await product_db.get_product(product_id) for product_id in order.products_id]
+            products = [(await product_db.get_product(product_id), product_count)
+                        for product_id, product_count in order.products.items()]
             await Bot(state_data['token'], parse_mode=ParseMode.HTML).edit_message_text(
                 order.convert_to_notification_text(products=products),
                 reply_markup=None if data[0] in ("order_finish", "order_cancel") else
