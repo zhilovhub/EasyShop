@@ -6,7 +6,7 @@ After=syslog.target network-online.target
 
 [Service]
 Type=simple
-Environment="PYTHONPATH=/root/EasyShop"
+Environment="PYTHONPATH={working_directory}/../../../"
 WorkingDirectory={working_directory}
 ExecStart={working_directory}/../../../venv/bin/python3 {working_directory}/main.py
 KillMode=process

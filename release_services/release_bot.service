@@ -1,0 +1,17 @@
+[Unit]
+Description=release bot service
+
+Wants=network.target
+After=syslog.target network-online.target
+
+[Service]
+Environment="PYTHONPATH=/root/EasyShop"
+Type=simple
+WorkingDirectory=/root/EasyShop/bot
+ExecStart=/root/EasyShop/venv/bin/python3 /root/EasyShop/bot/main.py
+KillMode=process
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target

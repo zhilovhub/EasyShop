@@ -1,9 +1,10 @@
 import Vuex from 'vuex'
+
 let tg = window.Telegram.WebApp;
 tg.expand();
 const url = new URL(window.location.href);
 const token = url.searchParams.get('token');
-const apiUrl = 'https://ezbots.ru:8080'
+const apiUrl = `https://ezbots.ru:${import.meta.env.VITE_API_PORT}`
 
 export const Store = new Vuex.Store({
   state: {

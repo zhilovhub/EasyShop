@@ -10,9 +10,9 @@ from bot.config import logger
 from bot.utils.storage import AlchemyStorageAsync
 
 bot = Bot(config.TELEGRAM_TOKEN, parse_mode=ParseMode.HTML)
-storage = AlchemyStorageAsync(config.STORAGE_DB_URL, config.STORAGE_TABLE_NAME)
+storage = AlchemyStorageAsync(config.SQLALCHEMY_URL, config.STORAGE_TABLE_NAME)
 dp = Dispatcher(storage=storage)
-db_engine = Database(config.DB_URL)
+db_engine = Database(config.SQLALCHEMY_URL)
 
 
 async def on_start():

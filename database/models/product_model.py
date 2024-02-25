@@ -1,7 +1,7 @@
 from typing import Optional
 
 from sqlalchemy import BigInteger, Column, String, ForeignKey, Integer
-from sqlalchemy import select, insert, delete
+from sqlalchemy import select, insert, delete, update
 from sqlalchemy.ext.asyncio import AsyncEngine
 
 from pydantic import BaseModel, Field, validate_call, ConfigDict
@@ -46,8 +46,8 @@ class ProductSchema(ProductWithoutId):
 
 
 class ProductDao(Dao):
-    def __init__(self, engine: AsyncEngine) -> None:
-        super().__init__(engine)
+    def __init__(self, engine: AsyncEngine, logger) -> None:
+        super().__init__(engine, logger)
 
     @validate_call(validate_return=True)
     async def get_all_products(self, bot_token: str) -> list[ProductSchema]:
@@ -58,6 +58,8 @@ class ProductDao(Dao):
         res = []
         for product in raw_res:
             res.append(ProductSchema.model_validate(product))
+
+        self.logger.info(f"get_all_products method with token: {bot_token} success.")
         return res
 
     @validate_call(validate_return=True)
@@ -70,14 +72,24 @@ class ProductDao(Dao):
         if not raw_res:
             raise ProductNotFound
 
+        self.logger.info(f"get_product method with product_id: {product_id} success.")
         return ProductSchema.model_validate(raw_res)
 
     @validate_call
     async def add_product(self, new_product: ProductWithoutId):
         async with self.engine.begin() as conn:
-            await conn.execute(insert(Product).values(new_product.model_dump()))
+            product_id = await conn.execute(insert(Product).values(new_product.model_dump()))
+        self.logger.info(f"successfully add product with id {product_id} to db.")
+
+    @validate_call
+    async def update_product(self, updated_product: ProductSchema):
+        await self.get_product(updated_product.id)
+        async with self.engine.begin() as conn:
+            await conn.execute(update(Product).where(Product.id == updated_product.id).values(updated_product.model_dump()))
+        self.logger.info(f"successfully update product with id {updated_product.id} at db.")
 
     @validate_call
     async def delete_product(self, product_id: int):
         async with self.engine.begin() as conn:
             await conn.execute(delete(Product).where(Product.id == product_id))
+        self.logger.info(f"deleted product with id {product_id}")
