@@ -9,7 +9,6 @@ from pydantic import BaseModel, Field, ConfigDict
 from database.models import Base
 from database.models.dao import Dao
 
-from bot.config import logger
 from bot.exceptions.exceptions import *
 
 
@@ -34,8 +33,8 @@ class UserSchema(BaseModel):
 
 
 class UserDao(Dao):
-    def __init__(self, engine: AsyncEngine) -> None:
-        super().__init__(engine)
+    def __init__(self, engine: AsyncEngine, logger) -> None:
+        super().__init__(engine, logger)
         
     async def get_users(self) -> list[UserSchema]:
         async with self.engine.begin() as conn:
@@ -46,7 +45,8 @@ class UserDao(Dao):
         res = []
         for user in raw_res:
             res.append(UserSchema.model_validate(user))
-            
+
+        self.logger.info(f"get_all_users method success.")
         return res
     
     async def get_user(self, user_id: int) -> UserSchema:
@@ -60,7 +60,8 @@ class UserDao(Dao):
         res = raw_res.fetchone()
         if res is None:
             raise UserNotFound(f"id {user_id} not found in database.")
-        
+
+        self.logger.info(f"get_user method with user_id: {user_id} success.")
         return UserSchema.model_validate(res)
 
     async def add_user(self, user: UserSchema) -> None:
@@ -76,7 +77,7 @@ class UserDao(Dao):
             await conn.execute(insert(User).values(**user.model_dump(by_alias=True)))
         await self.engine.dispose()
 
-        logger.debug(f"successfully add user with id {user.id} to db.")
+        self.logger.info(f"successfully add user with id {user.id} to db.")
 
     async def update_user(self, updated_user: UserSchema) -> None:
         if not isinstance(updated_user, UserSchema):
@@ -87,7 +88,7 @@ class UserDao(Dao):
                                values(**updated_user.model_dump(by_alias=True)))
         await self.engine.dispose()
 
-        logger.debug(f"successfully update user with id {updated_user.id} in db.")
+        self.logger.info(f"successfully update user with id {updated_user.id} in db.")
 
     async def del_user(self, user_id: int) -> None:
         if not isinstance(user_id, int):
@@ -97,4 +98,4 @@ class UserDao(Dao):
             await conn.execute(delete(User).where(User.user_id == user_id))
         await self.engine.dispose()
 
-        logger.debug(f"successfully delete user with id {user_id} from db.")
+        self.logger.info(f"successfully delete user with id {user_id} from db.")

@@ -8,7 +8,7 @@ from distutils.dir_util import copy_tree
 from bot.main import bot, db_engine
 
 from aiogram import Router, Bot
-from aiogram.types import Message, MenuButtonWebApp, WebAppInfo, ReplyKeyboardRemove, FSInputFile, CallbackQuery
+from aiogram.types import Message, ReplyKeyboardRemove, FSInputFile, CallbackQuery
 from aiogram.filters import CommandStart
 from aiogram.exceptions import TelegramUnauthorizedError
 from aiogram.fsm.context import FSMContext
@@ -63,11 +63,13 @@ async def stop_custom_bot(token: str):
 
 async def send_new_order_notify(order: OrderSchema, user_id: int):
     order_user_data = await bot.get_chat(order.from_user)
+    products = [(await product_db.get_product(product_id), product_count)
+                for product_id, product_count in order.products.items()]
 
     await bot.send_message(user_id, f"Так будет выглядеть у тебя уведомление о новом заказе 👇")
     await bot.send_message(
         user_id, order.convert_to_notification_text(
-            [await product_db.get_product(product_id) for product_id in order.products_id],
+            products,
             "@" + order_user_data.username if order_user_data.username else order_user_data.full_name,
             True
         )
@@ -107,7 +109,8 @@ async def handle_callback(query: CallbackQuery, state: FSMContext):
 
             await order_db.update_order(order)
 
-            products = [await product_db.get_product(product_id) for product_id in order.products_id]
+            products = [(await product_db.get_product(product_id), product_count)
+                        for product_id, product_count in order.products.items()]
             await Bot(state_data['token'], parse_mode=ParseMode.HTML).edit_message_text(
                 order.convert_to_notification_text(products=products),
                 reply_markup=None if data[0] in ("order_finish", "order_cancel") else
@@ -173,7 +176,7 @@ async def start_command_handler(message: Message, state: FSMContext):
         user_bot_data = await user_bot.get_me()
         await message.answer(DefaultLocale.selected_bot_msg().replace("{selected_name}", user_bot_data.full_name),
                              reply_markup=get_bot_menu_keyboard(WebAppInfo(
-                                 url=config.WEB_APP_URL + '?token=' + user_bot.token.replace(':', '_'))))
+                                 url=config.WEB_APP_URL + f":{config.WEB_APP_PORT}" + '?token=' + user_bot.token.replace(':', '_'))))
         await state.set_state(States.BOT_MENU)
         await state.set_data({'token': user_bots[0].token})
 
@@ -246,7 +249,7 @@ async def bot_menu_photo_handler(message: Message, state: FSMContext):
     else:
         return await message.answer("Цена должна быть <b>целым числом</b>")
 
-    await bot.download(photo_file_id, destination=f"Files/{filename}")
+    await bot.download(photo_file_id, destination=f"{os.getenv('FILES_PATH')}{filename}")
 
     new_product = ProductWithoutId(bot_token=state_data['token'],
                                    name=params[0],
@@ -282,7 +285,7 @@ async def bot_menu_handler(message: Message, state: FSMContext):
                 await message.answer("Список товаров твоего магазина 👇\nЧтобы удалить товар, нажми на тег рядом с ним")
                 for product in products:
                     await message.answer_photo(
-                        photo=FSInputFile("Files/" + product.picture),
+                        photo=FSInputFile(os.getenv('FILES_PATH') + product.picture),
                         caption=f"<b>{product.name}</b>\n\n"
                                 f"Цена: <b>{float(product.price)}₽</b>",
                         reply_markup=get_inline_delete_button(product.id))
@@ -304,7 +307,7 @@ async def bot_menu_handler(message: Message, state: FSMContext):
             await message.answer(
                 "Для навигации используй кнопки 👇",
                 reply_markup=get_bot_menu_keyboard(
-                    WebAppInfo(url=config.WEB_APP_URL + f"?token={state_data['token']}".replace(":", "_"))))
+                    WebAppInfo(url=config.WEB_APP_URL + f":{config.WEB_APP_PORT}" + f"?token={state_data['token']}".replace(":", "_"))))
 
 
 @router.message(States.EDITING_START_MESSAGE)
@@ -316,7 +319,7 @@ async def editing_start_message_handler(message: Message, state: FSMContext):
             await message.answer(
                 "Возвращемся в меню...",
                 reply_markup=get_bot_menu_keyboard(WebAppInfo(
-                    url=config.WEB_APP_URL + '?token=' + state_data['token'].replace(':', '_'))))
+                    url=config.WEB_APP_URL + f":{config.WEB_APP_PORT}" + '?token=' + state_data['token'].replace(':', '_'))))
             await state.set_state(States.BOT_MENU)
             await state.set_data(state_data)
         else:
@@ -330,7 +333,7 @@ async def editing_start_message_handler(message: Message, state: FSMContext):
             await message.answer(
                 "Стартовое сообщение изменено!",
                 reply_markup=get_bot_menu_keyboard(WebAppInfo(
-                    url=config.WEB_APP_URL + '?token=' + state_data['token'].replace(':', '_'))))
+                    url=config.WEB_APP_URL + f":{config.WEB_APP_PORT}" + '?token=' + state_data['token'].replace(':', '_'))))
             await state.set_state(States.BOT_MENU)
             await state.set_data(state_data)
     else:
@@ -346,7 +349,7 @@ async def editing_default_message_handler(message: Message, state: FSMContext):
             await message.answer(
                 "Возвращемся в меню...",
                 reply_markup=get_bot_menu_keyboard(WebAppInfo(
-                    url=config.WEB_APP_URL + '?token=' + state_data['token'].replace(':', '_'))))
+                    url=config.WEB_APP_URL + f":{config.WEB_APP_PORT}" + '?token=' + state_data['token'].replace(':', '_'))))
             await state.set_state(States.BOT_MENU)
             await state.set_data(state_data)
         else:
@@ -360,7 +363,7 @@ async def editing_default_message_handler(message: Message, state: FSMContext):
             await message.answer(
                 "Сообщение-затычка изменена!",
                 reply_markup=get_bot_menu_keyboard(WebAppInfo(
-                    url=config.WEB_APP_URL + '?token=' + state_data['token'].replace(':', '_'))))
+                    url=config.WEB_APP_URL + f":{config.WEB_APP_PORT}" + '?token=' + state_data['token'].replace(':', '_'))))
             await state.set_state(States.BOT_MENU)
             await state.set_data(state_data)
     else:
@@ -387,7 +390,7 @@ async def delete_bot_handler(message: Message, state: FSMContext):
         await message.answer(
             "Возвращемся в меню...",
             reply_markup=get_bot_menu_keyboard(
-                WebAppInfo(url=config.WEB_APP_URL + f"?token={state_data['token']}".replace(":", "_"))))
+                WebAppInfo(url=config.WEB_APP_URL + f":{config.WEB_APP_PORT}" + f"?token={state_data['token']}".replace(":", "_"))))
         await state.set_state(States.BOT_MENU)
         await state.set_data(state_data)
     else:

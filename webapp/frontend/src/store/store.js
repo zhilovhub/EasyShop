@@ -1,9 +1,10 @@
 import Vuex from 'vuex'
+
 let tg = window.Telegram.WebApp;
 tg.expand();
 const url = new URL(window.location.href);
 const token = url.searchParams.get('token');
-const apiUrl = 'https://ezbots.ru:8080'
+const apiUrl = `https://ezbots.ru:${import.meta.env.VITE_API_PORT}`
 
 export const Store = new Vuex.Store({
   state: {
@@ -11,8 +12,9 @@ export const Store = new Vuex.Store({
     itemsAddToCartArray: [],
     items: [],
     generatedOrderId: '',
+    paymentMethod: '',
     address: '',
-    comment: ''
+    comment: '',
   },
   mutations: {
     addToLocalStorage(state) {
@@ -92,10 +94,15 @@ export const Store = new Vuex.Store({
       let data = {
         'order_id': Store.state.generatedOrderId,
         'bot_token': Store.state.token,
-        'products_id': Store.state.itemsAddToCartArray.map(item => item.id),
+        'products': Store.state.itemsAddToCartArray.reduce((acc, item) => {
+          acc[item.id] = item.count;
+          return acc;
+        },{}),
+        'payment_method': Store.state.paymentMethod,
         'ordered_at': new Date().toISOString(),
         'address': Store.state.address,
         'comment': Store.state.comment
+
       };
       tg.sendData(JSON.stringify(data));
       tg.close();

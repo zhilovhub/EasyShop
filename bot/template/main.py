@@ -31,13 +31,13 @@ dotenv.load_dotenv()
 
 MAIN_TELEGRAM_TOKEN = os.getenv("MAIN_TELEGRAM_TOKEN")
 TOKEN = os.getenv("CUSTOM_TELEGRAM_TOKEN")
-DB_URL = os.getenv("DB_URL")
+SQLALCHEMY_URL = os.getenv("SQLALCHEMY_URL")
 WEB_APP_URL = os.getenv("CUSTOM_WEB_APP_URL")
 
 bot = Bot(TOKEN, parse_mode=ParseMode.HTML)
 storage = MemoryStorage()
 dp = Dispatcher(storage=storage)
-db_engine = Database(sqlalchemy_url=DB_URL)
+db_engine = Database(sqlalchemy_url=SQLALCHEMY_URL)
 bot_db = db_engine.get_bot_dao()
 product_db = db_engine.get_product_db()
 order_db = db_engine.get_order_dao()
@@ -56,7 +56,7 @@ bots = Table('bots', metadata,
              Column('settings', JSON),
              Column('locale', String(10), nullable=False),
              )
-engine = create_async_engine(DB_URL, echo=False)
+engine = create_async_engine(SQLALCHEMY_URL, echo=False)
 
 router = Router(name="users")
 
@@ -131,7 +131,8 @@ async def process_web_app_request(event: Message):
         logger.error("error while creating order", exc_info=True)
         return await event.answer("Произошла ошибка при создании заказа, попробуйте еще раз.")
 
-    products = [await product_db.get_product(product_id) for product_id in order.products_id]
+    products = [(await product_db.get_product(product_id), product_count)
+                for product_id, product_count in order.products.items()]
     username = "@" + order_user_data.username if order_user_data.username else order_user_data.full_name
     admin_id = (await bot_db.get_bot(TOKEN)).created_by
     main_msg = await Bot(MAIN_TELEGRAM_TOKEN, parse_mode=ParseMode.HTML).send_message(
@@ -184,7 +185,8 @@ async def handle_callback(query: CallbackQuery):
         case "order_cancel":
             order.status = OrderStatusValues.CANCELLED
             await order_db.update_order(order)
-            products = [await product_db.get_product(product_id) for product_id in order.products_id]
+            products = [(await product_db.get_product(product_id), product_count)
+                        for product_id, product_count in order.products.items()]
             await query.message.edit_text(order.convert_to_notification_text(products=products), reply_markup=None)
             await Bot(MAIN_TELEGRAM_TOKEN, parse_mode=ParseMode.HTML).edit_message_text(
                 text=order.convert_to_notification_text(

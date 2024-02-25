@@ -1,14 +1,14 @@
 [Unit]
-Description=api service
+Description=debug api service
 
 Wants=network.target
 After=syslog.target network-online.target
 
 [Service]
 Type=simple
-Environment="PYTHONPATH=/root/EasyShop"
-WorkingDirectory=/root/EasyShop/api
-ExecStart=/root/EasyShop/venv/bin/python3 main.py
+Environment="PYTHONPATH=/root/DebugEasyShop"
+WorkingDirectory=/root/DebugEasyShop/api
+ExecStart=/root/DebugEasyShop/venv/bin/python3 main.py
 KillMode=process
 Restart=always
 RestartSec=10

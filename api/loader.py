@@ -7,7 +7,7 @@ import os
 
 load_dotenv()
 ALCHEMY_URL = os.getenv("SQLALCHEMY_URL")
-DEBUG = bool(os.getenv("DEBUG"))
+DEBUG = bool(int(os.getenv("DEBUG")))
 
 db_engine = Database(ALCHEMY_URL)
 
@@ -49,5 +49,5 @@ LOGGING_SETUP = {
 }
 logging.config.dictConfig(LOGGING_SETUP)
 logging.basicConfig(format=u'[%(asctime)s][%(levelname)s] ::: %(filename)s(%(lineno)d) -> %(message)s',
-                    level="INFO", filename='api/logs/all.log')
+                    level="INFO", filename='logs/all.log')
 logger = logging.getLogger('logger')

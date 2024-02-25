@@ -1,14 +1,14 @@
 [Unit]
-Description=bot service
+Description=release api service
 
 Wants=network.target
 After=syslog.target network-online.target
 
 [Service]
-Environment="PYTHONPATH=/root/EasyShop"
 Type=simple
-WorkingDirectory=/root/EasyShop/bot
-ExecStart=/root/EasyShop/venv/bin/python3 /root/EasyShop/bot/main.py
+Environment="PYTHONPATH=/root/EasyShop"
+WorkingDirectory=/root/EasyShop/api
+ExecStart=/root/EasyShop/venv/bin/python3 main.py
 KillMode=process
 Restart=always
 RestartSec=10

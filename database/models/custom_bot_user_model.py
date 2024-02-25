@@ -20,5 +20,5 @@ class CustomBotUserSchema(BaseModel):
 
 
 class CustomBotUserDao(Dao):
-    def __init__(self, engine: AsyncEngine) -> None:
-        super().__init__(engine)
+    def __init__(self, engine: AsyncEngine, logger) -> None:
+        super().__init__(engine, logger)
