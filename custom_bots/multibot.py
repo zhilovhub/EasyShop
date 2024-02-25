@@ -14,6 +14,7 @@ from aiogram.types import Message, User, Chat, CallbackQuery
 from aiogram.filters import CommandStart, StateFilter
 from aiogram.utils.keyboard import ReplyKeyboardMarkup, KeyboardButton
 from aiogram.utils.token import TokenValidationError, validate_token
+from aiogram.exceptions import TelegramUnauthorizedError
 from dotenv import load_dotenv
 from aiogram.webhook.aiohttp_server import (
     TokenBasedRequestHandler,
@@ -27,6 +28,10 @@ from database.models.order_model import OrderSchema, OrderStatusValues, OrderNot
 from bot.keyboards import keyboards
 
 import json
+
+app = web.Application()
+
+routes = web.RouteTableDef()
 
 load_dotenv()
 
@@ -64,14 +69,6 @@ logging.basicConfig(format=u'[%(asctime)s][%(levelname)s] ::: %(filename)s(%(lin
 logger = logging.getLogger('logger')
 
 
-def is_bot_token(value: str) -> Union[bool, Dict[str, Any]]:
-    try:
-        validate_token(value)
-    except TokenValidationError:
-        return False
-    return True
-
-
 def format_locales(text: str, user: User, chat: Chat, reply_to_user: User = None) -> str:
     if text is None:
         return "Empty message"
@@ -97,6 +94,43 @@ def format_locales(text: str, user: User, chat: Chat, reply_to_user: User = None
     return text
 
 
+@routes.get('/start_bot/{bot_token}')
+async def add_bot_handler(request):
+    bot_token = request.match_info['bot_token']
+    if not is_bot_token(bot_token):
+        return web.Response(status=400, text="Incorrect bot token format.")
+    try:
+        new_bot = Bot(token=bot_token, session=session)
+        new_bot_data = await new_bot.get_me()
+    except TelegramUnauthorizedError:
+        return web.Response(status=400, text="Unauthorized telegram token.")
+    await new_bot.delete_webhook(drop_pending_updates=True)
+    await new_bot.set_webhook(OTHER_BOTS_URL.format(bot_token=bot_token))
+    return web.Response(text=f"Added bot with token ({bot_token}) and username (@{new_bot_data.username})")
+
+
+@routes.get('/stop_bot/{bot_token}')
+async def stop_bot_handler(request):
+    bot_token = request.match_info['bot_token']
+    if not is_bot_token(bot_token):
+        return web.Response(status=400, text="Incorrect bot token format.")
+    try:
+        new_bot = Bot(token=bot_token, session=session)
+        new_bot_data = await new_bot.get_me()
+    except TelegramUnauthorizedError:
+        return web.Response(status=400, text="Unauthorized telegram token.")
+    await new_bot.delete_webhook(drop_pending_updates=True)
+    return web.Response(text=f"Stopped bot with token ({bot_token}) and username (@{new_bot_data.username})")
+
+
+def is_bot_token(value: str) -> Union[bool, Dict[str, Any]]:
+    try:
+        validate_token(value)
+    except TokenValidationError:
+        return False
+    return True
+
+
 # @main_router.message(Command("add", magic=F.args.func(is_bot_token)))
 # async def command_add_bot(message: Message, command: CommandObject, bot: Bot) -> Any:
 #     new_bot = Bot(token=command.args, session=bot.session)
@@ -116,14 +150,14 @@ def format_locales(text: str, user: User, chat: Chat, reply_to_user: User = None
 def main():
     logging.basicConfig(level=logging.INFO, stream=sys.stdout)
 
-    app = web.Application()
-
     TokenBasedRequestHandler(
         dispatcher=multibot_dispatcher,
         bot_settings=bot_settings,
     ).register(app, path=OTHER_BOTS_PATH)
 
     setup_application(app, multibot_dispatcher)
+
+    app.add_routes(routes)
 
     web.run_app(app, host=WEB_SERVER_HOST, port=WEB_SERVER_PORT)
 
