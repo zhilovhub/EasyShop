@@ -26,10 +26,10 @@ from bot.locales.default import DefaultLocale
 from bot.filters.chat_type import ChatTypeFilter
 from bot.exceptions.exceptions import *
 
-from database.models.bot_model import BotSchema
+from database.models.bot_model import BotSchemaWithoutId
 from database.models.user_model import UserSchema
-from database.models.product_model import ProductWithoutId
 from database.models.order_model import OrderSchema, OrderNotFound, OrderStatusValues
+from database.models.product_model import ProductWithoutId
 
 from magic_filter import F
 
@@ -44,7 +44,7 @@ bot_db = db_engine.get_bot_dao()
 
 
 async def start_custom_bot(token: str):
-    async with (aiohttp.ClientSession() as session):
+    async with aiohttp.ClientSession() as session:
         async with session.get(
                 f"http://{config.LOCAL_API_SERVER_HOST}:{config.LOCAL_API_SERVER_PORT}/start_bot/{token}") as response:
             if response.status != 200:
@@ -53,7 +53,7 @@ async def start_custom_bot(token: str):
 
 
 async def stop_custom_bot(token: str):
-    async with (aiohttp.ClientSession() as session):
+    async with aiohttp.ClientSession() as session:
         async with session.get(
                 f"http://{config.LOCAL_API_SERVER_HOST}:{config.LOCAL_API_SERVER_PORT}/stop_bot/{token}") as response:
             if response.status != 200:
@@ -193,7 +193,7 @@ async def waiting_for_the_token_handler(message: Message, state: FSMContext):
         found_bot_data = await found_bot.get_me()
         bot_fullname, bot_username = found_bot_data.full_name, found_bot_data.username
 
-        new_bot = BotSchema(bot_token=token,
+        new_bot = BotSchemaWithoutId(bot_token=token,
                             status="new",
                             created_at=datetime.utcnow(),
                             created_by=message.from_user.id,
