@@ -62,7 +62,7 @@ PREV_ORDER_MSGS = {}
 
 storage = MemoryStorage()
 
-multibot_dispatcher = Dispatcher(storage=storage, events_isolation=SimpleEventIsolation())
+multi_bot_router = Router(name="multibot")
 
 logging.basicConfig(format=u'[%(asctime)s][%(levelname)s] ::: %(filename)s(%(lineno)d) -> %(message)s',
                     level="INFO", filename='logs/all.log')
@@ -147,21 +147,6 @@ def is_bot_token(value: str) -> Union[bool, Dict[str, Any]]:
 #     await bot.set_webhook(f"{BASE_URL}{MAIN_BOT_PATH}")
 
 
-def main():
-    logging.basicConfig(level=logging.INFO, stream=sys.stdout)
-
-    TokenBasedRequestHandler(
-        dispatcher=multibot_dispatcher,
-        bot_settings=bot_settings,
-    ).register(app, path=OTHER_BOTS_PATH)
-
-    setup_application(app, multibot_dispatcher)
-
-    app.add_routes(routes)
-
-    web.run_app(app, host=WEB_SERVER_HOST, port=WEB_SERVER_PORT)
-
-
 async def get_option(param: str, token: str):
     bot_info = await bot_db.get_bot(token)
     options = bot_info.settings
@@ -172,7 +157,7 @@ async def get_option(param: str, token: str):
     return None
 
 
-@multibot_dispatcher.message(CommandStart())
+@multi_bot_router.message(CommandStart())
 async def start_cmd(message: Message):
     start_msg = await get_option("start_msg", message.bot.token)
     web_app_button = await get_option("web_app_button", message.bot.token)
@@ -185,7 +170,7 @@ async def start_cmd(message: Message):
     return await message.reply(format_locales(start_msg, message.from_user, message.chat), reply_markup=kb)
 
 
-@multibot_dispatcher.message(F.web_app_data)
+@multi_bot_router.message(F.web_app_data)
 async def process_web_app_request(event: Message):
     user_id = event.from_user.id
     order_user_data = await event.bot.get_chat(user_id)
@@ -233,7 +218,7 @@ async def process_web_app_request(event: Message):
     )
 
 
-@multibot_dispatcher.message(StateFilter(None))
+@multi_bot_router.message(StateFilter(None))
 async def default_cmd(message: Message):
     web_app_button = await get_option("web_app_button", message.bot.token)
     kb = ReplyKeyboardMarkup(keyboard=[
@@ -245,7 +230,7 @@ async def default_cmd(message: Message):
     await message.answer(format_locales(default_msg, message.from_user, message.chat), reply_markup=kb)
 
 
-@multibot_dispatcher.callback_query(lambda q: q.data.startswith("order_"))
+@multi_bot_router.callback_query(lambda q: q.data.startswith("order_"))
 async def handle_callback(query: CallbackQuery):
     data = query.data.split(":")
     try:
@@ -273,6 +258,25 @@ async def handle_callback(query: CallbackQuery):
                 chat_id=PREV_ORDER_MSGS[order.id][0],
                 text=f"Новый статус заказа <b>#{order.id}</b>\n<b>{order.translate_order_status()}</b>")
             del PREV_ORDER_MSGS[order.id]
+
+
+def main():
+    logging.basicConfig(level=logging.INFO, stream=sys.stdout)
+
+    multibot_dispatcher = Dispatcher(storage=storage)
+
+    multibot_dispatcher.include_router(multi_bot_router)
+
+    TokenBasedRequestHandler(
+        dispatcher=multibot_dispatcher,
+        bot_settings=bot_settings,
+    ).register(app, path=OTHER_BOTS_PATH)
+
+    setup_application(app, multibot_dispatcher)
+
+    app.add_routes(routes)
+
+    web.run_app(app, host=WEB_SERVER_HOST, port=WEB_SERVER_PORT)
 
 
 if __name__ == "__main__":
