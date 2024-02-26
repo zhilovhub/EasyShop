@@ -2,7 +2,7 @@ from datetime import datetime
 from enum import Enum
 from typing import Optional
 
-from sqlalchemy import BigInteger, Column, String, TypeDecorator, Unicode, Dialect, ARRAY, DateTime, JSON
+from sqlalchemy import BigInteger, Column, String, TypeDecorator, Unicode, Dialect, ARRAY, DateTime, JSON, ForeignKey
 from sqlalchemy import select, update, delete, insert
 from sqlalchemy.ext.asyncio import AsyncEngine
 
@@ -11,6 +11,7 @@ from pydantic import BaseModel, Field, validate_call, ConfigDict, Json
 from database.models import Base
 from database.models.dao import Dao
 from database.models.product_model import ProductSchema
+from database.models.bot_model import Bot
 
 
 class OrderStatusValues(Enum):
@@ -48,7 +49,7 @@ class Order(Base):
     __tablename__ = "orders"
 
     id = Column(String(13), primary_key=True)
-    bot_token = Column(String(46))
+    bot_id = Column(ForeignKey(Bot.bot_id, ondelete="CASCADE"))
     products = Column(JSON)
     from_user = Column(BigInteger, nullable=False)  # TODO make it Foreign
     payment_method = Column(String, nullable=False)
@@ -121,9 +122,9 @@ class OrderDao(Dao):
         super().__init__(engine, logger)
 
     @validate_call
-    async def get_all_orders(self, bot_token: str) -> list[OrderSchema]:
+    async def get_all_orders(self, bot_id: int) -> list[OrderSchema]:
         async with self.engine.begin() as conn:
-            raw_res = await conn.execute(select(Order).where(Order.bot_token == bot_token))
+            raw_res = await conn.execute(select(Order).where(Order.bot_id == bot_id))
         await self.engine.dispose()
 
         raw_res = raw_res.fetchall()
@@ -131,7 +132,7 @@ class OrderDao(Dao):
         for order in raw_res:
             res.append(OrderSchema.model_validate(order))
 
-        self.logger.info(f"get_all_orders method with token: {bot_token} success.")
+        self.logger.info(f"get_all_orders method with bot_id: {bot_id} success")
         return res
 
     @validate_call

@@ -12,19 +12,18 @@ router = APIRouter(
 db = db_engine.get_product_db()
 
 
-@router.get("/get_all_products/{token}")
-async def get_all_products_api(token: str) -> list[ProductSchema]:
-    token = token.replace('_', ':', 1)
+@router.get("/get_all_products/{bot_id}")
+async def get_all_products_api(bot_id: int) -> list[ProductSchema]:
     try:
-        products = await db.get_all_products(token)
+        products = await db.get_all_products(bot_id)
     except Exception:
         logger.error("Error while execute get_all_products db_method", exc_info=True)
         raise HTTPException(status_code=500, detail="Internal error.")
     return products
 
 
-@router.get("/get_product/{token}/{product_id}")
-async def get_product_api(token: str, product_id: int) -> ProductSchema:
+@router.get("/get_product/{bot_id}/{product_id}")
+async def get_product_api(bot_id: int, product_id: int) -> ProductSchema:
     try:
         product = await db.get_product(product_id)
     except ProductNotFound:
