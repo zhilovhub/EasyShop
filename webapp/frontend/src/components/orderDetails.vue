@@ -36,6 +36,12 @@
     },
     mounted() {
       this.$store.commit("addToLocalStorage");
+      let WebApp = window.Telegram.WebApp;
+      const BackButton = WebApp.BackButton;
+      BackButton.show();
+      WebApp.onEvent('backButtonClicked', function() {
+        window.location.href = "/shopping-cart";
+      });
     },
     methods: {
       orderBtnClicked() {

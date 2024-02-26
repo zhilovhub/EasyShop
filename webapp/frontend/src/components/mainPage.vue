@@ -52,7 +52,7 @@
       </li>
     </ul>
   </div>
-
+  <RouterLink to="/shopping-cart" v-if="itemsAddToCartArray.length>0"><button class="addToCartBtn">В Корзину</button></RouterLink>
 </template>
 
 <script>
@@ -84,7 +84,7 @@ export default {
     },
     shortenName(name) {
       if (!name) return '';
-      return name.length > 15 ? name.substring(0, 15) + '...' : name;;
+      return name.length > 15 ? name.substring(0, 15) + '...' : name;
     }
   },
   computed: {
@@ -162,6 +162,32 @@ button {
   right: 10px;
   top: 10px;
 }
+
+.addToCartBtn {
+  width: 100%;
+  height: 52px;
+  color: #293C47;
+  background-color: #59FFAF;
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  cursor: pointer;
+  box-shadow: none;
+  border: none;
+  font-size: 24px;
+  font-weight: 600;
+  font-family: 'Montserrat', sans-serif;
+  z-index: 10;
+  &:hover{
+    background-color: #55A27D;
+  }
+}
+@media (min-width: 1400px) {
+  .addToCartBtn{
+    height: 100px;
+  }
+}
+
 @media (max-width: 300px) {
   .items-styles {
     grid-template-columns: repeat(auto-fill, minmax(95vw, 1fr));

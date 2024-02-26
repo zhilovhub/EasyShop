@@ -8,6 +8,17 @@
     },
     mounted() {
       this.$store.commit("addToLocalStorage");
+      let WebApp = window.Telegram.WebApp;
+      const BackButton = WebApp.BackButton;
+      const vm = this;
+      BackButton.show();
+      BackButton.onClick(function() {
+        BackButton.hide();
+      });
+      WebApp.onEvent('backButtonClicked', function() {
+        localStorage.setItem('itemsAddToCartArray', null);
+        window.location.href = "/?token=" + vm.$store.state.token;
+      });
     },
     computed: {
       itemsAddToCartArray() {
@@ -162,7 +173,7 @@
   grid-template-columns: repeat(auto-fill, minmax(95vw, 1fr)) ;
   grid-gap: 15px;
   padding: 0;
-  margin-bottom: 50px;
+  margin-bottom: 15px;
 
   .item-block{
     display: flex;
