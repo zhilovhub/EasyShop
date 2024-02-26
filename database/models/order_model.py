@@ -61,7 +61,8 @@ class Order(Base):
 
 class OrderWithoutId(BaseModel):
     model_config = ConfigDict(from_attributes=True, populate_by_name=True)
-
+    
+    bot_id: int
     # bot_token: str = Field(max_length=46, min_length=46, frozen=True)
     products: dict[int, int]
     from_user: int
