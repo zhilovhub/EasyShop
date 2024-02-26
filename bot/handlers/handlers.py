@@ -43,19 +43,19 @@ order_db = db_engine.get_order_dao()
 bot_db = db_engine.get_bot_dao()
 
 
-async def start_custom_bot(token: str):
+async def start_custom_bot(bot_id: int):
     async with aiohttp.ClientSession() as session:
         async with session.get(
-                f"http://{config.LOCAL_API_SERVER_HOST}:{config.LOCAL_API_SERVER_PORT}/start_bot/{token}") as response:
+                f"http://{config.LOCAL_API_SERVER_HOST}:{config.LOCAL_API_SERVER_PORT}/start_bot/{bot_id}") as response:
             if response.status != 200:
                 raise LocalAPIException(f"API returned {response.status} status code "
                                         f"with text {await response.text()}")
 
 
-async def stop_custom_bot(token: str):
+async def stop_custom_bot(bot_id: int):
     async with aiohttp.ClientSession() as session:
         async with session.get(
-                f"http://{config.LOCAL_API_SERVER_HOST}:{config.LOCAL_API_SERVER_PORT}/stop_bot/{token}") as response:
+                f"http://{config.LOCAL_API_SERVER_HOST}:{config.LOCAL_API_SERVER_PORT}/stop_bot/{bot_id}") as response:
             if response.status != 200:
                 raise LocalAPIException(f"API returned {response.status} status code "
                                         f"with text {await response.text()}")
@@ -181,7 +181,7 @@ async def start_command_handler(message: Message, state: FSMContext):
         await message.answer(DefaultLocale.selected_bot_msg().replace("{selected_name}", user_bot_data.full_name),
                              reply_markup=get_bot_menu_keyboard(bot_id=bot_id))
         await state.set_state(States.BOT_MENU)
-        await state.set_data({'bot_id': bot_id})  # TODO change token to bot_id
+        await state.set_data({'bot_id': bot_id})
 
 
 @router.message(States.WAITING_FOR_TOKEN)  # TODO remove all replace(":", "___") of tokens
@@ -206,8 +206,8 @@ async def waiting_for_the_token_handler(message: Message, state: FSMContext):
                                       "web_app_button": DefaultLocale.open_web_app_button()},
                             locale=lang)
 
-        await bot_db.add_bot(new_bot)
-        await start_custom_bot(token)
+        bot_id = await bot_db.add_bot(new_bot)
+        await start_custom_bot(bot_id)
     except TokenValidationError:
         return await message.answer(DefaultLocale.incorrect_bot_token())
     except TelegramUnauthorizedError:
@@ -225,11 +225,10 @@ async def waiting_for_the_token_handler(message: Message, state: FSMContext):
         return await message.answer(":( Произошла ошибка при добавлении бота, попробуй еще раз позже.")
     await message.answer(
         DefaultLocale.bot_will_initialize().format(bot_fullname, bot_username),
-        reply_markup=get_bot_menu_keyboard(WebAppInfo(
-            url=config.WEB_APP_URL + '?token=' + token.replace(':', '_')))
+        reply_markup=get_bot_menu_keyboard(bot_id)
     )
     await state.set_state(States.BOT_MENU)
-    await state.set_data({"token": token})
+    await state.set_data({"bot_id": bot_id})
 
 
 @router.message(States.BOT_MENU, F.photo)
@@ -296,10 +295,10 @@ async def bot_menu_handler(message: Message, state: FSMContext):
             await message.answer("Чтобы добавить товар, прикрепи его картинку и отправь сообщение в виде:"
                                  "\n\nНазвание\nЦена в рублях")
         case "Запустить бота":
-            await start_custom_bot(state_data['token'])
+            await start_custom_bot(state_data['bot_id'])
             await message.answer("Твой бот запущен ✅")
         case "Остановить бота":
-            await stop_custom_bot(state_data['token'])
+            await stop_custom_bot(state_data['bot_id'])
             await message.answer("Твой бот приостановлен ❌")
         case "Удалить бота":
             await message.answer("Бот удалится вместе со всей базой продуктов безвозвратно.\n"
@@ -378,8 +377,8 @@ async def delete_bot_handler(message: Message, state: FSMContext):
     message_text = message.text
     state_data = await state.get_data()
     if message_text == "ПОДТВЕРДИТЬ":
-        logger.info(f"Disabling bot {state_data['token']}, setting deleted status to db...")
-        user_bot = await bot_db.get_bot(state_data["token"])
+        logger.info(f"Disabling bot {state_data['bot_id']}, setting deleted status to db...")
+        user_bot = await bot_db.get_bot(state_data["bot_id"])
         user_bot.status = "Deleted"
         await bot_db.del_bot(user_bot.bot_id)
 
