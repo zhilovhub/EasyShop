@@ -38,7 +38,7 @@ class BotSchemaWithoutId(BaseModel):
     locale: str = Field()
 
 
-class BotSchema(BaseModel):
+class BotSchema(BotSchemaWithoutId):
     bot_id: int = Field(frozen=True)
 
 
@@ -100,7 +100,7 @@ class BotDao(Dao):
 
         async with self.engine.begin() as conn:
             try:
-                bot_id = await conn.execute(insert(Bot).values(**bot.model_dump(by_alias=True)))
+                bot_id = (await conn.execute(insert(Bot).values(**bot.model_dump(by_alias=True)))).inserted_primary_key[0]
             except IntegrityError:
                 raise InstanceAlreadyExists(f"bot with {bot.token} already exists in db.")
         await self.engine.dispose()

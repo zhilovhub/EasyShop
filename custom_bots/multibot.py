@@ -28,6 +28,7 @@ from aiogram.types.web_app_info import WebAppInfo
 
 from database.models.models import Database
 from database.models.order_model import OrderSchema, OrderStatusValues, OrderNotFound
+from database.models.bot_model import BotNotFound
 
 from bot.keyboards import keyboards
 
@@ -60,7 +61,7 @@ main_bot = Bot(MAIN_TELEGRAM_TOKEN, default=DefaultBotProperties(**bot_settings)
 
 OTHER_BOTS_URL = f"{BASE_URL}{OTHER_BOTS_PATH}"
 
-WEB_APP_URL = f"{getenv('WEB_APP_URL')}:{getenv('WEB_APP_PORT')}?token=[token]"
+WEB_APP_URL = f"{getenv('WEB_APP_URL')}:{getenv('WEB_APP_PORT')}?bot_id=[bot_id]"
 
 LOCAL_API_SERVER_HOST = getenv("WEBHOOK_LOCAL_API_URL")
 LOCAL_API_SERVER_PORT = int(getenv("WEBHOOK_LOCAL_API_PORT"))
@@ -106,33 +107,41 @@ def format_locales(text: str, user: User, chat: Chat, reply_to_user: User = None
     return text
 
 
-@routes.get('/start_bot/{bot_token}')
+@routes.get('/start_bot/{bot_id}')
 async def add_bot_handler(request):
-    bot_token = request.match_info['bot_token']
-    if not is_bot_token(bot_token):
+    bot_id = request.match_info['bot_id']
+    try:
+        bot = await bot_db.get_bot(int(bot_id))
+    except BotNotFound:
+        return web.Response(status=404, text=f"Bot with provided id not found (id: {bot_id}).")
+    if not is_bot_token(bot.token):
         return web.Response(status=400, text="Incorrect bot token format.")
     try:
-        new_bot = Bot(token=bot_token, session=session)
+        new_bot = Bot(token=bot.token, session=session)
         new_bot_data = await new_bot.get_me()
     except TelegramUnauthorizedError:
         return web.Response(status=400, text="Unauthorized telegram token.")
     await new_bot.delete_webhook(drop_pending_updates=True)
-    await new_bot.set_webhook(OTHER_BOTS_URL.format(bot_token=bot_token))
-    return web.Response(text=f"Added bot with token ({bot_token}) and username (@{new_bot_data.username})")
+    await new_bot.set_webhook(OTHER_BOTS_URL.format(bot_token=bot.token))
+    return web.Response(text=f"Started bot with token ({bot.token}) and username (@{new_bot_data.username})")
 
 
-@routes.get('/stop_bot/{bot_token}')
+@routes.get('/stop_bot/{bot_id}')
 async def stop_bot_handler(request):
-    bot_token = request.match_info['bot_token']
-    if not is_bot_token(bot_token):
+    bot_id = request.match_info['bot_id']
+    try:
+        bot = await bot_db.get_bot(int(bot_id))
+    except BotNotFound:
+        return web.Response(status=404, text=f"Bot with provided id not found (id: {bot_id}).")
+    if not is_bot_token(bot.token):
         return web.Response(status=400, text="Incorrect bot token format.")
     try:
-        new_bot = Bot(token=bot_token, session=session)
+        new_bot = Bot(token=bot.token, session=session)
         new_bot_data = await new_bot.get_me()
     except TelegramUnauthorizedError:
-        return web.Response(status=400, text="Unauthorized telegram token.")
+       return web.Response(status=400, text="Unauthorized telegram token.")
     await new_bot.delete_webhook(drop_pending_updates=True)
-    return web.Response(text=f"Stopped bot with token ({bot_token}) and username (@{new_bot_data.username})")
+    return web.Response(text=f"Stopped bot with token ({bot.token}) and username (@{new_bot_data.username})")
 
 
 def is_bot_token(value: str) -> Union[bool, Dict[str, Any]]:
@@ -157,10 +166,14 @@ async def get_option(param: str, token: str):
 async def start_cmd(message: Message):
     start_msg = await get_option("start_msg", message.bot.token)
     web_app_button = await get_option("web_app_button", message.bot.token)
+    try:
+        bot = await bot_db.get_bot_by_token(message.bot.token)
+    except BotNotFound:
+        return await message.answer("Бот не инициализирован.")
     kb = ReplyKeyboardMarkup(keyboard=[
         [
             KeyboardButton(text=web_app_button, web_app=WebAppInfo(
-                url=WEB_APP_URL.replace('[token]', message.bot.token.replace(':', '_', 1))))
+                url=WEB_APP_URL.replace('[bot_id]', str(bot.bot_id))))
         ]
     ], resize_keyboard=True)
     return await message.reply(format_locales(start_msg, message.from_user, message.chat), reply_markup=kb)
@@ -175,7 +188,7 @@ async def process_web_app_request(event: Message):
         data = json.loads(event.web_app_data.data)
         logger.info(f"receive web app data: {data}")
 
-        order_params = ('order_id', 'products', 'payment_method', 'ordered_at', 'address', 'comment', 'bot_token')
+        order_params = ('order_id', 'products', 'payment_method', 'ordered_at', 'address', 'comment', 'bot_id')
         order_data = {k: v for k, v in data.items() if k in order_params}
 
         order_data["from_user"] = user_id
