@@ -7,13 +7,12 @@ from datetime import datetime
 import asyncio
 
 from aiohttp import web
-from aiojobs.aiohttp import setup, spawn
 import ssl
 
 from aiogram import Bot, Dispatcher, F, Router
 from aiogram.client.session.aiohttp import AiohttpSession
 from aiogram.enums import ParseMode
-from aiogram.fsm.storage.memory import MemoryStorage, SimpleEventIsolation
+from aiogram.fsm.storage.memory import MemoryStorage
 from aiogram.types import Message, User, Chat, CallbackQuery
 from aiogram.filters import CommandStart, StateFilter
 from aiogram.utils.keyboard import ReplyKeyboardMarkup, KeyboardButton
@@ -145,7 +144,7 @@ def is_bot_token(value: str) -> Union[bool, Dict[str, Any]]:
 
 
 async def get_option(param: str, token: str):
-    bot_info = await bot_db.get_bot(token)
+    bot_info = await bot_db.get_bot_by_token(token)
     options = bot_info.settings
     if options is None:
         return None
@@ -195,7 +194,7 @@ async def process_web_app_request(event: Message):
 
     products = [(await product_db.get_product(int(product_id)), amount) for product_id, amount in data['products'].items()]
     username = "@" + order_user_data.username if order_user_data.username else order_user_data.full_name
-    admin_id = (await bot_db.get_bot(event.bot.token)).created_by
+    admin_id = (await bot_db.get_bot_by_token(event.bot.token)).created_by
     main_msg = await main_bot.send_message(
         admin_id, order.convert_to_notification_text(
             products,

@@ -1,8 +1,10 @@
 from datetime import datetime
-from re import fullmatch
+
+from aiogram.utils.token import validate_token, TokenValidationError
 
 from sqlalchemy import BigInteger, Column, String, DateTime, JSON
 from sqlalchemy import select, update, delete, insert
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncEngine
 
 from pydantic import BaseModel, Field, ConfigDict
@@ -17,7 +19,7 @@ class Bot(Base):
     __tablename__ = "bots"
 
     bot_id = Column(BigInteger, primary_key=True, autoincrement=True)
-    bot_token = Column(String(46))
+    bot_token = Column(String(46), unique=True)
     status = Column(String(55), nullable=False)
     created_at = Column(DateTime, nullable=False)
     created_by = Column(BigInteger, nullable=False)
@@ -36,7 +38,7 @@ class BotSchemaWithoutId(BaseModel):
     locale: str = Field()
 
 
-class BotSchema(BaseModel):  #  TODO back naming to BotSchema
+class BotSchema(BaseModel):
     bot_id: int = Field(frozen=True)
 
 
@@ -75,7 +77,9 @@ class BotDao(Dao):
         return BotSchema.model_validate(res)
 
     async def get_bot_by_token(self, bot_token: str) -> BotSchema:
-        if not isinstance(bot_token, str) and fullmatch(r"\d{10}:[\w|-]{35}", bot_token):
+        try:
+            validate_token(bot_token)
+        except TokenValidationError:
             raise InvalidParameterFormat(
                 "bot_token must be type of str with format 0000000000:AaAaAaAaAaAaAaAaAaAaAaAaAaAaAaAaAaA")
 
@@ -93,14 +97,12 @@ class BotDao(Dao):
     async def add_bot(self, bot: BotSchemaWithoutId) -> int:
         if not isinstance(bot, BotSchemaWithoutId):
             raise InvalidParameterFormat("bot must be type of BotSchemaWithoutId")
-        try:
-            await self.get_bot_by_token(bot_token=bot.token)
-            raise InstanceAlreadyExists(f"bot with {bot.token} already exists in db.")
-        except BotNotFound:
-            pass
 
         async with self.engine.begin() as conn:
-            bot_id = await conn.execute(insert(Bot).values(**bot.model_dump(by_alias=True)))
+            try:
+                bot_id = await conn.execute(insert(Bot).values(**bot.model_dump(by_alias=True)))
+            except IntegrityError:
+                raise InstanceAlreadyExists(f"bot with {bot.token} already exists in db.")
         await self.engine.dispose()
 
         self.logger.info(f"successfully add bot with bot_id {bot_id} to db.")
