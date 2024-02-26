@@ -21,7 +21,7 @@ class Product(Base):
     __tablename__ = "products"
 
     id = Column(BigInteger, primary_key=True)
-    bot_token = Column(ForeignKey(Bot.bot_token, ondelete="CASCADE"), nullable=False)
+    bot_id = Column(ForeignKey(Bot.bot_id, ondelete="CASCADE"), nullable=False)
     name = Column(String(55), nullable=False)
     description = Column(String(255), nullable=False)
     price = Column(Integer, nullable=False)
@@ -31,7 +31,7 @@ class Product(Base):
 class ProductWithoutId(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
-    bot_token: str = Field(frozen=True, max_length=46, min_length=46)
+    bot_id: int = Field(frozen=True)
     name: str = Field(max_length=55)
     description: str = Field(max_length=255)
     price: int
@@ -50,16 +50,17 @@ class ProductDao(Dao):
         super().__init__(engine, logger)
 
     @validate_call(validate_return=True)
-    async def get_all_products(self, bot_token: str) -> list[ProductSchema]:
+    async def get_all_products(self, bot_id: int) -> list[ProductSchema]:
         async with self.engine.begin() as conn:
-            raw_res = await conn.execute(select(Product).where(Product.bot_token == bot_token))
+            raw_res = await conn.execute(select(Product).where(Product.bot_id == bot_id))
         await self.engine.dispose()
+
         raw_res = raw_res.fetchall()
         res = []
         for product in raw_res:
             res.append(ProductSchema.model_validate(product))
 
-        self.logger.info(f"get_all_products method with token: {bot_token} success.")
+        self.logger.info(f"get_all_products method with bot_id: {bot_id} success.")
         return res
 
     @validate_call(validate_return=True)
@@ -85,7 +86,9 @@ class ProductDao(Dao):
     async def update_product(self, updated_product: ProductSchema):
         await self.get_product(updated_product.id)
         async with self.engine.begin() as conn:
-            await conn.execute(update(Product).where(Product.id == updated_product.id).values(updated_product.model_dump()))
+            await conn.execute(
+                update(Product).where(Product.id == updated_product.id).values(updated_product.model_dump())
+            )
         self.logger.info(f"successfully update product with id {updated_product.id} at db.")
 
     @validate_call

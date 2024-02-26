@@ -26,10 +26,10 @@ from bot.locales.default import DefaultLocale
 from bot.filters.chat_type import ChatTypeFilter
 from bot.exceptions.exceptions import *
 
-from database.models.bot_model import BotSchema
+from database.models.bot_model import BotSchemaWithoutId
 from database.models.user_model import UserSchema
-from database.models.product_model import ProductWithoutId
 from database.models.order_model import OrderSchema, OrderNotFound, OrderStatusValues
+from database.models.product_model import ProductWithoutId
 
 from magic_filter import F
 
@@ -43,19 +43,19 @@ order_db = db_engine.get_order_dao()
 bot_db = db_engine.get_bot_dao()
 
 
-async def start_custom_bot(token: str):
-    async with (aiohttp.ClientSession() as session):
+async def start_custom_bot(bot_id: int):
+    async with aiohttp.ClientSession() as session:
         async with session.get(
-                f"http://{config.LOCAL_API_SERVER_HOST}:{config.LOCAL_API_SERVER_PORT}/start_bot/{token}") as response:
+                f"http://{config.LOCAL_API_SERVER_HOST}:{config.LOCAL_API_SERVER_PORT}/start_bot/{bot_id}") as response:
             if response.status != 200:
                 raise LocalAPIException(f"API returned {response.status} status code "
                                         f"with text {await response.text()}")
 
 
-async def stop_custom_bot(token: str):
-    async with (aiohttp.ClientSession() as session):
+async def stop_custom_bot(bot_id: int):
+    async with aiohttp.ClientSession() as session:
         async with session.get(
-                f"http://{config.LOCAL_API_SERVER_HOST}:{config.LOCAL_API_SERVER_PORT}/stop_bot/{token}") as response:
+                f"http://{config.LOCAL_API_SERVER_HOST}:{config.LOCAL_API_SERVER_PORT}/stop_bot/{bot_id}") as response:
             if response.status != 200:
                 raise LocalAPIException(f"API returned {response.status} status code "
                                         f"with text {await response.text()}")
@@ -77,7 +77,7 @@ async def send_new_order_notify(order: OrderSchema, user_id: int):
 
 
 async def send_order_change_status_notify(order: OrderSchema):
-    user_bot = await bot_db.get_bot(order.bot_token)
+    user_bot = await bot_db.get_bot(order.bot_id)
     text = f"Новый статус заказ <b>#{order.id}</b>\n<b>{order.status}</b>"
     await bot.send_message(user_bot.created_by, text)
     await bot.send_message(order.from_user, text)
@@ -87,11 +87,14 @@ async def send_order_change_status_notify(order: OrderSchema):
 async def handle_callback(query: CallbackQuery, state: FSMContext):
     state_data = await state.get_data()
     data = query.data.split(":")
+    bot_token = (await bot_db.get_bot(state_data['bot_id'])).token
+
     try:
         order = await order_db.get_order(data[1])
     except OrderNotFound:
         await query.answer("Ошибка при работе с заказом, возможно статус уже изменился.", show_alert=True)
         return await query.message.edit_reply_markup(None)
+
     match data[0]:
         case "order_pre_cancel":
             await query.message.edit_reply_markup(reply_markup=create_cancel_confirm_kb(
@@ -111,7 +114,7 @@ async def handle_callback(query: CallbackQuery, state: FSMContext):
 
             products = [(await product_db.get_product(product_id), product_count)
                         for product_id, product_count in order.products.items()]
-            await Bot(state_data['token'], parse_mode=ParseMode.HTML).edit_message_text(
+            await Bot(bot_token, parse_mode=ParseMode.HTML).edit_message_text(
                 order.convert_to_notification_text(products=products),
                 reply_markup=None if data[0] in ("order_finish", "order_cancel") else
                 create_cancel_order_kb(order.id, int(data[2]), int(data[3])),
@@ -126,7 +129,7 @@ async def handle_callback(query: CallbackQuery, state: FSMContext):
                 ), reply_markup=None if data[0] in ("order_finish", "order_cancel") else
                 create_change_order_status_kb(order.id, int(data[2]), int(data[3]), is_processing))
 
-            await Bot(state_data['token'], parse_mode=ParseMode.HTML).send_message(
+            await Bot(bot_token, parse_mode=ParseMode.HTML).send_message(
                 chat_id=data[3],
                 text=f"Новый статус заказа <b>#{order.id}</b>\n<b>{order.translate_order_status()}</b>")
 
@@ -172,13 +175,13 @@ async def start_command_handler(message: Message, state: FSMContext):
         await state.set_state(States.WAITING_FOR_TOKEN)
         await message.answer(DefaultLocale.input_token())
     else:
-        user_bot = Bot(user_bots[0].token)
+        bot_id = user_bots[0].bot_id
+        user_bot = Bot(bot_id)
         user_bot_data = await user_bot.get_me()
         await message.answer(DefaultLocale.selected_bot_msg().replace("{selected_name}", user_bot_data.full_name),
-                             reply_markup=get_bot_menu_keyboard(WebAppInfo(
-                                 url=config.WEB_APP_URL + f":{config.WEB_APP_PORT}" + '?token=' + user_bot.token.replace(':', '_'))))
+                             reply_markup=get_bot_menu_keyboard(bot_id=bot_id))
         await state.set_state(States.BOT_MENU)
-        await state.set_data({'token': user_bots[0].token})
+        await state.set_data({'bot_id': bot_id})
 
 
 @router.message(States.WAITING_FOR_TOKEN)  # TODO remove all replace(":", "___") of tokens
@@ -193,7 +196,7 @@ async def waiting_for_the_token_handler(message: Message, state: FSMContext):
         found_bot_data = await found_bot.get_me()
         bot_fullname, bot_username = found_bot_data.full_name, found_bot_data.username
 
-        new_bot = BotSchema(bot_token=token,
+        new_bot = BotSchemaWithoutId(bot_token=token,
                             status="new",
                             created_at=datetime.utcnow(),
                             created_by=message.from_user.id,
@@ -203,8 +206,8 @@ async def waiting_for_the_token_handler(message: Message, state: FSMContext):
                                       "web_app_button": DefaultLocale.open_web_app_button()},
                             locale=lang)
 
-        await bot_db.add_bot(new_bot)
-        await start_custom_bot(token)
+        bot_id = await bot_db.add_bot(new_bot)
+        await start_custom_bot(bot_id)
     except TokenValidationError:
         return await message.answer(DefaultLocale.incorrect_bot_token())
     except TelegramUnauthorizedError:
@@ -222,11 +225,10 @@ async def waiting_for_the_token_handler(message: Message, state: FSMContext):
         return await message.answer(":( Произошла ошибка при добавлении бота, попробуй еще раз позже.")
     await message.answer(
         DefaultLocale.bot_will_initialize().format(bot_fullname, bot_username),
-        reply_markup=get_bot_menu_keyboard(WebAppInfo(
-            url=config.WEB_APP_URL + '?token=' + token.replace(':', '_')))
+        reply_markup=get_bot_menu_keyboard(bot_id)
     )
     await state.set_state(States.BOT_MENU)
-    await state.set_data({"token": token})
+    await state.set_data({"bot_id": bot_id})
 
 
 @router.message(States.BOT_MENU, F.photo)
@@ -251,7 +253,7 @@ async def bot_menu_photo_handler(message: Message, state: FSMContext):
 
     await bot.download(photo_file_id, destination=f"{os.getenv('FILES_PATH')}{filename}")
 
-    new_product = ProductWithoutId(bot_token=state_data['token'],
+    new_product = ProductWithoutId(bot_id=state_data['bot_id'],
                                    name=params[0],
                                    description="",
                                    price=price,
@@ -278,7 +280,7 @@ async def bot_menu_handler(message: Message, state: FSMContext):
         case "Магазин":
             pass  # should be pass, it's nice
         case "Список товаров":
-            products = await db_engine.get_product_db().get_all_products(state_data["token"])
+            products = await db_engine.get_product_db().get_all_products(state_data["bot_id"])
             if not products:
                 await message.answer("Список товаров твоего магазина пуст")
             else:
@@ -293,10 +295,10 @@ async def bot_menu_handler(message: Message, state: FSMContext):
             await message.answer("Чтобы добавить товар, прикрепи его картинку и отправь сообщение в виде:"
                                  "\n\nНазвание\nЦена в рублях")
         case "Запустить бота":
-            await start_custom_bot(state_data['token'])
+            await start_custom_bot(state_data['bot_id'])
             await message.answer("Твой бот запущен ✅")
         case "Остановить бота":
-            await stop_custom_bot(state_data['token'])
+            await stop_custom_bot(state_data['bot_id'])
             await message.answer("Твой бот приостановлен ❌")
         case "Удалить бота":
             await message.answer("Бот удалится вместе со всей базой продуктов безвозвратно.\n"
@@ -306,8 +308,8 @@ async def bot_menu_handler(message: Message, state: FSMContext):
         case _:
             await message.answer(
                 "Для навигации используй кнопки 👇",
-                reply_markup=get_bot_menu_keyboard(
-                    WebAppInfo(url=config.WEB_APP_URL + f":{config.WEB_APP_PORT}" + f"?token={state_data['token']}".replace(":", "_"))))
+                reply_markup=get_bot_menu_keyboard(state_data["bot_id"])
+            )
 
 
 @router.message(States.EDITING_START_MESSAGE)
@@ -318,12 +320,12 @@ async def editing_start_message_handler(message: Message, state: FSMContext):
         if message_text == "🔙 Назад":
             await message.answer(
                 "Возвращемся в меню...",
-                reply_markup=get_bot_menu_keyboard(WebAppInfo(
-                    url=config.WEB_APP_URL + f":{config.WEB_APP_PORT}" + '?token=' + state_data['token'].replace(':', '_'))))
+                reply_markup=get_bot_menu_keyboard(state_data["bot_id"])
+            )
             await state.set_state(States.BOT_MENU)
             await state.set_data(state_data)
         else:
-            user_bot = await db_engine.get_bot_dao().get_bot(state_data["token"])
+            user_bot = await db_engine.get_bot_dao().get_bot(state_data["bot_id"])
             if user_bot.settings:
                 user_bot.settings["start_msg"] = message_text
             else:
@@ -332,8 +334,8 @@ async def editing_start_message_handler(message: Message, state: FSMContext):
 
             await message.answer(
                 "Стартовое сообщение изменено!",
-                reply_markup=get_bot_menu_keyboard(WebAppInfo(
-                    url=config.WEB_APP_URL + f":{config.WEB_APP_PORT}" + '?token=' + state_data['token'].replace(':', '_'))))
+                reply_markup=get_bot_menu_keyboard(state_data["bot_id"])
+            )
             await state.set_state(States.BOT_MENU)
             await state.set_data(state_data)
     else:
@@ -348,12 +350,12 @@ async def editing_default_message_handler(message: Message, state: FSMContext):
         if message_text == "🔙 Назад":
             await message.answer(
                 "Возвращемся в меню...",
-                reply_markup=get_bot_menu_keyboard(WebAppInfo(
-                    url=config.WEB_APP_URL + f":{config.WEB_APP_PORT}" + '?token=' + state_data['token'].replace(':', '_'))))
+                reply_markup=get_bot_menu_keyboard(state_data["bot_id"])
+            )
             await state.set_state(States.BOT_MENU)
             await state.set_data(state_data)
         else:
-            user_bot = await db_engine.get_bot_dao().get_bot(state_data["token"])
+            user_bot = await db_engine.get_bot_dao().get_bot(state_data["bot_id"])
             if user_bot.settings:
                 user_bot.settings["default_msg"] = message_text
             else:
@@ -362,8 +364,8 @@ async def editing_default_message_handler(message: Message, state: FSMContext):
 
             await message.answer(
                 "Сообщение-затычка изменена!",
-                reply_markup=get_bot_menu_keyboard(WebAppInfo(
-                    url=config.WEB_APP_URL + f":{config.WEB_APP_PORT}" + '?token=' + state_data['token'].replace(':', '_'))))
+                reply_markup=get_bot_menu_keyboard(state_data["bot_id"])
+            )
             await state.set_state(States.BOT_MENU)
             await state.set_data(state_data)
     else:
@@ -375,22 +377,22 @@ async def delete_bot_handler(message: Message, state: FSMContext):
     message_text = message.text
     state_data = await state.get_data()
     if message_text == "ПОДТВЕРДИТЬ":
-        logger.info(f"Disabling bot {state_data['token']}, setting deleted status to db...")
-        user_bot = await bot_db.get_bot(state_data["token"])
+        logger.info(f"Disabling bot {state_data['bot_id']}, setting deleted status to db...")
+        user_bot = await bot_db.get_bot(state_data["bot_id"])
         user_bot.status = "Deleted"
-        # await bot_db.update_bot(user_bot) TODO after change primary key from token to bot id
-        await bot_db.del_bot(user_bot.token)
+        await bot_db.del_bot(user_bot.bot_id)
 
         await message.answer(
             "Бот удален",
-            reply_markup=ReplyKeyboardRemove())
+            reply_markup=ReplyKeyboardRemove()
+        )
         await message.answer(DefaultLocale.input_token())
         await state.set_state(States.WAITING_FOR_TOKEN)
     elif message_text == "🔙 Назад":
         await message.answer(
             "Возвращемся в меню...",
-            reply_markup=get_bot_menu_keyboard(
-                WebAppInfo(url=config.WEB_APP_URL + f":{config.WEB_APP_PORT}" + f"?token={state_data['token']}".replace(":", "_"))))
+            reply_markup=get_bot_menu_keyboard(state_data["bot_id"])
+        )
         await state.set_state(States.BOT_MENU)
         await state.set_data(state_data)
     else:

@@ -3,12 +3,12 @@ import Vuex from 'vuex'
 let tg = window.Telegram.WebApp;
 tg.expand();
 const url = new URL(window.location.href);
-const token = url.searchParams.get('token');
+const bot_id = url.searchParams.get('bot_id');
 const apiUrl = `https://ezbots.ru:${import.meta.env.VITE_API_PORT}`
 
 export const Store = new Vuex.Store({
   state: {
-    token: "",
+    bot_id: "",
     itemsAddToCartArray: [],
     items: [],
     generatedOrderId: '',
@@ -28,7 +28,7 @@ export const Store = new Vuex.Store({
     itemsInit() {
       async function fetchItems() {
         try {
-          const response =  await fetch(`${apiUrl}/api/products/get_all_products/${token}`,
+          const response =  await fetch(`${apiUrl}/api/products/get_all_products/${bot_id}`,
             {
               method: 'GET',
               headers: {
@@ -54,7 +54,7 @@ export const Store = new Vuex.Store({
           console.log('No data received');
         }
       });
-      Store.state.token = token;
+      Store.state.bot_id = bot_id;
     },
     checkOrderId() {
       if (Store.state.generatedOrderId !== '') {
@@ -93,7 +93,7 @@ export const Store = new Vuex.Store({
     postData() {
       let data = {
         'order_id': Store.state.generatedOrderId,
-        'bot_token': Store.state.token,
+        'bot_id': Store.state.bot_id,
         'products': Store.state.itemsAddToCartArray.reduce((acc, item) => {
           acc[item.id] = item.count;
           return acc;
