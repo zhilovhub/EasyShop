@@ -176,7 +176,7 @@ async def start_command_handler(message: Message, state: FSMContext):
         await message.answer(DefaultLocale.input_token())
     else:
         bot_id = user_bots[0].bot_id
-        user_bot = Bot(bot_id)
+        user_bot = Bot(user_bots[0].token)
         user_bot_data = await user_bot.get_me()
         await message.answer(DefaultLocale.selected_bot_msg().replace("{selected_name}", user_bot_data.full_name),
                              reply_markup=get_bot_menu_keyboard(bot_id=bot_id))
