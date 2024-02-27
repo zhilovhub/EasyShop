@@ -11,12 +11,14 @@ const textarea = document.querySelectorAll('textarea');
 textarea.forEach(textarea => {
   textarea.addEventListener('blur', function() {
     textarea.blur();
+    document.activeElement.blur();
   });
 
   document.addEventListener('click', function(event) {
     // Проверяем, было ли событие клика вне области ввода текущего textarea и не было ли это событие клика именно на клавиатуре
     if (!textarea.contains(event.target) && !isKeyboardEvent(event)) {
       textarea.blur();
+      document.activeElement.blur();
     }
   });
 });
