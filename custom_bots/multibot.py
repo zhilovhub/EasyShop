@@ -24,7 +24,6 @@ from aiogram.webhook.aiohttp_server import (
     TokenBasedRequestHandler,
     setup_application,
 )
-from aiogram.types.web_app_info import WebAppInfo
 
 from database.models.models import Database
 from database.models.order_model import OrderSchema, OrderStatusValues, OrderNotFound
@@ -169,14 +168,12 @@ async def start_cmd(message: Message):
     try:
         bot = await bot_db.get_bot_by_token(message.bot.token)
     except BotNotFound:
-        return await message.answer("Бот не инициализирован.")
-    kb = ReplyKeyboardMarkup(keyboard=[
-        [
-            KeyboardButton(text=web_app_button, web_app=WebAppInfo(
-                url=WEB_APP_URL.replace('[bot_id]', str(bot.bot_id))))
-        ]
-    ], resize_keyboard=True)
-    return await message.reply(format_locales(start_msg, message.from_user, message.chat), reply_markup=kb)
+        return await message.answer("Бот не инициализирован")
+
+    return await message.answer(
+        format_locales(start_msg, message.from_user, message.chat),
+        reply_markup=keyboards.get_custom_bot_menu_keyboard(web_app_button, bot.bot_id)
+    )
 
 
 @multi_bot_router.message(F.web_app_data)
@@ -233,13 +230,17 @@ async def process_web_app_request(event: Message):
 @multi_bot_router.message(StateFilter(None))
 async def default_cmd(message: Message):
     web_app_button = await get_option("web_app_button", message.bot.token)
-    kb = ReplyKeyboardMarkup(keyboard=[
-        [
-            KeyboardButton(text=web_app_button, web_app=WebAppInfo(url=WEB_APP_URL))
-        ]
-    ], resize_keyboard=True)
+
+    try:
+        bot = await bot_db.get_bot_by_token(message.bot.token)
+    except BotNotFound:
+        return await message.answer("Бот не инициализирован.")
+
     default_msg = await get_option("default_msg", message.bot.token)
-    await message.answer(format_locales(default_msg, message.from_user, message.chat), reply_markup=kb)
+    await message.answer(
+        format_locales(default_msg, message.from_user, message.chat),
+        reply_markup=keyboards.get_custom_bot_menu_keyboard(web_app_button, bot.bot_id)
+    )
 
 
 @multi_bot_router.callback_query(lambda q: q.data.startswith("order_"))

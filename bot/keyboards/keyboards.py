@@ -69,6 +69,12 @@ def get_bot_menu_keyboard(bot_id: int) -> ReplyKeyboardMarkup:
     ], resize_keyboard=True, one_time_keyboard=False)
 
 
+def get_custom_bot_menu_keyboard(button_text: str, bot_id: int) -> ReplyKeyboardMarkup:
+    return ReplyKeyboardMarkup(keyboard=[
+        [KeyboardButton(text="Открыть магазин", web_app=make_webapp_info(bot_id))]
+    ], resize_keyboard=True, one_time_keyboard=False)
+
+
 def get_inline_delete_button(product_id: int) -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(inline_keyboard=[
         [InlineKeyboardButton(text="Удалить", callback_data=f"product:delete_{product_id}")]
