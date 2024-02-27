@@ -75,7 +75,7 @@
   <div class="title-div">
     <img style="width: 134px; height: 134px; border-radius: 7px;" src="../../src/assets/logo.png" alt="image">
     <div class="title-text">
-      <span style="font-size: 24px; margin-bottom: 15px">Заказ №{{orderId}}</span>
+      <span style="font-size: 24px; margin-bottom: 15px; line-height: 1.5rem">Заказ №{{orderId}}</span>
       <span style="color: #71CBFF; font-size: 15px; font-weight: 500">Название заказа</span>
     </div>
   </div>
