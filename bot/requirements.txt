@@ -3,3 +3,5 @@ asyncpg
 SQLAlchemy
 python-dotenv
 aiojobs
+pytest
+pytest-asyncio

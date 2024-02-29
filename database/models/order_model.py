@@ -2,11 +2,11 @@ from datetime import datetime
 from enum import Enum
 from typing import Optional
 
-from sqlalchemy import BigInteger, Column, String, TypeDecorator, Unicode, Dialect, ARRAY, DateTime, JSON, ForeignKey
+from sqlalchemy import BigInteger, Column, String, TypeDecorator, Unicode, Dialect, DateTime, JSON, ForeignKey
 from sqlalchemy import select, update, delete, insert
 from sqlalchemy.ext.asyncio import AsyncEngine
 
-from pydantic import BaseModel, Field, validate_call, ConfigDict, Json
+from pydantic import BaseModel, Field, validate_call, ConfigDict
 
 from database.models import Base
 from database.models.dao import Dao
@@ -59,11 +59,11 @@ class Order(Base):
     comment = Column(String)
 
 
-class OrderWithoutId(BaseModel):
+class OrderSchema(BaseModel):
     model_config = ConfigDict(from_attributes=True, populate_by_name=True)
-    
+
+    id: str = Field(max_length=12, frozen=True, alias="order_id")
     bot_id: int
-    # bot_token: str = Field(max_length=46, min_length=46, frozen=True)
     products: dict[int, int]
     from_user: int
     payment_method: str
@@ -71,10 +71,6 @@ class OrderWithoutId(BaseModel):
     address: str
     status: OrderStatusValues
     comment: str
-
-
-class OrderSchema(OrderWithoutId):
-    id: str = Field(max_length=12, frozen=True, alias="order_id")
 
     def translate_order_status(self) -> str:
         match self.status:

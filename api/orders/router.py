@@ -1,4 +1,4 @@
-from database.models.order_model import OrderSchema, OrderWithoutId, OrderNotFound
+from database.models.order_model import OrderNotFound
 from loader import db_engine, logger
 from fastapi import HTTPException, APIRouter
 from pydantic import ValidationError

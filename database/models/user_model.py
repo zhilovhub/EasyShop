@@ -67,17 +67,16 @@ class UserDao(Dao):
     async def add_user(self, user: UserSchema) -> None:
         if not isinstance(user, UserSchema):
             raise InvalidParameterFormat("user must be type of database.DbUser.")
+
         try:
-            if await self.get_user(user_id=user.id):
-                raise InstanceAlreadyExists(f"user with {user.id} already exists in db.")
-        except:
-            pass
+            await self.get_user(user_id=user.id)
+            raise InstanceAlreadyExists(f"user with {user.id} already exists in db.")
+        except UserNotFound:
+            async with self.engine.begin() as conn:
+                await conn.execute(insert(User).values(**user.model_dump(by_alias=True)))
+            await self.engine.dispose()
 
-        async with self.engine.begin() as conn:
-            await conn.execute(insert(User).values(**user.model_dump(by_alias=True)))
-        await self.engine.dispose()
-
-        self.logger.info(f"successfully add user with id {user.id} to db.")
+            self.logger.info(f"successfully add user with id {user.id} to db.")
 
     async def update_user(self, updated_user: UserSchema) -> None:
         if not isinstance(updated_user, UserSchema):
