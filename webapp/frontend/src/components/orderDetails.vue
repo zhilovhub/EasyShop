@@ -247,19 +247,6 @@
   }
 }
 
-@media (max-width: 300px) {
-  .footer {
-    bottom: 50px;
-  }
-  .btnTotalPrice {
-    font-size: 22px;
-  }
-}
-@media (min-width: 1400px) {
-  .btnTotalPrice {
-    height: 100px;
-  }
-}
 @media (max-height: 1000px) {
   .footer {
     margin-top: 10vh;
@@ -268,6 +255,15 @@
 @media (max-height: 700px) {
   .footer {
     margin-top: 5vh;
+  }
+  .address-container {
+    margin-bottom: 10px;
+  }
+  .title-div {
+    margin-bottom: 10px;
+  }
+  .btnTotalPrice {
+    font-size: 22px;
   }
 }
 
