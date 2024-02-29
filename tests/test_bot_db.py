@@ -21,19 +21,11 @@ bot_schema_without_id_2 = BotSchemaWithoutId(
 )
 bot_schema_1 = BotSchema(
     bot_id=1,
-    token="1000000000:AaAaAaAaAaAaAaAaAaAaAaAaAaAaAaAaAaA",
-    status="a",
-    created_at=datetime.utcnow(),
-    created_by=1,
-    locale=""
+    **bot_schema_without_id_1.model_dump()
 )
 bot_schema_2 = BotSchema(
     bot_id=2,
-    token="2000000000:AaAaAaAaAaAaAaAaAaAaAaAaAaAaAaAaAaA",
-    status="a",
-    created_at=datetime.utcnow(),
-    created_by=2,
-    locale=""
+    **bot_schema_without_id_2.model_dump()
 )
 
 

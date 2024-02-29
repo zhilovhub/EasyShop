@@ -24,43 +24,31 @@ product_schema_without_id_2 = ProductWithoutId(
 )
 product_schema_1 = ProductSchema(
     id=1,
-    bot_id=BOT_ID,
-    name="Xbox",
-    description="",
-    price=21000,
-    picture="asd4F.jpg"
+    **product_schema_without_id_1.model_dump()
 )
 product_schema_2 = ProductSchema(
     id=2,
-    bot_id=BOT_ID,
-    name="Xbox Series X",
-    description="",
-    price=31000,
-    picture="sa123.jpg"
+    **product_schema_without_id_2.model_dump()
+)
+
+bot_schema_without_id = BotSchemaWithoutId(
+    token="1000000000:AaAaAaAaAaAaAaAaAaAaAaAaAaAaAaAaAaA",
+    status="a",
+    created_at=datetime.utcnow(),
+    created_by=1,
+    locale=""
 )
 
 
 @pytest.fixture
 async def before_add_product(bot_db: BotDao, product_db: ProductDao) -> None:
-    await bot_db.add_bot(BotSchemaWithoutId(
-        token="1000000000:AaAaAaAaAaAaAaAaAaAaAaAaAaAaAaAaAaA",
-        status="a",
-        created_at=datetime.utcnow(),
-        created_by=1,
-        locale=""
-    ))
+    await bot_db.add_bot(bot_schema_without_id)
     await product_db.add_product(product_schema_without_id_1)
 
 
 @pytest.fixture
 async def before_add_two_products(bot_db: BotDao, product_db: ProductDao) -> None:
-    await bot_db.add_bot(BotSchemaWithoutId(
-        token="1000000000:AaAaAaAaAaAaAaAaAaAaAaAaAaAaAaAaAaA",
-        status="a",
-        created_at=datetime.utcnow(),
-        created_by=1,
-        locale=""
-    ))
+    await bot_db.add_bot(bot_schema_without_id)
     await product_db.add_product(product_schema_without_id_1)
     await product_db.add_product(product_schema_without_id_2)
 

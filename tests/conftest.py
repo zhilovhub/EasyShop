@@ -9,6 +9,7 @@ import pytest
 from database.models.models import Database
 from database.models.bot_model import BotDao
 from database.models.user_model import UserDao
+from database.models.order_model import OrderDao
 from database.models.product_model import ProductDao
 
 from database.models.models import Base
@@ -40,6 +41,11 @@ def bot_db(database: Database) -> BotDao:
 @pytest.fixture
 def product_db(database: Database) -> ProductDao:
     return database.get_product_db()
+
+
+@pytest.fixture
+def order_db(database: Database) -> OrderDao:
+    return database.get_order_dao()
 
 
 @pytest.fixture(scope="session")
