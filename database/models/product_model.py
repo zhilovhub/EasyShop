@@ -6,6 +6,8 @@ from sqlalchemy.ext.asyncio import AsyncEngine
 
 from pydantic import BaseModel, Field, validate_call, ConfigDict
 
+from bot.exceptions import InvalidParameterFormat
+
 from database.models import Base
 from database.models.dao import Dao
 
@@ -77,10 +79,15 @@ class ProductDao(Dao):
         return ProductSchema.model_validate(raw_res)
 
     @validate_call
-    async def add_product(self, new_product: ProductWithoutId):
+    async def add_product(self, new_product: ProductWithoutId) -> int:
+        if type(new_product) != ProductWithoutId:
+            raise InvalidParameterFormat("new_product must be type of ProductWithoutId")
+
         async with self.engine.begin() as conn:
-            product_id = await conn.execute(insert(Product).values(new_product.model_dump()))
-        self.logger.info(f"successfully add product with id {product_id} to db.")
+            product_id = (await conn.execute(insert(Product).values(new_product.model_dump()))).inserted_primary_key[0]
+
+        self.logger.info(f"successfully add product with id {product_id} to db")
+        return product_id
 
     @validate_call
     async def update_product(self, updated_product: ProductSchema):
