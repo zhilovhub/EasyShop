@@ -7,6 +7,7 @@ from dotenv import load_dotenv
 import pytest
 
 from database.models.models import Database
+from database.models.bot_model import BotDao
 from database.models.user_model import UserDao
 
 from database.models.models import Base
@@ -17,6 +18,8 @@ load_dotenv()
 @pytest.fixture
 async def database() -> Database:
     database = Database(sqlalchemy_url=os.environ["DB_FOR_TESTS"])
+    async with database.engine.begin() as conn:
+        await conn.run_sync(Base.metadata.drop_all)
     await database.connect()
     yield database
     async with database.engine.begin() as conn:
@@ -26,6 +29,11 @@ async def database() -> Database:
 @pytest.fixture
 def user_db(database: Database) -> UserDao:
     return database.get_user_dao()
+
+
+@pytest.fixture
+def bot_db(database: Database) -> BotDao:
+    return database.get_bot_dao()
 
 
 @pytest.fixture(scope="session")

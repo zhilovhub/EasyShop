@@ -28,7 +28,7 @@ class Bot(Base):
 
 
 class BotSchemaWithoutId(BaseModel):
-    model_config = ConfigDict(from_attributes=True)
+    model_config = ConfigDict(from_attributes=True, populate_by_name=True)
 
     token: str = Field(alias="bot_token", frozen=True, max_length=46, min_length=46)
     status: str = Field(max_length=55)
@@ -95,7 +95,7 @@ class BotDao(Dao):
         return BotSchema.model_validate(res)
 
     async def add_bot(self, bot: BotSchemaWithoutId) -> int:
-        if not isinstance(bot, BotSchemaWithoutId):
+        if type(bot) != BotSchemaWithoutId:
             raise InvalidParameterFormat("bot must be type of BotSchemaWithoutId")
 
         async with self.engine.begin() as conn:
@@ -119,7 +119,7 @@ class BotDao(Dao):
 
         self.logger.info(f"successfully update bot with token {updated_bot.token} in db.")
 
-    async def del_bot(self, bot_id: str) -> None:
+    async def del_bot(self, bot_id: int) -> None:
         if not isinstance(bot_id, int):
             raise InvalidParameterFormat(
                 "bot_id must be type of int")
