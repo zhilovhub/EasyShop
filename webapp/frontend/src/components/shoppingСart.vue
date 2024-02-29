@@ -17,7 +17,7 @@
       });
       WebApp.onEvent('backButtonClicked', function() {
         localStorage.setItem('itemsAddToCartArray', null);
-        window.location.href = "/?token=" + vm.$store.state.token;
+        window.location.href = "/?bot_id=" + vm.$store.state.bot_id;
       });
     },
     computed: {
