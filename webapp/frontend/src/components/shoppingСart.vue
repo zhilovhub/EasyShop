@@ -16,7 +16,10 @@
         BackButton.hide();
       });
       WebApp.onEvent('backButtonClicked', function() {
-        localStorage.setItem('itemsAddToCartArray', null);
+        let tempItemsAddToCartArray = localStorage.getItem('itemsAddToCartArray')
+        tempItemsAddToCartArray = JSON.parse(tempItemsAddToCartArray);
+        tempItemsAddToCartArray = tempItemsAddToCartArray.map(item => ({ ...item, count: 0 }));
+        localStorage.setItem('itemsAddToCartArray', JSON.stringify(tempItemsAddToCartArray));
         window.location.href = "/?bot_id=" + vm.$store.state.bot_id;
       });
     },
