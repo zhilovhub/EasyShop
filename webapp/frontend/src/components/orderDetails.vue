@@ -254,13 +254,13 @@
 }
 @media (max-height: 700px) {
   .footer {
-    margin-top: 5vh;
+    margin-top: 0;
   }
   .address-container {
-    margin-bottom: 10px;
+    margin-bottom: 5px;
   }
   .title-div {
-    margin-bottom: 10px;
+    margin-bottom: 5px;
   }
   .btnTotalPrice {
     font-size: 22px;
