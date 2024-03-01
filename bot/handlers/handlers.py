@@ -99,13 +99,14 @@ async def handle_callback(query: CallbackQuery, state: FSMContext):
                 data[1], int(data[2]), int(data[3])))
         case "order_back_to_order":
             await query.message.edit_reply_markup(reply_markup=create_change_order_status_kb(
-                data[1], int(data[2]), int(data[3])))
-        case "order_finish" | "order_cancel" | "order_process" | "order_backlog":
-            order.status, is_processing = {
-                "order_cancel": (OrderStatusValues.CANCELLED, False),
-                "order_finish": (OrderStatusValues.FINISHED, False),
-                "order_process": (OrderStatusValues.PROCESSING, True),
-                "order_backlog": (OrderStatusValues.BACKLOG, False),
+                data[1], int(data[2]), int(data[3]), current_status=order.status))
+        case "order_finish" | "order_cancel" | "order_process" | "order_backlog" | "order_waiting_payment":
+            order.status = {
+                "order_cancel": OrderStatusValues.CANCELLED,
+                "order_finish": OrderStatusValues.FINISHED,
+                "order_process": OrderStatusValues.PROCESSING,
+                "order_backlog": OrderStatusValues.BACKLOG,
+                "order_waiting_payment": OrderStatusValues.WAITING_PAYMENT
             }[data[0]]
 
             await order_db.update_order(order)
@@ -125,7 +126,7 @@ async def handle_callback(query: CallbackQuery, state: FSMContext):
                     username="@" + query.from_user.username if query.from_user.username else query.from_user.full_name,
                     is_admin=True
                 ), reply_markup=None if data[0] in ("order_finish", "order_cancel") else
-                create_change_order_status_kb(order.id, int(data[2]), int(data[3]), is_processing))
+                create_change_order_status_kb(order.id, int(data[2]), int(data[3]), order.status))
 
             await Bot(bot_token, parse_mode=ParseMode.HTML).send_message(
                 chat_id=data[3],
