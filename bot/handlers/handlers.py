@@ -1,9 +1,7 @@
 import os
 import string
 from random import sample
-from re import fullmatch
 from datetime import datetime
-from distutils.dir_util import copy_tree
 
 from bot.main import bot, db_engine
 
@@ -19,10 +17,10 @@ import aiohttp
 from aiohttp.client_exceptions import ClientConnectorError
 
 from bot import config
+from bot.utils import MessageTexts
 from bot.config import logger
 from bot.keyboards import *
 from bot.states.states import States
-from bot.locales.default import DefaultLocale
 from bot.filters.chat_type import ChatTypeFilter
 from bot.exceptions.exceptions import *
 
@@ -168,18 +166,20 @@ async def start_command_handler(message: Message, state: FSMContext):
             user_id=message.from_user.id, registered_at=datetime.utcnow(), status="new", locale="default")
         )
 
-    await message.answer(DefaultLocale.about_message())
+    await message.answer(MessageTexts.ABOUT_MESSAGE.value)
 
     user_bots = await db_engine.get_bot_dao().get_bots(message.from_user.id)
     if not user_bots:
         await state.set_state(States.WAITING_FOR_TOKEN)
-        await message.answer(DefaultLocale.input_token())
+        await message.answer(MessageTexts.INSTRUCTION_MESSAGE.value)
     else:
         bot_id = user_bots[0].bot_id
         user_bot = Bot(user_bots[0].token)
         user_bot_data = await user_bot.get_me()
-        await message.answer(DefaultLocale.selected_bot_msg().replace("{selected_name}", user_bot_data.full_name),
-                             reply_markup=get_bot_menu_keyboard(bot_id=bot_id))
+        await message.answer(MessageTexts.BOT_SELECTED_MESSAGE.value.replace(
+            "{selected_name}", user_bot_data.full_name
+        ),
+            reply_markup=get_bot_menu_keyboard(bot_id=bot_id))
         await state.set_state(States.BOT_MENU)
         await state.set_data({'bot_id': bot_id})
 
@@ -197,21 +197,21 @@ async def waiting_for_the_token_handler(message: Message, state: FSMContext):
         bot_fullname, bot_username = found_bot_data.full_name, found_bot_data.username
 
         new_bot = BotSchemaWithoutId(bot_token=token,
-                            status="new",
-                            created_at=datetime.utcnow(),
-                            created_by=message.from_user.id,
-                            settings={"start_msg": DefaultLocale.default_start_msg(),
-                                      "default_msg":
-                                          f"Привет, этот бот создан с помощью @{(await bot.get_me()).username}",
-                                      "web_app_button": DefaultLocale.open_web_app_button()},
-                            locale=lang)
+                                     status="new",
+                                     created_at=datetime.utcnow(),
+                                     created_by=message.from_user.id,
+                                     settings={"start_msg": MessageTexts.DEFAULT_START_MESSAGE.value,
+                                               "default_msg":
+                                                   f"Привет, этот бот создан с помощью @{(await bot.get_me()).username}",
+                                               "web_app_button": MessageTexts.OPEN_WEB_APP_BUTTON_TEXT.value},
+                                     locale=lang)
 
         bot_id = await bot_db.add_bot(new_bot)
         await start_custom_bot(bot_id)
     except TokenValidationError:
-        return await message.answer(DefaultLocale.incorrect_bot_token())
+        return await message.answer(MessageTexts.INCORRECT_BOT_TOKEN_MESSAGE.value)
     except TelegramUnauthorizedError:
-        return await message.answer(DefaultLocale.bot_with_token_not_found())
+        return await message.answer(MessageTexts.BOT_WITH_TOKEN_NOT_FOUND_MESSAGE.value)
     except InstanceAlreadyExists:
         return await message.answer("Бот с таким токеном в системе уже найден.\n"
                                     "Введи другой токен или перейди в список ботов и поищи своего бота там")
@@ -224,7 +224,7 @@ async def waiting_for_the_token_handler(message: Message, state: FSMContext):
         )
         return await message.answer(":( Произошла ошибка при добавлении бота, попробуй еще раз позже.")
     await message.answer(
-        DefaultLocale.bot_will_initialize().format(bot_fullname, bot_username),
+        MessageTexts.BOT_INITIALIZING_MESSAGE.value.format(bot_fullname, bot_username),
         reply_markup=get_bot_menu_keyboard(bot_id)
     )
     await state.set_state(States.BOT_MENU)
@@ -386,7 +386,7 @@ async def delete_bot_handler(message: Message, state: FSMContext):
             "Бот удален",
             reply_markup=ReplyKeyboardRemove()
         )
-        await message.answer(DefaultLocale.input_token())
+        await message.answer(MessageTexts.INSTRUCTION_MESSAGE.value)
         await state.set_state(States.WAITING_FOR_TOKEN)
     elif message_text == "🔙 Назад":
         await message.answer(

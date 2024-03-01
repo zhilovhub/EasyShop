@@ -1,8 +1,6 @@
 from aiogram.utils.keyboard import InlineKeyboardMarkup, InlineKeyboardButton, ReplyKeyboardMarkup, KeyboardButton
 
-from bot.locales import DefaultLocale
-
-from bot.utils.make_webapp_info import make_webapp_info
+from bot.utils import make_webapp_info, MessageTexts
 
 
 def create_change_order_status_kb(order_id: str, msg_id: int = 0, chat_id: int = 0, is_processing: bool = True) \
@@ -42,7 +40,7 @@ def create_cancel_confirm_kb(order_id: str, msg_id: int = 0, chat_id: int = 0) -
 
 def get_back_keyboard() -> ReplyKeyboardMarkup:
     return ReplyKeyboardMarkup(keyboard=[
-        [KeyboardButton(text=DefaultLocale.back_button())]
+        [KeyboardButton(text=MessageTexts.BACK_BUTTON_TEXT.value)]
     ], resize_keyboard=True)
 
 
