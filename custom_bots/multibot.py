@@ -70,8 +70,6 @@ bot_db = db_engine.get_bot_dao()
 product_db = db_engine.get_product_db()
 order_db = db_engine.get_order_dao()
 
-PREV_ORDER_MSGS = {}
-
 storage = MemoryStorage()
 
 multi_bot_router = Router(name="multibot")
@@ -79,6 +77,36 @@ multi_bot_router = Router(name="multibot")
 logging.basicConfig(format=u'[%(asctime)s][%(levelname)s] ::: %(filename)s(%(lineno)d) -> %(message)s',
                     level="INFO", filename='logs/all.log')
 logger = logging.getLogger('logger')
+
+
+class JsonMsgIdStore:
+
+    def __init__(self, file_path: str):
+        self.file_path = file_path
+        self.data = self.get_data()
+
+    def get_data(self) -> dict:
+        try:
+            with open(self.file_path) as json_file:
+                data = json.load(json_file)
+        except FileNotFoundError:
+            logger.debug("json file to store ids not found, creating new...")
+            with open(self.file_path, 'w') as json_file:
+                json_file.write("{}")
+                data = {}
+        except json.decoder.JSONDecodeError:
+            logger.warning("cant read json file... clearing old data.")
+            with open(self.file_path, 'w') as json_file:
+                json_file.write("{}")
+                data = {}
+        return data
+
+    def update_data(self, new_data: dict):
+        with open(self.file_path, "w") as file:
+            file.write(json.dumps(new_data))
+
+
+PREV_ORDER_MSGS = JsonMsgIdStore("prev_orders_msg_id.json")
 
 
 def format_locales(text: str, user: User, chat: Chat, reply_to_user: User = None) -> str:
@@ -93,12 +121,12 @@ def format_locales(text: str, user: User, chat: Chat, reply_to_user: User = None
                  }
     if reply_to_user:
         data_dict.update({
-                 "reply_name": reply_to_user.full_name,
-                 "reply_first_name": reply_to_user.first_name,
-                 "reply_last_name": reply_to_user.last_name,
-                 "reply_username": f"@{reply_to_user.username}",
-                 "reply_user_id": reply_to_user.id,
-                 })
+            "reply_name": reply_to_user.full_name,
+            "reply_first_name": reply_to_user.first_name,
+            "reply_last_name": reply_to_user.last_name,
+            "reply_username": f"@{reply_to_user.username}",
+            "reply_user_id": reply_to_user.id,
+        })
     text = text.replace("{{", "START_FLAG").replace("}}", "END_FLAG")
     for param in data_dict:
         text = text.replace("{" + str(param) + "}", str(data_dict[param]))
@@ -138,7 +166,7 @@ async def stop_bot_handler(request):
         new_bot = Bot(token=bot.token, session=session)
         new_bot_data = await new_bot.get_me()
     except TelegramUnauthorizedError:
-       return web.Response(status=400, text="Unauthorized telegram token.")
+        return web.Response(status=400, text="Unauthorized telegram token.")
     await new_bot.delete_webhook(drop_pending_updates=True)
     return web.Response(text=f"Stopped bot with token ({bot.token}) and username (@{new_bot_data.username})")
 
@@ -202,7 +230,8 @@ async def process_web_app_request(event: Message):
         logger.error("error while creating order", exc_info=True)
         return await event.answer("Произошла ошибка при создании заказа, попробуйте еще раз.")
 
-    products = [(await product_db.get_product(int(product_id)), amount) for product_id, amount in data['products'].items()]
+    products = [(await product_db.get_product(int(product_id)), amount) for product_id, amount in
+                data['products'].items()]
     username = "@" + order_user_data.username if order_user_data.username else order_user_data.full_name
     admin_id = (await bot_db.get_bot_by_token(event.bot.token)).created_by
     main_msg = await main_bot.send_message(
@@ -212,7 +241,9 @@ async def process_web_app_request(event: Message):
             True
         ))
 
-    PREV_ORDER_MSGS[order.id] = (main_msg.chat.id, main_msg.message_id)
+    msg_id_data = PREV_ORDER_MSGS.get_data()
+    msg_id_data[order.id] = (main_msg.chat.id, main_msg.message_id)
+    PREV_ORDER_MSGS.update_data(msg_id_data)
     msg = await event.bot.send_message(
         user_id, order.convert_to_notification_text(
             products,
@@ -259,18 +290,20 @@ async def handle_callback(query: CallbackQuery):
         case "order_cancel":
             order.status = OrderStatusValues.CANCELLED
             await order_db.update_order(order)
-            products = [(await product_db.get_product(int(product_id)), amount) for product_id, amount in order.products.items()]
+            products = [(await product_db.get_product(int(product_id)), amount) for product_id, amount in
+                        order.products.items()]
             await query.message.edit_text(order.convert_to_notification_text(products=products), reply_markup=None)
+            msg_id_data = PREV_ORDER_MSGS.get_data()
             await main_bot.edit_message_text(
                 text=order.convert_to_notification_text(
                     products=products,
                     username="@" + query.from_user.username if query.from_user.username else query.from_user.full_name,
                     is_admin=True
-                ), chat_id=PREV_ORDER_MSGS[order.id][0], message_id=PREV_ORDER_MSGS[order.id][1], reply_markup=None)
+                ), chat_id=msg_id_data[order.id][0], message_id=msg_id_data[order.id][1], reply_markup=None)
             await main_bot.send_message(
-                chat_id=PREV_ORDER_MSGS[order.id][0],
+                chat_id=msg_id_data[order.id][0],
                 text=f"Новый статус заказа <b>#{order.id}</b>\n<b>{order.translate_order_status()}</b>")
-            del PREV_ORDER_MSGS[order.id]
+            del msg_id_data[order.id]
 
 
 async def main():
