@@ -1,8 +1,10 @@
 import asyncio
+from datetime import datetime
 
 from aiogram import Bot, Dispatcher
 from aiogram.enums import ParseMode
-from datetime import datetime
+from aiogram.types import BotCommand
+
 from database.models.models import Database
 
 from bot import config
@@ -17,6 +19,7 @@ db_engine = Database(config.SQLALCHEMY_URL)
 
 async def on_start():
     logger.info("Bot online.")
+    await bot.set_my_commands([BotCommand(command="start", description="Стартовая инструкция")])
     await storage.connect()
     await db_engine.connect()
     await dp.start_polling(bot)
