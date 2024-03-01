@@ -1,4 +1,4 @@
-from database.models.product_model import ProductSchema, ProductDao, ProductNotFound
+from database.models.product_model import ProductSchema, ProductNotFound
 from loader import db_engine, logger
 from fastapi import HTTPException, APIRouter
 
