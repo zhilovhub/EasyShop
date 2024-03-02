@@ -57,6 +57,7 @@
         this.$store.state.paymentMethod = selectedOption;
         this.$store.state.address = this.inputValue;
         this.$store.commit("postData");
+        localStorage.setItem('itemsAddToCartArray', JSON.stringify([]));
       }
     },
     watch: {

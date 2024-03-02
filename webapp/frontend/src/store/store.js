@@ -8,7 +8,7 @@ const apiUrl = `https://ezbots.ru:${import.meta.env.VITE_API_PORT}`
 
 export const Store = new Vuex.Store({
   state: {
-    bot_id: "",
+    bot_id: bot_id,
     itemsAddToCartArray: [],
     items: [],
     generatedOrderId: '',
@@ -28,7 +28,6 @@ export const Store = new Vuex.Store({
     setItems(state, items) {
       state.items = items;
       state.items = state.items.map(item => ({ ...item, count: 0 }));
-      state.bot_id = bot_id;
     },
     checkOrderId() {
       if (Store.state.generatedOrderId !== '') {

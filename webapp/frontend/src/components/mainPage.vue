@@ -124,16 +124,33 @@ export default {
   mounted() {
     let tempCheckItems = localStorage.getItem('itemsAddToCartArray');
     tempCheckItems = JSON.parse(tempCheckItems);
-    if (tempCheckItems.length > 0) {
-      this.$store.state.items = tempCheckItems;
-      this.isLoading = false;
+
+    if (tempCheckItems && tempCheckItems.length > 0) {
+      let itemsMatch = true;
+      for (let i = 0; i < this.items.length; i++) {
+        if (this.items[i].name !== tempCheckItems[i].name) {
+          itemsMatch = false;
+          break;
+        }
+      }
+      if (itemsMatch) {
+        this.$store.state.items = this.$store.state.items.map(item => ({ ...item, count: 1 }));
+        this.$store.state.items = tempCheckItems
+        this.isLoading = false;
+      } else {
+        this.$store.dispatch('itemsInit').then(() => {
+          this.isLoading = false;
+        });
+      }
     } else {
       this.$store.dispatch('itemsInit').then(() => {
         this.isLoading = false;
-      })
+      });
     }
+
     this.$store.commit("fetchOrderId");
     this.$store.commit("checkOrderId");
+    this.itemsAddToCart();
   }
 };
 </script>
