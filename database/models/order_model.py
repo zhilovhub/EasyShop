@@ -16,6 +16,7 @@ from database.models.bot_model import Bot
 
 class OrderStatusValues(Enum):
     BACKLOG = "backlog"
+    WAITING_PAYMENT = "waiting payment"
     CANCELLED = "cancelled"
     PROCESSING = "processing"
     FINISHED = "finished"
@@ -32,6 +33,8 @@ class OrderStatus(TypeDecorator):
         match value:
             case OrderStatusValues.BACKLOG.value:
                 return OrderStatusValues.BACKLOG
+            case OrderStatusValues.WAITING_PAYMENT.value:
+                return OrderStatusValues.WAITING_PAYMENT
             case OrderStatusValues.CANCELLED.value:
                 return OrderStatusValues.CANCELLED
             case OrderStatusValues.PROCESSING.value:
@@ -76,6 +79,8 @@ class OrderSchema(BaseModel):
         match self.status:
             case OrderStatusValues.BACKLOG:
                 return "⏳ В обработке"
+            case OrderStatusValues.WAITING_PAYMENT:
+                return "💳 Ожидает оплаты"
             case OrderStatusValues.CANCELLED:
                 return "❌ Отменен"
             case OrderStatusValues.PROCESSING:
