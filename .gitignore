@@ -149,3 +149,4 @@ cython_debug/
 bots
 Files
 bot/Files
+custom_bots/*.json
