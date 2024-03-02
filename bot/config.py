@@ -5,6 +5,9 @@ from dotenv import load_dotenv
 # Загрузка .env файла
 load_dotenv()
 
+# Resources path
+RESOURCES_PATH = os.getenv("PROJECT_ROOT") + "resources/{}"
+
 # Telegram bot variables
 TELEGRAM_TOKEN = os.getenv("TELEGRAM_TOKEN")
 SQLALCHEMY_URL = os.getenv("SQLALCHEMY_URL")

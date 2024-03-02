@@ -15,7 +15,6 @@ from aiogram.enums import ParseMode
 from aiogram.fsm.storage.memory import MemoryStorage
 from aiogram.types import Message, User, Chat, CallbackQuery
 from aiogram.filters import CommandStart, StateFilter
-from aiogram.utils.keyboard import ReplyKeyboardMarkup, KeyboardButton
 from aiogram.utils.token import TokenValidationError, validate_token
 from aiogram.exceptions import TelegramUnauthorizedError
 from aiogram.client.default import DefaultBotProperties
@@ -30,6 +29,7 @@ from database.models.order_model import OrderSchema, OrderStatusValues, OrderNot
 from database.models.bot_model import BotNotFound
 
 from bot.keyboards import keyboards
+from bot.utils import JsonStore
 
 import json
 
@@ -78,35 +78,7 @@ logging.basicConfig(format=u'[%(asctime)s][%(levelname)s] ::: %(filename)s(%(lin
                     level="INFO", filename='logs/all.log')
 logger = logging.getLogger('logger')
 
-
-class JsonMsgIdStore:
-
-    def __init__(self, file_path: str):
-        self.file_path = file_path
-        self.data = self.get_data()
-
-    def get_data(self) -> dict:
-        try:
-            with open(self.file_path) as json_file:
-                data = json.load(json_file)
-        except FileNotFoundError:
-            logger.debug("json file to store ids not found, creating new...")
-            with open(self.file_path, 'w') as json_file:
-                json_file.write("{}")
-                data = {}
-        except json.decoder.JSONDecodeError:
-            logger.warning("cant read json file... clearing old data.")
-            with open(self.file_path, 'w') as json_file:
-                json_file.write("{}")
-                data = {}
-        return data
-
-    def update_data(self, new_data: dict):
-        with open(self.file_path, "w") as file:
-            file.write(json.dumps(new_data))
-
-
-PREV_ORDER_MSGS = JsonMsgIdStore("prev_orders_msg_id.json")
+PREV_ORDER_MSGS = JsonStore(file_path="prev_orders_msg_id.json", json_store_name="PREV_ORDER_MSGS")
 
 
 def format_locales(text: str, user: User, chat: Chat, reply_to_user: User = None) -> str:
