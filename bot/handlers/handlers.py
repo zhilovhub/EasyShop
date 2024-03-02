@@ -3,21 +3,23 @@ import string
 from random import sample
 from datetime import datetime
 
+from aiogram.methods import SendMediaGroup
+
 from bot.main import bot, db_engine
 
 from aiogram import Router, Bot
-from aiogram.types import Message, ReplyKeyboardRemove, FSInputFile, CallbackQuery
-from aiogram.filters import CommandStart
-from aiogram.exceptions import TelegramUnauthorizedError
-from aiogram.fsm.context import FSMContext
 from aiogram.enums import ParseMode
+from aiogram.types import Message, ReplyKeyboardRemove, FSInputFile, CallbackQuery, InputMediaPhoto
+from aiogram.filters import CommandStart
+from aiogram.exceptions import TelegramUnauthorizedError, TelegramBadRequest
+from aiogram.fsm.context import FSMContext
 from aiogram.utils.token import TokenValidationError, validate_token
 
 import aiohttp
 from aiohttp.client_exceptions import ClientConnectorError
 
 from bot import config
-from bot.utils import MessageTexts
+from bot.utils import JsonStore
 from bot.config import logger
 from bot.keyboards import *
 from bot.states.states import States
@@ -39,6 +41,11 @@ router.message.filter(ChatTypeFilter(chat_type='private'))
 product_db = db_engine.get_product_db()
 order_db = db_engine.get_order_dao()
 bot_db = db_engine.get_bot_dao()
+
+cache_resources_file_id_store = JsonStore(
+    file_path=config.RESOURCES_PATH.format("cache.json"),
+    json_store_name="RESOURCES_FILE_ID_STORE"
+)
 
 
 async def start_custom_bot(bot_id: int):
@@ -172,7 +179,28 @@ async def start_command_handler(message: Message, state: FSMContext):
     user_bots = await db_engine.get_bot_dao().get_bots(message.from_user.id)
     if not user_bots:
         await state.set_state(States.WAITING_FOR_TOKEN)
-        await message.answer(MessageTexts.INSTRUCTION_MESSAGE.value)
+
+        file_ids = cache_resources_file_id_store.get_data()
+        try:
+            await message.answer_media_group(
+                media=[
+                    InputMediaPhoto(media=file_ids["botFather1.jpg"], caption=MessageTexts.INSTRUCTION_MESSAGE.value),
+                    InputMediaPhoto(media=file_ids["botFather2.jpg"]),
+                    InputMediaPhoto(media=file_ids["botFather3.jpg"])
+                ]
+            )
+        except (TelegramBadRequest, KeyError) as e:
+            logger.info(f"error while sending instructions.... cache is empty, sending raw files {e}")
+            media_group = await message.answer_media_group(
+                media=[
+                    InputMediaPhoto(media=FSInputFile(config.RESOURCES_PATH.format("botFather1.jpg")), caption=MessageTexts.INSTRUCTION_MESSAGE.value),
+                    InputMediaPhoto(media=FSInputFile(config.RESOURCES_PATH.format("botFather2.jpg"))),
+                    InputMediaPhoto(media=FSInputFile(config.RESOURCES_PATH.format("botFather3.jpg"))),
+                ]
+            )
+            for ind, message in enumerate(media_group, start=1):
+                file_ids[f"botFather{ind}.jpg"] = message.photo[0].file_id
+            cache_resources_file_id_store.update_data(file_ids)
     else:
         bot_id = user_bots[0].bot_id
         user_bot = Bot(user_bots[0].token)
@@ -185,7 +213,7 @@ async def start_command_handler(message: Message, state: FSMContext):
         await state.set_data({'bot_id': bot_id})
 
 
-@router.message(States.WAITING_FOR_TOKEN)  # TODO remove all replace(":", "___") of tokens
+@router.message(States.WAITING_FOR_TOKEN)
 async def waiting_for_the_token_handler(message: Message, state: FSMContext):
     user = await db_engine.get_user_dao().get_user(message.from_user.id)
     lang = user.locale

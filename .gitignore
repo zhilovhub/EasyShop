@@ -150,3 +150,5 @@ bots
 Files
 bot/Files
 custom_bots/*.json
+
+resources/*.json
