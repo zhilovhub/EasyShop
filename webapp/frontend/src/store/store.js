@@ -2,12 +2,12 @@ import Vuex from 'vuex'
 
 let tg = window.Telegram.WebApp;
 tg.expand();
-
+const bot_id_local = localStorage.getItem('bot_id')
 const apiUrl = `https://ezbots.ru:${import.meta.env.VITE_API_PORT}`
 
 export const Store = new Vuex.Store({
   state: {
-    bot_id: '',
+    bot_id: bot_id_local,
     itemsAddToCartArray: [],
     items: [],
     generatedOrderId: '',

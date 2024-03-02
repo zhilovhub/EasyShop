@@ -123,7 +123,8 @@ export default {
   },
   mounted() {
     const url = new URL(window.location.href);
-    this.$store.state.bot_id = url.searchParams.get('bot_id');
+    const bot_id = url.searchParams.get('bot_id');
+    localStorage.setItem('bot_id', bot_id)
 
     let tempCheckItems = localStorage.getItem('itemsAddToCartArray');
     tempCheckItems = JSON.parse(tempCheckItems);
