@@ -2,13 +2,12 @@ import Vuex from 'vuex'
 
 let tg = window.Telegram.WebApp;
 tg.expand();
-const url = new URL(window.location.href);
-const bot_id = url.searchParams.get('bot_id');
+
 const apiUrl = `https://ezbots.ru:${import.meta.env.VITE_API_PORT}`
 
 export const Store = new Vuex.Store({
   state: {
-    bot_id: bot_id,
+    bot_id: '',
     itemsAddToCartArray: [],
     items: [],
     generatedOrderId: '',
@@ -84,7 +83,7 @@ export const Store = new Vuex.Store({
   actions: {
     async itemsInit({ commit }) {
       try {
-        const response = await fetch(`${apiUrl}/api/products/get_all_products/${bot_id}`, {
+        const response = await fetch(`${apiUrl}/api/products/get_all_products/${Store.state.bot_id}`, {
           method: 'GET',
           headers: {
             'Content-Type': 'application/json',

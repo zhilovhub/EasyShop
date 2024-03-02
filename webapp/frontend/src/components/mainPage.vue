@@ -74,7 +74,6 @@
 </template>
 
 <script>
-
 export default {
   name: 'mainPage',
   data() {
@@ -151,6 +150,9 @@ export default {
     this.$store.commit("fetchOrderId");
     this.$store.commit("checkOrderId");
     this.itemsAddToCart();
+
+    const url = new URL(window.location.href);
+    this.$store.state.bot_id = url.searchParams.get('bot_id')
   }
 };
 </script>
