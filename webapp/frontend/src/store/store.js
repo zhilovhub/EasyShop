@@ -2,6 +2,9 @@ import Vuex from 'vuex'
 
 let tg = window.Telegram.WebApp;
 tg.expand();
+const url = new URL(window.location.href);
+const bot_id = url.searchParams.get('bot_id');
+localStorage.setItem('bot_id', bot_id)
 const bot_id_local = localStorage.getItem('bot_id')
 const apiUrl = `https://ezbots.ru:${import.meta.env.VITE_API_PORT}`
 
@@ -65,7 +68,7 @@ export const Store = new Vuex.Store({
     postData() {
       let data = {
         'order_id': Store.state.generatedOrderId,
-        'bot_id': Store.state.bot_id,
+        'bot_id': Store.state.itemsAddToCartArray[0].bot_id,
         'products': Store.state.itemsAddToCartArray.reduce((acc, item) => {
           acc[item.id] = item.count;
           return acc;
@@ -74,7 +77,6 @@ export const Store = new Vuex.Store({
         'ordered_at': new Date().toISOString(),
         'address': Store.state.address,
         'comment': Store.state.comment
-
       };
       tg.sendData(JSON.stringify(data));
       tg.close();
@@ -83,6 +85,7 @@ export const Store = new Vuex.Store({
   actions: {
     async itemsInit({ commit }) {
       try {
+
         const response = await fetch(`${apiUrl}/api/products/get_all_products/${Store.state.bot_id}`, {
           method: 'GET',
           headers: {
@@ -94,6 +97,7 @@ export const Store = new Vuex.Store({
           throw new Error('Network response was not ok');
         }
         const data = await response.json();
+
         commit('setItems', data);
       } catch (error) {
         console.error('There was a problem with the fetch operation:', error);
