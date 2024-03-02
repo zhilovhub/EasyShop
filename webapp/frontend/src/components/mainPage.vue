@@ -122,6 +122,9 @@ export default {
     },
   },
   mounted() {
+    const url = new URL(window.location.href);
+    this.$store.state.bot_id = url.searchParams.get('bot_id');
+
     let tempCheckItems = localStorage.getItem('itemsAddToCartArray');
     tempCheckItems = JSON.parse(tempCheckItems);
 
