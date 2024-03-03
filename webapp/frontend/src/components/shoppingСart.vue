@@ -7,7 +7,7 @@
       }
     },
     mounted() {
-      this.$store.commit("addToLocalStorage");
+      this.$store.commit("addToSessionStorage");
       let WebApp = window.Telegram.WebApp;
       const BackButton = WebApp.BackButton;
       const vm = this;
@@ -16,9 +16,9 @@
         BackButton.hide();
       });
       WebApp.onEvent('backButtonClicked', function() {
-          let tempItemsAddToCartArray = localStorage.getItem('itemsAddToCartArray')
+          let tempItemsAddToCartArray = sessionStorage.getItem('itemsAddToCartArray')
           tempItemsAddToCartArray = JSON.parse(tempItemsAddToCartArray);
-          localStorage.setItem('itemsAddToCartArray', JSON.stringify(tempItemsAddToCartArray));
+          sessionStorage.setItem('itemsAddToCartArray', JSON.stringify(tempItemsAddToCartArray));
           window.location.href = "/?bot_id=" + vm.$store.state.bot_id;
       });
     },
@@ -62,7 +62,7 @@
         }
       },
       itemsAddToCart() {
-        this.$store.commit("addToLocalStorage");
+        this.$store.commit("addToSessionStorage");
       },
       totalPriceCalc() {
         let price = this.itemsAddToCartArray.reduce((total, item) => total + item.price*item.count, 0);

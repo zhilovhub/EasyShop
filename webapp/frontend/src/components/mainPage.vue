@@ -124,7 +124,7 @@ export default {
   mounted() {
     this.$store.dispatch('itemsInit').then(() => {
       this.isLoading = false;
-      let tempCheckItems = localStorage.getItem('itemsAddToCartArray');
+      let tempCheckItems = sessionStorage.getItem('itemsAddToCartArray');
       if (tempCheckItems && tempCheckItems.length > 0) {
         tempCheckItems = JSON.parse(tempCheckItems);
         let itemsMatch = true;

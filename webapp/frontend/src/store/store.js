@@ -4,8 +4,8 @@ let tg = window.Telegram.WebApp;
 tg.expand();
 const url = new URL(window.location.href);
 const bot_id = url.searchParams.get('bot_id');
-localStorage.setItem('bot_id', bot_id)
-const bot_id_local = localStorage.getItem('bot_id')
+sessionStorage.setItem('bot_id', bot_id)
+const bot_id_local = sessionStorage.getItem('bot_id')
 const apiUrl = `https://ezbots.ru:${import.meta.env.VITE_API_PORT}`
 
 export const Store = new Vuex.Store({
@@ -19,11 +19,11 @@ export const Store = new Vuex.Store({
     comment: '',
   },
   mutations: {
-    addToLocalStorage(state) {
+    addToSessionStorage(state) {
       if (state.itemsAddToCartArray.length>0) {
-        localStorage.setItem('itemsAddToCartArray', JSON.stringify(state.itemsAddToCartArray));
+        sessionStorage.setItem('itemsAddToCartArray', JSON.stringify(state.itemsAddToCartArray));
       } else {
-        let items = localStorage.getItem('itemsAddToCartArray');
+        let items = sessionStorage.getItem('itemsAddToCartArray');
         state.itemsAddToCartArray = JSON.parse(items) || [];
       }
     },
@@ -33,9 +33,9 @@ export const Store = new Vuex.Store({
     },
     checkOrderId() {
       if (Store.state.generatedOrderId !== '') {
-        localStorage.setItem('generatedOrderId', Store.state.generatedOrderId);
+        sessionStorage.setItem('generatedOrderId', Store.state.generatedOrderId);
       } else {
-        Store.state.generatedOrderId = localStorage.getItem('generatedOrderId');
+        Store.state.generatedOrderId = sessionStorage.getItem('generatedOrderId');
       }
     },
     fetchOrderId() {

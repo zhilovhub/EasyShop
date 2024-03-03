@@ -35,7 +35,7 @@
       }
     },
     mounted() {
-      this.$store.commit("addToLocalStorage");
+      this.$store.commit("addToSessionStorage");
       let WebApp = window.Telegram.WebApp;
       const BackButton = WebApp.BackButton;
       BackButton.show();
@@ -57,7 +57,7 @@
         this.$store.state.paymentMethod = selectedOption;
         this.$store.state.address = this.inputValue;
         this.$store.commit("postData");
-        localStorage.setItem('itemsAddToCartArray', JSON.stringify([]));
+        sessionStorage.setItem('itemsAddToCartArray', JSON.stringify([]));
       }
     },
     watch: {
