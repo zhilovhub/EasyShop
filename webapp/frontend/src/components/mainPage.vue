@@ -122,39 +122,27 @@ export default {
     },
   },
   mounted() {
-    const url = new URL(window.location.href);
-    const bot_id = url.searchParams.get('bot_id');
-    localStorage.setItem('bot_id', bot_id)
-
-    let tempCheckItems = localStorage.getItem('itemsAddToCartArray');
-    tempCheckItems = JSON.parse(tempCheckItems);
-
-    if (tempCheckItems && tempCheckItems.length > 0) {
-      let itemsMatch = true;
-      for (let i = 0; i < this.items.length; i++) {
-        if (this.items[i].name !== tempCheckItems[i].name) {
-          itemsMatch = false;
-          break;
+    this.$store.dispatch('itemsInit').then(() => {
+      this.isLoading = false;
+      let tempCheckItems = localStorage.getItem('itemsAddToCartArray');
+      if (tempCheckItems && tempCheckItems.length > 0) {
+        tempCheckItems = JSON.parse(tempCheckItems);
+        let itemsMatch = true;
+        for (let i = 0; i < this.items.length; i++) {
+          if (this.items[i].name !== tempCheckItems[i].name) {
+            itemsMatch = false;
+            break;
+          }
+        }
+        if (itemsMatch) {
+          this.$store.state.items = this.$store.state.items.map(item => ({ ...item, count: 1 }));
+          this.$store.state.items = tempCheckItems;
+          this.itemsAddToCart();
         }
       }
-      if (itemsMatch) {
-        this.$store.state.items = this.$store.state.items.map(item => ({ ...item, count: 1 }));
-        this.$store.state.items = tempCheckItems
-        this.isLoading = false;
-      } else {
-        this.$store.dispatch('itemsInit').then(() => {
-          this.isLoading = false;
-        });
-      }
-    } else {
-      this.$store.dispatch('itemsInit').then(() => {
-        this.isLoading = false;
-      });
-    }
-
+    });
     this.$store.commit("fetchOrderId");
     this.$store.commit("checkOrderId");
-    this.itemsAddToCart();
   }
 };
 </script>
