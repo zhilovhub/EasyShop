@@ -206,7 +206,10 @@ async def start_command_handler(message: Message, state: FSMContext):
         user_bot = Bot(user_bots[0].token)
         user_bot_data = await user_bot.get_me()
         await message.answer(MessageTexts.BOT_SELECTED_MESSAGE.value.replace(
-            "{selected_name}", user_bot_data.full_name
+            "{selected_name}"
+
+
+            , user_bot_data.full_name
         ),
             reply_markup=get_bot_menu_keyboard(bot_id=bot_id))
         await state.set_state(States.BOT_MENU)
