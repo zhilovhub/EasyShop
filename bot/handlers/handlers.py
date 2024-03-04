@@ -217,6 +217,7 @@ async def start_command_handler(message: Message, state: FSMContext):
 async def waiting_for_the_token_handler(message: Message, state: FSMContext):
     user = await db_engine.get_user_dao().get_user(message.from_user.id)
     lang = user.locale
+
     token = message.text
     try:
         validate_token(token)
