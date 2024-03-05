@@ -7,18 +7,13 @@ on:
       - closed
 
 jobs:
-  validate-rules-and-move-task:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v3
-        with:
-          ref: ${{ github.event.pull_request.head.sha }}
-  
   move-task-when-pr-opened:
     runs-on: ubuntu-latest
     name: Pull requests opened
     if: github.event.action != 'closed'
+    
     steps:
+    - uses: actions/checkout@v3
+    
     - name: Move status to Ревью
       run: echo ${{ github.event.pull_request.title }}
