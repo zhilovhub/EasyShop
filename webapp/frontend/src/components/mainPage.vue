@@ -125,18 +125,31 @@ export default {
     this.$store.dispatch('itemsInit').then(() => {
       this.isLoading = false;
       let tempCheckItems = sessionStorage.getItem('itemsAddToCartArray');
-      if (tempCheckItems && tempCheckItems.length > 0) {
-        tempCheckItems = JSON.parse(tempCheckItems);
+      tempCheckItems = JSON.parse(tempCheckItems);
+      if (tempCheckItems && tempCheckItems.length > 0 && tempCheckItems.length !== this.items.length) {
+        //Проверка совпадает ли длина из хранилища сессии с длиной из сервера, если не совпадает, то заменяется только совпадающий элемент(т.е его поле count).
+        console.log(this.items, tempCheckItems)
+        let resultArray = [];
+        for (let i = 0; i < this.$store.state.items.length; i++) {
+          let matchingItem = tempCheckItems.find(item => item.id === this.$store.state.items[i].id);
+          resultArray.push(matchingItem || this.$store.state.items[i]);
+        }
+        console.log(resultArray)
+        this.$store.state.items = resultArray;
+        console.log(this.$store.state.items)
+      }
+      else if(tempCheckItems && tempCheckItems.length > 0) {
+        //Если все элементы из локального хранилища совпадают с теми, что на сервере, то приоритет отдаётся тем, что в хранилище сессии.
         let itemsMatch = true;
         for (let i = 0; i < this.items.length; i++) {
-          if (this.items[i].name !== tempCheckItems[i].name) {
+          if (this.items[i].id !== tempCheckItems[i].id) {
             itemsMatch = false;
             break;
           }
         }
         if (itemsMatch) {
-          this.$store.state.items = this.$store.state.items.map(item => ({ ...item, count: 1 }));
           this.$store.state.items = tempCheckItems;
+          console.log(tempCheckItems)
           this.itemsAddToCart();
         }
       }
