@@ -209,7 +209,7 @@ async def start_command_handler(message: Message, state: FSMContext):
             "{selected_name}"
 
 
-            , user_bot_data.full_name
+            , user_bot_data.full_nameыва
         ),
             reply_markup=get_bot_menu_keyboard(bot_id=bot_id))
         await state.set_state(States.BOT_MENU)
