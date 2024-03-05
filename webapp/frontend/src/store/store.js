@@ -3,14 +3,12 @@ import Vuex from 'vuex'
 let tg = window.Telegram.WebApp;
 tg.expand();
 const url = new URL(window.location.href);
-const bot_id = url.searchParams.get('bot_id');
-sessionStorage.setItem('bot_id', bot_id)
-const bot_id_local = sessionStorage.getItem('bot_id')
+export const bot_id = url.searchParams.get('bot_id');
 const apiUrl = `https://ezbots.ru:${import.meta.env.VITE_API_PORT}`
 
 export const Store = new Vuex.Store({
   state: {
-    bot_id: bot_id_local,
+    bot_id: bot_id,
     itemsAddToCartArray: [],
     items: [],
     generatedOrderId: '',
@@ -68,7 +66,7 @@ export const Store = new Vuex.Store({
     postData() {
       let data = {
         'order_id': Store.state.generatedOrderId,
-        'bot_id': Store.state.itemsAddToCartArray[0].bot_id,
+        'bot_id': Store.state.bot_id,
         'products': Store.state.itemsAddToCartArray.reduce((acc, item) => {
           acc[item.id] = item.count;
           return acc;
@@ -107,3 +105,5 @@ export const Store = new Vuex.Store({
   getters: {
   }
 });
+
+

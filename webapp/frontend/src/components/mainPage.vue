@@ -70,10 +70,13 @@
       </li>
     </ul>
   </div>
-  <RouterLink to="/shopping-cart" v-if="itemsAddToCartArray.length>0"><button class="addToCartBtn">В Корзину</button></RouterLink>
+  <RouterLink :to="`/shopping-cart/?bot_id=${bot_id()}`" v-if="itemsAddToCartArray.length>0"><button class="addToCartBtn">В Корзину</button></RouterLink>
 </template>
 
 <script>
+
+import { bot_id } from '@/store/store.js'
+import * as https from 'https'
 
 export default {
   name: 'mainPage',
@@ -83,6 +86,9 @@ export default {
     }
   },
   methods: {
+    bot_id() {
+      return bot_id
+    },
     priceComma(price) {
       return price + ' ₽'
     },
@@ -128,15 +134,12 @@ export default {
       tempCheckItems = JSON.parse(tempCheckItems);
       if (tempCheckItems && tempCheckItems.length > 0 && tempCheckItems.length !== this.items.length) {
         //Проверка совпадает ли длина из хранилища сессии с длиной из сервера, если не совпадает, то заменяется только совпадающий элемент(т.е его поле count).
-        console.log(this.items, tempCheckItems)
         let resultArray = [];
         for (let i = 0; i < this.$store.state.items.length; i++) {
           let matchingItem = tempCheckItems.find(item => item.id === this.$store.state.items[i].id);
           resultArray.push(matchingItem || this.$store.state.items[i]);
         }
-        console.log(resultArray)
         this.$store.state.items = resultArray;
-        console.log(this.$store.state.items)
       }
       else if(tempCheckItems && tempCheckItems.length > 0) {
         //Если все элементы из локального хранилища совпадают с теми, что на сервере, то приоритет отдаётся тем, что в хранилище сессии.
@@ -149,7 +152,6 @@ export default {
         }
         if (itemsMatch) {
           this.$store.state.items = tempCheckItems;
-          console.log(tempCheckItems)
           this.itemsAddToCart();
         }
       }
