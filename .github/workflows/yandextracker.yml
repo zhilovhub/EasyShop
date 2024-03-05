@@ -1,0 +1,19 @@
+name: YC Tracker
+on:
+  pull_request:
+    types:
+      - opened
+      - reopened
+      - closed
+
+jobs:
+  move-task-when-pr-opened:
+    runs-on: ubuntu-latest
+    name: Pull requests opened
+    if: github.event.action != 'closed'
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Move status to Ревью
+      run: echo ${{ github.event.pull_request.title }}
