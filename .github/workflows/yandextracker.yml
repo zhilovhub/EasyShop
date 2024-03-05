@@ -16,4 +16,9 @@ jobs:
     - uses: actions/checkout@v3
     
     - name: Move status to Ревью
-      run: echo ${{ github.event.pull_request.title }} and ${{ secrets.TEST }}
+      run: >
+        echo Starting working with ${{ github.event.pull_request.title }} &&
+        curl
+        --request POST
+        --header 
+        --url https://api.tracker.yandex.net/v2/issues/<ключ_или_идентификатор_задачи>/transitions/<идентификатор_перехода>/_execute
