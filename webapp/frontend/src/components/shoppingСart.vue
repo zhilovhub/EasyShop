@@ -1,4 +1,6 @@
 <script>
+  import { bot_id } from '@/store/store.js'
+
   export default {
     name: 'ShoppingCart',
     data() {
@@ -35,6 +37,9 @@
       }
     },
     methods: {
+      bot_id() {
+        return bot_id
+      },
       priceRub(price) {
         return price + ' ₽'
       },
@@ -137,7 +142,7 @@
   </div>
   </div>
   <textarea v-model="inputValue" placeholder="Добавить комментарий..."/>
-  <RouterLink to="/order-details"><button class="btnTotalPrice">{{this.totalPrice}}</button></RouterLink>
+  <RouterLink :to="`/order-details/?bot_id=${bot_id()}`"><button class="btnTotalPrice">{{this.totalPrice}}</button></RouterLink>
 </template>
 
 <style scoped lang="scss">

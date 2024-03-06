@@ -12,12 +12,12 @@ const router = createRouter({
       component: mainPage
     },
     {
-      path: '/shopping-cart',
+      path: `/shopping-cart/`,
       name: 'shopping-cart',
       component: shoppingCart
     },
     {
-      path: '/order-details',
+      path: `/order-details/`,
       name: 'order-details',
       component: orderDetails
     }
