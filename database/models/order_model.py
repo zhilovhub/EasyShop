@@ -145,7 +145,7 @@ class OrderDao(Dao):
 
         raw_res = raw_res.fetchone()
         if not raw_res:
-            raise OrderNotFound
+            raise ValueError
 
         res = OrderSchema.model_validate(raw_res)
         return res
