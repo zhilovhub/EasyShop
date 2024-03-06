@@ -99,6 +99,7 @@ async def handle_callback(query: CallbackQuery, state: FSMContext):
     except OrderNotFound:
         await query.answer("Ошибка при работе с заказом, возможно статус уже изменился.", show_alert=True)
         return await query.message.edit_reply_markup(None)
+    g
 
     match data[0]:
         case "order_pre_cancel":
