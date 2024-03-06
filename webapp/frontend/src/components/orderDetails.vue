@@ -38,9 +38,10 @@
       this.$store.commit("addToSessionStorage");
       let WebApp = window.Telegram.WebApp;
       const BackButton = WebApp.BackButton;
+      const vm = this;
       BackButton.show();
       WebApp.onEvent('backButtonClicked', function() {
-        window.location.href = "/shopping-cart";
+        window.location.href = "/shopping-cart/?bot_id=" + vm.$store.state.bot_id;
       });
     },
     methods: {
