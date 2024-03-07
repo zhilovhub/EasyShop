@@ -54,5 +54,7 @@ class Stoke:
         except ProductNotFound:
             return 0
 
-    def update_product_count(self, product_id: int, new_count: int) -> None:
-        pass
+    async def update_product_count(self, product_id: int, new_count: int) -> None:
+        product = await self.product_db.get_product(product_id)
+        product.count = new_count
+        await self.product_db.update_product(product)

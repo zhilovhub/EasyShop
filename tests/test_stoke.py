@@ -51,3 +51,10 @@ class TestStoke:
     async def test_get_product_count(self, stoke: Stoke, before_add_two_products) -> None:
         """Stoke.get_product_count"""
         assert await stoke.get_product_count(1) == 23 and await stoke.get_product_count(-20) == 0
+
+    async def test_update_product_count(self, stoke: Stoke, product_db: ProductDao, before_add_two_products) -> None:
+        """Stoke.update_product_count"""
+        product_id = 1
+        count = 345
+        await stoke.update_product_count(product_id, count)
+        assert (await product_db.get_product(product_id)).count == count
