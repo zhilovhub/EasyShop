@@ -43,6 +43,11 @@ async def before_add_two_products(bot_db: BotDao, product_db: ProductDao) -> Non
 
 class TestStoke:
     async def test_export_json(self, stoke: Stoke, before_add_two_products) -> None:
+        """Stoke.export_json"""
         json_products_in_bytes = await stoke.export_json(bot_id=BOT_ID)
         assert json_products_in_bytes.decode(encoding="utf-8") == \
                open("tests/raw_files/export_json_test.json", "r", encoding="utf-8").read()
+
+    async def test_get_product_count(self, stoke: Stoke, before_add_two_products) -> None:
+        """Stoke.get_product_count"""
+        assert await stoke.get_product_count(1) == 23 and await stoke.get_product_count(-20) == 0

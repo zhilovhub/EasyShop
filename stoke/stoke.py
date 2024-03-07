@@ -5,6 +5,7 @@ import os
 from aiogram.types import BufferedInputFile
 
 from database.models.models import Database
+from database.models.product_model import ProductNotFound
 
 
 def singleton(class_):
@@ -47,8 +48,11 @@ class Stoke:
     def export_xlsx(self, bot_id: int) -> dict:
         pass
 
-    def get_product_count(self, product_id: int) -> int:
-        pass
+    async def get_product_count(self, product_id: int) -> int:
+        try:
+            return (await self.product_db.get_product(product_id)).count
+        except ProductNotFound:
+            return 0
 
     def update_product_count(self, product_id: int, new_count: int) -> None:
         pass
