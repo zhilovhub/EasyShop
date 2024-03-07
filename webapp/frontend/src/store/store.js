@@ -1,6 +1,6 @@
 import Vuex from 'vuex'
 
-let tg = window.Telegram.WebApp;
+export const tg = window.Telegram.WebApp;
 tg.expand();
 const url = new URL(window.location.href);
 export const bot_id = url.searchParams.get('bot_id');

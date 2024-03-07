@@ -1,7 +1,12 @@
 <script>
-  import { bot_id } from '@/store/store.js'
+import { bot_id, tg } from '@/store/store.js'
 
-  export default {
+tg.onEvent('mainButtonClicked', () => {
+  tg.MainButton.color = '#55A27D';
+  this.$router.push({ path: `/order-details/?bot_id=${this.bot_id()}`});
+})
+
+export default {
     name: 'ShoppingCart',
     data() {
       return {
@@ -9,15 +14,18 @@
       }
     },
     mounted() {
+      tg.MainButton.text = `${this.totalPrice}`;
+      tg.MainButton.textColor = '#293C47';
+      tg.MainButton.color = '#59FFAF';
+
       this.$store.commit("addToSessionStorage");
-      let WebApp = window.Telegram.WebApp;
-      const BackButton = WebApp.BackButton;
+      const BackButton = tg.BackButton;
       const vm = this;
       BackButton.show();
       BackButton.onClick(function() {
         BackButton.hide();
       });
-      WebApp.onEvent('backButtonClicked', function() {
+      tg.onEvent('backButtonClicked', () => {
           let tempItemsAddToCartArray = sessionStorage.getItem('itemsAddToCartArray')
           tempItemsAddToCartArray = JSON.parse(tempItemsAddToCartArray);
           sessionStorage.setItem('itemsAddToCartArray', JSON.stringify(tempItemsAddToCartArray));
@@ -84,7 +92,7 @@
     beforeUnmount() {
       this.$store.state.comment = this.inputValue;
     }
-  }
+}
 </script>
 
 <template>
@@ -142,7 +150,7 @@
   </div>
   </div>
   <textarea v-model="inputValue" placeholder="Добавить комментарий..."/>
-  <RouterLink :to="`/order-details/?bot_id=${bot_id()}`"><button class="btnTotalPrice">{{this.totalPrice}}</button></RouterLink>
+
 </template>
 
 <style scoped lang="scss">
@@ -216,26 +224,6 @@
   align-items: center;
   font-weight: 500;
   font-size: 15px;
-}
-
-.btnTotalPrice {
-  width: 100%;
-  height: 52px;
-  color: #293C47;
-  background-color: #59FFAF;
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  cursor: pointer;
-  box-shadow: none;
-  border: none;
-  font-size: 24px;
-  font-weight: 600;
-  font-family: 'Montserrat', sans-serif;
-  z-index: 999;
-  &:hover{
-    background-color: #55A27D;
-  }
 }
 
 .buttons {

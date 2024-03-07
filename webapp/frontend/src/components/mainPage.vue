@@ -70,13 +70,17 @@
       </li>
     </ul>
   </div>
-  <RouterLink :to="`/shopping-cart/?bot_id=${bot_id()}`" v-if="itemsAddToCartArray.length>0"><button class="addToCartBtn">В Корзину</button></RouterLink>
 </template>
 
 <script>
 
-import { bot_id } from '@/store/store.js'
+import { bot_id, tg } from '@/store/store.js'
 import * as https from 'https'
+
+tg.onEvent('mainButtonClicked',  () => {
+  tg.MainButton.color = '#55A27D';
+  this.$router.push({ path: `/shopping-cart/?bot_id=${this.bot_id()}`});
+})
 
 export default {
   name: 'mainPage',
@@ -110,6 +114,7 @@ export default {
     },
     itemsAddToCart() {
       this.$store.state.itemsAddToCartArray = this.$store.state.items.filter(item => item.count > 0);
+      tg.MainButton.isVisible = this.$store.state.itemsAddToCartArray.length > 0;
     },
     shortenName(name) {
       if (!name) return '';
@@ -128,6 +133,10 @@ export default {
     },
   },
   mounted() {
+    tg.MainButton.text = 'В Корзину';
+    tg.MainButton.textColor = '#293C47';
+    tg.MainButton.color = '#59FFAF';
+
     this.$store.dispatch('itemsInit').then(() => {
       this.isLoading = false;
       let tempCheckItems = sessionStorage.getItem('itemsAddToCartArray');
@@ -140,6 +149,7 @@ export default {
           resultArray.push(matchingItem || this.$store.state.items[i]);
         }
         this.$store.state.items = resultArray;
+        this.itemsAddToCart();
       }
       else if(tempCheckItems && tempCheckItems.length > 0) {
         //Если все элементы из локального хранилища совпадают с теми, что на сервере, то приоритет отдаётся тем, что в хранилище сессии.
@@ -227,31 +237,6 @@ button {
   position: absolute;
   right: 10px;
   top: 10px;
-}
-
-.addToCartBtn {
-  width: 100%;
-  height: 52px;
-  color: #293C47;
-  background-color: #59FFAF;
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  cursor: pointer;
-  box-shadow: none;
-  border: none;
-  font-size: 24px;
-  font-weight: 600;
-  font-family: 'Montserrat', sans-serif;
-  z-index: 10;
-  &:hover{
-    background-color: #55A27D;
-  }
-}
-@media (min-width: 1400px) {
-  .addToCartBtn{
-    height: 100px;
-  }
 }
 
 @media (max-width: 300px) {

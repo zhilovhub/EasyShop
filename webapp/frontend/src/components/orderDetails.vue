@@ -1,5 +1,7 @@
 <script>
-  export default {
+import { tg } from '@/store/store.js'
+
+export default {
     name: 'order-details',
     data() {
       return {
@@ -35,12 +37,21 @@
       }
     },
     mounted() {
+      tg.MainButton.text = `${this.totalPriceForButton}`;
+      tg.MainButton.textColor = '#293C47';
+      tg.MainButton.color = '#FF9F59';
+
       this.$store.commit("addToSessionStorage");
-      let WebApp = window.Telegram.WebApp;
-      const BackButton = WebApp.BackButton;
+      const BackButton = tg.BackButton;
       const vm = this;
       BackButton.show();
-      WebApp.onEvent('backButtonClicked', function() {
+
+      tg.onEvent('mainButtonClicked', () => {
+        tg.MainButton.color = '#965F37';
+        this.orderBtnClicked();
+      })
+
+      tg.onEvent('backButtonClicked', () => {
         window.location.href = "/shopping-cart/?bot_id=" + vm.$store.state.bot_id;
       });
     },
@@ -75,7 +86,7 @@
         }
       }
     }
-  }
+}
 </script>
 
 <template>
@@ -118,7 +129,6 @@
       <span>0 ₽</span>
     </div>
   </div>
-  <button @click="orderBtnClicked()" class="btnTotalPrice">{{this.totalPriceForButton}}</button>
 </template>
 
 <style scoped lang="scss">
@@ -207,27 +217,6 @@
     &:hover, :focus, :active {
       outline: none;
     }
-  }
-}
-
-
-.btnTotalPrice {
-  width: 100%;
-  height: 52px;
-  color: #293C47;
-  background-color: #FF9F59;
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  cursor: pointer;
-  box-shadow: none;
-  border: none;
-  font-size: 24px;
-  font-weight: 600;
-  font-family: 'Montserrat', sans-serif;
-  z-index: 999;
-  &:hover{
-    background-color: #965F37;
   }
 }
 
