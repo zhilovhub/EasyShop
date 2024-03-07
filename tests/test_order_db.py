@@ -37,6 +37,7 @@ product_schema_without_id_1 = ProductWithoutId(
     name="Xbox",
     description="",
     price=21000,
+    count=5,
     picture="asd4F.jpg"
 )
 product_schema_without_id_2 = ProductWithoutId(
@@ -44,6 +45,7 @@ product_schema_without_id_2 = ProductWithoutId(
     name="Xbox Series X",
     description="",
     price=31000,
+    count=6,
     picture="sa123.jpg"
 )
 product_schema_1 = ProductSchema(

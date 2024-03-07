@@ -27,6 +27,7 @@ class Product(Base):
     name = Column(String(55), nullable=False)
     description = Column(String(255), nullable=False)
     price = Column(Integer, nullable=False)
+    count = Column(BigInteger, nullable=False, default=0)
     picture = Column(String)
 
 
@@ -37,6 +38,7 @@ class ProductWithoutId(BaseModel):
     name: str = Field(max_length=55)
     description: str = Field(max_length=255)
     price: int
+    count: int
     picture: Optional[str | None]
 
 
