@@ -1,3 +1,9 @@
+import asyncio
+import json
+import os
+
+from aiogram.types import BufferedInputFile
+
 from database.models.models import Database
 
 
@@ -16,18 +22,29 @@ def singleton(class_):
 class Stoke:
     """Модуль склада"""
     def __init__(self, database: Database) -> None:
-        self.database = database
+        self.product_db = database.get_product_db()
 
     def import_json(self, product_schema: None) -> None:
         pass
 
-    def export_json(self) -> dict:
+    async def export_json(self, bot_id: int) -> bytes:
+        """Экспорт товаров в виде json файла"""
+        products = await self.product_db.get_all_products(bot_id)
+        json_products = []
+        for product in products:
+            json_products.append({
+                "name": product.name,
+                "description": product.description,
+                "price": product.price,
+                "count": product.count
+            })
+        return bytes(json.dumps(json_products, indent=4, ensure_ascii=False), encoding="utf-8")
+
+
+    def import_xlsx(self, product_schema: None) -> None:
         pass
 
-    def import_xsl(self, product_schema: None) -> None:
-        pass
-
-    def export_xsl(self) -> dict:
+    def export_xlsx(self, bot_id: int) -> dict:
         pass
 
     def get_product_count(self, product_id: int) -> int:
