@@ -140,6 +140,7 @@ export default {
           resultArray.push(matchingItem || this.$store.state.items[i]);
         }
         this.$store.state.items = resultArray;
+        this.itemsAddToCart();
       }
       else if(tempCheckItems && tempCheckItems.length > 0) {
         //Если все элементы из локального хранилища совпадают с теми, что на сервере, то приоритет отдаётся тем, что в хранилище сессии.
