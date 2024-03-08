@@ -82,6 +82,19 @@ class TestProductDb:
         product = await product_db.get_product(product_id)
         assert product_schema_2 == product
 
+    async def test_upsert_product(self, product_db: ProductDao, before_add_product) -> None:
+        """ProductDao.upsert_product"""
+        product_schema_1.count = 4
+        await product_db.upsert_product(product_schema_1)
+        await product_db.upsert_product(product_schema_without_id_2)
+        updated_product = await product_db.get_product(product_schema_1.id)
+        assert updated_product.count == 4
+
+        # plus because upsert always increments id
+        inserted_product = await product_db.get_product(product_schema_2.id + 1)
+        product_schema_2.id = product_schema_2.id + 1
+        assert inserted_product == product_schema_2
+
     async def test_update_product(self, product_db: ProductDao, before_add_product) -> None:
         """ProductDao.update_product"""
         product_schema_1.price = 19000
@@ -96,3 +109,10 @@ class TestProductDb:
 
         with pytest.raises(ProductNotFound):
             await product_db.get_product(product_schema_1.id)
+
+    async def test_delete_all_products(self, product_db: ProductDao, before_add_two_products) -> None:
+        """ProductDao.delete_all_products"""
+        await product_db.delete_all_products(BOT_ID)
+        products = await product_db.get_all_products(BOT_ID)
+
+        assert len(products) == 0

@@ -1,9 +1,10 @@
+import json
 from datetime import datetime
 
 import pytest
 
 from database.models.bot_model import BotDao, BotSchemaWithoutId
-from database.models.product_model import ProductDao, ProductWithoutId
+from database.models.product_model import ProductDao, ProductWithoutId, ProductSchema
 from stoke.stoke import Stoke
 
 BOT_ID = 1
@@ -24,6 +25,22 @@ product_schema_without_id_2 = ProductWithoutId(
     count=12,
     picture="sa123.jpg"
 )
+product_schema_without_id_3 = ProductWithoutId(
+    bot_id=BOT_ID,
+    name="Xbox Series XXX",
+    description="",
+    price=55000,
+    count=122,
+    picture="fghdf.jpg"
+)
+product_schema_2 = ProductSchema(
+    id=4,
+    **product_schema_without_id_2.model_dump()
+)
+product_schema_3 = ProductSchema(
+    id=3,
+    **product_schema_without_id_3.model_dump()
+)
 
 bot_schema_without_id = BotSchemaWithoutId(
     token="1000000000:AaAaAaAaAaAaAaAaAaAaAaAaAaAaAaAaAaA",
@@ -42,6 +59,31 @@ async def before_add_two_products(bot_db: BotDao, product_db: ProductDao) -> Non
 
 
 class TestStoke:
+    async def test_import_json(self, stoke: Stoke, product_db: ProductDao, before_add_two_products) -> None:
+        """Stoke.import_json"""
+        await stoke.import_json(
+            BOT_ID,
+            json.dumps([product_schema_without_id_3.model_dump(exclude={"bot_id"})]),
+            replace=True  # with replace True
+        )
+        products = await product_db.get_all_products(BOT_ID)
+        assert len(products) == 1
+        assert products[0] == product_schema_3
+
+        product_schema_without_id_3.count = 50
+        await stoke.import_json(
+            BOT_ID,
+            json.dumps([
+                product_schema_without_id_2.model_dump(exclude={"bot_id"}),
+                product_schema_without_id_3.model_dump(exclude={"bot_id"})
+            ]),
+            replace=False  # with replace False
+        )
+        product_schema_3.count = 50
+        products = await product_db.get_all_products(BOT_ID)
+        assert len(products) == 2
+        assert products[0] == product_schema_3 and products[1] == product_schema_2
+
     async def test_export_json(self, stoke: Stoke, before_add_two_products) -> None:
         """Stoke.export_json"""
         json_products_in_bytes = await stoke.export_json(bot_id=BOT_ID)

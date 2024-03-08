@@ -3,6 +3,7 @@ from typing import Optional
 from sqlalchemy import BigInteger, Column, String, ForeignKey, Integer
 from sqlalchemy import select, insert, delete, update
 from sqlalchemy.ext.asyncio import AsyncEngine
+from sqlalchemy.dialects.postgresql import insert as upsert
 
 from pydantic import BaseModel, Field, validate_call, ConfigDict
 
@@ -24,7 +25,7 @@ class Product(Base):
 
     id = Column(BigInteger, primary_key=True)
     bot_id = Column(ForeignKey(Bot.bot_id, ondelete="CASCADE"), nullable=False)
-    name = Column(String(55), nullable=False)
+    name = Column(String(55), unique=True, nullable=False)  # TODO add test for unique name
     description = Column(String(255), nullable=False)
     price = Column(Integer, nullable=False)
     count = Column(BigInteger, nullable=False, default=0)
@@ -56,7 +57,9 @@ class ProductDao(Dao):
     @validate_call(validate_return=True)
     async def get_all_products(self, bot_id: int) -> list[ProductSchema]:
         async with self.engine.begin() as conn:
-            raw_res = await conn.execute(select(Product).where(Product.bot_id == bot_id))
+            raw_res = await conn.execute(
+                select(Product).where(Product.bot_id == bot_id).order_by(Product.id)
+            )
         await self.engine.dispose()
 
         raw_res = raw_res.fetchall()
@@ -92,6 +95,22 @@ class ProductDao(Dao):
         return product_id
 
     @validate_call
+    async def upsert_product(self, new_product: ProductWithoutId) -> int:  # TODO write tests for it
+        if type(new_product) not in (ProductWithoutId, ProductSchema):
+            raise InvalidParameterFormat("new_product must be a subclass of ProductWithoutId")
+
+        new_product_dict = new_product.model_dump(exclude={"id"})
+        async with self.engine.begin() as conn:
+            upsert_query = upsert(Product).values(new_product_dict).on_conflict_do_update(
+                constraint=f"products_name_key",
+                set_=new_product_dict
+            )
+            product_id = (await conn.execute(upsert_query)).inserted_primary_key[0]
+
+        self.logger.info(f"successfully upserted product with id {product_id} to db")
+        return product_id
+
+    @validate_call
     async def update_product(self, updated_product: ProductSchema):
         await self.get_product(updated_product.id)
         async with self.engine.begin() as conn:
@@ -105,3 +124,9 @@ class ProductDao(Dao):
         async with self.engine.begin() as conn:
             await conn.execute(delete(Product).where(Product.id == product_id))
         self.logger.info(f"deleted product with id {product_id}")
+
+    @validate_call
+    async def delete_all_products(self, bot_id: int):
+        async with self.engine.begin() as conn:
+            await conn.execute(delete(Product).where(Product.bot_id == bot_id))
+        self.logger.info(f"deleted all products with bot_id {bot_id}")
