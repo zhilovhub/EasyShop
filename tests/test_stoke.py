@@ -83,12 +83,35 @@ class TestStoke:
         products = await product_db.get_all_products(BOT_ID)
         assert len(products) == 2
         assert products[0] == product_schema_3 and products[1] == product_schema_2
+        product_schema_3.count = 122
 
     async def test_export_json(self, stoke: Stoke, before_add_two_products) -> None:
         """Stoke.export_json"""
         json_products_in_bytes = await stoke.export_json(bot_id=BOT_ID)
         assert json_products_in_bytes.decode(encoding="utf-8") == \
                open("tests/raw_files/export_json_test.json", "r", encoding="utf-8").read()
+
+    async def test_import_xlsx(self, stoke: Stoke, product_db: ProductDao, before_add_two_products) -> None:
+        """Stoke.import_xlsx"""
+        await stoke.import_xlsx(
+            BOT_ID,
+            "tests/raw_files/import_xlsx_1_file_test.xlsx",
+            replace=True  # with replace True
+        )
+        products = await product_db.get_all_products(BOT_ID)
+        assert len(products) == 1
+        assert products[0] == product_schema_3
+
+        product_schema_without_id_3.count = 50
+        await stoke.import_xlsx(
+            BOT_ID,
+            "tests/raw_files/import_xlsx_2_files_test.xlsx",
+            replace=False  # with replace False
+        )
+        product_schema_3.count = 50
+        products = await product_db.get_all_products(BOT_ID)
+        assert len(products) == 2
+        assert products[0] == product_schema_3 and products[1] == product_schema_2
 
     async def test_get_product_count(self, stoke: Stoke, before_add_two_products) -> None:
         """Stoke.get_product_count"""
