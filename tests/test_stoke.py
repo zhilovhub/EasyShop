@@ -113,6 +113,10 @@ class TestStoke:
         assert len(products) == 2
         assert products[0] == product_schema_3 and products[1] == product_schema_2
 
+    async def test_export_xlsx(self, stoke: Stoke, before_add_two_products) -> None:
+        """Stoke.export_xlsx"""
+        await stoke.export_xlsx(BOT_ID)
+
     async def test_get_product_count(self, stoke: Stoke, before_add_two_products) -> None:
         """Stoke.get_product_count"""
         assert await stoke.get_product_count(1) == 23 and await stoke.get_product_count(-20) == 0

@@ -1,7 +1,10 @@
+import asyncio
+import datetime
 import json
 import os
 
-from openpyxl import load_workbook
+from openpyxl import load_workbook, Workbook
+from openpyxl.styles import Font
 
 from database.models.models import Database
 from database.models.product_model import ProductNotFound, ProductWithoutId
@@ -73,8 +76,34 @@ class Stoke:
         for product in products:
             await self.product_db.upsert_product(product)
 
-    def export_xlsx(self, bot_id: int) -> dict:  # TODO come up with picture
-        pass
+    async def export_xlsx(self, bot_id: int) -> str:  # TODO come up with picture
+        """Экспорт товаров в виде Excel файла"""
+        products = await self.product_db.get_all_products(bot_id)
+
+        wb = Workbook()
+        ws = wb.active
+
+        column_names = ["Название", "Описание", "Цена", "Кол-во", "Картинка"]
+        column_ind = ['A', 'B', 'C', 'D', 'E']
+
+        ft = Font()
+        ft.bold = True
+
+        for ind, name in zip(column_ind, column_names):
+            ws[f'{ind}1'] = name
+            ws[f'{ind}1'].font = ft
+
+        for ind, product in enumerate(products, start=2):
+            ws[f'A{ind}'] = product.name
+            ws[f'B{ind}'] = product.description
+            ws[f'C{ind}'] = product.price
+            ws[f'D{ind}'] = product.count
+            ws[f'E{ind}'] = product.picture
+
+        filename = f"{bot_id}_" + datetime.datetime.utcnow().strftime("%d%m%y_%H%M%S") + ".xlsx"
+        wb.save(filename)
+
+        return filename
 
     async def get_product_count(self, product_id: int) -> int:
         """Возвращает количество товара на складе"""
@@ -90,3 +119,4 @@ class Stoke:
         await self.product_db.update_product(product)
 
 
+asyncio.run(Stoke(Database(sqlalchemy_url=os.environ["SQLALCHEMY_URL"])).export_xlsx(1))
