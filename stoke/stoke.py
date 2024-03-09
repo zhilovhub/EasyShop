@@ -100,10 +100,12 @@ class Stoke:
             ws[f'D{ind}'] = product.count
             ws[f'E{ind}'] = product.picture
 
-        filename = f"{bot_id}_" + datetime.datetime.utcnow().strftime("%d%m%y_%H%M%S") + ".xlsx"
-        wb.save(filename)
+        path_to_file = os.environ["FILES_PATH"] + \
+                       f"{bot_id}_" + \
+                       datetime.datetime.utcnow().strftime("%d%m%y_%H%M%S") + ".xlsx"
+        wb.save(path_to_file)
 
-        return filename
+        return path_to_file
 
     async def get_product_count(self, product_id: int) -> int:
         """Возвращает количество товара на складе"""
@@ -117,6 +119,3 @@ class Stoke:
         product = await self.product_db.get_product(product_id)
         product.count = new_count
         await self.product_db.update_product(product)
-
-
-asyncio.run(Stoke(Database(sqlalchemy_url=os.environ["SQLALCHEMY_URL"])).export_xlsx(1))

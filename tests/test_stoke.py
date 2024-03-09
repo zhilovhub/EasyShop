@@ -1,5 +1,7 @@
 import json
+import os
 from datetime import datetime
+from openpyxl import load_workbook
 
 import pytest
 
@@ -115,7 +117,23 @@ class TestStoke:
 
     async def test_export_xlsx(self, stoke: Stoke, before_add_two_products) -> None:
         """Stoke.export_xlsx"""
-        await stoke.export_xlsx(BOT_ID)
+        path_to_file = await stoke.export_xlsx(BOT_ID)
+        wb = load_workbook(filename=path_to_file, read_only=True)
+        ws = wb.active
+
+        excepted_products = [product_schema_without_id_1, product_schema_without_id_2]
+        for excepted_product, row in zip(excepted_products, list(ws.values)[1:]):
+            assert ProductWithoutId(
+                bot_id=BOT_ID,
+                name=row[0],
+                description=row[1] if row[1] is not None else "",
+                price=row[2],
+                count=row[3],
+                picture=row[4]
+            ) == excepted_product
+
+        wb.close()
+        os.remove(path_to_file)
 
     async def test_get_product_count(self, stoke: Stoke, before_add_two_products) -> None:
         """Stoke.get_product_count"""
