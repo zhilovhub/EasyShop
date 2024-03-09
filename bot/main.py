@@ -45,7 +45,10 @@ async def on_start():
 
 if __name__ == "__main__":
     from bot import handlers
+
+    dp.include_router(handlers.all_router)
     dp.include_router(handlers.router)
+
 
     for log_file in ('all.log', 'err.log'):
         with open(f'logs/{log_file}', 'a') as log:

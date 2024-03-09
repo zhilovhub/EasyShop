@@ -1,1 +1,1 @@
-from .handlers import router
+from .handlers import router, all_router

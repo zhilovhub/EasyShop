@@ -36,7 +36,7 @@ class UserSchema(BaseModel):
 
     id: int = Field(alias="user_id", frozen=True)
     status: str = Field(max_length=55)
-    subscribed_until: datetime
+    subscribed_until: datetime | None
     registered_at: datetime = Field(frozen=True)
     settings: dict | None = None
     locale: str = Field(max_length=10, default="default")

@@ -32,7 +32,7 @@ from database.models.bot_model import BotSchemaWithoutId, BotDao
 from database.models.user_model import UserSchema, UserDao
 from database.models.order_model import OrderSchema, OrderNotFound, OrderStatusValues, OrderDao
 from database.models.product_model import ProductWithoutId, ProductDao
-from database.models.payment_model import PaymentSchema, PaymentDao
+from database.models.payment_model import PaymentSchemaWithoutId, PaymentDao
 
 from magic_filter import F
 
@@ -54,7 +54,8 @@ class CheckSubscriptionMiddleware(BaseMiddleware):
         except UserNotFound:
             logger.info(f"user {event.from_user.id} not found in db, creating new instance...")
             await user_db.add_user(UserSchema(
-                user_id=event.from_user.id, registered_at=datetime.utcnow(), status="new", locale="default")
+                user_id=event.from_user.id, registered_at=datetime.utcnow(), status="new", locale="default",
+                subscribed_until=None)
             )
             user = await user_db.get_user(event.from_user.id)
         if user.status not in ("subscribed", "trial"):
@@ -64,10 +65,13 @@ class CheckSubscriptionMiddleware(BaseMiddleware):
         return await handler(event, data)
 
 
-router = Router(name="users")
+router = Router(name="subscribe_router")
 router.message.filter(ChatTypeFilter(chat_type='private'))
 router.message.middleware(CheckSubscriptionMiddleware())
 router.callback_query.middleware(CheckSubscriptionMiddleware())
+
+all_router = Router(name="all_router")
+all_router.message.filter(ChatTypeFilter(chat_type='private'))
 
 product_db: ProductDao = db_engine.get_product_db()
 order_db: OrderDao = db_engine.get_order_dao()
@@ -179,7 +183,8 @@ async def handle_callback(query: CallbackQuery, state: FSMContext):
                 chat_id=data[3],
                 message_id=int(data[2]))
 
-            username = query.message.text[query.message.text.find("пользователя") + 12:query.message.text.find("Список товаров") + 1]
+            username = query.message.text[
+                       query.message.text.find("пользователя") + 12:query.message.text.find("Список товаров") + 1]
 
             await query.message.edit_text(
                 text=order.convert_to_notification_text(
@@ -217,7 +222,7 @@ async def process_web_app_request(event: Message):
         logger.warning("error while sending test order notification", exc_info=True)
 
 
-@dp.message(CommandStart())
+@all_router.message(CommandStart())
 async def start_command_handler(message: Message, state: FSMContext):
     try:
         await db_engine.get_user_dao().get_user(message.from_user.id)
@@ -225,7 +230,8 @@ async def start_command_handler(message: Message, state: FSMContext):
         logger.info(f"user {message.from_user.id} not found in db, creating new instance...")
 
         await user_db.add_user(UserSchema(
-            user_id=message.from_user.id, registered_at=datetime.utcnow(), status="new", locale="default")
+            user_id=message.from_user.id, registered_at=datetime.utcnow(), status="new", locale="default",
+            subscribed_until=None)
         )
 
     await message.answer(MessageTexts.ABOUT_MESSAGE.value)
@@ -246,7 +252,7 @@ async def start_command_handler(message: Message, state: FSMContext):
         await state.set_data({'bot_id': bot_id})
 
 
-@dp.callback_query(States.WAITING_FREE_TRIAL_APPROVE, lambda q: q.data == "start_trial")
+@all_router.callback_query(States.WAITING_FREE_TRIAL_APPROVE, lambda q: q.data == "start_trial")
 async def start_trial_callback(query: CallbackQuery, state: FSMContext):
     subscribe_until = datetime.now() + timedelta(days=7)
     logger.info(f"starting trial subscription for user with id ({query.from_user.id} until date {subscribe_until}")
@@ -294,7 +300,7 @@ async def start_trial_callback(query: CallbackQuery, state: FSMContext):
         cache_resources_file_id_store.update_data(file_ids)
 
 
-@dp.message(Command(commands="check_subscription"))
+@all_router.message(F.text == "/check_subscription")
 async def check_sub_cmd(message: Message, state: FSMContext = None):
     user = await user_db.get_user(message.from_user.id)
     if user.status == "subscription_ended":
@@ -303,16 +309,16 @@ async def check_sub_cmd(message: Message, state: FSMContext = None):
     if user.status == "trial":
         await message.answer(f"Твоя бесплатная подписка истекает "
                              f"<b>{user.subscribed_until.strftime('%d.%m.%Y %H:%M')}</b> "
-                             f"(через <b>{(datetime.now() - user.subscribed_until).days}</b> дней)."
+                             f"(через <b>{(user.subscribed_until - datetime.now()).days}</b> дней)."
                              f"\nХочешь продлить прямо сейчас?", reply_markup=continue_subscription_kb)
     if user.status == "subscribed":
         await message.answer(f"Твоя подписка истекает "
                              f"<b>{user.subscribed_until.strftime('%d.%m.%Y %H:%M')}</b> "
-                             f"(через <b>{(datetime.now() - user.subscribed_until).days}</b> дней)."
+                             f"(через <b>{(user.subscribed_until - datetime.now()).days}</b> дней)."
                              f"\nХочешь продлить прямо сейчас?", reply_markup=continue_subscription_kb)
 
 
-@dp.callback_query(lambda q: q.data == "continue_subscription")
+@all_router.callback_query(lambda q: q.data == "continue_subscription")
 async def continue_subscription_callback(query: CallbackQuery, state: FSMContext):
     await state.set_state(States.WAITING_PAYMENT_APPROVE)
     await query.message.answer_photo(FSInputFile(f"{config.RESOURCES_PATH.replace('{}', 'sbp_qr.png')}"),
@@ -330,7 +336,7 @@ async def continue_subscription_callback(query: CallbackQuery, state: FSMContext
                                      ]))
 
 
-@dp.message(States.WAITING_PAYMENT_APPROVE)
+@all_router.message(States.WAITING_PAYMENT_APPROVE)
 async def waiting_payment_approve_handler(message: Message, state: FSMContext):
     if message.content_type not in (ContentType.PHOTO, ContentType.DOCUMENT):
         return await message.answer("Необходимо прислать боту чек в виде скрина или пдф файла.")
@@ -358,67 +364,83 @@ async def waiting_payment_approve_handler(message: Message, state: FSMContext):
     await message.reply("Ваши данные отправлены на модерацию, ожидайте изменения статуса оплаты.")
 
 
-@dp.callback_query(lambda q: q.data.startswith("approve_pay"))
+@all_router.callback_query(lambda q: q.data.startswith("approve_pay"))
 async def approve_pay_callback(query: CallbackQuery, state: FSMContext):
     user_id = int(query.data.split(':')[-1])
     user = await user_db.get_user(user_id)
     await query.message.edit_text(query.message.text + "\n\n<b>ПОДТВЕРЖДЕНО</b>", reply_markup=None)
-    payment = PaymentSchema(from_user=user_id,
-                            amount=config.SUBSCRIPTION_PRICE,
-                            status="success",
-                            created_at=datetime.now(),
-                            last_update=datetime.now())
+    payment = PaymentSchemaWithoutId(from_user=user_id,
+                                     amount=config.SUBSCRIPTION_PRICE,
+                                     status="success",
+                                     created_at=datetime.now(),
+                                     last_update=datetime.now())
     await pay_db.add_payment(payment)
     user_state = FSMContext(storage=dp.storage, key=StorageKey(
         chat_id=user_id,
         user_id=user_id,
         bot_id=bot.id))
     user.status = "subscribed"
-    user.subscribed_until = datetime.now() + timedelta(days=30)
+    if not user.subscribed_until:
+        user.subscribed_until = datetime.now() + timedelta(days=30)
+    else:
+        user.subscribed_until = user.subscribed_until + timedelta(days=30)
 
     logger.info(f"adding scheduled subscription notifies for user {user.id}")
     await scheduler.add_scheduled_job(func=send_subscription_expire_notify,
-                                      run_date=user.subscribe_until - timedelta(days=3),
+                                      run_date=user.subscribed_until - timedelta(days=3),
                                       args=[user])
     await scheduler.add_scheduled_job(func=send_subscription_expire_notify,
-                                      run_date=user.subscribe_until - timedelta(days=1),
+                                      run_date=user.subscribed_until - timedelta(days=1),
                                       args=[user])
     await scheduler.add_scheduled_job(func=send_subscription_end_notify,
-                                      run_date=user.subscribe_until,
+                                      run_date=user.subscribed_until,
                                       args=[user])
 
     await user_db.update_user(user)
     await user_state.set_state(States.WAITING_FOR_TOKEN)
     file_ids = cache_resources_file_id_store.get_data()
-    try:
-        await bot.send_media_group(user_id,
-                                   media=[
-                                       InputMediaPhoto(media=file_ids["botFather1.jpg"],
-                                                       caption=MessageTexts.INSTRUCTION_MESSAGE.value),
-                                       InputMediaPhoto(media=file_ids["botFather2.jpg"]),
-                                       InputMediaPhoto(media=file_ids["botFather3.jpg"])
-                                   ]
-                                   )
-    except (TelegramBadRequest, KeyError) as e:
-        logger.info(f"error while sending instructions.... cache is empty, sending raw files {e}")
-        media_group = await bot.send_media_group(user_id,
-                                                 media=[
-                                                     InputMediaPhoto(media=FSInputFile(
-                                                         config.RESOURCES_PATH.format("botFather1.jpg")),
-                                                                     caption=MessageTexts.INSTRUCTION_MESSAGE.value),
-                                                     InputMediaPhoto(media=FSInputFile(
-                                                         config.RESOURCES_PATH.format("botFather2.jpg"))),
-                                                     InputMediaPhoto(media=FSInputFile(
-                                                         config.RESOURCES_PATH.format("botFather3.jpg"))),
-                                                 ]
-                                                 )
-        for ind, message in enumerate(media_group, start=1):
-            file_ids[f"botFather{ind}.jpg"] = message.photo[0].file_id
-        cache_resources_file_id_store.update_data(file_ids)
+    await bot.send_message(user_id, "Оплата подписки подтверждена")
+    user_bots = await bot_db.get_bots(user_id)
+    if not user_bots:
+        bot_id = user_bots[0].bot_id
+        user_bot = Bot(user_bots[0].token)
+        user_bot_data = await user_bot.get_me()
+        await bot.send_message(user_id, MessageTexts.BOT_SELECTED_MESSAGE.value.replace(
+            "{selected_name}", user_bot_data.full_name
+        ),
+            reply_markup=get_bot_menu_keyboard(bot_id=bot_id))
+        await state.set_state(States.BOT_MENU)
+        await state.set_data({'bot_id': bot_id})
+    else:
+        try:
+            await bot.send_media_group(user_id,
+                                       media=[
+                                           InputMediaPhoto(media=file_ids["botFather1.jpg"],
+                                                           caption=MessageTexts.INSTRUCTION_MESSAGE.value),
+                                           InputMediaPhoto(media=file_ids["botFather2.jpg"]),
+                                           InputMediaPhoto(media=file_ids["botFather3.jpg"])
+                                       ]
+                                       )
+        except (TelegramBadRequest, KeyError) as e:
+            logger.info(f"error while sending instructions.... cache is empty, sending raw files {e}")
+            media_group = await bot.send_media_group(user_id,
+                                                     media=[
+                                                         InputMediaPhoto(media=FSInputFile(
+                                                             config.RESOURCES_PATH.format("botFather1.jpg")),
+                                                             caption=MessageTexts.INSTRUCTION_MESSAGE.value),
+                                                         InputMediaPhoto(media=FSInputFile(
+                                                             config.RESOURCES_PATH.format("botFather2.jpg"))),
+                                                         InputMediaPhoto(media=FSInputFile(
+                                                             config.RESOURCES_PATH.format("botFather3.jpg"))),
+                                                     ]
+                                                     )
+            for ind, message in enumerate(media_group, start=1):
+                file_ids[f"botFather{ind}.jpg"] = message.photo[0].file_id
+            cache_resources_file_id_store.update_data(file_ids)
     await query.answer("Оплата подтверждена.", show_alert=True)
 
 
-@dp.callback_query(lambda q: q.data.startswith("cancel_pay"))
+@all_router.callback_query(lambda q: q.data.startswith("cancel_pay"))
 async def cancel_pay_callback(query: CallbackQuery, state: FSMContext):
     user_id = int(query.data.split(':')[-1])
     await query.message.edit_text(query.message.text + "\n\n<b>ОТКЛОНЕНО</b>", reply_markup=None)

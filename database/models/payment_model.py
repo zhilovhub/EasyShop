@@ -106,15 +106,15 @@ class PaymentDao(Dao):
         if not isinstance(payment, PaymentSchemaWithoutId):
             raise InvalidParameterFormat("payment must be type of database.PaymentSchema.")
 
-        try:
-            await self.get_payment(payment_id=payment.id)
-            raise InstanceAlreadyExists(f"payment with {payment.id} already exists in db.")
-        except PaymentNotFound:
-            async with self.engine.begin() as conn:
-                await conn.execute(insert(Payment).values(**payment.model_dump(by_alias=True)))
-            await self.engine.dispose()
+        # try:
+        #     await self.get_payment(payment_id=payment.id)
+        #     raise InstanceAlreadyExists(f"payment with {payment.id} already exists in db.")
+        # except PaymentNotFound:
+        async with self.engine.begin() as conn:
+            payment_id = (await conn.execute(insert(Payment).values(**payment.model_dump(by_alias=True)))).inserted_primary_key[0]
+        await self.engine.dispose()
 
-            self.logger.info(f"successfully add payment with id {payment.id} to db.")
+        self.logger.info(f"successfully add payment with id {payment_id} to db.")
 
     async def update_payment(self, updated_payment: PaymentSchema) -> None:
         if not isinstance(updated_payment, PaymentSchema):
