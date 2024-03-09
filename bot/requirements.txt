@@ -5,3 +5,5 @@ python-dotenv
 aiojobs
 pytest
 pytest-asyncio
+apscheduler
+psycopg2

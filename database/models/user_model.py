@@ -42,7 +42,7 @@ class UserSchema(BaseModel):
     locale: str = Field(max_length=10, default="default")
 
     @field_validator("status")
-    def validate_request_status(self, value: str):
+    def validate_request_status(cls, value: str):
         if value.lower() not in USER_STATUSES:
             raise NotInUserStatusesList(f"status value must be one of {', '.join(USER_STATUSES)}")
         return value.lower()

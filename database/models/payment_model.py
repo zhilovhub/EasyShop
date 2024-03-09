@@ -60,7 +60,7 @@ class PaymentSchemaWithoutId(BaseModel):
     # shipping_option_id: Optional | str
 
     @field_validator("status")
-    def validate_request_status(self, value: str):
+    def validate_request_status(cls, value: str):
         if value.lower() not in PAYMENT_STATUSES:
             raise NotInPaymentStatusesList(f"status value must be one of {', '.join(PAYMENT_STATUSES)}")
         return value.lower()

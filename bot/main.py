@@ -11,10 +11,21 @@ from bot import config
 from bot.config import logger
 from bot.utils import AlchemyStorageAsync
 
+from apscheduler.schedulers.asyncio import AsyncIOScheduler
+from apscheduler.jobstores.sqlalchemy import SQLAlchemyJobStore
+
+import utils.scheduler as sch
+
 bot = Bot(config.TELEGRAM_TOKEN, parse_mode=ParseMode.HTML)
 storage = AlchemyStorageAsync(config.SQLALCHEMY_URL, config.STORAGE_TABLE_NAME)
 dp = Dispatcher(storage=storage)
 db_engine = Database(config.SQLALCHEMY_URL)
+
+_scheduler = AsyncIOScheduler({
+    'apscheduler.timezone': config.TIMEZONE,
+}, jobstores={'postgres': SQLAlchemyJobStore(url=config.SCHEDULER_URL)})
+
+scheduler = sch.Scheduler(_scheduler, 'postgres', config.TIMEZONE)
 
 
 async def on_start():
@@ -25,6 +36,8 @@ async def on_start():
 
     await storage.connect()
     await db_engine.connect()
+
+    await scheduler.start()
 
     logger.info("onStart finished. Bot online")
     await dp.start_polling(bot)

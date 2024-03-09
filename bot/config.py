@@ -10,7 +10,10 @@ RESOURCES_PATH = os.getenv("PROJECT_ROOT") + "resources/{}"
 
 # Telegram bot variables
 TELEGRAM_TOKEN = os.getenv("TELEGRAM_TOKEN")
+
+# Database variables
 SQLALCHEMY_URL = os.getenv("SQLALCHEMY_URL")
+SCHEDULER_URL = os.getenv("SCHEDULER_URL")
 
 # WebApp variables
 WEB_APP_URL = os.getenv("WEB_APP_URL")
@@ -25,6 +28,7 @@ STORAGE_TABLE_NAME = os.getenv("STORAGE_TABLE_NAME")
 
 # Other
 DEBUG = bool(int(os.getenv("DEBUG")))
+TIMEZONE = os.getenv("TIMEZONE")
 
 # Logging
 LOGGING_SETUP = {

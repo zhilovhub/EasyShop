@@ -3,11 +3,13 @@ import string
 from random import sample
 from datetime import datetime, timedelta
 
+from typing import *
+
 from aiogram.methods import SendMediaGroup
 
-from bot.main import bot, db_engine
+from bot.main import bot, db_engine, scheduler, dp
 
-from aiogram import Router, Bot
+from aiogram import Router, Bot, BaseMiddleware
 from aiogram.enums import ParseMode
 from aiogram.types import Message, ReplyKeyboardRemove, FSInputFile, CallbackQuery, InputMediaPhoto
 from aiogram.filters import CommandStart, Command
@@ -35,8 +37,36 @@ from magic_filter import F
 
 import json
 
+
+class CheckSubscriptionMiddleware(BaseMiddleware):
+    def __init__(self) -> None:
+        pass
+
+    async def __call__(
+            self,
+            handler: Callable[[CallbackQuery | Message, Dict[str, Any]], Awaitable[Any]],
+            event: CallbackQuery | Message,
+            data: Dict[str, Any]
+    ) -> Any:
+        try:
+            user = await user_db.get_user(event.from_user.id)
+        except UserNotFound:
+            logger.info(f"user {event.from_user.id} not found in db, creating new instance...")
+            await user_db.add_user(UserSchema(
+                user_id=event.from_user.id, registered_at=datetime.utcnow(), status="new", locale="default")
+            )
+            user = await user_db.get_user(event.from_user.id)
+        if user.status not in ("subscribed", "trial"):
+            await event.answer("Это действие доступно только для пользователей с активной подпиской.")
+            message = event if isinstance(event, Message) else event.message
+            return await check_sub_cmd(message)
+        return await handler(event, data)
+
+
 router = Router(name="users")
 router.message.filter(ChatTypeFilter(chat_type='private'))
+router.message.middleware(CheckSubscriptionMiddleware())
+router.callback_query.middleware(CheckSubscriptionMiddleware())
 
 product_db: ProductDao = db_engine.get_product_db()
 order_db: OrderDao = db_engine.get_order_dao()
@@ -87,6 +117,19 @@ async def send_order_change_status_notify(order: OrderSchema):
     text = f"Новый статус заказ <b>#{order.id}</b>\n<b>{order.status}</b>"
     await bot.send_message(user_bot.created_by, text)
     await bot.send_message(order.from_user, text)
+
+
+async def send_subscription_expire_notify(user: UserSchema):
+    text = MessageTexts.SUBSCRIPTION_EXPIRE_NOTIFY.value
+    text = text.replace("{expire_date}", user.subscribed_until.strftime("%d.%m.%Y %H:%M"))
+    text = text.replace("{expire_days}", (user.subscribed_until - datetime.now()).days)
+    await bot.send_message(user.id, text, reply_markup=continue_subscription_kb)
+
+
+async def send_subscription_end_notify(user: UserSchema):
+    user.status = "subscription_ended"
+    await user_db.update_user(user)
+    await bot.send_message(user.id, MessageTexts.SUBSCRIBE_END_NOTIFY.value, reply_markup=continue_subscription_kb)
 
 
 @router.callback_query(lambda q: q.data.startswith("order_"))
@@ -164,7 +207,7 @@ async def process_web_app_request(event: Message):
         logger.warning("error while sending test order notification", exc_info=True)
 
 
-@router.message(CommandStart())
+@dp.message(CommandStart())
 async def start_command_handler(message: Message, state: FSMContext):
     try:
         await db_engine.get_user_dao().get_user(message.from_user.id)
@@ -193,7 +236,7 @@ async def start_command_handler(message: Message, state: FSMContext):
         await state.set_data({'bot_id': bot_id})
 
 
-@router.callback_query(States.WAITING_FREE_TRIAL_APPROVE, lambda q: q.data == "start_trial")
+@dp.callback_query(States.WAITING_FREE_TRIAL_APPROVE, lambda q: q.data == "start_trial")
 async def start_trial_callback_data(query: CallbackQuery, state: FSMContext):
     subscribe_until = datetime.now() + timedelta(days=7)
     logger.info(f"starting trial subscription for user with id ({query.from_user.id} until date {subscribe_until}")
@@ -203,6 +246,18 @@ async def start_trial_callback_data(query: CallbackQuery, state: FSMContext):
         return await query.answer("Вы уже оформляли пробную подписку", show_alert=True)
     user.status = "trial"
     user.subscribed_until = subscribe_until
+
+    logger.info(f"adding scheduled subscription notifies for user {user.id}")
+    await scheduler.add_scheduled_job(func=send_subscription_expire_notify,
+                                      run_date=subscribe_until - timedelta(days=3),
+                                      args=[user])
+    await scheduler.add_scheduled_job(func=send_subscription_expire_notify,
+                                      run_date=subscribe_until - timedelta(days=1),
+                                      args=[user])
+    await scheduler.add_scheduled_job(func=send_subscription_end_notify,
+                                      run_date=subscribe_until,
+                                      args=[user])
+
     await user_db.update_user(user)
     await state.set_state(States.WAITING_FOR_TOKEN)
     file_ids = cache_resources_file_id_store.get_data()
@@ -229,11 +284,21 @@ async def start_trial_callback_data(query: CallbackQuery, state: FSMContext):
         cache_resources_file_id_store.update_data(file_ids)
 
 
-@router.message(Command(commands="check_subscription"))
-async def check_sub_cmd(message: Message, state: FSMContext):
+@dp.message(Command(commands="check_subscription"))
+async def check_sub_cmd(message: Message, state: FSMContext = None):
     user = await user_db.get_user(message.from_user.id)
+    if user.status == "subscription_ended":
+        await message.answer(f"Твоя подписка закончилась, чтобы продлить её на месяц нажми на кнопку ниже.",
+                             reply_markup=continue_subscription_kb)
     if user.status == "trial":
-        await message.answer(f"Твоя бесплатная подписка истекает {user.subscribed_until.strftime('%d.%m.%Y %H:%M')}."
+        await message.answer(f"Твоя бесплатная подписка истекает "
+                             f"<b>{user.subscribed_until.strftime('%d.%m.%Y %H:%M')}</b> "
+                             f"(через <b>{(datetime.now() - user.subscribed_until).days}</b> дней)."
+                             f"\nХочешь продлить прямо сейчас?", reply_markup=continue_subscription_kb)
+    if user.status == "subscribed":
+        await message.answer(f"Твоя подписка истекает "
+                             f"<b>{user.subscribed_until.strftime('%d.%m.%Y %H:%M')}</b> "
+                             f"(через <b>{(datetime.now() - user.subscribed_until).days}</b> дней)."
                              f"\nХочешь продлить прямо сейчас?", reply_markup=continue_subscription_kb)
 
 
