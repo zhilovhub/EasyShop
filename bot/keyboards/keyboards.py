@@ -11,6 +11,12 @@ free_trial_start_kb = InlineKeyboardMarkup(inline_keyboard=[
     ]
 ])
 
+continue_subscription_kb = InlineKeyboardMarkup(inline_keyboard=[
+    [
+        InlineKeyboardButton(text="Продлить подписку", callback_data="continue_subscription")
+    ]
+])
+
 
 def create_change_order_status_kb(order_id: str, msg_id: int = 0, chat_id: int = 0,
                                   current_status: OrderStatusValues = OrderStatusValues.BACKLOG) \

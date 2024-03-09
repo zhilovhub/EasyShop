@@ -20,7 +20,8 @@ db_engine = Database(config.SQLALCHEMY_URL)
 async def on_start():
     logger.info("onStart called")
 
-    await bot.set_my_commands([BotCommand(command="start", description="Стартовая инструкция")])
+    await bot.set_my_commands([BotCommand(command="start", description="Стартовая инструкция"),
+                               BotCommand(command="check_subscription", description="Проверить подписку")])
 
     await storage.connect()
     await db_engine.connect()

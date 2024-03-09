@@ -10,7 +10,7 @@ from bot.main import bot, db_engine
 from aiogram import Router, Bot
 from aiogram.enums import ParseMode
 from aiogram.types import Message, ReplyKeyboardRemove, FSInputFile, CallbackQuery, InputMediaPhoto
-from aiogram.filters import CommandStart
+from aiogram.filters import CommandStart, Command
 from aiogram.exceptions import TelegramUnauthorizedError, TelegramBadRequest
 from aiogram.fsm.context import FSMContext
 from aiogram.utils.token import TokenValidationError, validate_token
@@ -227,6 +227,14 @@ async def start_trial_callback_data(query: CallbackQuery, state: FSMContext):
         for ind, message in enumerate(media_group, start=1):
             file_ids[f"botFather{ind}.jpg"] = message.photo[0].file_id
         cache_resources_file_id_store.update_data(file_ids)
+
+
+@router.message(Command(commands="check_subscription"))
+async def check_sub_cmd(message: Message, state: FSMContext):
+    user = await user_db.get_user(message.from_user.id)
+    if user.status == "trial":
+        await message.answer(f"Твоя бесплатная подписка истекает {user.subscribed_until.strftime('%d.%m.%Y %H:%M')}."
+                             f"\nХочешь продлить прямо сейчас?", reply_markup=continue_subscription_kb)
 
 
 @router.message(States.WAITING_FOR_TOKEN)
