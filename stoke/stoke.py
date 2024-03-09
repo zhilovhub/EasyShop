@@ -22,17 +22,20 @@ def singleton(class_):
 
 
 @singleton
-class Stoke:
+class Stoke:  # TODO raise exceptions in import methods
     """Модуль склада"""
 
     def __init__(self, database: Database) -> None:
         self.product_db = database.get_product_db()
 
-    async def import_json(self, bot_id: int, json_products: str, replace: bool) -> None:  # TODO come up with picture
+    async def import_json(self, bot_id: int, path_to_file: str, replace: bool) -> None:  # TODO come up with picture
         """If ``replace`` is true then first delete all products else just add or update by name"""
+        with open(path_to_file, "r", encoding="utf-8") as f:
+            json_products = json.load(f)
+
         if replace:
             await self.product_db.delete_all_products(bot_id)
-        for product_dict in json.loads(json_products):
+        for product_dict in json_products:
             await self.product_db.upsert_product(
                 ProductWithoutId(
                     bot_id=bot_id,
@@ -103,7 +106,6 @@ class Stoke:
         wb = load_workbook(filename=path_to_file)
         ws = wb.active
 
-        # TODO raise exceptions
         # should be name, description, price, count, picture
         products = []
         for row in list(ws.values)[1:]:
