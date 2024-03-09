@@ -22,7 +22,7 @@ def singleton(class_):
 
 
 @singleton
-class Stoke:  # TODO change args json_products to path_to_file
+class Stoke:
     """Модуль склада"""
 
     def __init__(self, database: Database) -> None:
@@ -40,7 +40,7 @@ class Stoke:  # TODO change args json_products to path_to_file
                 )
             )
 
-    async def export_json(self, bot_id: int) -> bytes:  # TODO come up with picture
+    async def export_json(self, bot_id: int) -> str:  # TODO come up with picture
         """Экспорт товаров в виде json файла"""
         products = await self.product_db.get_all_products(bot_id)
         json_products = []
@@ -51,7 +51,12 @@ class Stoke:  # TODO change args json_products to path_to_file
                 "price": product.price,
                 "count": product.count
             })
-        return bytes(json.dumps(json_products, indent=4, ensure_ascii=False), encoding="utf-8")
+
+        path_to_file = self._generate_path_to_file(bot_id, "json")
+        with open(path_to_file, "w", encoding="utf-8") as f:
+            json.dump(json_products, f,  indent=4, ensure_ascii=False)
+
+        return path_to_file
 
     async def import_csv(self, bot_id: int, path_to_file: str, replace: bool) -> None:  # TODO come up with picture
         """If ``replace`` is true then first delete all products else just add or update by name"""
@@ -81,9 +86,7 @@ class Stoke:  # TODO change args json_products to path_to_file
         """Экспорт товаров в виде csv файла"""
         products = await self.product_db.get_all_products(bot_id)
 
-        path_to_file = os.environ["FILES_PATH"] + \
-                       f"{bot_id}_" + \
-                       datetime.datetime.utcnow().strftime("%d%m%y_%H%M%S") + ".csv"
+        path_to_file = self._generate_path_to_file(bot_id, "csv")
         with open(path_to_file, "w", newline="") as f:
             writer = csv.writer(f, delimiter=",")
             writer.writerow(["Название", "Описание", "Цена", "Кол-во", "Картинка"])
@@ -142,9 +145,7 @@ class Stoke:  # TODO change args json_products to path_to_file
             ws[f'D{ind}'] = product.count
             ws[f'E{ind}'] = product.picture
 
-        path_to_file = os.environ["FILES_PATH"] + \
-                       f"{bot_id}_" + \
-                       datetime.datetime.utcnow().strftime("%d%m%y_%H%M%S") + ".xlsx"
+        path_to_file = self._generate_path_to_file(bot_id, "xlsx")
         wb.save(path_to_file)
 
         return path_to_file
@@ -161,3 +162,8 @@ class Stoke:  # TODO change args json_products to path_to_file
         product = await self.product_db.get_product(product_id)
         product.count = new_count
         await self.product_db.update_product(product)
+
+    def _generate_path_to_file(self, bot_id: int, format: str) -> str:
+        return os.environ["FILES_PATH"] + \
+                       f"{bot_id}_" + \
+                       datetime.datetime.utcnow().strftime("%d%m%y_%H%M%S") + f".{format}"

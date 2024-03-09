@@ -61,8 +61,8 @@ async def before_add_two_products(bot_db: BotDao, product_db: ProductDao) -> Non
     await product_db.add_product(product_schema_without_id_2)
 
 
-class TestStoke:
-    async def test_import_json(self, stoke: Stoke, product_db: ProductDao, before_add_two_products) -> None:  # TODO optimize import tests
+class TestStoke:  # TODO optimize import tests
+    async def test_import_json(self, stoke: Stoke, product_db: ProductDao, before_add_two_products) -> None:
         """Stoke.import_json"""
         await stoke.import_json(
             BOT_ID,
@@ -93,9 +93,11 @@ class TestStoke:
 
     async def test_export_json(self, stoke: Stoke, before_add_two_products) -> None:
         """Stoke.export_json"""
-        json_products_in_bytes = await stoke.export_json(bot_id=BOT_ID)
-        assert json_products_in_bytes.decode(encoding="utf-8") == \
+        path_to_file = await stoke.export_json(bot_id=BOT_ID)
+        assert open(path_to_file, "r", encoding="utf-8").read() == \
                open("tests/raw_files/export_json_test.json", "r", encoding="utf-8").read()
+
+        os.remove(path_to_file)
 
     async def test_import_csv(self, stoke: Stoke, product_db: ProductDao, before_add_two_products) -> None:
         """Stoke.import_csv"""
