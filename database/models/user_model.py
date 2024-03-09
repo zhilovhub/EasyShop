@@ -12,7 +12,7 @@ from database.models.dao import Dao
 from bot.exceptions.exceptions import *
 
 
-USER_STATUSES = ("new", "banned", "subscribed", "subscription_ended")
+USER_STATUSES = ("new", "trial", "banned", "subscribed", "subscription_ended")
 
 
 class NotInUserStatusesList(ValueError):

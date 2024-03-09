@@ -1,7 +1,7 @@
 import os
 import string
 from random import sample
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from aiogram.methods import SendMediaGroup
 
@@ -26,10 +26,10 @@ from bot.states.states import States
 from bot.filters.chat_type import ChatTypeFilter
 from bot.exceptions.exceptions import *
 
-from database.models.bot_model import BotSchemaWithoutId
-from database.models.user_model import UserSchema
-from database.models.order_model import OrderSchema, OrderNotFound, OrderStatusValues
-from database.models.product_model import ProductWithoutId
+from database.models.bot_model import BotSchemaWithoutId, BotDao
+from database.models.user_model import UserSchema, UserDao
+from database.models.order_model import OrderSchema, OrderNotFound, OrderStatusValues, OrderDao
+from database.models.product_model import ProductWithoutId, ProductDao
 
 from magic_filter import F
 
@@ -38,9 +38,10 @@ import json
 router = Router(name="users")
 router.message.filter(ChatTypeFilter(chat_type='private'))
 
-product_db = db_engine.get_product_db()
-order_db = db_engine.get_order_dao()
-bot_db = db_engine.get_bot_dao()
+product_db: ProductDao = db_engine.get_product_db()
+order_db: OrderDao = db_engine.get_order_dao()
+bot_db: BotDao = db_engine.get_bot_dao()
+user_db: UserDao = db_engine.get_user_dao()
 
 cache_resources_file_id_store = JsonStore(
     file_path=config.RESOURCES_PATH.format("cache.json"),
@@ -170,37 +171,16 @@ async def start_command_handler(message: Message, state: FSMContext):
     except UserNotFound:
         logger.info(f"user {message.from_user.id} not found in db, creating new instance...")
 
-        await db_engine.get_user_dao().add_user(UserSchema(
+        await user_db.add_user(UserSchema(
             user_id=message.from_user.id, registered_at=datetime.utcnow(), status="new", locale="default")
         )
 
     await message.answer(MessageTexts.ABOUT_MESSAGE.value)
 
-    user_bots = await db_engine.get_bot_dao().get_bots(message.from_user.id)
+    user_bots = await bot_db.get_bots(message.from_user.id)
     if not user_bots:
-        await state.set_state(States.WAITING_FOR_TOKEN)
-
-        file_ids = cache_resources_file_id_store.get_data()
-        try:
-            await message.answer_media_group(
-                media=[
-                    InputMediaPhoto(media=file_ids["botFather1.jpg"], caption=MessageTexts.INSTRUCTION_MESSAGE.value),
-                    InputMediaPhoto(media=file_ids["botFather2.jpg"]),
-                    InputMediaPhoto(media=file_ids["botFather3.jpg"])
-                ]
-            )
-        except (TelegramBadRequest, KeyError) as e:
-            logger.info(f"error while sending instructions.... cache is empty, sending raw files {e}")
-            media_group = await message.answer_media_group(
-                media=[
-                    InputMediaPhoto(media=FSInputFile(config.RESOURCES_PATH.format("botFather1.jpg")), caption=MessageTexts.INSTRUCTION_MESSAGE.value),
-                    InputMediaPhoto(media=FSInputFile(config.RESOURCES_PATH.format("botFather2.jpg"))),
-                    InputMediaPhoto(media=FSInputFile(config.RESOURCES_PATH.format("botFather3.jpg"))),
-                ]
-            )
-            for ind, message in enumerate(media_group, start=1):
-                file_ids[f"botFather{ind}.jpg"] = message.photo[0].file_id
-            cache_resources_file_id_store.update_data(file_ids)
+        await message.answer(MessageTexts.FREE_TRIAL_MESSAGE.value, reply_markup=free_trial_start_kb)
+        await state.set_state(States.WAITING_FREE_TRIAL_APPROVE)
     else:
         bot_id = user_bots[0].bot_id
         user_bot = Bot(user_bots[0].token)
@@ -211,6 +191,42 @@ async def start_command_handler(message: Message, state: FSMContext):
             reply_markup=get_bot_menu_keyboard(bot_id=bot_id))
         await state.set_state(States.BOT_MENU)
         await state.set_data({'bot_id': bot_id})
+
+
+@router.callback_query(States.WAITING_FREE_TRIAL_APPROVE, lambda q: q.data == "start_trial")
+async def start_trial_callback_data(query: CallbackQuery, state: FSMContext):
+    subscribe_until = datetime.now() + timedelta(days=7)
+    logger.info(f"starting trial subscription for user with id ({query.from_user.id} until date {subscribe_until}")
+    user = await user_db.get_user(query.from_user.id)
+    if user.status != "new":
+        # TODO выставлять счет на оплату если триал уже был но пользователь все равно как то сюда попал
+        return await query.answer("Вы уже оформляли пробную подписку", show_alert=True)
+    user.status = "trial"
+    user.subscribed_until = subscribe_until
+    await user_db.update_user(user)
+    await state.set_state(States.WAITING_FOR_TOKEN)
+    file_ids = cache_resources_file_id_store.get_data()
+    try:
+        await query.message.answer_media_group(
+            media=[
+                InputMediaPhoto(media=file_ids["botFather1.jpg"], caption=MessageTexts.INSTRUCTION_MESSAGE.value),
+                InputMediaPhoto(media=file_ids["botFather2.jpg"]),
+                InputMediaPhoto(media=file_ids["botFather3.jpg"])
+            ]
+        )
+    except (TelegramBadRequest, KeyError) as e:
+        logger.info(f"error while sending instructions.... cache is empty, sending raw files {e}")
+        media_group = await query.message.answer_media_group(
+            media=[
+                InputMediaPhoto(media=FSInputFile(config.RESOURCES_PATH.format("botFather1.jpg")),
+                                caption=MessageTexts.INSTRUCTION_MESSAGE.value),
+                InputMediaPhoto(media=FSInputFile(config.RESOURCES_PATH.format("botFather2.jpg"))),
+                InputMediaPhoto(media=FSInputFile(config.RESOURCES_PATH.format("botFather3.jpg"))),
+            ]
+        )
+        for ind, message in enumerate(media_group, start=1):
+            file_ids[f"botFather{ind}.jpg"] = message.photo[0].file_id
+        cache_resources_file_id_store.update_data(file_ids)
 
 
 @router.message(States.WAITING_FOR_TOKEN)
