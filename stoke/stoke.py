@@ -2,6 +2,7 @@ import asyncio
 import datetime
 import json
 import os
+import csv
 
 from openpyxl import load_workbook, Workbook
 from openpyxl.styles import Font
@@ -22,7 +23,7 @@ def singleton(class_):
 
 
 @singleton
-class Stoke:
+class Stoke:  # TODO change args json_products to path_to_file
     """Модуль склада"""
 
     def __init__(self, database: Database) -> None:
@@ -52,6 +53,34 @@ class Stoke:
                 "count": product.count
             })
         return bytes(json.dumps(json_products, indent=4, ensure_ascii=False), encoding="utf-8")
+
+    async def import_csv(self, bot_id: int, path_to_file: str, replace: bool) -> None:  # TODO come up with picture
+        """If ``replace`` is true then first delete all products else just add or update by name"""
+        with open(path_to_file, "r") as f:
+            delimiter = csv.Sniffer().sniff(f.read(1024)).delimiter
+            f.seek(0)
+            reader = csv.reader(f, delimiter=delimiter)
+            next(reader)
+
+            products = []
+            for row in reader:
+                products.append(ProductWithoutId(
+                    bot_id=bot_id,
+                    name=row[0],
+                    description=row[1] if row[1] is not None else "",
+                    price=row[2],
+                    count=row[3],
+                    picture=row[4]
+                ))
+
+        if replace:
+            await self.product_db.delete_all_products(bot_id)
+        for product in products:
+            await self.product_db.upsert_product(product)
+
+    async def export_csv(self, bot_id: int) -> bytes:  # TODO come up with picture
+        """Экспорт товаров в виде csv файла"""
+        pass
 
     async def import_xlsx(self, bot_id: int, path_to_file: str, replace: bool) -> None:  # TODO come up with picture
         """If ``replace`` is true then first delete all products else just add or update by name"""
