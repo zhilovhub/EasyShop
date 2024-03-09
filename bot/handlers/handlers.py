@@ -179,10 +179,12 @@ async def handle_callback(query: CallbackQuery, state: FSMContext):
                 chat_id=data[3],
                 message_id=int(data[2]))
 
+            username = query.message.text[query.message.text.find("пользователя") + 12:query.message.text.find("Список товаров") + 1]
+
             await query.message.edit_text(
                 text=order.convert_to_notification_text(
                     products=products,
-                    username="@" + query.from_user.username if query.from_user.username else query.from_user.full_name,
+                    username=username,
                     is_admin=True
                 ), reply_markup=None if data[0] in ("order_finish", "order_cancel") else
                 create_change_order_status_kb(order.id, int(data[2]), int(data[3]), order.status))
