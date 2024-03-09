@@ -1,4 +1,3 @@
-import asyncio
 import datetime
 import json
 import os
@@ -78,9 +77,23 @@ class Stoke:  # TODO change args json_products to path_to_file
         for product in products:
             await self.product_db.upsert_product(product)
 
-    async def export_csv(self, bot_id: int) -> bytes:  # TODO come up with picture
+    async def export_csv(self, bot_id: int) -> str:  # TODO come up with picture
         """Экспорт товаров в виде csv файла"""
-        pass
+        products = await self.product_db.get_all_products(bot_id)
+
+        path_to_file = os.environ["FILES_PATH"] + \
+                       f"{bot_id}_" + \
+                       datetime.datetime.utcnow().strftime("%d%m%y_%H%M%S") + ".csv"
+        with open(path_to_file, "w", newline="") as f:
+            writer = csv.writer(f, delimiter=",")
+            writer.writerow(["Название", "Описание", "Цена", "Кол-во", "Картинка"])
+
+            for product in products:
+                writer.writerow(
+                    [product.name, product.description, product.price, product.count, product.picture]
+                )
+
+        return path_to_file
 
     async def import_xlsx(self, bot_id: int, path_to_file: str, replace: bool) -> None:  # TODO come up with picture
         """If ``replace`` is true then first delete all products else just add or update by name"""

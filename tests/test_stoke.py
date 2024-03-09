@@ -1,3 +1,4 @@
+import csv
 import json
 import os
 from datetime import datetime
@@ -121,6 +122,29 @@ class TestStoke:
         # back values
         product_schema_without_id_3.count = 122
         product_schema_3.count = 122
+
+    async def test_export_csv(self, stoke: Stoke, before_add_two_products) -> None:
+        """Stoke.export_csv"""
+        path_to_file = await stoke.export_csv(BOT_ID)
+
+        with open(path_to_file, "r") as f:
+            delimiter = csv.Sniffer().sniff(f.read(1024)).delimiter
+            f.seek(0)
+            reader = csv.reader(f, delimiter=delimiter)
+            next(reader)
+
+            excepted_products = [product_schema_without_id_1, product_schema_without_id_2]
+            for excepted_product, row in zip(excepted_products, reader):
+                assert ProductWithoutId(
+                    bot_id=BOT_ID,
+                    name=row[0],
+                    description=row[1] if row[1] is not None else "",
+                    price=row[2],
+                    count=row[3],
+                    picture=row[4]
+                ) == excepted_product
+
+        os.remove(path_to_file)
 
     async def test_import_xlsx(self, stoke: Stoke, product_db: ProductDao, before_add_two_products) -> None:
         """Stoke.import_xlsx"""
