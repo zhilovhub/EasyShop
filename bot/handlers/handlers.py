@@ -32,6 +32,7 @@ from database.models.bot_model import BotSchemaWithoutId, BotDao
 from database.models.user_model import UserSchema, UserDao
 from database.models.order_model import OrderSchema, OrderNotFound, OrderStatusValues, OrderDao
 from database.models.product_model import ProductWithoutId, ProductDao
+from database.models.payment_model import PaymentSchema, PaymentDao
 
 from magic_filter import F
 
@@ -72,6 +73,7 @@ product_db: ProductDao = db_engine.get_product_db()
 order_db: OrderDao = db_engine.get_order_dao()
 bot_db: BotDao = db_engine.get_bot_dao()
 user_db: UserDao = db_engine.get_user_dao()
+pay_db: PaymentDao = db_engine.get_payment_dao()
 
 cache_resources_file_id_store = JsonStore(
     file_path=config.RESOURCES_PATH.format("cache.json"),
@@ -312,6 +314,7 @@ async def check_sub_cmd(message: Message, state: FSMContext = None):
 async def continue_subscription_callback(query: CallbackQuery, state: FSMContext):
     await state.set_state(States.WAITING_PAYMENT_APPROVE)
     await query.message.answer_photo(FSInputFile(f"{config.RESOURCES_PATH.replace('{}', 'sbp_qr.png')}"),
+                                     f"• Стоимость подписки: <b>{config.SUBSCRIPTION_PRICE}₽</b>\n\n"
                                      f"• Оплачивайте подписку удобным способом, "
                                      f"через qr код. Либо на карту сбербанка по номеру телефона: "
                                      f"<code>{config.SBP_NUM}</code>\n\n"
@@ -358,6 +361,12 @@ async def approve_pay_callback(query: CallbackQuery, state: FSMContext):
     user_id = int(query.data.split(':')[-1])
     user = await user_db.get_user(user_id)
     await query.message.edit_text(query.message.text + "\n\n<b>ПОДТВЕРЖДЕНО</b>", reply_markup=None)
+    payment = PaymentSchema(from_user=user_id,
+                            amount=config.SUBSCRIPTION_PRICE,
+                            status="success",
+                            created_at=datetime.now(),
+                            last_update=datetime.now())
+    await pay_db.add_payment(payment)
     user_state = FSMContext(storage=dp.storage, key=StorageKey(
         chat_id=user_id,
         user_id=user_id,

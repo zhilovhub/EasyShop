@@ -19,7 +19,7 @@ import utils.scheduler as sch
 bot = Bot(config.TELEGRAM_TOKEN, parse_mode=ParseMode.HTML)
 storage = AlchemyStorageAsync(config.SQLALCHEMY_URL, config.STORAGE_TABLE_NAME)
 dp = Dispatcher(storage=storage)
-db_engine = Database(config.SQLALCHEMY_URL)
+db_engine: Database = Database(config.SQLALCHEMY_URL)
 
 _scheduler = AsyncIOScheduler({
     'apscheduler.timezone': config.TIMEZONE,
