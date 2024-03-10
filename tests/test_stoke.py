@@ -1,5 +1,4 @@
 import csv
-import json
 import os
 import shutil
 from datetime import datetime
@@ -100,7 +99,7 @@ class TestStoke:  # TODO optimize import tests + create fixture for cleaning and
         assert products[1].picture is None and product_picture != "XYvzR.jpg" and \
                len(product_picture.split(".")[0]) == 5 and product_picture.split(".")[1] == "jpg"
 
-    async def test_export_json(self, stoke: Stoke, before_add_two_products) -> None:
+    async def test_export_json(self, stoke: Stoke, before_add_two_products) -> None:  # TODO check that pictures are exists
         """Stoke.export_json"""
         path_to_file, _ = await stoke.export_json(bot_id=BOT_ID)
         assert open(path_to_file, "r", encoding="utf-8").read() == \
@@ -153,8 +152,32 @@ class TestStoke:  # TODO optimize import tests + create fixture for cleaning and
 
     async def test_export_csv(self, stoke: Stoke, before_add_two_products) -> None:
         """Stoke.export_csv"""
-        path_to_file = await stoke.export_csv(BOT_ID)
+        path_to_file, _ = await stoke.export_csv(BOT_ID)
 
+        with open(path_to_file, "r") as f:
+            delimiter = csv.Sniffer().sniff(f.read(1024)).delimiter
+            f.seek(0)
+            reader = csv.reader(f, delimiter=delimiter)
+            next(reader)
+
+            product_schema_without_id_1.picture = None
+            excepted_products = [product_schema_without_id_1, product_schema_without_id_2]
+            for excepted_product, row in zip(excepted_products, reader):
+                assert ProductWithoutId(
+                    bot_id=BOT_ID,
+                    name=row[0],
+                    description=row[1] if row[1] is not None else "",
+                    price=row[2],
+                    count=row[3],
+                    picture=None
+                ) == excepted_product
+
+        os.remove(path_to_file)
+
+        # back values
+        product_schema_without_id_1.picture = "XYvzR.jpg"
+
+        path_to_file, path_to_images = await stoke.export_csv(BOT_ID, with_pictures=True)
         with open(path_to_file, "r") as f:
             delimiter = csv.Sniffer().sniff(f.read(1024)).delimiter
             f.seek(0)
@@ -169,10 +192,11 @@ class TestStoke:  # TODO optimize import tests + create fixture for cleaning and
                     description=row[1] if row[1] is not None else "",
                     price=row[2],
                     count=row[3],
-                    picture=row[4]
+                    picture=row[4] if row[4] else None
                 ) == excepted_product
 
         os.remove(path_to_file)
+        shutil.rmtree("/".join(path_to_images.split("/")[:-2]))
 
     async def test_import_xlsx(self, stoke: Stoke, product_db: ProductDao, before_add_two_products) -> None:
         """Stoke.import_xlsx"""

@@ -79,7 +79,9 @@ class Stoke:  # TODO raise exceptions in import methods + optimize (union) pictu
 
         return path_to_file, path_to_images
 
-    async def import_csv(self, bot_id: int, path_to_file: str, replace: bool, path_to_file_with_pictures: str = None) -> None:
+    async def import_csv(
+            self, bot_id: int, path_to_file: str, replace: bool, path_to_file_with_pictures: str = None
+    ) -> None:
         """If ``replace`` is true then first delete all products else just add or update by name"""
         with open(path_to_file, "r") as f:
             delimiter = csv.Sniffer().sniff(f.read(1024)).delimiter
@@ -107,21 +109,26 @@ class Stoke:  # TODO raise exceptions in import methods + optimize (union) pictu
                 product.picture = None
             await self.product_db.upsert_product(product)
 
-    async def export_csv(self, bot_id: int) -> str:  # TODO come up with picture
+    async def export_csv(self, bot_id: int, with_pictures: bool = False) -> tuple[str, str | None]:
         """Экспорт товаров в виде csv файла"""
         products = await self.product_db.get_all_products(bot_id)
+        if with_pictures:
+            path_to_images = self._generate_path_for_pictures(bot_id)
+        else:
+            path_to_images = None
 
         path_to_file = self._generate_path_to_file(bot_id, "csv")
         with open(path_to_file, "w", newline="") as f:
             writer = csv.writer(f, delimiter=",")
-            writer.writerow(["Название", "Описание", "Цена", "Кол-во", "Картинка"])
+            writer.writerow(["Название", "Описание", "Цена", "Кол-во"] + (["Картинка"] if with_pictures else []))
 
             for product in products:
                 writer.writerow(
-                    [product.name, product.description, product.price, product.count, product.picture]
+                    [product.name, product.description, product.price, product.count] +
+                    ([product.picture] if with_pictures else [])
                 )
 
-        return path_to_file
+        return path_to_file, path_to_images
 
     async def import_xlsx(self, bot_id: int, path_to_file: str, replace: bool, ) -> None:  # TODO come up with picture
         """If ``replace`` is true then first delete all products else just add or update by name"""
