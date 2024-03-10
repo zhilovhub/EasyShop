@@ -123,10 +123,13 @@ class Stoke:  # TODO raise exceptions in import methods + optimize (union) pictu
             writer.writerow(["Название", "Описание", "Цена", "Кол-во"] + (["Картинка"] if with_pictures else []))
 
             for product in products:
+                picture = product.picture
                 writer.writerow(
                     [product.name, product.description, product.price, product.count] +
-                    ([product.picture] if with_pictures else [])
+                    ([picture] if with_pictures else [])
                 )
+                if with_pictures and picture:
+                    shutil.copyfile(self.files_path + picture, path_to_images + picture)
 
         return path_to_file, path_to_images
 

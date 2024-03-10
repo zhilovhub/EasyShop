@@ -1,4 +1,5 @@
 import csv
+import json
 import os
 import shutil
 from datetime import datetime
@@ -99,7 +100,7 @@ class TestStoke:  # TODO optimize import tests + create fixture for cleaning and
         assert products[1].picture is None and product_picture != "XYvzR.jpg" and \
                len(product_picture.split(".")[0]) == 5 and product_picture.split(".")[1] == "jpg"
 
-    async def test_export_json(self, stoke: Stoke, before_add_two_products) -> None:  # TODO check that pictures are exists
+    async def test_export_json(self, stoke: Stoke, before_add_two_products) -> None:
         """Stoke.export_json"""
         path_to_file, _ = await stoke.export_json(bot_id=BOT_ID)
         assert open(path_to_file, "r", encoding="utf-8").read() == \
@@ -111,6 +112,10 @@ class TestStoke:  # TODO optimize import tests + create fixture for cleaning and
         assert open(path_to_file, "r", encoding="utf-8").read() == \
                open("tests/raw_files/export_json_with_pictures_test.json", "r", encoding="utf-8").read()
 
+        with open(path_to_file, "r", encoding="utf-8") as f:
+            for product in json.load(f):
+                if product["picture"]:
+                    assert os.path.exists(path_to_images + product["picture"])
         os.remove(path_to_file)
         shutil.rmtree("/".join(path_to_images.split("/")[:-2]))
 
@@ -194,6 +199,8 @@ class TestStoke:  # TODO optimize import tests + create fixture for cleaning and
                     count=row[3],
                     picture=row[4] if row[4] else None
                 ) == excepted_product
+                if row[4]:
+                    assert os.path.exists(path_to_images + row[4])
 
         os.remove(path_to_file)
         shutil.rmtree("/".join(path_to_images.split("/")[:-2]))
