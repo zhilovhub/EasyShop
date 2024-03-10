@@ -4,7 +4,7 @@ from sqlalchemy import BigInteger, Column, String, DateTime, JSON
 from sqlalchemy import select, update, delete, insert
 from sqlalchemy.ext.asyncio import AsyncEngine
 
-from pydantic import BaseModel, Field, ConfigDict
+from pydantic import BaseModel, Field, ConfigDict, field_validator
 
 from database.models import Base
 from database.models.dao import Dao
@@ -12,11 +12,20 @@ from database.models.dao import Dao
 from bot.exceptions.exceptions import *
 
 
+USER_STATUSES = ("new", "trial", "banned", "subscribed", "subscription_ended")
+
+
+class NotInUserStatusesList(ValueError):
+    """Error when value of user status not in values list"""
+    pass
+
+
 class User(Base):
     __tablename__ = "users"
 
     user_id = Column(BigInteger, primary_key=True)
     status = Column(String(55), nullable=False)
+    subscribed_until = Column(DateTime)
     registered_at = Column(DateTime, nullable=False)
     settings = Column(JSON)
     locale = Column(String(10), nullable=False)
@@ -27,9 +36,16 @@ class UserSchema(BaseModel):
 
     id: int = Field(alias="user_id", frozen=True)
     status: str = Field(max_length=55)
+    subscribed_until: datetime | None
     registered_at: datetime = Field(frozen=True)
     settings: dict | None = None
     locale: str = Field(max_length=10, default="default")
+
+    @field_validator("status")
+    def validate_request_status(cls, value: str):
+        if value.lower() not in USER_STATUSES:
+            raise NotInUserStatusesList(f"status value must be one of {', '.join(USER_STATUSES)}")
+        return value.lower()
 
 
 class UserDao(Dao):

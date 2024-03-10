@@ -8,6 +8,7 @@ from database.models.user_model import UserDao
 from database.models.order_model import OrderDao
 from database.models.product_model import ProductDao
 from database.models.custom_bot_user_model import CustomBotUserDao
+from database.models.payment_model import PaymentDao
 
 import logging.config
 import logging
@@ -48,6 +49,7 @@ class Database:
         self.product_dao = ProductDao(self.engine, self.logger)
         self.custom_bot_user_dao = CustomBotUserDao(self.engine, self.logger)
         self.order_dao = OrderDao(self.engine, self.logger)
+        self.payment_dao = PaymentDao(self.engine, self.logger)
 
         self.logger.debug("New root database class initialized.", stack_info=True, stacklevel=2)
 
@@ -70,3 +72,6 @@ class Database:
 
     def get_order_dao(self) -> OrderDao:
         return self.order_dao
+
+    def get_payment_dao(self) -> PaymentDao:
+        return self.payment_dao
