@@ -1,7 +1,10 @@
 import datetime
 import json
 import os
+import shutil
 import csv
+from string import ascii_letters, digits
+from random import sample
 
 from openpyxl import load_workbook, Workbook
 from openpyxl.styles import Font
@@ -22,30 +25,40 @@ def singleton(class_):
 
 
 @singleton
-class Stoke:  # TODO raise exceptions in import methods
+class Stoke:  # TODO raise exceptions in import methods + optimize (union) pictures logic
     """Модуль склада"""
 
     def __init__(self, database: Database) -> None:
         self.product_db = database.get_product_db()
+        self.files_path = os.environ["FILES_PATH"]
 
-    async def import_json(self, bot_id: int, path_to_file: str, replace: bool) -> None:  # TODO come up with picture
+    async def import_json(
+            self, bot_id: int, path_to_file: str, replace: bool, path_to_file_with_pictures: str = None
+    ) -> None:
         """If ``replace`` is true then first delete all products else just add or update by name"""
         with open(path_to_file, "r", encoding="utf-8") as f:
             json_products = json.load(f)
 
         if replace:
             await self.product_db.delete_all_products(bot_id)
-        for product_dict in json_products:
-            await self.product_db.upsert_product(
-                ProductWithoutId(
-                    bot_id=bot_id,
-                    **product_dict
-                )
-            )
 
-    async def export_json(self, bot_id: int) -> str:  # TODO come up with picture
+        for product_dict in json_products:
+            product = ProductWithoutId(bot_id=bot_id, **product_dict)
+            if path_to_file_with_pictures:
+                self._update_product_picture(product, path_to_file_with_pictures)
+            else:
+                product.picture = None
+
+            await self.product_db.upsert_product(product)
+
+    async def export_json(self, bot_id: int, with_pictures: bool = False) -> tuple[str, str | None]:
         """Экспорт товаров в виде json файла"""
         products = await self.product_db.get_all_products(bot_id)
+        if with_pictures:
+            path_to_images = self._generate_path_for_pictures(bot_id)
+        else:
+            path_to_images = None
+
         json_products = []
         for product in products:
             json_products.append({
@@ -54,14 +67,19 @@ class Stoke:  # TODO raise exceptions in import methods
                 "price": product.price,
                 "count": product.count
             })
+            if with_pictures:
+                picture = product.picture
+                json_products[-1]["picture"] = picture
+                if picture:
+                    shutil.copyfile(self.files_path + picture, path_to_images + picture)
 
         path_to_file = self._generate_path_to_file(bot_id, "json")
         with open(path_to_file, "w", encoding="utf-8") as f:
-            json.dump(json_products, f,  indent=4, ensure_ascii=False)
+            json.dump(json_products, f, indent=4, ensure_ascii=False)
 
-        return path_to_file
+        return path_to_file, path_to_images
 
-    async def import_csv(self, bot_id: int, path_to_file: str, replace: bool) -> None:  # TODO come up with picture
+    async def import_csv(self, bot_id: int, path_to_file: str, replace: bool, ) -> None:  # TODO come up with picture
         """If ``replace`` is true then first delete all products else just add or update by name"""
         with open(path_to_file, "r") as f:
             delimiter = csv.Sniffer().sniff(f.read(1024)).delimiter
@@ -101,7 +119,7 @@ class Stoke:  # TODO raise exceptions in import methods
 
         return path_to_file
 
-    async def import_xlsx(self, bot_id: int, path_to_file: str, replace: bool) -> None:  # TODO come up with picture
+    async def import_xlsx(self, bot_id: int, path_to_file: str, replace: bool, ) -> None:  # TODO come up with picture
         """If ``replace`` is true then first delete all products else just add or update by name"""
         wb = load_workbook(filename=path_to_file)
         ws = wb.active
@@ -165,7 +183,32 @@ class Stoke:  # TODO raise exceptions in import methods
         product.count = new_count
         await self.product_db.update_product(product)
 
+    def _update_product_picture(self, product: ProductWithoutId, path_to_file_with_pictures: str) -> None:
+        new_picture_path = self._generate_path_to_picture()
+
+        with open(new_picture_path, "wb") as f_new_picture:
+            with open(f"{path_to_file_with_pictures}{product.picture}", "rb") as f_from_json:
+                f_new_picture.write(f_from_json.read())
+
+        product.picture = new_picture_path.split("/")[-1]
+
+    def _generate_path_to_picture(self) -> str:
+        return self.files_path + ''.join(sample(digits + ascii_letters, 5)) + ".jpg"
+
     def _generate_path_to_file(self, bot_id: int, format: str) -> str:
-        return os.environ["FILES_PATH"] + \
-                       f"{bot_id}_" + \
-                       datetime.datetime.utcnow().strftime("%d%m%y_%H%M%S") + f".{format}"
+        return self.files_path + \
+               f"{bot_id}_" + \
+               datetime.datetime.utcnow().strftime("%d%m%y_%H%M%S") + f".{format}"
+
+    def _generate_path_for_pictures(self, bot_id: int) -> str:
+        path_to_pictures = self.files_path + \
+                           f"{bot_id}_" + \
+                           datetime.datetime.utcnow().strftime("%d%m%y_%H%M%S")
+        try:
+            os.mkdir(path_to_pictures)
+            path_to_pictures += "/pictures/"
+            os.mkdir(path_to_pictures)
+        except Exception as _:
+            pass
+
+        return path_to_pictures

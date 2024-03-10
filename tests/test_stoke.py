@@ -1,6 +1,7 @@
 import csv
 import json
 import os
+import shutil
 from datetime import datetime
 from openpyxl import load_workbook
 
@@ -18,7 +19,7 @@ product_schema_without_id_1 = ProductWithoutId(
     description="",
     price=21000,
     count=23,
-    picture="asd4F.jpg"
+    picture="XYvzR.jpg"
 )
 product_schema_without_id_2 = ProductWithoutId(
     bot_id=BOT_ID,
@@ -26,7 +27,7 @@ product_schema_without_id_2 = ProductWithoutId(
     description="",
     price=31000,
     count=12,
-    picture="sa123.jpg"
+    picture=None
 )
 product_schema_without_id_3 = ProductWithoutId(
     bot_id=BOT_ID,
@@ -34,7 +35,7 @@ product_schema_without_id_3 = ProductWithoutId(
     description="",
     price=55000,
     count=122,
-    picture="fghdf.jpg"
+    picture=None
 )
 product_schema_2 = ProductSchema(
     id=4,
@@ -61,7 +62,7 @@ async def before_add_two_products(bot_db: BotDao, product_db: ProductDao) -> Non
     await product_db.add_product(product_schema_without_id_2)
 
 
-class TestStoke:  # TODO optimize import tests
+class TestStoke:  # TODO optimize import tests + create fixture for cleaning and backing data
     async def test_import_json(self, stoke: Stoke, product_db: ProductDao, before_add_two_products) -> None:
         """Stoke.import_json"""
         await stoke.import_json(
@@ -86,13 +87,33 @@ class TestStoke:  # TODO optimize import tests
         # back values
         product_schema_3.count = 122
 
+        await stoke.import_json(
+            BOT_ID,
+            "tests/raw_files/import_json_1_file_with_picture_test.json",
+            replace=False,
+            path_to_file_with_pictures="tests/raw_files/product_pictures_test/"   # with pictures
+        )
+
+        products = await product_db.get_all_products(BOT_ID)
+        assert len(products) == 2
+        product_picture = products[0].picture
+        assert products[1].picture is None and product_picture != "XYvzR.jpg" and \
+               len(product_picture.split(".")[0]) == 5 and product_picture.split(".")[1] == "jpg"
+
     async def test_export_json(self, stoke: Stoke, before_add_two_products) -> None:
         """Stoke.export_json"""
-        path_to_file = await stoke.export_json(bot_id=BOT_ID)
+        path_to_file, _ = await stoke.export_json(bot_id=BOT_ID)
         assert open(path_to_file, "r", encoding="utf-8").read() == \
                open("tests/raw_files/export_json_test.json", "r", encoding="utf-8").read()
 
         os.remove(path_to_file)
+
+        path_to_file, path_to_images = await stoke.export_json(bot_id=BOT_ID, with_pictures=True)   # with pictures
+        assert open(path_to_file, "r", encoding="utf-8").read() == \
+               open("tests/raw_files/export_json_with_pictures_test.json", "r", encoding="utf-8").read()
+
+        os.remove(path_to_file)
+        shutil.rmtree("/".join(path_to_images.split("/")[:-2]))
 
     async def test_import_csv(self, stoke: Stoke, product_db: ProductDao, before_add_two_products) -> None:
         """Stoke.import_csv"""
