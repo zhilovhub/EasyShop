@@ -5,14 +5,10 @@ from datetime import datetime, timedelta
 
 from typing import *
 
-from aiogram.methods import SendMediaGroup
-
-from bot.main import bot, db_engine, scheduler, dp
-
 from aiogram import Router, Bot, BaseMiddleware
 from aiogram.enums import ParseMode
 from aiogram.types import Message, ReplyKeyboardRemove, FSInputFile, CallbackQuery, InputMediaPhoto, ContentType
-from aiogram.filters import CommandStart, Command
+from aiogram.filters import CommandStart
 from aiogram.exceptions import TelegramUnauthorizedError, TelegramBadRequest
 from aiogram.fsm.context import FSMContext, StorageKey
 from aiogram.utils.token import TokenValidationError, validate_token
@@ -21,6 +17,7 @@ import aiohttp
 from aiohttp.client_exceptions import ClientConnectorError
 
 from bot import config
+from bot.main import bot, db_engine, scheduler, dp
 from bot.utils import JsonStore
 from bot.config import logger
 from bot.keyboards import *
@@ -302,6 +299,7 @@ async def start_trial_callback(query: CallbackQuery, state: FSMContext):
 
 @all_router.message(F.text == "/check_subscription")
 async def check_sub_cmd(message: Message, state: FSMContext = None):
+    # TODO https://tracker.yandex.ru/BOT-17 Учесть часовые пояса клиентов
     user = await user_db.get_user(message.from_user.id)
     if user.status == "subscription_ended":
         await message.answer(f"Твоя подписка закончилась, чтобы продлить её на месяц нажми на кнопку ниже.",
@@ -397,21 +395,24 @@ async def approve_pay_callback(query: CallbackQuery, state: FSMContext):
                                       args=[user])
 
     await user_db.update_user(user)
-    await user_state.set_state(States.WAITING_FOR_TOKEN)
-    file_ids = cache_resources_file_id_store.get_data()
+
     await bot.send_message(user_id, "Оплата подписки подтверждена")
     user_bots = await bot_db.get_bots(user_id)
-    if not user_bots:
+
+    if user_bots:
         bot_id = user_bots[0].bot_id
         user_bot = Bot(user_bots[0].token)
         user_bot_data = await user_bot.get_me()
         await bot.send_message(user_id, MessageTexts.BOT_SELECTED_MESSAGE.value.replace(
             "{selected_name}", user_bot_data.full_name
         ),
-            reply_markup=get_bot_menu_keyboard(bot_id=bot_id))
-        await state.set_state(States.BOT_MENU)
-        await state.set_data({'bot_id': bot_id})
+                               reply_markup=get_bot_menu_keyboard(bot_id=bot_id))
+        await user_state.set_state(States.BOT_MENU)
+        await user_state.set_data({'bot_id': bot_id})
     else:
+        await user_state.set_state(States.WAITING_FOR_TOKEN)
+        file_ids = cache_resources_file_id_store.get_data()
+
         try:
             await bot.send_media_group(user_id,
                                        media=[
