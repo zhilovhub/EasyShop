@@ -79,7 +79,7 @@ class Stoke:  # TODO raise exceptions in import methods + optimize (union) pictu
 
         return path_to_file, path_to_images
 
-    async def import_csv(self, bot_id: int, path_to_file: str, replace: bool, ) -> None:  # TODO come up with picture
+    async def import_csv(self, bot_id: int, path_to_file: str, replace: bool, path_to_file_with_pictures: str = None) -> None:
         """If ``replace`` is true then first delete all products else just add or update by name"""
         with open(path_to_file, "r") as f:
             delimiter = csv.Sniffer().sniff(f.read(1024)).delimiter
@@ -101,6 +101,10 @@ class Stoke:  # TODO raise exceptions in import methods + optimize (union) pictu
         if replace:
             await self.product_db.delete_all_products(bot_id)
         for product in products:
+            if path_to_file_with_pictures:
+                self._update_product_picture(product, path_to_file_with_pictures)
+            else:
+                product.picture = None
             await self.product_db.upsert_product(product)
 
     async def export_csv(self, bot_id: int) -> str:  # TODO come up with picture
