@@ -78,7 +78,7 @@ class Stoke:  # TODO raise specific exceptions in import methods + optimize (uni
             self, bot_id: int, path_to_file: str, replace: bool, path_to_file_with_pictures: str = None
     ) -> None:
         """If ``replace`` is true then first delete all products else just add or update by name"""
-        with open(path_to_file, "r") as f:
+        with open(path_to_file, "r", encoding="latin-1") as f:
             delimiter = csv.Sniffer().sniff(f.read(1024)).delimiter
             f.seek(0)
             reader = csv.reader(f, delimiter=delimiter)
