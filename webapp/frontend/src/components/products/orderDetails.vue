@@ -41,7 +41,7 @@
       const vm = this;
       BackButton.show();
       WebApp.onEvent('backButtonClicked', function() {
-        window.location.href = "/shopping-cart/?bot_id=" + vm.$store.state.bot_id;
+        window.location.href = "/products-page/shopping-cart/?bot_id=" + vm.$store.state.bot_id;
       });
     },
     methods: {
@@ -81,7 +81,7 @@
 <template>
   <div class="main-body">
   <div class="title-div">
-    <img style="width: 134px; height: 134px; border-radius: 7px;" src="../../src/assets/logo.png" alt="image">
+    <img style="width: 134px; height: 134px; border-radius: 7px;" src="../../assets/logo.png" alt="image">
     <div class="title-text">
       <span style="font-size: 24px; margin-bottom: 15px; line-height: 1.5rem">Заказ №{{orderId}}</span>
       <span style="color: #71CBFF; font-size: 15px; font-weight: 500">Название заказа</span>
@@ -198,7 +198,7 @@
     -webkit-appearance: none;
     -moz-appearance: none;
     appearance: none;
-    background-image: url('../assets/arrow-down.png') !important;
+    background-image: url('../../assets/arrow-down.png') !important;
     background-position: center right 20px;
     background-repeat: no-repeat;
     background-size: auto 15%;
