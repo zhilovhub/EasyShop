@@ -134,11 +134,12 @@ async def send_subscription_expire_notify(user: UserSchema):
 
 
 async def send_subscription_end_notify(user: UserSchema):  # TODO https://tracker.yandex.ru/BOT-29 очищать джобы в бд
-    if datetime.now() + timedelta(minutes=5) < user.subscribed_until:  # TODO change it to 5 minutes
+    actual_user = await user_db.get_user(user.id)
+    if datetime.now() + timedelta(minutes=5) < actual_user.subscribed_until:  # TODO change it to 5 minutes
         return None
-    user.status = "subscription_ended"
-    await user_db.update_user(user)
-    await bot.send_message(user.id, MessageTexts.SUBSCRIBE_END_NOTIFY.value, reply_markup=continue_subscription_kb)
+    actual_user.status = "subscription_ended"
+    await user_db.update_user(actual_user)
+    await bot.send_message(actual_user.id, MessageTexts.SUBSCRIBE_END_NOTIFY.value, reply_markup=continue_subscription_kb)
 
 
 @router.callback_query(lambda q: q.data.startswith("order_"))
