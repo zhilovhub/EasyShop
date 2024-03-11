@@ -60,7 +60,7 @@ class CheckSubscriptionMiddleware(BaseMiddleware):
         if user.id not in config.ADMINS and \
                 user.status not in ("subscribed", "trial") and \
                 message.text not in ("/start", "/check_subscription"):
-            await event.answer("Это действие доступно только для пользователей с активной подпиской.")
+            await event.answer("Для того, чтобы пользоваться ботом, тебе нужна подписка")  # TODO move it into check_sub_cmd
             return await check_sub_cmd(message)
 
         return await handler(event, data)
@@ -238,7 +238,7 @@ async def start_command_handler(message: Message, state: FSMContext):
     await message.answer(MessageTexts.ABOUT_MESSAGE.value)
 
     user_bots = await bot_db.get_bots(message.from_user.id)
-    if not user_bots:
+    if not user_bots:  # TODO https://tracker.yandex.ru/BOT-32 переработать логику
         await message.answer(MessageTexts.FREE_TRIAL_MESSAGE.value, reply_markup=free_trial_start_kb)
         await state.set_state(States.WAITING_FREE_TRIAL_APPROVE)
     else:
