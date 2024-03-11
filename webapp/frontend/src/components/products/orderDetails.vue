@@ -1,6 +1,6 @@
 <script>
   export default {
-    name: 'order-details',
+    name: 'orderDetails',
     data() {
       return {
         inputValue: '',

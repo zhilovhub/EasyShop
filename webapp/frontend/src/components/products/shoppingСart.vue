@@ -142,7 +142,7 @@
   </div>
   </div>
   <textarea v-model="inputValue" placeholder="Добавить комментарий..."/>
-  <RouterLink :to="`/products-page/?bot_id=${bot_id()}`"><button class="btnTotalPrice">{{this.totalPrice}}</button></RouterLink>
+  <RouterLink :to="`/products-page/order-details/?bot_id=${bot_id()}`" ><button class="btnTotalPrice">{{this.totalPrice}}</button></RouterLink>
 </template>
 
 <style scoped lang="scss">

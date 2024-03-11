@@ -1,8 +1,4 @@
 import { createRouter, createWebHistory } from 'vue-router'
-import shoppingCart from "@/components/products/shoppingСart.vue";
-import orderDetails from '@/components/products/orderDetails.vue'
-import choosingBranch from '@/components/services/choosingBranch.vue'
-import productsPage from '@/components/products/productsPage.vue'
 
 
 const router = createRouter({
@@ -10,23 +6,23 @@ const router = createRouter({
   routes: [
     {
       path: '/products-page/',
-      name: 'productsPage',
-      component: productsPage
+      name: 'products-page',
+      component: () => import('@/components/products/productsPage.vue')
     },
     {
       path: `/products-page/shopping-cart/`,
       name: 'shopping-cart',
-      component: shoppingCart
+      component: () => import ('@/components/products/shoppingСart.vue')
     },
     {
       path: `/products-page/order-details/`,
       name: 'order-details',
-      component: orderDetails
+      component: () => import('@/components/products/orderDetails.vue')
     },
     {
       path: '/services/choose-branch/',
-      name: 'order-details',
-      component: choosingBranch
+      name: 'choosing-branch',
+      component: () => import('@/components/services/choosingBranch.vue')
     }
   ]
 });
