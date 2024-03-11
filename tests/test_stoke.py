@@ -203,8 +203,6 @@ class TestStoke:  # TODO optimize import tests + create fixture for cleaning and
                     count=row[3],
                     picture=row[4] if row[4] else None
                 ) == excepted_product
-                if row[4]:
-                    assert os.path.exists(path_to_images + row[4])
 
             assert self._check_pictures_exists(excepted_products, path_to_images)
 
@@ -250,7 +248,29 @@ class TestStoke:  # TODO optimize import tests + create fixture for cleaning and
 
     async def test_export_xlsx(self, stoke: Stoke, before_add_two_products) -> None:
         """Stoke.export_xlsx"""
-        path_to_file = await stoke.export_xlsx(BOT_ID)
+        path_to_file, _ = await stoke.export_xlsx(BOT_ID)
+        wb = load_workbook(filename=path_to_file, read_only=True)
+        ws = wb.active
+
+        product_schema_without_id_1.picture = None
+        excepted_products = [product_schema_without_id_1, product_schema_without_id_2]
+        for excepted_product, row in zip(excepted_products, list(ws.values)[1:]):
+            assert ProductWithoutId(
+                bot_id=BOT_ID,
+                name=row[0],
+                description=row[1] if row[1] is not None else "",
+                price=row[2],
+                count=row[3],
+                picture=None if len(row) < 5 else row[4]
+            ) == excepted_product
+
+        wb.close()
+        os.remove(path_to_file)
+
+        # back values
+        product_schema_without_id_1.picture = "XYvzR.jpg"
+
+        path_to_file, path_to_images = await stoke.export_xlsx(BOT_ID, with_pictures=True)  # with pictures
         wb = load_workbook(filename=path_to_file, read_only=True)
         ws = wb.active
 
@@ -265,8 +285,10 @@ class TestStoke:  # TODO optimize import tests + create fixture for cleaning and
                 picture=row[4]
             ) == excepted_product
 
+        assert self._check_pictures_exists(excepted_products, path_to_images)
         wb.close()
         os.remove(path_to_file)
+        shutil.rmtree("/".join(path_to_images.split("/")[:-2]))
 
     async def test_get_product_count(self, stoke: Stoke, before_add_two_products) -> None:
         """Stoke.get_product_count"""

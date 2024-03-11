@@ -142,15 +142,19 @@ class Stoke:  # TODO raise exceptions in import methods + optimize (union) pictu
 
         await self._import_products(bot_id, products, replace, path_to_file_with_pictures)
 
-    async def export_xlsx(self, bot_id: int) -> str:  # TODO come up with picture
+    async def export_xlsx(self, bot_id: int, with_pictures: bool = False) -> tuple[str, str | None]:
         """Экспорт товаров в виде Excel файла"""
         products = await self.product_db.get_all_products(bot_id)
+        if with_pictures:
+            path_to_images = self._generate_path_for_pictures(bot_id)
+        else:
+            path_to_images = None
 
         wb = Workbook()
         ws = wb.active
 
-        column_names = ["Название", "Описание", "Цена", "Кол-во", "Картинка"]
-        column_ind = ['A', 'B', 'C', 'D', 'E']
+        column_names = ["Название", "Описание", "Цена", "Кол-во"] + (["Картинка"] if with_pictures else [])
+        column_ind = ['A', 'B', 'C', 'D'] + (["E"] if with_pictures else [])
 
         ft = Font()
         ft.bold = True
@@ -164,12 +168,16 @@ class Stoke:  # TODO raise exceptions in import methods + optimize (union) pictu
             ws[f'B{ind}'] = product.description
             ws[f'C{ind}'] = product.price
             ws[f'D{ind}'] = product.count
-            ws[f'E{ind}'] = product.picture
+            if with_pictures:
+                picture = product.picture
+                ws[f'E{ind}'] = picture
+                if with_pictures and picture:
+                    shutil.copyfile(self.files_path + picture, path_to_images + picture)
 
         path_to_file = self._generate_path_to_file(bot_id, "xlsx")
         wb.save(path_to_file)
 
-        return path_to_file
+        return path_to_file, path_to_images
 
     async def get_product_count(self, product_id: int) -> int:
         """Возвращает количество товара на складе"""
@@ -184,7 +192,9 @@ class Stoke:  # TODO raise exceptions in import methods + optimize (union) pictu
         product.count = new_count
         await self.product_db.update_product(product)
 
-    async def _import_products(self, bot_id: int, products: Iterable[ProductWithoutId], replace: bool, path_to_file_with_pictures: str):
+    async def _import_products(
+            self, bot_id: int, products: Iterable[ProductWithoutId], replace: bool, path_to_file_with_pictures: str
+    ) -> None:
         if replace:
             await self.product_db.delete_all_products(bot_id)
         for product in products:
@@ -193,7 +203,6 @@ class Stoke:  # TODO raise exceptions in import methods + optimize (union) pictu
             else:
                 product.picture = None
             await self.product_db.upsert_product(product)
-
 
     def _update_product_picture(self, product: ProductWithoutId, path_to_file_with_pictures: str) -> None:
         new_picture_path = self._generate_path_to_picture()
