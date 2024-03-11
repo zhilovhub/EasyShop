@@ -6,6 +6,8 @@ import csv
 from string import ascii_letters, digits
 from random import sample
 
+from typing import Iterable
+
 from openpyxl import load_workbook, Workbook
 from openpyxl.styles import Font
 
@@ -37,19 +39,12 @@ class Stoke:  # TODO raise exceptions in import methods + optimize (union) pictu
     ) -> None:
         """If ``replace`` is true then first delete all products else just add or update by name"""
         with open(path_to_file, "r", encoding="utf-8") as f:
-            json_products = json.load(f)
+            products = map(lambda x: ProductWithoutId(bot_id=bot_id, **x), json.load(f))
 
         if replace:
             await self.product_db.delete_all_products(bot_id)
 
-        for product_dict in json_products:
-            product = ProductWithoutId(bot_id=bot_id, **product_dict)
-            if path_to_file_with_pictures:
-                self._update_product_picture(product, path_to_file_with_pictures)
-            else:
-                product.picture = None
-
-            await self.product_db.upsert_product(product)
+        await self._import_products(bot_id, products, replace, path_to_file_with_pictures)
 
     async def export_json(self, bot_id: int, with_pictures: bool = False) -> tuple[str, str | None]:
         """Экспорт товаров в виде json файла"""
@@ -100,14 +95,7 @@ class Stoke:  # TODO raise exceptions in import methods + optimize (union) pictu
                     picture=row[4]
                 ))
 
-        if replace:
-            await self.product_db.delete_all_products(bot_id)
-        for product in products:
-            if path_to_file_with_pictures:
-                self._update_product_picture(product, path_to_file_with_pictures)
-            else:
-                product.picture = None
-            await self.product_db.upsert_product(product)
+        await self._import_products(bot_id, products, replace, path_to_file_with_pictures)
 
     async def export_csv(self, bot_id: int, with_pictures: bool = False) -> tuple[str, str | None]:
         """Экспорт товаров в виде csv файла"""
@@ -133,7 +121,9 @@ class Stoke:  # TODO raise exceptions in import methods + optimize (union) pictu
 
         return path_to_file, path_to_images
 
-    async def import_xlsx(self, bot_id: int, path_to_file: str, replace: bool, ) -> None:  # TODO come up with picture
+    async def import_xlsx(
+            self, bot_id: int, path_to_file: str, replace: bool, path_to_file_with_pictures: str = None
+    ) -> None:  # TODO come up with picture
         """If ``replace`` is true then first delete all products else just add or update by name"""
         wb = load_workbook(filename=path_to_file)
         ws = wb.active
@@ -147,13 +137,10 @@ class Stoke:  # TODO raise exceptions in import methods + optimize (union) pictu
                 description=row[1] if row[1] is not None else "",
                 price=row[2],
                 count=row[3],
-                picture=row[4]
+                picture=row[4] if len(row) > 4 else None
             ))
 
-        if replace:
-            await self.product_db.delete_all_products(bot_id)
-        for product in products:
-            await self.product_db.upsert_product(product)
+        await self._import_products(bot_id, products, replace, path_to_file_with_pictures)
 
     async def export_xlsx(self, bot_id: int) -> str:  # TODO come up with picture
         """Экспорт товаров в виде Excel файла"""
@@ -196,6 +183,17 @@ class Stoke:  # TODO raise exceptions in import methods + optimize (union) pictu
         product = await self.product_db.get_product(product_id)
         product.count = new_count
         await self.product_db.update_product(product)
+
+    async def _import_products(self, bot_id: int, products: Iterable[ProductWithoutId], replace: bool, path_to_file_with_pictures: str):
+        if replace:
+            await self.product_db.delete_all_products(bot_id)
+        for product in products:
+            if path_to_file_with_pictures:
+                self._update_product_picture(product, path_to_file_with_pictures)
+            else:
+                product.picture = None
+            await self.product_db.upsert_product(product)
+
 
     def _update_product_picture(self, product: ProductWithoutId, path_to_file_with_pictures: str) -> None:
         new_picture_path = self._generate_path_to_picture()

@@ -229,6 +229,18 @@ class TestStoke:  # TODO optimize import tests + create fixture for cleaning and
         # back values
         product_schema_3.count = 122
 
+        await stoke.import_xlsx(
+            BOT_ID,
+            "tests/raw_files/import_xlsx_1_file_with_picture_test.xlsx",
+            replace=False,
+            path_to_file_with_pictures="tests/raw_files/product_pictures_test/"  # with pictures
+        )
+        products = await product_db.get_all_products(BOT_ID)
+        assert len(products) == 2
+        product_picture = products[0].picture
+        assert products[1].picture is None and product_picture != "XYvzR.jpg" and \
+               len(product_picture.split(".")[0]) == 5 and product_picture.split(".")[1] == "jpg"
+
     async def test_export_xlsx(self, stoke: Stoke, before_add_two_products) -> None:
         """Stoke.export_xlsx"""
         path_to_file = await stoke.export_xlsx(BOT_ID)
