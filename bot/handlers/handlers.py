@@ -250,7 +250,7 @@ async def start_command_handler(message: Message, state: FSMContext):
 
 @all_router.callback_query(States.WAITING_FREE_TRIAL_APPROVE, lambda q: q.data == "start_trial")
 async def start_trial_callback(query: CallbackQuery, state: FSMContext):
-    subscribe_until = datetime.now() + timedelta(days=7)
+    subscribe_until = datetime.now() + timedelta(seconds=60)  # TODO change it to 7 days
     logger.info(f"starting trial subscription for user with id ({query.from_user.id} until date {subscribe_until}")
     user = await user_db.get_user(query.from_user.id)
     if user.status != "new":
@@ -261,10 +261,10 @@ async def start_trial_callback(query: CallbackQuery, state: FSMContext):
 
     logger.info(f"adding scheduled subscription notifies for user {user.id}")
     await scheduler.add_scheduled_job(func=send_subscription_expire_notify,
-                                      run_date=subscribe_until - timedelta(days=3),
+                                      run_date=subscribe_until - timedelta(seconds=40),  # TODO change it to 3 days
                                       args=[user])
     await scheduler.add_scheduled_job(func=send_subscription_expire_notify,
-                                      run_date=subscribe_until - timedelta(days=1),
+                                      run_date=subscribe_until - timedelta(seconds=20),  # TODO change it to 1 day
                                       args=[user])
     await scheduler.add_scheduled_job(func=send_subscription_end_notify,
                                       run_date=subscribe_until,
