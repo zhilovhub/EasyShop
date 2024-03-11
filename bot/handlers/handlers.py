@@ -129,7 +129,7 @@ async def send_subscription_expire_notify(user: UserSchema):
         return None
     text = MessageTexts.SUBSCRIPTION_EXPIRE_NOTIFY.value
     text = text.replace("{expire_date}", user.subscribed_until.strftime("%d.%m.%Y %H:%M"))
-    text = text.replace("{expire_days}", (user.subscribed_until - datetime.now()).days)
+    text = text.replace("{expire_days}", str((user.subscribed_until - datetime.now()).days))
     await bot.send_message(user.id, text, reply_markup=continue_subscription_kb)
 
 
