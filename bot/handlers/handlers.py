@@ -55,10 +55,14 @@ class CheckSubscriptionMiddleware(BaseMiddleware):
                 subscribed_until=None)
             )
             user = await user_db.get_user(event.from_user.id)
-        if user.id not in config.ADMINS and user.status not in ("subscribed", "trial"):
+
+        message = event if isinstance(event, Message) else event.message
+        if user.id not in config.ADMINS and \
+                user.status not in ("subscribed", "trial") and \
+                message.text not in ("/start", "/check_subscription"):
             await event.answer("Это действие доступно только для пользователей с активной подпиской.")
-            message = event if isinstance(event, Message) else event.message
             return await check_sub_cmd(message)
+
         return await handler(event, data)
 
 
@@ -304,12 +308,12 @@ async def check_sub_cmd(message: Message, state: FSMContext = None):
     if user.status == "subscription_ended":
         await message.answer(f"Твоя подписка закончилась, чтобы продлить её на месяц нажми на кнопку ниже.",
                              reply_markup=continue_subscription_kb)
-    if user.status == "trial":
+    elif user.status == "trial":
         await message.answer(f"Твоя бесплатная подписка истекает "
                              f"<b>{user.subscribed_until.strftime('%d.%m.%Y %H:%M')}</b> "
                              f"(через <b>{(user.subscribed_until - datetime.now()).days}</b> дней)."
                              f"\nХочешь продлить прямо сейчас?", reply_markup=continue_subscription_kb)
-    if user.status == "subscribed":
+    elif user.status == "subscribed":
         await message.answer(f"Твоя подписка истекает "
                              f"<b>{user.subscribed_until.strftime('%d.%m.%Y %H:%M')}</b> "
                              f"(через <b>{(user.subscribed_until - datetime.now()).days}</b> дней)."
