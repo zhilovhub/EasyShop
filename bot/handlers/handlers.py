@@ -7,7 +7,7 @@ from typing import *
 
 from aiogram import Router, Bot, BaseMiddleware
 from aiogram.enums import ParseMode
-from aiogram.types import Message, ReplyKeyboardRemove, FSInputFile, CallbackQuery, InputMediaPhoto, ContentType, User
+from aiogram.types import Message, ReplyKeyboardRemove, FSInputFile, CallbackQuery, ContentType, User
 from aiogram.filters import CommandStart
 from aiogram.exceptions import TelegramUnauthorizedError, TelegramBadRequest
 from aiogram.fsm.context import FSMContext, StorageKey
@@ -17,7 +17,7 @@ import aiohttp
 from aiohttp.client_exceptions import ClientConnectorError
 
 from bot import config
-from bot.main import bot, db_engine, scheduler, dp
+from bot.main import bot, db_engine, dp, subscription
 from bot.utils import JsonStore
 from bot.config import logger
 from bot.keyboards import *
@@ -27,14 +27,16 @@ from bot.filters.chat_type import ChatTypeFilter
 from bot.exceptions.exceptions import *
 
 from database.models.bot_model import BotSchemaWithoutId, BotDao
-from database.models.user_model import UserSchema, UserDao
+from database.models.user_model import UserSchema, UserDao, UserStatusValues
 from database.models.order_model import OrderSchema, OrderNotFound, OrderStatusValues, OrderDao
 from database.models.product_model import ProductWithoutId, ProductDao
-from database.models.payment_model import PaymentSchemaWithoutId, PaymentDao
+from database.models.payment_model import PaymentDao
 
 from magic_filter import F
 
 import json
+
+from subscription.subscription import UserHasAlreadyStartedTrial
 
 
 class CheckSubscriptionMiddleware(BaseMiddleware):
@@ -50,19 +52,18 @@ class CheckSubscriptionMiddleware(BaseMiddleware):
         user_id = event.from_user.id
         message, is_message = (event, True) if isinstance(event, Message) else (event.message, False)
         try:
-            user = await user_db.get_user(user_id)
+            await user_db.get_user(user_id)
         except UserNotFound:
             logger.info(f"user {user_id} not found in db, creating new instance...")
             await send_event(event.from_user, EventTypes.NEW_USER)
             await user_db.add_user(UserSchema(
-                user_id=user_id, registered_at=datetime.utcnow(), status="new", locale="default",
+                user_id=user_id, registered_at=datetime.utcnow(), status=UserStatusValues.NEW, locale="default",
                 subscribed_until=None)
             )
             await message.answer(MessageTexts.ABOUT_MESSAGE.value)
-            user = await user_db.get_user(user_id)
 
-        if user.id not in config.ADMINS and \
-                user.status not in ("subscribed", "trial") and \
+        if user_id not in config.ADMINS and \
+                not (await subscription.is_user_subscribed(user_id)) and \
                 message.text not in ("/start", "/check_subscription"):
             if is_message:
                 await message.answer("Для того, чтобы пользоваться ботом, тебе нужна подписка")
@@ -174,7 +175,7 @@ async def send_subscription_end_notify(user: UserSchema):  # TODO https://tracke
     if datetime.now() + timedelta(minutes=5) < actual_user.subscribed_until:
         return None
 
-    actual_user.status = "subscription_ended"
+    actual_user.status = UserStatusValues.SUBSCRIPTION_ENDED
     await user_db.update_user(actual_user)
 
     user_bots = await bot_db.get_bots(actual_user.id)
@@ -282,7 +283,7 @@ async def start_command_handler(message: Message, state: FSMContext):
         logger.info(f"user {user_id} not found in db, creating new instance...")
         await send_event(message.from_user, EventTypes.NEW_USER)
         await user_db.add_user(UserSchema(
-            user_id=user_id, registered_at=datetime.utcnow(), status="new", locale="default",
+            user_id=user_id, registered_at=datetime.utcnow(), status=UserStatusValues.NEW, locale="default",
             subscribed_until=None)
         )
 
@@ -290,7 +291,7 @@ async def start_command_handler(message: Message, state: FSMContext):
 
     user_status = (await user_db.get_user(user_id)).status
 
-    if user_status == "subscription_ended":  # TODO do not send it from States.WAITING_PAYMENT_APPROVE
+    if user_status == UserStatusValues.SUBSCRIPTION_ENDED:  # TODO do not send it from States.WAITING_PAYMENT_APPROVE
         await message.answer(
             MessageTexts.SUBSCRIBE_END_NOTIFY.value,
             reply_markup=create_continue_subscription_kb(bot_id=None)
@@ -299,7 +300,7 @@ async def start_command_handler(message: Message, state: FSMContext):
 
     user_bots = await bot_db.get_bots(user_id)
     if not user_bots:
-        if user_status == "new":
+        if user_status == UserStatusValues.NEW:
             await message.answer(MessageTexts.FREE_TRIAL_MESSAGE.value, reply_markup=free_trial_start_kb)
             await state.set_state(States.WAITING_FREE_TRIAL_APPROVE)
         else:
@@ -320,28 +321,25 @@ async def start_command_handler(message: Message, state: FSMContext):
 async def start_trial_callback(query: CallbackQuery, state: FSMContext):
     admin_message = await send_event(query.from_user, EventTypes.STARTED_TRIAL)
     await query.message.edit_text(MessageTexts.FREE_TRIAL_MESSAGE.value, reply_markup=None)
+    user_id = query.from_user.id
+    # logger.info(f"starting trial subscription for user with id ({user_id} until date {subscribe_until}")
+    logger.info(
+        f"starting trial subscription for user with id ({user_id} until date ТУТ нужно выполнить TODO")  # TODO move logger into to subscription module
 
-    subscribe_until = datetime.now() + timedelta(days=7)
-    logger.info(f"starting trial subscription for user with id ({query.from_user.id} until date {subscribe_until}")
-    user = await user_db.get_user(query.from_user.id)
-    if user.status != "new":
+    try:
+        subscribed_until = await subscription.start_trial(query.from_user.id)
+    except UserHasAlreadyStartedTrial:
         # TODO выставлять счет на оплату если триал уже был но пользователь все равно как то сюда попал
         return await query.answer("Вы уже оформляли пробную подписку", show_alert=True)
-    user.status = "trial"
-    user.subscribed_until = subscribe_until
 
-    logger.info(f"adding scheduled subscription notifies for user {user.id}")
-    await scheduler.add_scheduled_job(func=send_subscription_expire_notify,
-                                      run_date=subscribe_until - timedelta(days=3),
-                                      args=[user])
-    await scheduler.add_scheduled_job(func=send_subscription_expire_notify,
-                                      run_date=subscribe_until - timedelta(days=1),
-                                      args=[user])
-    await scheduler.add_scheduled_job(func=send_subscription_end_notify,
-                                      run_date=subscribe_until,
-                                      args=[user])
+    logger.info(f"adding scheduled subscription notifies for user {user_id}")
+    await subscription.add_notifications(
+        user_id,
+        on_expiring_notification=send_subscription_expire_notify,
+        on_end_notification=send_subscription_end_notify,
+        subscribed_until=subscribed_until,
+    )
 
-    await user_db.update_user(user)
     await state.set_state(States.WAITING_FOR_TOKEN)
 
     await send_instructions(chat_id=query.from_user.id)
@@ -356,30 +354,27 @@ async def start_trial_callback(query: CallbackQuery, state: FSMContext):
 @all_router.message(F.text == "/check_subscription")
 async def check_sub_cmd(message: Message, state: FSMContext = None):
     # TODO https://tracker.yandex.ru/BOT-17 Учесть часовые пояса клиентов
-    user = await user_db.get_user(message.chat.id)
+    user_id = message.from_user.id
     try:
         bot_id = (await state.get_data())["bot_id"]
     except (KeyError, AttributeError):
-        logger.warning(f"check_sub_cmd: bot_id of user {user.id} not found, setting it to None")
+        logger.warning(f"check_sub_cmd: bot_id of user {user_id} not found, setting it to None")
         bot_id = None
     kb = create_continue_subscription_kb(bot_id=bot_id)
 
-    if user.status == "subscription_ended":
-        await message.answer(f"Ваша подписка закончилась, чтобы продлить её на месяц нажмите на кнопку ниже.",
-                             reply_markup=kb)
-    elif user.status == "trial":
-        await message.answer(f"Ваша бесплатная подписка истекает "
-                             f"<b>{user.subscribed_until.strftime('%d.%m.%Y %H:%M')}</b> "
-                             f"(через <b>{(user.subscribed_until - datetime.now()).days}</b> дней)."
-                             f"\nХотите продлить прямо сейчас?", reply_markup=kb)
-    elif user.status == "subscribed":
-        await message.answer(f"Ваша подписка истекает "
-                             f"<b>{user.subscribed_until.strftime('%d.%m.%Y %H:%M')}</b> "
-                             f"(через <b>{(user.subscribed_until - datetime.now()).days}</b> дней)."
-                             f"\nХотите продлить прямо сейчас?", reply_markup=kb)
-    elif user.status == "new":
-        await state.set_state(States.WAITING_FREE_TRIAL_APPROVE)
-        await message.answer(MessageTexts.FREE_TRIAL_MESSAGE.value, reply_markup=free_trial_start_kb)
+    user_status = await subscription.get_user_status(user_id)
+    match user_status:
+        case UserStatusValues.SUBSCRIPTION_ENDED:
+            await message.answer(f"Твоя подписка закончилась, чтобы продлить её на месяц нажми на кнопку ниже.",
+                                 reply_markup=kb)
+        case UserStatusValues.TRIAL | UserStatusValues.SUBSCRIBED:
+            await message.answer(
+                await subscription.get_when_expires_text(user_id, is_trial=(user_status == UserStatusValues.TRIAL)),
+                reply_markup=kb
+            )
+        case UserStatusValues.NEW:
+            await state.set_state(States.WAITING_FREE_TRIAL_APPROVE)
+            await message.answer(MessageTexts.FREE_TRIAL_MESSAGE.value, reply_markup=free_trial_start_kb)
 
 
 @all_router.callback_query(lambda q: q.data.startswith("continue_subscription"))
@@ -389,19 +384,15 @@ async def continue_subscription_callback(query: CallbackQuery, state: FSMContext
         bot_id = int(query.data.split("_")[-1])
         await state.set_data({"bot_id": bot_id})
 
-    await query.message.answer_photo(FSInputFile(f"{config.RESOURCES_PATH.replace('{}', 'sbp_qr.png')}"),
-                                     f"• Стоимость подписки: <b>{config.SUBSCRIPTION_PRICE}₽</b>\n\n"
-                                     f"• Оплачивайте подписку удобным способом, "
-                                     f"через qr код. Либо на карту сбербанка по номеру телефона: "
-                                     f"<code>{config.SBP_NUM}</code>\n\n"
-                                     f"• После оплаты пришлите боту чек (скрин или пдфку) с подтверждением оплаты\n\n"
-                                     f"• В подписи к фото <b>напишите Ваши контакты для связи</b> с "
-                                     f"Вами в случае возникновения вопросов по оплате",
-                                     reply_markup=InlineKeyboardMarkup(inline_keyboard=[
-                                         [
-                                             InlineKeyboardButton(text="Перейти на страницу оплаты", url=config.SBP_URL)
-                                         ]
-                                     ]))
+    photo_name, instruction = subscription.get_subscribe_instructions()
+    await query.message.answer_photo(
+        photo=FSInputFile(config.RESOURCES_PATH.format(photo_name)),
+        caption=instruction,
+        reply_markup=InlineKeyboardMarkup(inline_keyboard=[
+            [
+                InlineKeyboardButton(text="Перейти на страницу оплаты", url=config.SBP_URL)
+            ]
+        ]))
     await query.message.answer(f"По возникновению каких-либо вопросов, пиши @someone", reply_markup=get_back_keyboard())
 
 
@@ -417,7 +408,7 @@ async def waiting_payment_pay_handler(message: Message, state: FSMContext):
     state_data = await state.get_data()
 
     if message.text == "🔙 Назад":
-        if user_status == "subscription_ended":
+        if user_status == UserStatusValues.SUBSCRIPTION_ENDED:
             await state.set_state(States.SUBSCRIBE_ENDED)
             await message.answer(
                 MessageTexts.SUBSCRIBE_END_NOTIFY.value,
@@ -467,7 +458,8 @@ async def waiting_payment_pay_handler(message: Message, state: FSMContext):
 
     await message.reply(
         "Ваши данные отправлены на модерацию, ожидайте изменения статуса оплаты",
-        reply_markup=get_back_keyboard() if user_status in ("subscribed", "trial") else ReplyKeyboardRemove()
+        reply_markup=get_back_keyboard() if user_status in (
+            UserStatusValues.SUBSCRIBED, UserStatusValues.TRIAL) else ReplyKeyboardRemove()
     )
     await state.set_state(States.WAITING_PAYMENT_APPROVE)
     await state.set_data(state_data)
@@ -478,7 +470,7 @@ async def waiting_payment_approve_handler(message: Message, state: FSMContext):
     user_id = message.from_user.id
     user_status = (await user_db.get_user(user_id)).status
 
-    if user_status in ("subscribed", "trial") and message.text == "🔙 Назад":
+    if user_status in (UserStatusValues.SUBSCRIBED, UserStatusValues.TRIAL) and message.text == "🔙 Назад":
         state_data = await state.get_data()
         user_bot = await bot_db.get_bot(state_data['bot_id'])
         if state_data and "bot_id" in state_data:
@@ -506,6 +498,7 @@ async def subscribe_ended_handler(message: Message) -> None:
 
 @all_router.callback_query(lambda q: q.data.startswith("approve_pay"))
 async def approve_pay_callback(query: CallbackQuery, state: FSMContext):
+    await query.message.edit_text(query.message.text + "\n\n<b>ПОДТВЕРЖДЕНО</b>", reply_markup=None)
     user_id = int(query.data.split(':')[-1])
 
     user_chat_to_approve = await bot.get_chat(user_id)
@@ -514,40 +507,25 @@ async def approve_pay_callback(query: CallbackQuery, state: FSMContext):
     )
     admin_message = await send_event(user_to_approve, EventTypes.SUBSCRIBED)
 
-    user = await user_db.get_user(user_id)
+    subscribed_until = await subscription.approve_payment(user_id)
 
-    await query.message.edit_text(query.message.text + "\n\n<b>ПОДТВЕРЖДЕНО</b>", reply_markup=None)
-    payment = PaymentSchemaWithoutId(from_user=user_id,
-                                     amount=config.SUBSCRIPTION_PRICE,
-                                     status="success",
-                                     created_at=datetime.now(),
-                                     last_update=datetime.now())
-    await pay_db.add_payment(payment)
+    user = await user_db.get_user(user_id)
+    await subscription.create_payment(user_id)
+
+    logger.info(f"adding scheduled subscription notifies for user {user.id}")
+    await subscription.add_notifications(
+        user_id,
+        on_expiring_notification=send_subscription_expire_notify,
+        on_end_notification=send_subscription_end_notify,
+        subscribed_until=subscribed_until,
+    )
+
+    await bot.send_message(user_id, "Оплата подписки подтверждена ✅")
+    user_bots = await bot_db.get_bots(user_id)
     user_state = FSMContext(storage=dp.storage, key=StorageKey(
         chat_id=user_id,
         user_id=user_id,
         bot_id=bot.id))
-    if user.status == "subscription_ended":
-        user.subscribed_until = datetime.now() + timedelta(days=31)
-    else:
-        user.subscribed_until = user.subscribed_until + timedelta(days=31)
-    user.status = "subscribed"
-
-    logger.info(f"adding scheduled subscription notifies for user {user.id}")
-    await scheduler.add_scheduled_job(func=send_subscription_expire_notify,
-                                      run_date=user.subscribed_until - timedelta(days=3),
-                                      args=[user])
-    await scheduler.add_scheduled_job(func=send_subscription_expire_notify,
-                                      run_date=user.subscribed_until - timedelta(days=1),
-                                      args=[user])
-    await scheduler.add_scheduled_job(func=send_subscription_end_notify,
-                                      run_date=user.subscribed_until,
-                                      args=[user])
-
-    await user_db.update_user(user)
-
-    await bot.send_message(user_id, "Оплата подписки подтверждена ✅")
-    user_bots = await bot_db.get_bots(user_id)
 
     if user_bots:
         bot_id = user_bots[0].bot_id
@@ -572,6 +550,7 @@ async def approve_pay_callback(query: CallbackQuery, state: FSMContext):
 
 @all_router.callback_query(lambda q: q.data.startswith("cancel_pay"))
 async def cancel_pay_callback(query: CallbackQuery, state: FSMContext):
+    state_data = await state.get_data()
     user_id = int(query.data.split(':')[-1])
     await query.message.edit_text(query.message.text + "\n\n<b>ОТКЛОНЕНО</b>", reply_markup=None)
 
@@ -579,7 +558,9 @@ async def cancel_pay_callback(query: CallbackQuery, state: FSMContext):
         chat_id=user_id,
         user_id=user_id,
         bot_id=bot.id))
+
     await user_state.set_state(States.WAITING_PAYMENT_PAY)
+    await user_state.set_data(state_data)
 
     await bot.send_message(user_id, "Оплата не была принята, перепроверьте корректность отправленных данный (чека) "
                                     "и отправьте его еще раз")
@@ -692,7 +673,8 @@ async def bot_menu_handler(message: Message, state: FSMContext):
             if not products:
                 await message.answer("Список товаров Вашего магазина пуст")
             else:
-                await message.answer("Список товаров Вашего магазина 👇\nЧтобы удалить товар, нажмите на тег рядом с ним")
+                await message.answer(
+                    "Список товаров Вашего магазина 👇\nЧтобы удалить товар, нажмите на тег рядом с ним")
                 for product in products:
                     await message.answer_photo(
                         photo=FSInputFile(os.getenv('FILES_PATH') + product.picture),

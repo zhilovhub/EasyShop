@@ -1,10 +1,12 @@
+from enum import Enum
+from typing import Optional
 from datetime import datetime
 
-from sqlalchemy import BigInteger, Column, String, DateTime, JSON
+from sqlalchemy import BigInteger, Column, String, DateTime, JSON, TypeDecorator, Unicode, Dialect
 from sqlalchemy import select, update, delete, insert
 from sqlalchemy.ext.asyncio import AsyncEngine
 
-from pydantic import BaseModel, Field, ConfigDict, field_validator
+from pydantic import BaseModel, Field, ConfigDict
 
 from database.models import Base
 from database.models.dao import Dao
@@ -12,8 +14,34 @@ from database.models.dao import Dao
 from bot.exceptions.exceptions import *
 
 
-USER_STATUSES = ("new", "trial", "banned", "subscribed", "subscription_ended")
+class UserStatusValues(Enum):
+    BANNED = "banned"
+    NEW = "new"
+    TRIAL = "trial"
+    SUBSCRIBED = "subscribed"
+    SUBSCRIPTION_ENDED = "subscription_ended"
 
+
+class UserStatus(TypeDecorator):
+    impl = Unicode
+    cache_ok = True
+
+    def process_bind_param(self, value: Optional[UserStatusValues], dialect: Dialect) -> String:
+        return value.value
+
+    def process_result_value(self, value: Optional[String], dialect: Dialect) -> Optional[UserStatusValues]:
+        match value:
+            case UserStatusValues.BANNED.value:
+                return UserStatusValues.BANNED
+            case UserStatusValues.NEW.value:
+                return UserStatusValues.NEW
+            case UserStatusValues.TRIAL.value:
+                return UserStatusValues.TRIAL
+            case UserStatusValues.SUBSCRIBED.value:
+                return UserStatusValues.SUBSCRIBED
+            case UserStatusValues.SUBSCRIPTION_ENDED.value:
+                return UserStatusValues.SUBSCRIPTION_ENDED
+        
 
 class NotInUserStatusesList(ValueError):
     """Error when value of user status not in values list"""
@@ -24,7 +52,7 @@ class User(Base):
     __tablename__ = "users"
 
     user_id = Column(BigInteger, primary_key=True)
-    status = Column(String(55), nullable=False)
+    status = Column(UserStatus, nullable=False)
     subscribed_until = Column(DateTime)
     registered_at = Column(DateTime, nullable=False)
     settings = Column(JSON)
@@ -35,17 +63,11 @@ class UserSchema(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
     id: int = Field(alias="user_id", frozen=True)
-    status: str = Field(max_length=55)
+    status: UserStatusValues
     subscribed_until: datetime | None
     registered_at: datetime = Field(frozen=True)
     settings: dict | None = None
     locale: str = Field(max_length=10, default="default")
-
-    @field_validator("status")
-    def validate_request_status(cls, value: str):
-        if value.lower() not in USER_STATUSES:
-            raise NotInUserStatusesList(f"status value must be one of {', '.join(USER_STATUSES)}")
-        return value.lower()
 
 
 class UserDao(Dao):

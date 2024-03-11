@@ -2,14 +2,13 @@ import csv
 import json
 import os
 import shutil
-from datetime import datetime
 from typing import Iterable
 
 from openpyxl import load_workbook
 
 import pytest
 
-from database.models.bot_model import BotDao, BotSchemaWithoutId
+from database.models.bot_model import BotDao
 from database.models.product_model import ProductDao, ProductWithoutId, ProductSchema
 from stoke.stoke import Stoke
 from tests.schemas import BOT_ID
@@ -46,6 +45,7 @@ product_schema_3 = ProductSchema(
     id=3,
     **product_schema_without_id_3.model_dump()
 )
+
 
 @pytest.fixture
 async def before_add_two_products(bot_db: BotDao, product_db: ProductDao, before_add_bot) -> None:
@@ -100,7 +100,7 @@ class TestStoke:  # TODO optimize import tests + create fixture for cleaning and
 
         os.remove(path_to_file)
 
-        path_to_file, path_to_images = await stoke.export_json(bot_id=BOT_ID, with_pictures=True)   # with pictures
+        path_to_file, path_to_images = await stoke.export_json(bot_id=BOT_ID, with_pictures=True)  # with pictures
         assert open(path_to_file, "r", encoding="utf-8").read() == \
                open("tests/raw_files/export_json_with_pictures_test.json", "r", encoding="utf-8").read()
 

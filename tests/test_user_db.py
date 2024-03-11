@@ -1,7 +1,8 @@
 import pytest
 
 from bot.exceptions import InvalidParameterFormat, UserNotFound, InstanceAlreadyExists
-from database.models.user_model import UserDao
+from database.models.user_model import UserDao, UserStatusValues
+from database.models.order_model import OrderStatusValues
 
 from pydantic import ValidationError
 
@@ -44,14 +45,14 @@ class TestUserDb:
             await user_db.update_user(1)
 
         with pytest.raises(ValidationError):
-            user_schema_1.status = "random_string"
+            user_schema_1.status = OrderStatusValues.BACKLOG
             await user_db.update_user(user_schema_1)
-            user = await user_db.get_user(user_schema_1.id)
+            await user_db.get_user(user_schema_1.id)
 
-        user_schema_1.status = "trial"
+        user_schema_1.status = UserStatusValues.TRIAL
         await user_db.update_user(user_schema_1)
         user = await user_db.get_user(user_schema_1.id)
-        assert user.status == "trial"
+        assert user.status == UserStatusValues.TRIAL
 
     async def test_del_user(self, user_db: UserDao, before_add_user) -> None:
         """UserDao.del_user"""

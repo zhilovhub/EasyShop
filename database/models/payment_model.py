@@ -1,7 +1,7 @@
 from datetime import datetime
 
-from sqlalchemy import BigInteger, Column, String, DateTime, JSON, ForeignKey
-from sqlalchemy import select, update, delete, insert
+from sqlalchemy import BigInteger, Column, String, DateTime, ForeignKey
+from sqlalchemy import select, update, insert
 from sqlalchemy.ext.asyncio import AsyncEngine
 
 from pydantic import BaseModel, Field, ConfigDict, field_validator

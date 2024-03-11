@@ -71,7 +71,6 @@ if __name__ == "__main__":
                     ssl_keyfile=os.getenv("SSL_KEY_PATH"), ssl_certfile=os.getenv("SSL_CERT_PATH"),
                     log_config=LOGGING_SETUP)
 
-
 # Start uvicorn from cli (no logs)
 if __name__ == "api.main":
     import api.products
