@@ -336,10 +336,14 @@ async def continue_subscription_callback(query: CallbackQuery, state: FSMContext
 @all_router.message(States.WAITING_PAYMENT_APPROVE)
 async def waiting_payment_approve_handler(message: Message, state: FSMContext):
     if message.content_type not in (ContentType.PHOTO, ContentType.DOCUMENT):
-        return await message.answer("Необходимо прислать боту чек в виде скрина или пдф файла.")
+        return await message.answer(
+            "Необходимо прислать боту чек в виде скрина или пдф файла", reply_markup=get_back_keyboard()
+        )
     if not message.caption:
         return await message.answer(
-            "В подписи к файлу или фото укажите Ваши контактные данные и отправьте чек повторно.")
+            "В подписи к файлу или фото укажите Ваши контактные данные и отправьте чек повторно",
+            reply_markup=get_back_keyboard()
+        )
     for admin in config.ADMINS:
         try:
             msg: Message = await message.send_copy(admin)
@@ -358,7 +362,7 @@ async def waiting_payment_approve_handler(message: Message, state: FSMContext):
                                    ]))
         except:
             logger.warning("error while notify admin", exc_info=True)
-    await message.reply("Ваши данные отправлены на модерацию, ожидайте изменения статуса оплаты.")
+    await message.reply("Ваши данные отправлены на модерацию, ожидайте изменения статуса оплаты")
 
 
 @all_router.callback_query(lambda q: q.data.startswith("approve_pay"))
