@@ -3,6 +3,8 @@ import json
 import os
 import shutil
 from datetime import datetime
+from typing import Iterable
+
 from openpyxl import load_workbook
 
 import pytest
@@ -99,6 +101,7 @@ class TestStoke:  # TODO optimize import tests + create fixture for cleaning and
         product_picture = products[0].picture
         assert products[1].picture is None and product_picture != "XYvzR.jpg" and \
                len(product_picture.split(".")[0]) == 5 and product_picture.split(".")[1] == "jpg"
+        assert self._check_pictures_exists(products, os.environ["FILES_PATH"])
 
     async def test_export_json(self, stoke: Stoke, before_add_two_products) -> None:
         """Stoke.export_json"""
@@ -113,9 +116,9 @@ class TestStoke:  # TODO optimize import tests + create fixture for cleaning and
                open("tests/raw_files/export_json_with_pictures_test.json", "r", encoding="utf-8").read()
 
         with open(path_to_file, "r", encoding="utf-8") as f:
-            for product in json.load(f):
-                if product["picture"]:
-                    assert os.path.exists(path_to_images + product["picture"])
+            assert self._check_pictures_exists(
+                map(lambda x: ProductWithoutId(bot_id=BOT_ID, **x), json.load(f)), path_to_images
+            )
         os.remove(path_to_file)
         shutil.rmtree("/".join(path_to_images.split("/")[:-2]))
 
@@ -154,6 +157,7 @@ class TestStoke:  # TODO optimize import tests + create fixture for cleaning and
         product_picture = products[0].picture
         assert products[1].picture is None and product_picture != "XYvzR.jpg" and \
                len(product_picture.split(".")[0]) == 5 and product_picture.split(".")[1] == "jpg"
+        assert self._check_pictures_exists(products, os.environ["FILES_PATH"])
 
     async def test_export_csv(self, stoke: Stoke, before_add_two_products) -> None:
         """Stoke.export_csv"""
@@ -202,6 +206,8 @@ class TestStoke:  # TODO optimize import tests + create fixture for cleaning and
                 if row[4]:
                     assert os.path.exists(path_to_images + row[4])
 
+            assert self._check_pictures_exists(excepted_products, path_to_images)
+
         os.remove(path_to_file)
         shutil.rmtree("/".join(path_to_images.split("/")[:-2]))
 
@@ -240,6 +246,7 @@ class TestStoke:  # TODO optimize import tests + create fixture for cleaning and
         product_picture = products[0].picture
         assert products[1].picture is None and product_picture != "XYvzR.jpg" and \
                len(product_picture.split(".")[0]) == 5 and product_picture.split(".")[1] == "jpg"
+        assert self._check_pictures_exists(products, os.environ["FILES_PATH"])
 
     async def test_export_xlsx(self, stoke: Stoke, before_add_two_products) -> None:
         """Stoke.export_xlsx"""
@@ -271,3 +278,10 @@ class TestStoke:  # TODO optimize import tests + create fixture for cleaning and
         count = 345
         await stoke.update_product_count(product_id, count)
         assert (await product_db.get_product(product_id)).count == count
+
+    def _check_pictures_exists(self, products: Iterable[ProductWithoutId], path_to_file_with_pictures: str) -> bool:
+        for product in products:
+            if product.picture:
+                if not os.path.exists(path_to_file_with_pictures + product.picture):
+                    return False
+        return True
