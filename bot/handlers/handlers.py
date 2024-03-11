@@ -180,8 +180,7 @@ async def handle_callback(query: CallbackQuery, state: FSMContext):
                 chat_id=data[3],
                 message_id=int(data[2]))
 
-            username = query.message.text[
-                       query.message.text.find("пользователя") + 12:query.message.text.find("Список товаров") + 1]
+            username = query.message.text[query.message.text.find("пользователя"):].split()[1].strip("\n")
 
             await query.message.edit_text(
                 text=order.convert_to_notification_text(
