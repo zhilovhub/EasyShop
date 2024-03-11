@@ -125,7 +125,7 @@ async def send_order_change_status_notify(order: OrderSchema):
 async def send_subscription_expire_notify(user: UserSchema):
     if datetime.now() > user.subscribed_until:
         return None
-    if (user.subscribed_until - datetime.now()).days > 7:
+    if (user.subscribed_until - datetime.now()).seconds > 60:  # TODO change it to 7 days
         return None
     text = MessageTexts.SUBSCRIPTION_EXPIRE_NOTIFY.value
     text = text.replace("{expire_date}", user.subscribed_until.strftime("%d.%m.%Y %H:%M"))
@@ -134,7 +134,7 @@ async def send_subscription_expire_notify(user: UserSchema):
 
 
 async def send_subscription_end_notify(user: UserSchema):
-    if datetime.now() < user.subscribed_until + timedelta(minutes=5):
+    if datetime.now() < user.subscribed_until + timedelta(seconds=10):  # TODO change it to 5 minutes
         return None
     user.status = "subscription_ended"
     await user_db.update_user(user)
@@ -382,16 +382,16 @@ async def approve_pay_callback(query: CallbackQuery, state: FSMContext):
         bot_id=bot.id))
     user.status = "subscribed"
     if not user.subscribed_until:
-        user.subscribed_until = datetime.now() + timedelta(days=30)
+        user.subscribed_until = datetime.now() + timedelta(seconds=60)  # TODO change it to 31 days
     else:
-        user.subscribed_until = user.subscribed_until + timedelta(days=30)
+        user.subscribed_until = user.subscribed_until + timedelta(seconds=60)  # TODO change it to 31 days
 
     logger.info(f"adding scheduled subscription notifies for user {user.id}")
     await scheduler.add_scheduled_job(func=send_subscription_expire_notify,
-                                      run_date=user.subscribed_until - timedelta(days=3),
+                                      run_date=user.subscribed_until - timedelta(seconds=40),  # TODO change it to 3 days
                                       args=[user])
     await scheduler.add_scheduled_job(func=send_subscription_expire_notify,
-                                      run_date=user.subscribed_until - timedelta(days=1),
+                                      run_date=user.subscribed_until - timedelta(seconds=20),  # TODO change it to 1 day
                                       args=[user])
     await scheduler.add_scheduled_job(func=send_subscription_end_notify,
                                       run_date=user.subscribed_until,
