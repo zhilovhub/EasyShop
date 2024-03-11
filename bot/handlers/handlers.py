@@ -134,7 +134,7 @@ async def send_subscription_expire_notify(user: UserSchema):
 
 
 async def send_subscription_end_notify(user: UserSchema):
-    if datetime.now() < user.subscribed_until + timedelta(seconds=10):  # TODO change it to 5 minutes
+    if datetime.now() < user.subscribed_until + timedelta(minutes=5):  # TODO change it to 5 minutes
         return None
     user.status = "subscription_ended"
     await user_db.update_user(user)
