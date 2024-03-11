@@ -55,7 +55,7 @@ class CheckSubscriptionMiddleware(BaseMiddleware):
                 subscribed_until=None)
             )
             user = await user_db.get_user(event.from_user.id)
-        if user.status not in ("subscribed", "trial"):
+        if user.id not in config.ADMINS and user.status not in ("subscribed", "trial"):
             await event.answer("Это действие доступно только для пользователей с активной подпиской.")
             message = event if isinstance(event, Message) else event.message
             return await check_sub_cmd(message)
