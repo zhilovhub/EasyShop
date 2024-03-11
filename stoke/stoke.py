@@ -27,7 +27,7 @@ def singleton(class_):
 
 
 @singleton
-class Stoke:  # TODO raise exceptions in import methods + optimize (union) pictures logic
+class Stoke:  # TODO raise specific exceptions in import methods + optimize (union) pictures logic
     """Модуль склада"""
 
     def __init__(self, database: Database) -> None:

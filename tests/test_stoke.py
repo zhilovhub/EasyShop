@@ -64,7 +64,7 @@ async def before_add_two_products(bot_db: BotDao, product_db: ProductDao) -> Non
     await product_db.add_product(product_schema_without_id_2)
 
 
-class TestStoke:  # TODO optimize import tests + create fixture for cleaning and backing data
+class TestStoke:  # TODO optimize import tests + create fixture for cleaning and backing data + test the exceptions
     async def test_import_json(self, stoke: Stoke, product_db: ProductDao, before_add_two_products) -> None:
         """Stoke.import_json"""
         await stoke.import_json(
