@@ -133,8 +133,8 @@ async def send_subscription_expire_notify(user: UserSchema):
     await bot.send_message(user.id, text, reply_markup=continue_subscription_kb)
 
 
-async def send_subscription_end_notify(user: UserSchema):
-    if datetime.now() < user.subscribed_until + timedelta(minutes=5):  # TODO change it to 5 minutes
+async def send_subscription_end_notify(user: UserSchema):  # TODO https://tracker.yandex.ru/BOT-29 очищать джобы в бд
+    if datetime.now() + timedelta(minutes=5) < user.subscribed_until:  # TODO change it to 5 minutes
         return None
     user.status = "subscription_ended"
     await user_db.update_user(user)
