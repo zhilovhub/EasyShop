@@ -47,7 +47,9 @@ class CheckSubscriptionMiddleware(BaseMiddleware):
             data: Dict[str, Any]
     ) -> Any:
         message = event if isinstance(event, Message) else event.message
-
+        if message.text == "/clear":
+            await user_db.del_user(user_id=event.from_user.id)
+            await start_command_handler(message)
         try:
             user = await user_db.get_user(event.from_user.id)
         except UserNotFound:
@@ -248,7 +250,7 @@ async def process_web_app_request(event: Message):
 
 
 @all_router.message(CommandStart())
-async def start_command_handler(message: Message, state: FSMContext):
+async def start_command_handler(message: Message, state: FSMContext = None):  # TODO rempve = None after payment tests
     user_id = message.from_user.id
     try:
         await user_db.get_user(user_id)

@@ -31,8 +31,13 @@ scheduler = sch.Scheduler(_scheduler, 'postgres', config.TIMEZONE)
 async def on_start():
     logger.info("onStart called")
 
-    await bot.set_my_commands([BotCommand(command="start", description="Стартовая инструкция"),
-                               BotCommand(command="check_subscription", description="Проверить подписку")])
+    await bot.set_my_commands(
+        [
+            BotCommand(command="start", description="Стартовая инструкция"),
+            BotCommand(command="check_subscription", description="Проверить подписку"),
+            BotCommand(command="clear", description="Снести себя"),  # TODO remove after payment tests
+         ]
+    )
 
     await storage.connect()
     await db_engine.connect()
