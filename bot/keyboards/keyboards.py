@@ -1,9 +1,10 @@
+from typing import Optional
+
 from aiogram.utils.keyboard import InlineKeyboardMarkup, InlineKeyboardButton, ReplyKeyboardMarkup, KeyboardButton
 
 from bot.utils import make_webapp_info, MessageTexts
 
 from database.models.order_model import OrderStatusValues
-
 
 free_trial_start_kb = InlineKeyboardMarkup(inline_keyboard=[
     [
@@ -11,11 +12,13 @@ free_trial_start_kb = InlineKeyboardMarkup(inline_keyboard=[
     ]
 ])
 
-continue_subscription_kb = InlineKeyboardMarkup(inline_keyboard=[
-    [
-        InlineKeyboardButton(text="Продлить подписку", callback_data="continue_subscription")
-    ]
-])
+
+def create_continue_subscription_kb(bot_id: Optional[int | None]) -> InlineKeyboardMarkup:
+    return InlineKeyboardMarkup(inline_keyboard=[
+        [
+            InlineKeyboardButton(text="Продлить подписку", callback_data=f"continue_subscription_{bot_id}")
+        ]
+    ])
 
 
 def create_change_order_status_kb(order_id: str, msg_id: int = 0, chat_id: int = 0,
@@ -25,8 +28,9 @@ def create_change_order_status_kb(order_id: str, msg_id: int = 0, chat_id: int =
         [
             InlineKeyboardButton(text=("🔸 " if current_status == OrderStatusValues.BACKLOG else "") + "Ожидание",
                                  callback_data=f"order_backlog:{order_id}:{msg_id}:{chat_id}"),
-            InlineKeyboardButton(text=("🔸 " if current_status == OrderStatusValues.WAITING_PAYMENT else "") + "Ждет оплаты",
-                                 callback_data=f"order_waiting_payment:{order_id}:{msg_id}:{chat_id}"),
+            InlineKeyboardButton(
+                text=("🔸 " if current_status == OrderStatusValues.WAITING_PAYMENT else "") + "Ждет оплаты",
+                callback_data=f"order_waiting_payment:{order_id}:{msg_id}:{chat_id}"),
         ],
         [
             InlineKeyboardButton(text=("🔸 " if current_status == OrderStatusValues.PROCESSING else "") + "Выполнять",
