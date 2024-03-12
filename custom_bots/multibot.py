@@ -60,7 +60,7 @@ main_bot = Bot(MAIN_TELEGRAM_TOKEN, default=DefaultBotProperties(**bot_settings)
 
 OTHER_BOTS_URL = f"{BASE_URL}{OTHER_BOTS_PATH}"
 
-WEB_APP_URL = f"{getenv('WEB_APP_URL')}:{getenv('WEB_APP_PORT')}?bot_id=[bot_id]"
+WEB_APP_URL = f"{getenv('WEB_APP_URL')}:{getenv('WEB_APP_PORT')}/products-page/?bot_id=[bot_id]"
 
 LOCAL_API_SERVER_HOST = getenv("WEBHOOK_LOCAL_API_URL")
 LOCAL_API_SERVER_PORT = int(getenv("WEBHOOK_LOCAL_API_PORT"))
