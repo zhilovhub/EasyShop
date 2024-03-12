@@ -378,7 +378,7 @@ async def waiting_free_trial_handler(message: Message) -> None:
 
 
 @all_router.message(States.WAITING_PAYMENT_PAY)
-async def waiting_payment_approve_handler(message: Message, state: FSMContext):
+async def waiting_payment_pay_handler(message: Message, state: FSMContext):
     if message.text == "🔙 Назад":
         user_id = message.from_user.id
         user_status = (await user_db.get_user(user_id)).status
