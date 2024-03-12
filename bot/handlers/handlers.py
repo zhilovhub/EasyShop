@@ -46,6 +46,8 @@ class CheckSubscriptionMiddleware(BaseMiddleware):
             event: CallbackQuery | Message,
             data: Dict[str, Any]
     ) -> Any:
+        message = event if isinstance(event, Message) else event.message
+
         try:
             user = await user_db.get_user(event.from_user.id)
         except UserNotFound:
@@ -54,9 +56,9 @@ class CheckSubscriptionMiddleware(BaseMiddleware):
                 user_id=event.from_user.id, registered_at=datetime.utcnow(), status="new", locale="default",
                 subscribed_until=None)
             )
+            await message.answer(MessageTexts.ABOUT_MESSAGE.value)
             user = await user_db.get_user(event.from_user.id)
 
-        message = event if isinstance(event, Message) else event.message
         if user.id not in config.ADMINS and \
                 user.status not in ("subscribed", "trial") and \
                 message.text not in ("/start", "/check_subscription"):
@@ -234,8 +236,6 @@ async def start_command_handler(message: Message, state: FSMContext):
             user_id=message.from_user.id, registered_at=datetime.utcnow(), status="new", locale="default",
             subscribed_until=None)
         )
-
-    await message.answer(MessageTexts.ABOUT_MESSAGE.value)
 
     user_bots = await bot_db.get_bots(message.from_user.id)
     if not user_bots:  # TODO https://tracker.yandex.ru/BOT-32 переработать логику
