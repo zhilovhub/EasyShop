@@ -27,6 +27,7 @@ jobs:
           run: |
             export DEBUG=1
             export PROJECT_ROOT=/home/runner/work/EasyShop/EasyShop/
+            export FILES_PATH=/home/runner/work/EasyShop/EasyShop/Files/
             export DB_FOR_TESTS=postgresql+asyncpg://postgres:password@localhost:5432/postgres
             mkdir database/logs
             . venv/bin/activate

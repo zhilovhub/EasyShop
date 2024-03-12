@@ -1,0 +1,16 @@
+[
+    {
+        "name": "Xbox Series X",
+        "description": "",
+        "price": 31000,
+        "count": 12,
+        "picture": "sa123.jpg"
+    },
+    {
+        "name": "Xbox Series XXX",
+        "description": "",
+        "price": 55000,
+        "count": 50,
+        "picture":"fghdf.jpg"
+    }
+]

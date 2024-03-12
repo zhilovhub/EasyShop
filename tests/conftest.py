@@ -11,8 +11,9 @@ from database.models.bot_model import BotDao
 from database.models.user_model import UserDao
 from database.models.order_model import OrderDao
 from database.models.product_model import ProductDao
-
 from database.models.models import Base
+
+from stoke.stoke import Stoke
 
 load_dotenv()
 
@@ -26,6 +27,12 @@ async def database() -> Database:
     yield database
     async with database.engine.begin() as conn:
         await conn.run_sync(Base.metadata.drop_all)
+
+
+@pytest.fixture
+def stoke(database: Database) -> Stoke:
+    stoke = Stoke(database)
+    return stoke
 
 
 @pytest.fixture

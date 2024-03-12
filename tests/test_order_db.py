@@ -2,7 +2,6 @@ from datetime import datetime
 
 import pytest
 
-from bot.exceptions import InvalidParameterFormat
 from database.models.bot_model import BotDao, BotSchemaWithoutId
 from database.models.order_model import OrderDao, OrderSchema, OrderNotFound, OrderStatusValues
 from database.models.product_model import ProductDao, ProductWithoutId, ProductSchema
@@ -37,6 +36,7 @@ product_schema_without_id_1 = ProductWithoutId(
     name="Xbox",
     description="",
     price=21000,
+    count=5,
     picture="asd4F.jpg"
 )
 product_schema_without_id_2 = ProductWithoutId(
@@ -44,6 +44,7 @@ product_schema_without_id_2 = ProductWithoutId(
     name="Xbox Series X",
     description="",
     price=31000,
+    count=6,
     picture="sa123.jpg"
 )
 product_schema_1 = ProductSchema(

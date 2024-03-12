@@ -147,8 +147,6 @@ cython_debug/
 
 # User bots directory
 bots
-Files
-bot/Files
 custom_bots/*.json
 
 resources/*.json
