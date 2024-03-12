@@ -237,6 +237,8 @@ async def start_command_handler(message: Message, state: FSMContext):
             subscribed_until=None)
         )
 
+    await send_instructions(message)
+
     user_bots = await bot_db.get_bots(message.from_user.id)
     if not user_bots:  # TODO https://tracker.yandex.ru/BOT-32 переработать логику
         await message.answer(MessageTexts.FREE_TRIAL_MESSAGE.value, reply_markup=free_trial_start_kb)
@@ -277,28 +279,8 @@ async def start_trial_callback(query: CallbackQuery, state: FSMContext):
 
     await user_db.update_user(user)
     await state.set_state(States.WAITING_FOR_TOKEN)
-    file_ids = cache_resources_file_id_store.get_data()
-    try:
-        await query.message.answer_media_group(
-            media=[
-                InputMediaPhoto(media=file_ids["botFather1.jpg"], caption=MessageTexts.INSTRUCTION_MESSAGE.value),
-                InputMediaPhoto(media=file_ids["botFather2.jpg"]),
-                InputMediaPhoto(media=file_ids["botFather3.jpg"])
-            ]
-        )
-    except (TelegramBadRequest, KeyError) as e:
-        logger.info(f"error while sending instructions.... cache is empty, sending raw files {e}")
-        media_group = await query.message.answer_media_group(
-            media=[
-                InputMediaPhoto(media=FSInputFile(config.RESOURCES_PATH.format("botFather1.jpg")),
-                                caption=MessageTexts.INSTRUCTION_MESSAGE.value),
-                InputMediaPhoto(media=FSInputFile(config.RESOURCES_PATH.format("botFather2.jpg"))),
-                InputMediaPhoto(media=FSInputFile(config.RESOURCES_PATH.format("botFather3.jpg"))),
-            ]
-        )
-        for ind, message in enumerate(media_group, start=1):
-            file_ids[f"botFather{ind}.jpg"] = message.photo[0].file_id
-        cache_resources_file_id_store.update_data(file_ids)
+
+    await send_instructions(query.message)
 
 
 @all_router.message(F.text == "/check_subscription")
@@ -683,3 +665,28 @@ async def delete_product_handler(query: CallbackQuery):
     product_id = int(query.data.split("_")[-1])
     await db_engine.get_product_db().delete_product(product_id)
     await query.message.delete()
+
+
+async def send_instructions(message: Message) -> None:
+    file_ids = cache_resources_file_id_store.get_data()
+    try:
+        await message.answer_media_group(
+            media=[
+                InputMediaPhoto(media=file_ids["botFather1.jpg"], caption=MessageTexts.INSTRUCTION_MESSAGE.value),
+                InputMediaPhoto(media=file_ids["botFather2.jpg"]),
+                InputMediaPhoto(media=file_ids["botFather3.jpg"])
+            ]
+        )
+    except (TelegramBadRequest, KeyError) as e:
+        logger.info(f"error while sending instructions.... cache is empty, sending raw files {e}")
+        media_group = await message.answer_media_group(
+            media=[
+                InputMediaPhoto(media=FSInputFile(config.RESOURCES_PATH.format("botFather1.jpg")),
+                                caption=MessageTexts.INSTRUCTION_MESSAGE.value),
+                InputMediaPhoto(media=FSInputFile(config.RESOURCES_PATH.format("botFather2.jpg"))),
+                InputMediaPhoto(media=FSInputFile(config.RESOURCES_PATH.format("botFather3.jpg"))),
+            ]
+        )
+        for ind, message in enumerate(media_group, start=1):
+            file_ids[f"botFather{ind}.jpg"] = message.photo[0].file_id
+        cache_resources_file_id_store.update_data(file_ids)
