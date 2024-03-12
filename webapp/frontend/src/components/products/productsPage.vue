@@ -70,7 +70,7 @@
       </li>
     </ul>
   </div>
-  <RouterLink :to="`/shopping-cart/?bot_id=${bot_id()}`" v-if="itemsAddToCartArray.length>0"><button class="addToCartBtn">В Корзину</button></RouterLink>
+  <RouterLink :to="`/products-page/shopping-cart/?bot_id=${bot_id()}`" v-if="itemsAddToCartArray.length>0"><button class="addToCartBtn">В Корзину</button></RouterLink>
 </template>
 
 <script>
@@ -79,7 +79,7 @@ import { bot_id } from '@/store/store.js'
 import * as https from 'https'
 
 export default {
-  name: 'mainPage',
+  name: 'productsPage',
   data() {
     return {
       isLoading: true

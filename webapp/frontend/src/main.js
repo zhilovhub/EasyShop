@@ -4,7 +4,7 @@ tg.expand();
 import './assets/main.css'
 import { createApp } from 'vue'
 import App from './App.vue'
-import router from './router'
+import router from './router/router.js'
 import Vuex from "vuex";
 import {Store} from "./store/store.js"
 

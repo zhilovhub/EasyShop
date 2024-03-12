@@ -21,7 +21,7 @@
           let tempItemsAddToCartArray = sessionStorage.getItem('itemsAddToCartArray')
           tempItemsAddToCartArray = JSON.parse(tempItemsAddToCartArray);
           sessionStorage.setItem('itemsAddToCartArray', JSON.stringify(tempItemsAddToCartArray));
-          window.location.href = "/?bot_id=" + vm.$store.state.bot_id;
+          window.location.href = "/products-page/?bot_id=" + vm.$store.state.bot_id;
       });
     },
     computed: {
@@ -142,7 +142,7 @@
   </div>
   </div>
   <textarea v-model="inputValue" placeholder="Добавить комментарий..."/>
-  <RouterLink :to="`/order-details/?bot_id=${bot_id()}`"><button class="btnTotalPrice">{{this.totalPrice}}</button></RouterLink>
+  <RouterLink :to="`/products-page/order-details/?bot_id=${bot_id()}`" ><button class="btnTotalPrice">{{this.totalPrice}}</button></RouterLink>
 </template>
 
 <style scoped lang="scss">
