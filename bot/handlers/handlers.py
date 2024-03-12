@@ -49,7 +49,6 @@ class CheckSubscriptionMiddleware(BaseMiddleware):
         message = event if isinstance(event, Message) else event.message
         if message.text == "/clear":
             await user_db.del_user(user_id=event.from_user.id)
-            await start_command_handler(message)
         try:
             user = await user_db.get_user(event.from_user.id)
         except UserNotFound:
