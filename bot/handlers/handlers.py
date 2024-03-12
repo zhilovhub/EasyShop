@@ -340,6 +340,9 @@ async def check_sub_cmd(message: Message, state: FSMContext = None):
                              f"<b>{user.subscribed_until.strftime('%d.%m.%Y %H:%M')}</b> "
                              f"(через <b>{(user.subscribed_until - datetime.now()).days}</b> дней)."
                              f"\nХочешь продлить прямо сейчас?", reply_markup=kb)
+    elif user.status == "new":
+        await state.set_state(States.WAITING_FREE_TRIAL_APPROVE)
+        await message.answer(MessageTexts.FREE_TRIAL_MESSAGE.value, reply_markup=free_trial_start_kb)
 
 
 @all_router.callback_query(lambda q: q.data.startswith("continue_subscription"))
@@ -388,6 +391,8 @@ async def waiting_payment_approve_handler(message: Message, state: FSMContext):
         else:
             await state.set_state(States.WAITING_FOR_TOKEN)
             await send_instructions(message)
+            await message.answer("Твой список ботов пуст, используй инструкцию выше 👆")
+        return
     elif message.content_type not in (ContentType.PHOTO, ContentType.DOCUMENT):
         return await message.answer(
             "Необходимо прислать боту чек в виде скрина или пдф файла",
