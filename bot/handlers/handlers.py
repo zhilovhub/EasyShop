@@ -372,6 +372,11 @@ async def continue_subscription_callback(query: CallbackQuery, state: FSMContext
     await query.message.answer(f"По возникновению каких-либо вопросов, пиши @someone", reply_markup=get_back_keyboard())
 
 
+@all_router.message(States.WAITING_FREE_TRIAL_APPROVE)
+async def waiting_free_trial_handler(message: Message) -> None:
+    await message.answer(MessageTexts.FREE_TRIAL_MESSAGE.value, reply_markup=free_trial_start_kb)
+
+
 @all_router.message(States.WAITING_PAYMENT_PAY)
 async def waiting_payment_approve_handler(message: Message, state: FSMContext):
     if message.text == "🔙 Назад":
@@ -478,9 +483,7 @@ async def approve_pay_callback(query: CallbackQuery, state: FSMContext):
         bot_id = user_bots[0].bot_id
         user_bot = Bot(user_bots[0].token)
         user_bot_data = await user_bot.get_me()
-        await bot.send_message(user_id, MessageTexts.BOT_SELECTED_MESSAGE.value.replace(
-            "{selected_name}", user_bot_data.full_name
-        ),
+        await bot.send_message(user_id, MessageTexts.BOT_SELECTED_MESSAGE.value.format(user_bot_data.full_name),
                                reply_markup=get_bot_menu_keyboard(bot_id=bot_id))
         await user_state.set_state(States.BOT_MENU)
         await user_state.set_data({'bot_id': bot_id})
