@@ -51,4 +51,4 @@ class MessageTexts(Enum):
 
     DEFAULT_START_MESSAGE = "Привет, <b>{name}</b>! Для открытия магазина нажми на кнопку магазин"
 
-    BOT_SELECTED_MESSAGE = "Выбран бот <b>{selected_name}</b>, выбери настройку, которую хочешь сменить"
+    BOT_SELECTED_MESSAGE = "Выбран бот <b>@{}</b>\nГотовься к росту продаж"

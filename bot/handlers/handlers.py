@@ -227,30 +227,34 @@ async def process_web_app_request(event: Message):
 
 @all_router.message(CommandStart())
 async def start_command_handler(message: Message, state: FSMContext):
+    user_id = message.from_user.id
     try:
-        await db_engine.get_user_dao().get_user(message.from_user.id)
+        await user_db.get_user(user_id)
     except UserNotFound:
-        logger.info(f"user {message.from_user.id} not found in db, creating new instance...")
+        logger.info(f"user {user_id} not found in db, creating new instance...")
 
         await user_db.add_user(UserSchema(
-            user_id=message.from_user.id, registered_at=datetime.utcnow(), status="new", locale="default",
+            user_id=user_id, registered_at=datetime.utcnow(), status="new", locale="default",
             subscribed_until=None)
         )
 
     await send_instructions(message)
 
-    user_bots = await bot_db.get_bots(message.from_user.id)
-    if not user_bots:  # TODO https://tracker.yandex.ru/BOT-32 переработать логику
-        await message.answer(MessageTexts.FREE_TRIAL_MESSAGE.value, reply_markup=free_trial_start_kb)
-        await state.set_state(States.WAITING_FREE_TRIAL_APPROVE)
+    user_bots = await bot_db.get_bots(user_id)
+    if not user_bots:
+        if (await user_db.get_user(user_id)).status == "new":
+            await message.answer(MessageTexts.FREE_TRIAL_MESSAGE.value, reply_markup=free_trial_start_kb)
+            await state.set_state(States.WAITING_FREE_TRIAL_APPROVE)
+        else:
+            await state.set_state(States.WAITING_FOR_TOKEN)
     else:
         bot_id = user_bots[0].bot_id
         user_bot = Bot(user_bots[0].token)
         user_bot_data = await user_bot.get_me()
-        await message.answer(MessageTexts.BOT_SELECTED_MESSAGE.value.replace(
-            "{selected_name}", user_bot_data.full_name
-        ),
-            reply_markup=get_bot_menu_keyboard(bot_id=bot_id))
+        await message.answer(
+            MessageTexts.BOT_SELECTED_MESSAGE.value.format(user_bot_data.username),
+            reply_markup=get_bot_menu_keyboard(bot_id=bot_id)
+        )
         await state.set_state(States.BOT_MENU)
         await state.set_data({'bot_id': bot_id})
 
