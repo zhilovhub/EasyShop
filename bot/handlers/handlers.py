@@ -143,9 +143,20 @@ async def send_subscription_end_notify(user: UserSchema):  # TODO https://tracke
     actual_user = await user_db.get_user(user.id)
     if datetime.now() + timedelta(minutes=5) < actual_user.subscribed_until:  # TODO change it to 5 minutes
         return None
+
     actual_user.status = "subscription_ended"
     await user_db.update_user(actual_user)
-    await bot.send_message(actual_user.id, MessageTexts.SUBSCRIBE_END_NOTIFY.value, reply_markup=continue_subscription_kb)
+
+    await bot.send_message(
+        actual_user.id,
+        MessageTexts.SUBSCRIBE_END_NOTIFY.value,
+        reply_markup=continue_subscription_kb
+    )  # TODO change to keyboard markup
+    user_state = FSMContext(storage=dp.storage, key=StorageKey(
+            chat_id=actual_user.id,
+            user_id=actual_user.id,
+            bot_id=bot.id))
+    await user_state.set_state(States.SUBSCRIBE_ENDED)
 
 
 @router.callback_query(lambda q: q.data.startswith("order_"))
@@ -242,9 +253,16 @@ async def start_command_handler(message: Message, state: FSMContext):
 
     user_bots = await bot_db.get_bots(user_id)
     if not user_bots:
-        if (await user_db.get_user(user_id)).status == "new":
+        user_status = (await user_db.get_user(user_id)).status
+        if user_status == "new":
             await message.answer(MessageTexts.FREE_TRIAL_MESSAGE.value, reply_markup=free_trial_start_kb)
             await state.set_state(States.WAITING_FREE_TRIAL_APPROVE)
+        elif user_status == "subscription_ended":
+            await message.answer(
+                MessageTexts.SUBSCRIBE_END_NOTIFY.value,
+                reply_markup=continue_subscription_kb
+            )  # TODO change to keyboard markup
+            await state.set_state(States.SUBSCRIBE_ENDED)
         else:
             await state.set_state(States.WAITING_FOR_TOKEN)
     else:
@@ -308,7 +326,7 @@ async def check_sub_cmd(message: Message, state: FSMContext = None):
 
 @all_router.callback_query(lambda q: q.data == "continue_subscription")
 async def continue_subscription_callback(query: CallbackQuery, state: FSMContext):
-    await state.set_state(States.WAITING_PAYMENT_APPROVE)
+    await state.set_state(States.WAITING_PAYMENT_PAY)
     await query.message.answer_photo(FSInputFile(f"{config.RESOURCES_PATH.replace('{}', 'sbp_qr.png')}"),
                                      f"• Стоимость подписки: <b>{config.SUBSCRIPTION_PRICE}₽</b>\n\n"
                                      f"• Оплачивайте подписку удобным способом, "
@@ -324,7 +342,7 @@ async def continue_subscription_callback(query: CallbackQuery, state: FSMContext
                                      ]))
 
 
-@all_router.message(States.WAITING_PAYMENT_APPROVE)
+@all_router.message(States.WAITING_PAYMENT_PAY)
 async def waiting_payment_approve_handler(message: Message, state: FSMContext):
     if message.content_type not in (ContentType.PHOTO, ContentType.DOCUMENT):
         return await message.answer(
@@ -354,6 +372,14 @@ async def waiting_payment_approve_handler(message: Message, state: FSMContext):
         except:
             logger.warning("error while notify admin", exc_info=True)
     await message.reply("Ваши данные отправлены на модерацию, ожидайте изменения статуса оплаты")
+
+
+@all_router.message(States.SUBSCRIBE_ENDED)
+async def waiting_payment_approve_handler(message: Message) -> None:
+    await message.answer(
+        MessageTexts.SUBSCRIBE_END_NOTIFY.value,
+        reply_markup=continue_subscription_kb
+    )  # TODO change to keyboard markup
 
 
 @all_router.callback_query(lambda q: q.data.startswith("approve_pay"))
@@ -445,7 +471,7 @@ async def cancel_pay_callback(query: CallbackQuery, state: FSMContext):
         chat_id=user_id,
         user_id=user_id,
         bot_id=bot.id))
-    await user_state.set_state(States.WAITING_PAYMENT_APPROVE)
+    await user_state.set_state(States.WAITING_PAYMENT_PAY)
     await query.answer("Оплата отклонена.", show_alert=True)
 
 

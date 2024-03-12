@@ -10,7 +10,11 @@ from aiogram.fsm.state import State, StatesGroup
 
 class States(StatesGroup):
     WAITING_FREE_TRIAL_APPROVE = State()
+
+    WAITING_PAYMENT_PAY = State()
     WAITING_PAYMENT_APPROVE = State()
+    SUBSCRIBE_ENDED = State()
+
     WAITING_FOR_TOKEN = State()
     BOT_MENU = State()
     EDITING_START_MESSAGE = State()
