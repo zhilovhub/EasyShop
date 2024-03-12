@@ -6,7 +6,6 @@ aiojobs
 pytest
 pytest-asyncio
 apscheduler
-psycopg2
 openpyxl
 psycopg2-binary
 APScheduler
