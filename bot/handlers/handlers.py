@@ -61,7 +61,8 @@ class CheckSubscriptionMiddleware(BaseMiddleware):
         if user.id not in config.ADMINS and \
                 user.status not in ("subscribed", "trial") and \
                 message.text not in ("/start", "/check_subscription"):
-            await event.answer("Для того, чтобы пользоваться ботом, тебе нужна подписка")  # TODO move it into check_sub_cmd
+            await event.answer(
+                "Для того, чтобы пользоваться ботом, тебе нужна подписка")  # TODO move it into check_sub_cmd
             return await check_sub_cmd(message)
 
         return await handler(event, data)
@@ -85,6 +86,7 @@ cache_resources_file_id_store = JsonStore(
     file_path=config.RESOURCES_PATH.format("cache.json"),
     json_store_name="RESOURCES_FILE_ID_STORE"
 )
+
 
 @all_router.message(F.text == "/clear")
 async def sd(message: Message, state: FSMContext):  # TODO remove after payment tests
@@ -174,9 +176,9 @@ async def send_subscription_end_notify(user: UserSchema):  # TODO https://tracke
         reply_markup=create_continue_subscription_kb(bot_id=user_bot_id)
     )  # TODO change to keyboard markup
     user_state = FSMContext(storage=dp.storage, key=StorageKey(
-            chat_id=actual_user.id,
-            user_id=actual_user.id,
-            bot_id=bot.id))
+        chat_id=actual_user.id,
+        user_id=actual_user.id,
+        bot_id=bot.id))
     await user_state.set_state(States.SUBSCRIBE_ENDED)
 
 
@@ -393,11 +395,11 @@ async def waiting_free_trial_handler(message: Message) -> None:
 
 @all_router.message(States.WAITING_PAYMENT_PAY)
 async def waiting_payment_pay_handler(message: Message, state: FSMContext):
-    if message.text == "🔙 Назад":
-        user_id = message.from_user.id
-        user_status = (await user_db.get_user(user_id)).status
+    user_id = message.from_user.id
+    user_status = (await user_db.get_user(user_id)).status
+    state_data = await state.get_data()
 
-        state_data = await state.get_data()
+    if message.text == "🔙 Назад":
         if user_status == "subscription_ended":
             await state.set_state(States.SUBSCRIBE_ENDED)
             await message.answer(
@@ -408,7 +410,7 @@ async def waiting_payment_pay_handler(message: Message, state: FSMContext):
             await state.set_state(States.BOT_MENU)
             await state.set_data(state_data)
             await message.answer(
-                "Возвращемся в главное меню...",
+                "Возвращаемся в главное меню...",
                 reply_markup=get_bot_menu_keyboard(state_data["bot_id"])
             )
         else:
@@ -444,8 +446,36 @@ async def waiting_payment_pay_handler(message: Message, state: FSMContext):
                                    ]))
         except:
             logger.warning("error while notify admin", exc_info=True)
-    await message.reply("Ваши данные отправлены на модерацию, ожидайте изменения статуса оплаты")
+
+    await message.reply(
+        "Ваши данные отправлены на модерацию, ожидайте изменения статуса оплаты",
+        reply_markup=get_back_keyboard() if user_status in ("subscribed", "trial") else ReplyKeyboardRemove()
+    )
     await state.set_state(States.WAITING_PAYMENT_APPROVE)
+    await state.set_data(state_data)
+
+
+@all_router.message(States.WAITING_PAYMENT_APPROVE)
+async def waiting_payment_approve_handler(message: Message, state: FSMContext):
+    user_id = message.from_user.id
+    user_status = (await user_db.get_user(user_id)).status
+
+    if user_status in ("subscribed", "trial") and message.text == "🔙 Назад":
+        state_data = await state.get_data()
+
+        if state_data and "bot_id" in state_data:
+            await state.set_state(States.BOT_MENU)
+            await state.set_data(state_data)
+            await message.answer(
+                "Возвращаемся в главное меню (мы Вас оповестим, когда оплата пройдет модерацию)...",
+                reply_markup=get_bot_menu_keyboard(state_data["bot_id"])
+            )
+        else:
+            await state.set_state(States.WAITING_FOR_TOKEN)
+            await send_instructions(message)
+            await message.answer("Твой список ботов пуст, используй инструкцию выше 👆")
+    else:
+        await message.answer("Ваши данные отправлены на модерацию, ожидайте изменения статуса оплаты")
 
 
 @all_router.message(States.SUBSCRIBE_ENDED)
@@ -479,7 +509,8 @@ async def approve_pay_callback(query: CallbackQuery, state: FSMContext):
 
     logger.info(f"adding scheduled subscription notifies for user {user.id}")
     await scheduler.add_scheduled_job(func=send_subscription_expire_notify,
-                                      run_date=user.subscribed_until - timedelta(seconds=40),  # TODO change it to 3 days
+                                      run_date=user.subscribed_until - timedelta(seconds=40),
+                                      # TODO change it to 3 days
                                       args=[user])
     await scheduler.add_scheduled_job(func=send_subscription_expire_notify,
                                       run_date=user.subscribed_until - timedelta(seconds=20),  # TODO change it to 1 day
@@ -537,13 +568,19 @@ async def approve_pay_callback(query: CallbackQuery, state: FSMContext):
 async def cancel_pay_callback(query: CallbackQuery, state: FSMContext):
     user_id = int(query.data.split(':')[-1])
     await query.message.edit_text(query.message.text + "\n\n<b>ОТКЛОНЕНО</b>", reply_markup=None)
-    await bot.send_message(user_id, "Оплата не была принята, перепроверьте корректность отправленных данный (чека) "
-                                    "и отправьте его еще раз.")
+
     user_state = FSMContext(storage=dp.storage, key=StorageKey(
         chat_id=user_id,
         user_id=user_id,
         bot_id=bot.id))
     await user_state.set_state(States.WAITING_PAYMENT_PAY)
+
+    await bot.send_message(user_id, "Оплата не была принята, перепроверьте корректность отправленных данный (чека) "
+                                    "и отправьте его еще раз.")
+    await bot.send_message(
+        user_id, f"По возникновению каких-либо вопросов, пиши @someone", reply_markup=get_back_keyboard()
+    )
+
     await query.answer("Оплата отклонена.", show_alert=True)
 
 
@@ -683,7 +720,7 @@ async def editing_start_message_handler(message: Message, state: FSMContext):
         state_data = await state.get_data()
         if message_text == "🔙 Назад":
             await message.answer(
-                "Возвращемся в меню...",
+                "Возвращаемся в меню...",
                 reply_markup=get_bot_menu_keyboard(state_data["bot_id"])
             )
             await state.set_state(States.BOT_MENU)
@@ -713,7 +750,7 @@ async def editing_default_message_handler(message: Message, state: FSMContext):
         state_data = await state.get_data()
         if message_text == "🔙 Назад":
             await message.answer(
-                "Возвращемся в меню...",
+                "Возвращаемся в меню...",
                 reply_markup=get_bot_menu_keyboard(state_data["bot_id"])
             )
             await state.set_state(States.BOT_MENU)
@@ -754,7 +791,7 @@ async def delete_bot_handler(message: Message, state: FSMContext):
         await state.set_state(States.WAITING_FOR_TOKEN)
     elif message_text == "🔙 Назад":
         await message.answer(
-            "Возвращемся в меню...",
+            "Возвращаемся в меню...",
             reply_markup=get_bot_menu_keyboard(state_data["bot_id"])
         )
         await state.set_state(States.BOT_MENU)

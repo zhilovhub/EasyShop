@@ -65,7 +65,7 @@ def create_cancel_confirm_kb(order_id: str, msg_id: int = 0, chat_id: int = 0) -
 def get_back_keyboard() -> ReplyKeyboardMarkup:
     return ReplyKeyboardMarkup(keyboard=[
         [KeyboardButton(text=MessageTexts.BACK_BUTTON_TEXT.value)]
-    ], resize_keyboard=True, one_time_keyboard=True)
+    ], resize_keyboard=True)
 
 
 def get_bot_menu_keyboard(bot_id: int) -> ReplyKeyboardMarkup:
