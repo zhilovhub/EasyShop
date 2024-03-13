@@ -330,7 +330,7 @@ async def start_trial_callback(query: CallbackQuery, state: FSMContext):
     await user_db.update_user(user)
     await state.set_state(States.WAITING_FOR_TOKEN)
 
-    await send_instructions(chat_id=query.message.from_user.id)
+    await send_instructions(chat_id=query.from_user.id)
     await query.message.answer(
         "Ваша пробная подписка активирована!\n"
         "Чтобы получить бота с магазином, воспользуйся инструкцией выше 👆",
