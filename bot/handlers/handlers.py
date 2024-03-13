@@ -299,7 +299,7 @@ async def start_command_handler(message: Message, state: FSMContext = None):  # 
         await state.set_data({'bot_id': bot_id})
 
 
-@all_router.callback_query(States.WAITING_FREE_TRIAL_APPROVE, lambda q: q.data == "start_trial")
+@all_router.callback_query(lambda q: q.data == "start_trial")
 async def start_trial_callback(query: CallbackQuery, state: FSMContext):
     await query.message.edit_text(query.message.text, reply_markup=None)
 
