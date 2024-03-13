@@ -133,31 +133,37 @@ async def send_order_change_status_notify(order: OrderSchema):
 
 
 async def send_subscription_expire_notify(user: UserSchema):
-    if datetime.now() > user.subscribed_until:
-        return None
-    if (user.subscribed_until - datetime.now()).seconds > 60:  # TODO change it to 7 days
-        return None
-    text = MessageTexts.SUBSCRIPTION_EXPIRE_NOTIFY.value
-    text = text.replace("{expire_date}", user.subscribed_until.strftime("%d.%m.%Y %H:%M"))
-    text = text.replace("{expire_days}", str((user.subscribed_until - datetime.now()).days))
+    actual_user = await user_db.get_user(user.id)
 
-    user_bots = await bot_db.get_bots(user.id)
+    if datetime.now() > actual_user.subscribed_until:
+        return None
+
+    if (actual_user.subscribed_until - datetime.now()).seconds > 60:  # TODO change it to 7 days
+        return None
+
+    text = MessageTexts.SUBSCRIPTION_EXPIRE_NOTIFY.value
+    text = text.replace("{expire_date}", actual_user.subscribed_until.strftime("%d.%m.%Y %H:%M"))
+    text = text.replace("{expire_days}", str((actual_user.subscribed_until - datetime.now()).days))
+
+    user_bots = await bot_db.get_bots(actual_user.id)
     if user_bots:
         user_bot_id = user_bots[0].bot_id
     else:
         user_bot_id = None
-    await bot.send_message(user.id, text, reply_markup=create_continue_subscription_kb(bot_id=user_bot_id))
+    await bot.send_message(actual_user.id, text, reply_markup=create_continue_subscription_kb(bot_id=user_bot_id))
 
 
 async def send_subscription_end_notify(user: UserSchema):  # TODO https://tracker.yandex.ru/BOT-29 очищать джобы в бд
     actual_user = await user_db.get_user(user.id)
-    if datetime.now() + timedelta(minutes=5) < actual_user.subscribed_until:  # TODO change it to 5 minutes
+
+    # check if there any new subscription (in this case we should not end it)
+    if datetime.now() + timedelta(seconds=5) < actual_user.subscribed_until:  # TODO change it to 5 minutes
         return None
 
     actual_user.status = "subscription_ended"
     await user_db.update_user(actual_user)
 
-    user_bots = await bot_db.get_bots(user.id)
+    user_bots = await bot_db.get_bots(actual_user.id)
     if user_bots:
         user_bot_id = user_bots[0].bot_id
     else:
