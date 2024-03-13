@@ -301,7 +301,7 @@ async def start_command_handler(message: Message, state: FSMContext = None):  # 
 
 @all_router.callback_query(lambda q: q.data == "start_trial")
 async def start_trial_callback(query: CallbackQuery, state: FSMContext):
-    await query.message.edit_text(query.message.text, reply_markup=None)
+    await query.message.edit_text(query.message.text, reply_markup=None, parse_mode=ParseMode.HTML)
 
     subscribe_until = datetime.now() + timedelta(seconds=60)  # TODO change it to 7 days
     logger.info(f"starting trial subscription for user with id ({query.from_user.id} until date {subscribe_until}")
