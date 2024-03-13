@@ -273,7 +273,7 @@ async def start_command_handler(message: Message, state: FSMContext = None):  # 
             subscribed_until=None)
         )
 
-    await send_instructions(message)
+    await send_instructions(chat_id=user_id)
 
     user_bots = await bot_db.get_bots(user_id)
     if not user_bots:
@@ -328,7 +328,7 @@ async def start_trial_callback(query: CallbackQuery, state: FSMContext):
     await user_db.update_user(user)
     await state.set_state(States.WAITING_FOR_TOKEN)
 
-    await send_instructions(query.message)
+    await send_instructions(chat_id=query.message.from_user.id)
     await query.message.answer(
         "Ваша пробная подписка активирована!\n"
         "Чтобы получить бота с магазином, воспользуйся инструкцией выше 👆",
@@ -415,7 +415,7 @@ async def waiting_payment_pay_handler(message: Message, state: FSMContext):
             )
         else:
             await state.set_state(States.WAITING_FOR_TOKEN)
-            await send_instructions(message)
+            await send_instructions(chat_id=user_id)
             await message.answer("Твой список ботов пуст, используй инструкцию выше 👆")
         return
     elif message.content_type not in (ContentType.PHOTO, ContentType.DOCUMENT):
@@ -472,7 +472,7 @@ async def waiting_payment_approve_handler(message: Message, state: FSMContext):
             )
         else:
             await state.set_state(States.WAITING_FOR_TOKEN)
-            await send_instructions(message)
+            await send_instructions(chat_id=user_id)
             await message.answer("Твой список ботов пуст, используй инструкцию выше 👆")
     else:
         await message.answer("Ваши данные отправлены на модерацию, ожидайте изменения статуса оплаты")
@@ -521,7 +521,7 @@ async def approve_pay_callback(query: CallbackQuery, state: FSMContext):
 
     await user_db.update_user(user)
 
-    await bot.send_message(user_id, "Оплата подписки подтверждена")
+    await bot.send_message(user_id, "Оплата подписки подтверждена ✅")
     user_bots = await bot_db.get_bots(user_id)
 
     if user_bots:
@@ -534,33 +534,12 @@ async def approve_pay_callback(query: CallbackQuery, state: FSMContext):
         await user_state.set_data({'bot_id': bot_id})
     else:
         await user_state.set_state(States.WAITING_FOR_TOKEN)
-        file_ids = cache_resources_file_id_store.get_data()
-
-        try:
-            await bot.send_media_group(user_id,
-                                       media=[
-                                           InputMediaPhoto(media=file_ids["botFather1.jpg"],
-                                                           caption=MessageTexts.INSTRUCTION_MESSAGE.value),
-                                           InputMediaPhoto(media=file_ids["botFather2.jpg"]),
-                                           InputMediaPhoto(media=file_ids["botFather3.jpg"])
-                                       ]
-                                       )
-        except (TelegramBadRequest, KeyError) as e:
-            logger.info(f"error while sending instructions.... cache is empty, sending raw files {e}")
-            media_group = await bot.send_media_group(user_id,
-                                                     media=[
-                                                         InputMediaPhoto(media=FSInputFile(
-                                                             config.RESOURCES_PATH.format("botFather1.jpg")),
-                                                             caption=MessageTexts.INSTRUCTION_MESSAGE.value),
-                                                         InputMediaPhoto(media=FSInputFile(
-                                                             config.RESOURCES_PATH.format("botFather2.jpg"))),
-                                                         InputMediaPhoto(media=FSInputFile(
-                                                             config.RESOURCES_PATH.format("botFather3.jpg"))),
-                                                     ]
-                                                     )
-            for ind, message in enumerate(media_group, start=1):
-                file_ids[f"botFather{ind}.jpg"] = message.photo[0].file_id
-            cache_resources_file_id_store.update_data(file_ids)
+        await send_instructions(chat_id=user_id)
+        await bot.send_message(
+            user_id,
+            "Чтобы получить бота с магазином, воспользуйся инструкцией выше 👆",
+            reply_markup=ReplyKeyboardRemove()
+        )
     await query.answer("Оплата подтверждена.", show_alert=True)
 
 
@@ -807,10 +786,11 @@ async def delete_product_handler(query: CallbackQuery):
     await query.message.delete()
 
 
-async def send_instructions(message: Message) -> None:
+async def send_instructions(chat_id: int) -> None:
     file_ids = cache_resources_file_id_store.get_data()
     try:
-        await message.answer_media_group(
+        await bot.send_media_group(
+            chat_id=chat_id,
             media=[
                 InputMediaPhoto(media=file_ids["botFather1.jpg"], caption=MessageTexts.INSTRUCTION_MESSAGE.value),
                 InputMediaPhoto(media=file_ids["botFather2.jpg"]),
@@ -819,7 +799,8 @@ async def send_instructions(message: Message) -> None:
         )
     except (TelegramBadRequest, KeyError) as e:
         logger.info(f"error while sending instructions.... cache is empty, sending raw files {e}")
-        media_group = await message.answer_media_group(
+        media_group = await bot.send_media_group(
+            chat_id=chat_id,
             media=[
                 InputMediaPhoto(media=FSInputFile(config.RESOURCES_PATH.format("botFather1.jpg")),
                                 caption=MessageTexts.INSTRUCTION_MESSAGE.value),
