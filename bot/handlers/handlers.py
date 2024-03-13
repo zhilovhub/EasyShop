@@ -275,18 +275,20 @@ async def start_command_handler(message: Message, state: FSMContext = None):  # 
 
     await send_instructions(chat_id=user_id)
 
+    user_status = (await user_db.get_user(user_id)).status
+
+    if user_status == "subscription_ended":
+        await message.answer(
+            MessageTexts.SUBSCRIBE_END_NOTIFY.value,
+            reply_markup=create_continue_subscription_kb(bot_id=None)
+        )  # TODO change to keyboard markup
+        return await state.set_state(States.SUBSCRIBE_ENDED)
+
     user_bots = await bot_db.get_bots(user_id)
     if not user_bots:
-        user_status = (await user_db.get_user(user_id)).status
         if user_status == "new":
             await message.answer(MessageTexts.FREE_TRIAL_MESSAGE.value, reply_markup=free_trial_start_kb)
             await state.set_state(States.WAITING_FREE_TRIAL_APPROVE)
-        elif user_status == "subscription_ended":
-            await message.answer(
-                MessageTexts.SUBSCRIBE_END_NOTIFY.value,
-                reply_markup=create_continue_subscription_kb(bot_id=None)
-            )  # TODO change to keyboard markup
-            await state.set_state(States.SUBSCRIBE_ENDED)
         else:
             await state.set_state(States.WAITING_FOR_TOKEN)
     else:
