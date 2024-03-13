@@ -2,7 +2,7 @@ from datetime import datetime
 
 from aiogram.utils.token import validate_token, TokenValidationError
 
-from sqlalchemy import BigInteger, Column, String, DateTime, JSON
+from sqlalchemy import BigInteger, Column, String, DateTime, JSON, ForeignKey
 from sqlalchemy import select, update, delete, insert
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncEngine
@@ -13,6 +13,7 @@ from database.models import Base
 from database.models.dao import Dao
 
 from bot.exceptions.exceptions import *
+from database.models.user_model import User
 
 
 class Bot(Base):
@@ -22,7 +23,7 @@ class Bot(Base):
     bot_token = Column(String(46), unique=True)
     status = Column(String(55), nullable=False)
     created_at = Column(DateTime, nullable=False)
-    created_by = Column(BigInteger, nullable=False)
+    created_by = Column(ForeignKey(User.user_id, ondelete="CASCADE"), nullable=False)
     settings = Column(JSON)
     locale = Column(String(10), nullable=False)
 

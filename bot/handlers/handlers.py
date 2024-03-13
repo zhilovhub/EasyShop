@@ -277,7 +277,7 @@ async def start_command_handler(message: Message, state: FSMContext = None):  # 
 
     user_status = (await user_db.get_user(user_id)).status
 
-    if user_status == "subscription_ended":
+    if user_status == "subscription_ended":  # TODO do not send it from States.WAITING_PAYMENT_APPROVE
         await message.answer(
             MessageTexts.SUBSCRIBE_END_NOTIFY.value,
             reply_markup=create_continue_subscription_kb(bot_id=None)
