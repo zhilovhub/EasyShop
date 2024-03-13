@@ -1,35 +1,11 @@
-from datetime import datetime, timedelta
-
 import pytest
 
 from bot.exceptions import InvalidParameterFormat, UserNotFound, InstanceAlreadyExists
-from database.models.user_model import UserDao, UserSchema, NotInUserStatusesList
+from database.models.user_model import UserDao
 
 from pydantic import ValidationError
 
-user_schema_1 = UserSchema(
-    user_id=1,
-    status="new",
-    subscribed_until=None,
-    registered_at=datetime.utcnow()
-)
-user_schema_2 = UserSchema(
-    user_id=2,
-    status="new",
-    subscribed_until=datetime.now() + timedelta(days=7),
-    registered_at=datetime.utcnow()
-)
-
-
-@pytest.fixture
-async def before_add_user(user_db: UserDao) -> None:
-    await user_db.add_user(user_schema_1)
-
-
-@pytest.fixture
-async def before_add_two_users(user_db: UserDao) -> None:
-    await user_db.add_user(user_schema_1)
-    await user_db.add_user(user_schema_2)
+from tests.schemas import user_schema_1, user_schema_2
 
 
 class TestUserDb:

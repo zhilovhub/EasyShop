@@ -103,7 +103,8 @@ class BotDao(Dao):
             try:
                 bot_id = (await conn.execute(insert(Bot).values(**bot.model_dump(by_alias=True)))).inserted_primary_key[0]
             except IntegrityError:
-                raise InstanceAlreadyExists(f"bot with {bot.token} already exists in db.")
+                raise InstanceAlreadyExists(f"bot with {bot.token} already exists in db or user with "
+                                            f"user_id = {bot.created_by} not exists")
         await self.engine.dispose()
 
         self.logger.info(f"successfully add bot with bot_id {bot_id} to db.")
