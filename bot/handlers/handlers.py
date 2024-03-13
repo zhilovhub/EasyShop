@@ -458,11 +458,11 @@ async def approve_pay_callback(query: CallbackQuery, state: FSMContext):
         chat_id=user_id,
         user_id=user_id,
         bot_id=bot.id))
-    user.status = "subscribed"
-    if not user.subscribed_until:
+    if user.status == "subscription_ended":
         user.subscribed_until = datetime.now() + timedelta(seconds=60)  # TODO change it to 31 days
     else:
         user.subscribed_until = user.subscribed_until + timedelta(seconds=60)  # TODO change it to 31 days
+    user.status = "subscribed"
 
     logger.info(f"adding scheduled subscription notifies for user {user.id}")
     await scheduler.add_scheduled_job(func=send_subscription_expire_notify,
