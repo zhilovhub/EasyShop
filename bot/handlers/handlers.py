@@ -325,6 +325,11 @@ async def start_trial_callback(query: CallbackQuery, state: FSMContext):
     await state.set_state(States.WAITING_FOR_TOKEN)
 
     await send_instructions(query.message)
+    await query.message.answer(
+        "Ваша пробная подписка активирована!\n"
+        "Чтобы получить бота с магазином, воспользуйся инструкцией выше 👆",
+        reply_markup=ReplyKeyboardRemove()
+    )
 
 
 @all_router.message(F.text == "/check_subscription")
