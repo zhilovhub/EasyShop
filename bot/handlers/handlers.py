@@ -237,6 +237,7 @@ async def process_web_app_request(event: Message):
 
         data["from_user"] = user_id
         data["status"] = "backlog"
+        data["count"] = 0
 
         order = OrderSchema(**data)
 
@@ -483,7 +484,7 @@ async def approve_pay_callback(query: CallbackQuery, state: FSMContext):
         bot_id = user_bots[0].bot_id
         user_bot = Bot(user_bots[0].token)
         user_bot_data = await user_bot.get_me()
-        await bot.send_message(user_id, MessageTexts.BOT_SELECTED_MESSAGE.value.format(user_bot_data.full_name),
+        await bot.send_message(user_id, MessageTexts.BOT_SELECTED_MESSAGE.value.format(user_bot_data.username),
                                reply_markup=get_bot_menu_keyboard(bot_id=bot_id))
         await user_state.set_state(States.BOT_MENU)
         await user_state.set_data({'bot_id': bot_id})

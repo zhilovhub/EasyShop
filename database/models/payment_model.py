@@ -31,7 +31,7 @@ class Payment(Base):
     __tablename__ = "payments"
 
     payment_id = Column(BigInteger, primary_key=True)
-    from_user = Column(ForeignKey(User.user_id), nullable=False)
+    from_user = Column(ForeignKey(User.user_id, ondelete="CASCADE"), nullable=False)
     amount = Column(BigInteger, )
     status = Column(String(55), nullable=False)
     created_at = Column(DateTime, nullable=False)
