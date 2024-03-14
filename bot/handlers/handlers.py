@@ -168,6 +168,7 @@ async def send_subscription_end_notify(user: UserSchema):  # TODO https://tracke
     user_bots = await bot_db.get_bots(actual_user.id)
     if user_bots:
         user_bot_id = user_bots[0].bot_id
+        await stop_custom_bot(user_bot_id)
     else:
         user_bot_id = None
     await bot.send_message(
