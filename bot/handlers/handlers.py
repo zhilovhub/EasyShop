@@ -62,7 +62,7 @@ class CheckSubscriptionMiddleware(BaseMiddleware):
                 user.status not in ("subscribed", "trial") and \
                 message.text not in ("/start", "/check_subscription"):
             if is_message:
-                await message.answer("Для того, чтобы пользоваться ботом, тебе нужна подписка")  # TODO move it into check_sub_cmd
+                await message.answer("Для того, чтобы пользоваться ботом, тебе нужна подписка")
             else:
                 await event.answer("Для того, чтобы пользоваться ботом, тебе нужна подписка", show_alert=True)
             return await check_sub_cmd(message)
@@ -91,7 +91,8 @@ cache_resources_file_id_store = JsonStore(
 
 
 @all_router.message(F.text == "/clear")
-async def sd(message: Message, state: FSMContext):  # TODO remove after payment tests
+async def debug_clear(message: Message, state: FSMContext) -> None:
+    """ONLY FOR DEBUG BOT"""
     await user_db.del_user(user_id=message.from_user.id)
     await start_command_handler(message, state)
 
@@ -177,7 +178,7 @@ async def send_subscription_end_notify(user: UserSchema):  # TODO https://tracke
         actual_user.id,
         MessageTexts.SUBSCRIBE_END_NOTIFY.value,
         reply_markup=create_continue_subscription_kb(bot_id=user_bot_id)
-    )  # TODO change to keyboard markup
+    )
     user_state = FSMContext(storage=dp.storage, key=StorageKey(
         chat_id=actual_user.id,
         user_id=actual_user.id,
@@ -284,7 +285,7 @@ async def start_command_handler(message: Message, state: FSMContext = None):  # 
         await message.answer(
             MessageTexts.SUBSCRIBE_END_NOTIFY.value,
             reply_markup=create_continue_subscription_kb(bot_id=None)
-        )  # TODO change to keyboard markup
+        )
         return await state.set_state(States.SUBSCRIBE_ENDED)
 
     user_bots = await bot_db.get_bots(user_id)
@@ -488,7 +489,7 @@ async def subscribe_ended_handler(message: Message) -> None:
     await message.answer(
         MessageTexts.SUBSCRIBE_END_NOTIFY.value,
         reply_markup=create_continue_subscription_kb(bot_id=None)
-    )  # TODO change to keyboard markup
+    )
 
 
 @all_router.callback_query(lambda q: q.data.startswith("approve_pay"))
@@ -548,7 +549,7 @@ async def approve_pay_callback(query: CallbackQuery, state: FSMContext):
     await query.answer("Оплата подтверждена", show_alert=True)
 
 
-@all_router.callback_query(lambda q: q.data.startswith("cancel_pay"))  # TODO обработать это
+@all_router.callback_query(lambda q: q.data.startswith("cancel_pay"))
 async def cancel_pay_callback(query: CallbackQuery, state: FSMContext):
     user_id = int(query.data.split(':')[-1])
     await query.message.edit_text(query.message.text + "\n\n<b>ОТКЛОНЕНО</b>", reply_markup=None)

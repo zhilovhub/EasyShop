@@ -37,7 +37,7 @@ async def on_start():
     ]
 
     if config.BOT_DEBUG_MODE:
-        commands.append(BotCommand(command="clear", description="Снести себя"))  # TODO remove after payment tests
+        commands.append(BotCommand(command="clear", description="Снести себя"))
 
     await bot.set_my_commands(commands)
 
