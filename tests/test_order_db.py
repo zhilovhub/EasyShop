@@ -27,7 +27,7 @@ class TestOrderDb:
             products=[(product_schema_1, 2), (product_schema_2, 1)],
             username="@username",
             is_admin=False
-        ) == """Твой заказ <b>#asdF5</b>
+        ) == """Ваш заказ <b>#asdF5</b>
 
 Список товаров:
 

@@ -334,7 +334,7 @@ async def start_trial_callback(query: CallbackQuery, state: FSMContext):
     await send_instructions(chat_id=query.from_user.id)
     await query.message.answer(
         "Ваша пробная подписка активирована!\n"
-        "Чтобы получить бота с магазином, воспользуйся инструкцией выше 👆",
+        "Чтобы получить бота с магазином, воспользуйтесь инструкцией выше 👆",
         reply_markup=ReplyKeyboardRemove()
     )
 
@@ -351,18 +351,18 @@ async def check_sub_cmd(message: Message, state: FSMContext = None):
     kb = create_continue_subscription_kb(bot_id=bot_id)
 
     if user.status == "subscription_ended":
-        await message.answer(f"Твоя подписка закончилась, чтобы продлить её на месяц нажми на кнопку ниже.",
+        await message.answer(f"Ваша подписка закончилась, чтобы продлить её на месяц нажмите на кнопку ниже.",
                              reply_markup=kb)
     elif user.status == "trial":
-        await message.answer(f"Твоя бесплатная подписка истекает "
+        await message.answer(f"Ваша бесплатная подписка истекает "
                              f"<b>{user.subscribed_until.strftime('%d.%m.%Y %H:%M')}</b> "
                              f"(через <b>{(user.subscribed_until - datetime.now()).days}</b> дней)."
-                             f"\nХочешь продлить прямо сейчас?", reply_markup=kb)
+                             f"\nХотите продлить прямо сейчас?", reply_markup=kb)
     elif user.status == "subscribed":
-        await message.answer(f"Твоя подписка истекает "
+        await message.answer(f"Ваша подписка истекает "
                              f"<b>{user.subscribed_until.strftime('%d.%m.%Y %H:%M')}</b> "
                              f"(через <b>{(user.subscribed_until - datetime.now()).days}</b> дней)."
-                             f"\nХочешь продлить прямо сейчас?", reply_markup=kb)
+                             f"\nХотите продлить прямо сейчас?", reply_markup=kb)
     elif user.status == "new":
         await state.set_state(States.WAITING_FREE_TRIAL_APPROVE)
         await message.answer(MessageTexts.FREE_TRIAL_MESSAGE.value, reply_markup=free_trial_start_kb)
@@ -380,9 +380,9 @@ async def continue_subscription_callback(query: CallbackQuery, state: FSMContext
                                      f"• Оплачивайте подписку удобным способом, "
                                      f"через qr код. Либо на карту сбербанка по номеру телефона: "
                                      f"<code>{config.SBP_NUM}</code>\n\n"
-                                     f"• После оплаты пришлите боту чек (скрин или пдфку) с подтверждением оплаты.\n\n"
+                                     f"• После оплаты пришлите боту чек (скрин или пдфку) с подтверждением оплаты\n\n"
                                      f"• В подписи к фото <b>напишите Ваши контакты для связи</b> с "
-                                     f"Вами в случае возникновения вопросов по оплате.",
+                                     f"Вами в случае возникновения вопросов по оплате",
                                      reply_markup=InlineKeyboardMarkup(inline_keyboard=[
                                          [
                                              InlineKeyboardButton(text="Перейти на страницу оплаты", url=config.SBP_URL)
@@ -419,7 +419,7 @@ async def waiting_payment_pay_handler(message: Message, state: FSMContext):
         else:
             await state.set_state(States.WAITING_FOR_TOKEN)
             await send_instructions(chat_id=user_id)
-            await message.answer("Твой список ботов пуст, используй инструкцию выше 👆")
+            await message.answer("Ваш список ботов пуст, используйте инструкцию выше 👆")
         return
     elif message.content_type not in (ContentType.PHOTO, ContentType.DOCUMENT):
         return await message.answer(
@@ -476,7 +476,7 @@ async def waiting_payment_approve_handler(message: Message, state: FSMContext):
         else:
             await state.set_state(States.WAITING_FOR_TOKEN)
             await send_instructions(chat_id=user_id)
-            await message.answer("Твой список ботов пуст, используй инструкцию выше 👆")
+            await message.answer("Ваш список ботов пуст, используйте инструкцию выше 👆")
     else:
         await message.answer("Ваши данные отправлены на модерацию, ожидайте изменения статуса оплаты")
 
@@ -540,10 +540,10 @@ async def approve_pay_callback(query: CallbackQuery, state: FSMContext):
         await send_instructions(chat_id=user_id)
         await bot.send_message(
             user_id,
-            "Чтобы получить бота с магазином, воспользуйся инструкцией выше 👆",
+            "Чтобы получить бота с магазином, воспользуйтесь инструкцией выше 👆",
             reply_markup=ReplyKeyboardRemove()
         )
-    await query.answer("Оплата подтверждена.", show_alert=True)
+    await query.answer("Оплата подтверждена", show_alert=True)
 
 
 @all_router.callback_query(lambda q: q.data.startswith("cancel_pay"))  # TODO обработать это
@@ -558,12 +558,12 @@ async def cancel_pay_callback(query: CallbackQuery, state: FSMContext):
     await user_state.set_state(States.WAITING_PAYMENT_PAY)
 
     await bot.send_message(user_id, "Оплата не была принята, перепроверьте корректность отправленных данный (чека) "
-                                    "и отправьте его еще раз.")
+                                    "и отправьте его еще раз")
     await bot.send_message(
-        user_id, f"По возникновению каких-либо вопросов, пиши @someone", reply_markup=get_back_keyboard()
+        user_id, f"По возникновению каких-либо вопросов, пишите @someone", reply_markup=get_back_keyboard()
     )
 
-    await query.answer("Оплата отклонена.", show_alert=True)
+    await query.answer("Оплата отклонена", show_alert=True)
 
 
 @router.message(States.WAITING_FOR_TOKEN)
@@ -584,7 +584,7 @@ async def waiting_for_the_token_handler(message: Message, state: FSMContext):
                                      created_by=message.from_user.id,
                                      settings={"start_msg": MessageTexts.DEFAULT_START_MESSAGE.value,
                                                "default_msg":
-                                                   f"Привет, этот бот создан с помощью @{(await bot.get_me()).username}",
+                                                   f"Приветствую, этот бот создан с помощью @{(await bot.get_me()).username}",
                                                "web_app_button": MessageTexts.OPEN_WEB_APP_BUTTON_TEXT.value},
                                      locale=lang)
 
@@ -596,15 +596,15 @@ async def waiting_for_the_token_handler(message: Message, state: FSMContext):
         return await message.answer(MessageTexts.BOT_WITH_TOKEN_NOT_FOUND_MESSAGE.value)
     except InstanceAlreadyExists:
         return await message.answer("Бот с таким токеном в системе уже найден.\n"
-                                    "Введи другой токен или перейди в список ботов и поищи своего бота там")
+                                    "Введите другой токен или перейдите в список ботов и поищите Вашего бота там")
     except ClientConnectorError:
         logger.error("Cant connect to local api host (maybe service is offline)")
-        return await message.answer("Сервис в данный момент недоступен, попробуй еще раз позже.")
+        return await message.answer("Сервис в данный момент недоступен, попробуйте еще раз позже")
     except Exception:
         logger.error(
             f"Unexpected error while adding new bot with token {token} from user {message.from_user.id}", exc_info=True
         )
-        return await message.answer(":( Произошла ошибка при добавлении бота, попробуй еще раз позже.")
+        return await message.answer(":( Произошла ошибка при добавлении бота, попробуйте еще раз позже")
     await message.answer(
         MessageTexts.BOT_INITIALIZING_MESSAGE.value.format(bot_fullname, bot_username),
         reply_markup=get_bot_menu_keyboard(bot_id)
@@ -619,14 +619,14 @@ async def bot_menu_photo_handler(message: Message, state: FSMContext):
     photo_file_id = message.photo[-1].file_id
 
     if message.caption is None:
-        return await message.answer("Чтобы добавить товар, прикрепи его картинку и отправь сообщение в виде:"
+        return await message.answer("Чтобы добавить товар, прикрепите его картинку и отправьте сообщение в виде:"
                                     "\n\nНазвание\nЦена в рублях")
 
     params = message.caption.strip().split('\n')
     filename = "".join(sample(string.ascii_letters + string.digits, k=5)) + ".jpg"
 
     if len(params) != 2:
-        return await message.answer("Чтобы добавить товар, прикрепи его картинку и отправь сообщение в виде:"
+        return await message.answer("Чтобы добавить товар, прикрепите его картинку и отправьте сообщение в виде:"
                                     "\n\nНазвание\nЦена в рублях")
     if params[-1].isdigit():
         price = int(params[-1])
@@ -651,12 +651,12 @@ async def bot_menu_handler(message: Message, state: FSMContext):
 
     match message.text:
         case "Стартовое сообщение":
-            await message.answer("Пришли текст, который должен присылаться пользователям, "
-                                 "когда они твоему боту отправляют /start", reply_markup=get_back_keyboard())
+            await message.answer("Пришлите текст, который должен присылаться пользователям, "
+                                 "когда они Вашему боту отправляют /start", reply_markup=get_back_keyboard())
             await state.set_state(States.EDITING_START_MESSAGE)
             await state.set_data(state_data)
         case "Сообщение затычка":
-            await message.answer("Пришли текст, который должен присылаться пользователям "
+            await message.answer("Пришлите текст, который должен присылаться пользователям "
                                  "на их любые обычные сообщения", reply_markup=get_back_keyboard())
             await state.set_state(States.EDITING_DEFAULT_MESSAGE)
             await state.set_data(state_data)
@@ -665,9 +665,9 @@ async def bot_menu_handler(message: Message, state: FSMContext):
         case "Список товаров":
             products = await db_engine.get_product_db().get_all_products(state_data["bot_id"])
             if not products:
-                await message.answer("Список товаров твоего магазина пуст")
+                await message.answer("Список товаров Вашего магазина пуст")
             else:
-                await message.answer("Список товаров твоего магазина 👇\nЧтобы удалить товар, нажми на тег рядом с ним")
+                await message.answer("Список товаров Вашего магазина 👇\nЧтобы удалить товар, нажмите на тег рядом с ним")
                 for product in products:
                     await message.answer_photo(
                         photo=FSInputFile(os.getenv('FILES_PATH') + product.picture),
@@ -675,22 +675,22 @@ async def bot_menu_handler(message: Message, state: FSMContext):
                                 f"Цена: <b>{float(product.price)}₽</b>",
                         reply_markup=get_inline_delete_button(product.id))
         case "Добавить товар":
-            await message.answer("Чтобы добавить товар, прикрепи его картинку и отправь сообщение в виде:"
+            await message.answer("Чтобы добавить товар, прикрепите его картинку и отправьте сообщение в виде:"
                                  "\n\nНазвание\nЦена в рублях")
         case "Запустить бота":
             await start_custom_bot(state_data['bot_id'])
-            await message.answer("Твой бот запущен ✅")
+            await message.answer("Ваш бот запущен ✅")
         case "Остановить бота":
             await stop_custom_bot(state_data['bot_id'])
-            await message.answer("Твой бот приостановлен ❌")
+            await message.answer("Ваш бот приостановлен ❌")
         case "Удалить бота":
             await message.answer("Бот удалится вместе со всей базой продуктов безвозвратно.\n"
-                                 "Напиши ПОДТВЕРДИТЬ для подтверждения удаления", reply_markup=get_back_keyboard())
+                                 "Напишите ПОДТВЕРДИТЬ для подтверждения удаления", reply_markup=get_back_keyboard())
             await state.set_state(States.DELETE_BOT)
             await state.set_data(state_data)
         case _:
             await message.answer(
-                "Для навигации используй кнопки 👇",
+                "Для навигации используйте кнопки 👇",
                 reply_markup=get_bot_menu_keyboard(state_data["bot_id"])
             )
 
@@ -779,7 +779,7 @@ async def delete_bot_handler(message: Message, state: FSMContext):
         await state.set_state(States.BOT_MENU)
         await state.set_data(state_data)
     else:
-        await message.answer("Напиши ПОДТВЕРДИТЬ для подтверждения удаления или вернись назад")
+        await message.answer("Напишите ПОДТВЕРДИТЬ для подтверждения удаления или вернитесь назад")
 
 
 @router.callback_query(lambda q: q.data.startswith('product:delete'))

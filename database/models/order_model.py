@@ -99,7 +99,7 @@ class OrderSchema(BaseModel):
 
         products_text = "\n".join(products_converted)
 
-        return f"Твой заказ <b>#{self.id}</b>\n\n" \
+        return f"Ваш заказ <b>#{self.id}</b>\n\n" \
                f"Список товаров:\n\n" \
                f"{products_text}\n" \
                f"Итого: <b>{total_price}₽</b>\n\n" \
