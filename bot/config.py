@@ -36,6 +36,8 @@ SBP_URL = os.getenv("SBP_PAYMENT_URL")
 DEBUG = bool(int(os.getenv("DEBUG")))
 TIMEZONE = os.getenv("TIMEZONE")
 
+BOT_DEBUG_MODE = bool(int(os.getenv("BOT_DEBUG_MODE")))
+
 # Logging
 LOGGING_SETUP = {
     'version': 1,

@@ -1,6 +1,7 @@
 import asyncio
 import os
 import sys
+from datetime import datetime, timedelta
 
 from dotenv import load_dotenv
 
@@ -8,12 +9,13 @@ import pytest
 
 from database.models.models import Database
 from database.models.bot_model import BotDao
-from database.models.user_model import UserDao
+from database.models.user_model import UserDao, UserSchema
 from database.models.order_model import OrderDao
 from database.models.product_model import ProductDao
 from database.models.models import Base
 
 from stoke.stoke import Stoke
+from tests.schemas import bot_schema_without_id_1, bot_schema_without_id_2, user_schema_1, user_schema_2
 
 load_dotenv()
 
@@ -53,6 +55,28 @@ def product_db(database: Database) -> ProductDao:
 @pytest.fixture
 def order_db(database: Database) -> OrderDao:
     return database.get_order_dao()
+
+
+@pytest.fixture
+async def before_add_user(user_db: UserDao) -> None:
+    await user_db.add_user(user_schema_1)
+
+
+@pytest.fixture
+async def before_add_two_users(user_db: UserDao) -> None:
+    await user_db.add_user(user_schema_1)
+    await user_db.add_user(user_schema_2)
+
+
+@pytest.fixture
+async def before_add_bot(bot_db: BotDao, before_add_two_users) -> None:
+    await bot_db.add_bot(bot_schema_without_id_1)
+
+
+@pytest.fixture
+async def before_add_two_bots(bot_db: BotDao, before_add_two_users) -> None:
+    await bot_db.add_bot(bot_schema_without_id_1)
+    await bot_db.add_bot(bot_schema_without_id_2)
 
 
 @pytest.fixture(scope="session")

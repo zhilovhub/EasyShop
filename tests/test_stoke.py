@@ -12,8 +12,7 @@ import pytest
 from database.models.bot_model import BotDao, BotSchemaWithoutId
 from database.models.product_model import ProductDao, ProductWithoutId, ProductSchema
 from stoke.stoke import Stoke
-
-BOT_ID = 1
+from tests.schemas import BOT_ID
 
 product_schema_without_id_1 = ProductWithoutId(
     bot_id=BOT_ID,
@@ -48,18 +47,8 @@ product_schema_3 = ProductSchema(
     **product_schema_without_id_3.model_dump()
 )
 
-bot_schema_without_id = BotSchemaWithoutId(
-    token="1000000000:AaAaAaAaAaAaAaAaAaAaAaAaAaAaAaAaAaA",
-    status="a",
-    created_at=datetime.utcnow(),
-    created_by=1,
-    locale=""
-)
-
-
 @pytest.fixture
-async def before_add_two_products(bot_db: BotDao, product_db: ProductDao) -> None:
-    await bot_db.add_bot(bot_schema_without_id)
+async def before_add_two_products(bot_db: BotDao, product_db: ProductDao, before_add_bot) -> None:
     await product_db.add_product(product_schema_without_id_1)
     await product_db.add_product(product_schema_without_id_2)
 

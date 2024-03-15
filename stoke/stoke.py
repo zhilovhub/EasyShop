@@ -123,7 +123,7 @@ class Stoke:  # TODO raise specific exceptions in import methods + optimize (uni
 
     async def import_xlsx(
             self, bot_id: int, path_to_file: str, replace: bool, path_to_file_with_pictures: str = None
-    ) -> None:  # TODO come up with picture
+    ) -> None:
         """If ``replace`` is true then first delete all products else just add or update by name"""
         wb = load_workbook(filename=path_to_file)
         ws = wb.active

@@ -1,56 +1,18 @@
-from datetime import datetime
-
 import pytest
 
 from bot.exceptions import InvalidParameterFormat
-from database.models.bot_model import BotDao, BotSchemaWithoutId
-from database.models.product_model import ProductDao, ProductSchema, ProductWithoutId, ProductNotFound
-
-BOT_ID = 1
-
-product_schema_without_id_1 = ProductWithoutId(
-    bot_id=BOT_ID,
-    name="Xbox",
-    description="",
-    price=21000,
-    count=5,
-    picture="asd4F.jpg"
-)
-product_schema_without_id_2 = ProductWithoutId(
-    bot_id=BOT_ID,
-    name="Xbox Series X",
-    description="",
-    price=31000,
-    count=4,
-    picture="sa123.jpg"
-)
-product_schema_1 = ProductSchema(
-    id=1,
-    **product_schema_without_id_1.model_dump()
-)
-product_schema_2 = ProductSchema(
-    id=2,
-    **product_schema_without_id_2.model_dump()
-)
-
-bot_schema_without_id = BotSchemaWithoutId(
-    token="1000000000:AaAaAaAaAaAaAaAaAaAaAaAaAaAaAaAaAaA",
-    status="a",
-    created_at=datetime.utcnow(),
-    created_by=1,
-    locale=""
-)
+from database.models.product_model import ProductDao, ProductNotFound
+from tests.schemas import product_schema_without_id_1, product_schema_without_id_2, product_schema_1, product_schema_2, \
+    BOT_ID
 
 
 @pytest.fixture
-async def before_add_product(bot_db: BotDao, product_db: ProductDao) -> None:
-    await bot_db.add_bot(bot_schema_without_id)
+async def before_add_product(product_db: ProductDao, before_add_bot) -> None:
     await product_db.add_product(product_schema_without_id_1)
 
 
 @pytest.fixture
-async def before_add_two_products(bot_db: BotDao, product_db: ProductDao) -> None:
-    await bot_db.add_bot(bot_schema_without_id)
+async def before_add_two_products(product_db: ProductDao, before_add_bot) -> None:
     await product_db.add_product(product_schema_without_id_1)
     await product_db.add_product(product_schema_without_id_2)
 

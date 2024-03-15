@@ -1,43 +1,8 @@
-from datetime import datetime
-
 import pytest
 
 from bot.exceptions import InvalidParameterFormat, BotNotFound, InstanceAlreadyExists
-from database.models.bot_model import BotDao, BotSchema, BotSchemaWithoutId
-
-bot_schema_without_id_1 = BotSchemaWithoutId(
-    token="1000000000:AaAaAaAaAaAaAaAaAaAaAaAaAaAaAaAaAaA",
-    status="a",
-    created_at=datetime.utcnow(),
-    created_by=1,
-    locale=""
-)
-bot_schema_without_id_2 = BotSchemaWithoutId(
-    token="2000000000:AaAaAaAaAaAaAaAaAaAaAaAaAaAaAaAaAaA",
-    status="a",
-    created_at=datetime.utcnow(),
-    created_by=2,
-    locale=""
-)
-bot_schema_1 = BotSchema(
-    bot_id=1,
-    **bot_schema_without_id_1.model_dump()
-)
-bot_schema_2 = BotSchema(
-    bot_id=2,
-    **bot_schema_without_id_2.model_dump()
-)
-
-
-@pytest.fixture
-async def before_add_bot(bot_db: BotDao) -> None:
-    await bot_db.add_bot(bot_schema_without_id_1)
-
-
-@pytest.fixture
-async def before_add_two_bots(bot_db: BotDao) -> None:
-    await bot_db.add_bot(bot_schema_without_id_1)
-    await bot_db.add_bot(bot_schema_without_id_2)
+from database.models.bot_model import BotDao
+from tests.schemas import bot_schema_1, bot_schema_2, bot_schema_without_id_1, bot_schema_without_id_2
 
 
 class TestBotDb:

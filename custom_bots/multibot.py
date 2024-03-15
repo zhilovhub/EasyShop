@@ -190,6 +190,7 @@ async def process_web_app_request(event: Message):
 
         order_data["from_user"] = user_id
         order_data["status"] = "backlog"
+        order_data["count"] = 0
 
         order = OrderSchema(**order_data)
 

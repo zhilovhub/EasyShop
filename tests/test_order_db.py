@@ -1,81 +1,20 @@
-from datetime import datetime
-
 import pytest
 
-from database.models.bot_model import BotDao, BotSchemaWithoutId
-from database.models.order_model import OrderDao, OrderSchema, OrderNotFound, OrderStatusValues
-from database.models.product_model import ProductDao, ProductWithoutId, ProductSchema
-
-BOT_ID = 1
-
-order_schema_1 = OrderSchema(
-    id="asdF5",
-    bot_id=BOT_ID,
-    products={1: 2, 2: 1},
-    from_user=1,
-    payment_method="Картой онлайн",
-    ordered_at=datetime.utcnow(),
-    address="Москва",
-    status=OrderStatusValues.BACKLOG,
-    comment="Позвонтить за 10 минут"
-)
-order_schema_2 = OrderSchema(
-    order_id="qw3D2",
-    bot_id=BOT_ID,
-    products={1: 1},
-    from_user=1,
-    payment_method="Картой онлайн",
-    ordered_at=datetime.utcnow(),
-    address="Москва",
-    status=OrderStatusValues.BACKLOG,
-    comment="Позвонтить за 20 минут"
-)
-
-product_schema_without_id_1 = ProductWithoutId(
-    bot_id=BOT_ID,
-    name="Xbox",
-    description="",
-    price=21000,
-    count=5,
-    picture="asd4F.jpg"
-)
-product_schema_without_id_2 = ProductWithoutId(
-    bot_id=BOT_ID,
-    name="Xbox Series X",
-    description="",
-    price=31000,
-    count=6,
-    picture="sa123.jpg"
-)
-product_schema_1 = ProductSchema(
-    id=1,
-    **product_schema_without_id_1.model_dump()
-)
-product_schema_2 = ProductSchema(
-    id=2,
-    **product_schema_without_id_2.model_dump()
-)
-
-bot_schema_without_id = BotSchemaWithoutId(
-    token="1000000000:AaAaAaAaAaAaAaAaAaAaAaAaAaAaAaAaAaA",
-    status="a",
-    created_at=datetime.utcnow(),
-    created_by=1,
-    locale=""
-)
+from database.models.order_model import OrderDao, OrderNotFound
+from database.models.product_model import ProductDao
+from tests.schemas import product_schema_without_id_1, product_schema_without_id_2, order_schema_1, order_schema_2, \
+    product_schema_1, product_schema_2
 
 
 @pytest.fixture
-async def before_add_order(bot_db: BotDao, product_db: ProductDao, order_db: OrderDao) -> None:
-    await bot_db.add_bot(bot_schema_without_id)
+async def before_add_order(product_db: ProductDao, order_db: OrderDao, before_add_bot) -> None:
     await product_db.add_product(product_schema_without_id_1)
     await product_db.add_product(product_schema_without_id_2)
     await order_db.add_order(order_schema_1)
 
 
 @pytest.fixture
-async def before_add_two_orders(bot_db: BotDao, product_db: ProductDao, order_db: OrderDao) -> None:
-    await bot_db.add_bot(bot_schema_without_id)
+async def before_add_two_orders(product_db: ProductDao, order_db: OrderDao, before_add_bot) -> None:
     await product_db.add_product(product_schema_without_id_1)
     await product_db.add_product(product_schema_without_id_2)
     await order_db.add_order(order_schema_1)
@@ -88,7 +27,7 @@ class TestOrderDb:
             products=[(product_schema_1, 2), (product_schema_2, 1)],
             username="@username",
             is_admin=False
-        ) == """Твой заказ <b>#asdF5</b>
+        ) == """Ваш заказ <b>#asdF5</b>
 
 Список товаров:
 
