@@ -46,7 +46,7 @@ class CheckSubscriptionMiddleware(BaseMiddleware):
             event: CallbackQuery | Message,
             data: Dict[str, Any]
     ) -> Any:
-        message, is_message = event, True if isinstance(event, Message) else event.message, False
+        message, is_message = (event, True) if isinstance(event, Message) else (event.message, False)
         try:
             user = await user_db.get_user(event.from_user.id)
         except UserNotFound:
