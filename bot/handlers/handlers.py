@@ -46,7 +46,7 @@ class CheckSubscriptionMiddleware(BaseMiddleware):
             event: CallbackQuery | Message,
             data: Dict[str, Any]
     ) -> Any:
-        message = event if isinstance(event, Message) else event.message
+        message, is_message = event, True if isinstance(event, Message) else event.message, False
         try:
             user = await user_db.get_user(event.from_user.id)
         except UserNotFound:
@@ -61,8 +61,10 @@ class CheckSubscriptionMiddleware(BaseMiddleware):
         if user.id not in config.ADMINS and \
                 user.status not in ("subscribed", "trial") and \
                 message.text not in ("/start", "/check_subscription"):
-            await event.answer(
-                "Для того, чтобы пользоваться ботом, тебе нужна подписка")  # TODO move it into check_sub_cmd
+            if is_message:
+                await message.answer("Для того, чтобы пользоваться ботом, тебе нужна подписка")  # TODO move it into check_sub_cmd
+            else:
+                await event.answer("Для того, чтобы пользоваться ботом, тебе нужна подписка", show_alert=True)
             return await check_sub_cmd(message)
 
         return await handler(event, data)
@@ -342,7 +344,7 @@ async def start_trial_callback(query: CallbackQuery, state: FSMContext):
 @all_router.message(F.text == "/check_subscription")
 async def check_sub_cmd(message: Message, state: FSMContext = None):
     # TODO https://tracker.yandex.ru/BOT-17 Учесть часовые пояса клиентов
-    user = await user_db.get_user(message.from_user.id)
+    user = await user_db.get_user(message.chat.id)
     try:
         bot_id = (await state.get_data())["bot_id"]
     except (KeyError, AttributeError):
