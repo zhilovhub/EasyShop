@@ -4,7 +4,7 @@ export default {
   methods: {
     redirectToService(event) {
       const selectedBranch = event.target.value;
-      this.$router.push(`/services/${selectedBranch}`);
+      this.$router.push(`/services/choose-speciality?chosen_branch=${selectedBranch}`);
     }
   }
 }
@@ -16,7 +16,7 @@ export default {
     <div class="select-wrapper">
       <select @change="redirectToService($event)">
           <option>Выберите филиал</option>
-          <option value="first-one">1-ый Филиал</option>
+          <option value="1-ый Филиал">1-ый Филиал</option>
       </select>
     </div>
   </div>
@@ -40,7 +40,6 @@ h1{
   font-size: 24px;
   font-weight: 600;
   text-align: center;
-
 }
 
 .select-wrapper {

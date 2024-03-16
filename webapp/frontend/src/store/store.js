@@ -15,6 +15,9 @@ export const Store = new Vuex.Store({
     address: '',
     comment: '',
   },
+  services: {
+    serviceItems: []
+  },
   mutations: {
     addToSessionStorage(state) {
       if (state.itemsAddToCartArray.length>0) {
