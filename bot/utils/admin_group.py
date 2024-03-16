@@ -15,7 +15,10 @@ class EventTypes(Enum):
         "⚠ <b>@{}</b> (<b>{}</b>) пытается принять <b>пробную</b> подписку... (<b>@{}</b>)",
         "🍟 <b>@{}</b> (<b>{}</b>) принял <b>пробную</b> подписку! (<b>@{}</b>)"
     )
-
+    SUBSCRIBED = (
+        "⚠⚠ Для <b>@{}</b> (<b>{}</b>) оформляется <b>ПЛАТНАЯ</b> подписка... (<b>@{}</b>)",
+        "🎉✨✅ <b>@{}</b> (<b>{}</b>) оформил <b>ПЛАТНУЮ</b> подписку! (<b>@{}</b>)"
+    )
 
 
 async def send_event(user: User, event_type: EventTypes) -> Message:
@@ -26,7 +29,7 @@ async def send_event(user: User, event_type: EventTypes) -> Message:
         match event_type:
             case EventTypes.NEW_USER:
                 message_text = event_type_text.format(bot_username, user.id, user.username, user.full_name)
-            case EventTypes.STARTED_TRIAL:
+            case EventTypes.STARTED_TRIAL | EventTypes.SUBSCRIBED:
                 message_text = event_type_text.format(user.username, user.id, bot_username)
         return await bot.send_message(
             chat_id=config.ADMIN_GROUP_ID,
@@ -36,16 +39,15 @@ async def send_event(user: User, event_type: EventTypes) -> Message:
         logger.info(e)
 
 
-async def success_event(message: Message, event_type: EventTypes):
+async def success_event(user: User, message: Message, event_type: EventTypes):
     try:
         bot_username = (await bot.get_me()).username
-        user = message.from_user
         message_text = ""
         event_type_text = event_type.value[1]
         match event_type:
             case EventTypes.NEW_USER:
                 pass  # should be so
-            case EventTypes.STARTED_TRIAL:
+            case EventTypes.STARTED_TRIAL | EventTypes.SUBSCRIBED:
                 message_text = event_type_text.format(user.username, user.id, bot_username)
         await message.edit_text(
             text=message_text,

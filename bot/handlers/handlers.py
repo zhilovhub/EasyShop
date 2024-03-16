@@ -344,7 +344,7 @@ async def start_trial_callback(query: CallbackQuery, state: FSMContext):
         "Чтобы получить бота с магазином, воспользуйтесь инструкцией выше 👆",
         reply_markup=ReplyKeyboardRemove()
     )
-    await success_event(admin_message, EventTypes.STARTED_TRIAL)
+    await success_event(query.from_user, admin_message, EventTypes.STARTED_TRIAL)
 
 
 @all_router.message(F.text == "/check_subscription")
@@ -499,6 +499,8 @@ async def subscribe_ended_handler(message: Message) -> None:
 
 @all_router.callback_query(lambda q: q.data.startswith("approve_pay"))
 async def approve_pay_callback(query: CallbackQuery, state: FSMContext):
+    admin_message = await send_event(query.from_user, EventTypes.SUBSCRIBED)
+
     user_id = int(query.data.split(':')[-1])
     user = await user_db.get_user(user_id)
     await query.message.edit_text(query.message.text + "\n\n<b>ПОДТВЕРЖДЕНО</b>", reply_markup=None)
@@ -551,6 +553,8 @@ async def approve_pay_callback(query: CallbackQuery, state: FSMContext):
             reply_markup=ReplyKeyboardRemove()
         )
     await query.answer("Оплата подтверждена", show_alert=True)
+
+    await success_event(query.from_user, admin_message, EventTypes.SUBSCRIBED)
 
 
 @all_router.callback_query(lambda q: q.data.startswith("cancel_pay"))
