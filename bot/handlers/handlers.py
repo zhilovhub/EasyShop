@@ -22,7 +22,7 @@ from bot.utils import JsonStore
 from bot.config import logger
 from bot.keyboards import *
 from bot.states.states import States
-from bot.utils.admin_group import send_event
+from bot.utils.admin_group import send_event, EventTypes
 from bot.filters.chat_type import ChatTypeFilter
 from bot.exceptions.exceptions import *
 
@@ -47,18 +47,19 @@ class CheckSubscriptionMiddleware(BaseMiddleware):
             event: CallbackQuery | Message,
             data: Dict[str, Any]
     ) -> Any:
+        user_id = event.from_user.id
         message, is_message = (event, True) if isinstance(event, Message) else (event.message, False)
-        await send_event(message)
         try:
-            user = await user_db.get_user(event.from_user.id)
+            user = await user_db.get_user(user_id)
         except UserNotFound:
-            logger.info(f"user {event.from_user.id} not found in db, creating new instance...")
+            logger.info(f"user {user_id} not found in db, creating new instance...")
+            await send_event(message, EventTypes.NEW_USER)
             await user_db.add_user(UserSchema(
-                user_id=event.from_user.id, registered_at=datetime.utcnow(), status="new", locale="default",
+                user_id=user_id, registered_at=datetime.utcnow(), status="new", locale="default",
                 subscribed_until=None)
             )
             await message.answer(MessageTexts.ABOUT_MESSAGE.value)
-            user = await user_db.get_user(event.from_user.id)
+            user = await user_db.get_user(user_id)
 
         if user.id not in config.ADMINS and \
                 user.status not in ("subscribed", "trial") and \
