@@ -53,7 +53,7 @@ class CheckSubscriptionMiddleware(BaseMiddleware):
             user = await user_db.get_user(user_id)
         except UserNotFound:
             logger.info(f"user {user_id} not found in db, creating new instance...")
-            await send_event(message, EventTypes.NEW_USER)
+            await send_event(event.from_user, EventTypes.NEW_USER)
             await user_db.add_user(UserSchema(
                 user_id=user_id, registered_at=datetime.utcnow(), status="new", locale="default",
                 subscribed_until=None)
@@ -312,6 +312,7 @@ async def start_command_handler(message: Message, state: FSMContext):
 
 @all_router.callback_query(lambda q: q.data == "start_trial")
 async def start_trial_callback(query: CallbackQuery, state: FSMContext):
+    await send_event(query.from_user, EventTypes.STARTED_TRIAL)
     await query.message.edit_text(MessageTexts.FREE_TRIAL_MESSAGE.value, reply_markup=None)
 
     subscribe_until = datetime.now() + timedelta(days=7)
