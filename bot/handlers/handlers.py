@@ -97,7 +97,7 @@ cache_resources_file_id_store = JsonStore(
 async def debug_clear(message: Message, state: FSMContext) -> None:
     """ONLY FOR DEBUG BOT"""
     await user_db.del_user(user_id=message.from_user.id)
-    await CheckSubscriptionMiddleware().__call__(start_command_handler, message, {})
+    await CheckSubscriptionMiddleware().__call__(start_command_handler, message, state)
 
 
 async def start_custom_bot(bot_id: int):
