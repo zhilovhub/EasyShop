@@ -22,7 +22,7 @@ from bot.utils import JsonStore
 from bot.config import logger
 from bot.keyboards import *
 from bot.states.states import States
-from bot.utils.admin_group import send_event, EventTypes
+from bot.utils.admin_group import send_event, success_event, EventTypes
 from bot.filters.chat_type import ChatTypeFilter
 from bot.exceptions.exceptions import *
 
@@ -312,7 +312,7 @@ async def start_command_handler(message: Message, state: FSMContext):
 
 @all_router.callback_query(lambda q: q.data == "start_trial")
 async def start_trial_callback(query: CallbackQuery, state: FSMContext):
-    await send_event(query.from_user, EventTypes.STARTED_TRIAL)
+    admin_message = await send_event(query.from_user, EventTypes.STARTED_TRIAL)
     await query.message.edit_text(MessageTexts.FREE_TRIAL_MESSAGE.value, reply_markup=None)
 
     subscribe_until = datetime.now() + timedelta(days=7)
@@ -344,6 +344,7 @@ async def start_trial_callback(query: CallbackQuery, state: FSMContext):
         "Чтобы получить бота с магазином, воспользуйтесь инструкцией выше 👆",
         reply_markup=ReplyKeyboardRemove()
     )
+    await success_event(admin_message, EventTypes.STARTED_TRIAL)
 
 
 @all_router.message(F.text == "/check_subscription")
