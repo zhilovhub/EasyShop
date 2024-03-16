@@ -22,6 +22,7 @@ from bot.utils import JsonStore
 from bot.config import logger
 from bot.keyboards import *
 from bot.states.states import States
+from bot.utils.admin_group import send_event
 from bot.filters.chat_type import ChatTypeFilter
 from bot.exceptions.exceptions import *
 
@@ -47,6 +48,7 @@ class CheckSubscriptionMiddleware(BaseMiddleware):
             data: Dict[str, Any]
     ) -> Any:
         message, is_message = (event, True) if isinstance(event, Message) else (event.message, False)
+        await send_event(message)
         try:
             user = await user_db.get_user(event.from_user.id)
         except UserNotFound:
