@@ -11,7 +11,8 @@ RESOURCES_PATH = os.getenv("PROJECT_ROOT") + "resources/{}"
 # Telegram bot variables
 TELEGRAM_TOKEN = os.getenv("TELEGRAM_TOKEN")
 ADMINS = [int(uid.strip()) for uid in os.getenv("ADMINS").split(',')]
-SUBSCRIPTION_PRICE = 500
+ADMIN_GROUP_ID = os.getenv("ADMIN_GROUP_ID")
+SUBSCRIPTION_PRICE = 1990
 
 # Database variables
 SQLALCHEMY_URL = os.getenv("SQLALCHEMY_URL")

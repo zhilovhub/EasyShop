@@ -22,6 +22,7 @@ from bot.utils import JsonStore
 from bot.config import logger
 from bot.keyboards import *
 from bot.states.states import States
+from bot.utils.admin_group import send_event, success_event, EventTypes
 from bot.filters.chat_type import ChatTypeFilter
 from bot.exceptions.exceptions import *
 
@@ -46,17 +47,19 @@ class CheckSubscriptionMiddleware(BaseMiddleware):
             event: CallbackQuery | Message,
             data: Dict[str, Any]
     ) -> Any:
+        user_id = event.from_user.id
         message, is_message = (event, True) if isinstance(event, Message) else (event.message, False)
         try:
-            user = await user_db.get_user(event.from_user.id)
+            user = await user_db.get_user(user_id)
         except UserNotFound:
-            logger.info(f"user {event.from_user.id} not found in db, creating new instance...")
+            logger.info(f"user {user_id} not found in db, creating new instance...")
+            await send_event(event.from_user, EventTypes.NEW_USER)
             await user_db.add_user(UserSchema(
-                user_id=event.from_user.id, registered_at=datetime.utcnow(), status="new", locale="default",
+                user_id=user_id, registered_at=datetime.utcnow(), status="new", locale="default",
                 subscribed_until=None)
             )
             await message.answer(MessageTexts.ABOUT_MESSAGE.value)
-            user = await user_db.get_user(event.from_user.id)
+            user = await user_db.get_user(user_id)
 
         if user.id not in config.ADMINS and \
                 user.status not in ("subscribed", "trial") and \
@@ -94,7 +97,7 @@ cache_resources_file_id_store = JsonStore(
 async def debug_clear(message: Message, state: FSMContext) -> None:
     """ONLY FOR DEBUG BOT"""
     await user_db.del_user(user_id=message.from_user.id)
-    await start_command_handler(message, state)
+    await CheckSubscriptionMiddleware().__call__(start_command_handler, message, state)
 
 
 async def start_custom_bot(bot_id: int):
@@ -309,6 +312,7 @@ async def start_command_handler(message: Message, state: FSMContext):
 
 @all_router.callback_query(lambda q: q.data == "start_trial")
 async def start_trial_callback(query: CallbackQuery, state: FSMContext):
+    admin_message = await send_event(query.from_user, EventTypes.STARTED_TRIAL)
     await query.message.edit_text(MessageTexts.FREE_TRIAL_MESSAGE.value, reply_markup=None)
 
     subscribe_until = datetime.now() + timedelta(days=7)
@@ -340,6 +344,7 @@ async def start_trial_callback(query: CallbackQuery, state: FSMContext):
         "Чтобы получить бота с магазином, воспользуйтесь инструкцией выше 👆",
         reply_markup=ReplyKeyboardRemove()
     )
+    await success_event(query.from_user, admin_message, EventTypes.STARTED_TRIAL)
 
 
 @all_router.message(F.text == "/check_subscription")
@@ -494,6 +499,8 @@ async def subscribe_ended_handler(message: Message) -> None:
 
 @all_router.callback_query(lambda q: q.data.startswith("approve_pay"))
 async def approve_pay_callback(query: CallbackQuery, state: FSMContext):
+    admin_message = await send_event(query.from_user, EventTypes.SUBSCRIBED)
+
     user_id = int(query.data.split(':')[-1])
     user = await user_db.get_user(user_id)
     await query.message.edit_text(query.message.text + "\n\n<b>ПОДТВЕРЖДЕНО</b>", reply_markup=None)
@@ -546,6 +553,8 @@ async def approve_pay_callback(query: CallbackQuery, state: FSMContext):
             reply_markup=ReplyKeyboardRemove()
         )
     await query.answer("Оплата подтверждена", show_alert=True)
+
+    await success_event(query.from_user, admin_message, EventTypes.SUBSCRIBED)
 
 
 @all_router.callback_query(lambda q: q.data.startswith("cancel_pay"))
