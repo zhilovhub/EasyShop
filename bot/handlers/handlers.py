@@ -809,25 +809,17 @@ async def delete_product_handler(query: CallbackQuery):
 async def send_instructions(chat_id: int) -> None:
     file_ids = cache_resources_file_id_store.get_data()
     try:
-        await bot.send_media_group(
+        await bot.send_video(
             chat_id=chat_id,
-            media=[
-                InputMediaPhoto(media=file_ids["botFather1.jpg"], caption=MessageTexts.INSTRUCTION_MESSAGE.value),
-                InputMediaPhoto(media=file_ids["botFather2.jpg"]),
-                InputMediaPhoto(media=file_ids["botFather3.jpg"])
-            ]
+            video=file_ids["botfather.mp4"],
+            caption=MessageTexts.INSTRUCTION_MESSAGE.value
         )
     except (TelegramBadRequest, KeyError) as e:
         logger.info(f"error while sending instructions.... cache is empty, sending raw files {e}")
-        media_group = await bot.send_media_group(
+        video_message = await bot.send_video(
             chat_id=chat_id,
-            media=[
-                InputMediaPhoto(media=FSInputFile(config.RESOURCES_PATH.format("botFather1.jpg")),
-                                caption=MessageTexts.INSTRUCTION_MESSAGE.value),
-                InputMediaPhoto(media=FSInputFile(config.RESOURCES_PATH.format("botFather2.jpg"))),
-                InputMediaPhoto(media=FSInputFile(config.RESOURCES_PATH.format("botFather3.jpg"))),
-            ]
+            video=FSInputFile(config.RESOURCES_PATH.format("botfather.mp4")),
+            caption=MessageTexts.INSTRUCTION_MESSAGE.value
         )
-        for ind, message in enumerate(media_group, start=1):
-            file_ids[f"botFather{ind}.jpg"] = message.photo[0].file_id
+        file_ids[f"botfather.mp4"] = video_message.photo[0].file_id
         cache_resources_file_id_store.update_data(file_ids)
