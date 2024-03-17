@@ -70,7 +70,7 @@
       </li>
     </ul>
   </div>
-  <RouterLink :to="`/products-page/shopping-cart/?bot_id=${bot_id()}`" v-if="itemsAddToCartArray.length>0"><button class="addToCartBtn">В Корзину</button></RouterLink>
+  <RouterLink :to="`/products-page/shopping-cart?bot_id=${bot_id()}`" v-if="itemsAddToCartArray.length>0"><button class="addToCartBtn">В Корзину</button></RouterLink>
 </template>
 
 <script>

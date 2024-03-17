@@ -41,7 +41,7 @@
       const vm = this;
       BackButton.show();
       WebApp.onEvent('backButtonClicked', function() {
-        window.location.href = "/products-page/shopping-cart/?bot_id=" + vm.$store.state.bot_id;
+        window.location.href = "/products-page/shopping-cart?bot_id=" + vm.$store.state.bot_id;
       });
     },
     methods: {
