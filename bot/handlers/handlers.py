@@ -274,7 +274,7 @@ async def start_command_handler(message: Message, state: FSMContext):
         await user_db.get_user(user_id)
     except UserNotFound:
         logger.info(f"user {user_id} not found in db, creating new instance...")
-
+        await send_event(message.from_user, EventTypes.NEW_USER)
         await user_db.add_user(UserSchema(
             user_id=user_id, registered_at=datetime.utcnow(), status="new", locale="default",
             subscribed_until=None)
