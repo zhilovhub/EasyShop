@@ -7,7 +7,7 @@ from typing import *
 
 from aiogram import Router, Bot, BaseMiddleware
 from aiogram.enums import ParseMode
-from aiogram.types import Message, ReplyKeyboardRemove, FSInputFile, CallbackQuery, InputMediaPhoto, ContentType
+from aiogram.types import Message, ReplyKeyboardRemove, FSInputFile, CallbackQuery, InputMediaPhoto, ContentType, User
 from aiogram.filters import CommandStart
 from aiogram.exceptions import TelegramUnauthorizedError, TelegramBadRequest
 from aiogram.fsm.context import FSMContext, StorageKey
@@ -499,10 +499,16 @@ async def subscribe_ended_handler(message: Message) -> None:
 
 @all_router.callback_query(lambda q: q.data.startswith("approve_pay"))
 async def approve_pay_callback(query: CallbackQuery, state: FSMContext):
-    admin_message = await send_event(query.from_user, EventTypes.SUBSCRIBED)
-
     user_id = int(query.data.split(':')[-1])
+
+    user_chat_to_approve = await bot.get_chat(user_id)
+    user_to_approve = User(
+        id=user_id, is_bot=False, first_name=user_chat_to_approve.first_name, username=user_chat_to_approve.username
+    )
+    admin_message = await send_event(user_to_approve, EventTypes.SUBSCRIBED)
+
     user = await user_db.get_user(user_id)
+
     await query.message.edit_text(query.message.text + "\n\n<b>ПОДТВЕРЖДЕНО</b>", reply_markup=None)
     payment = PaymentSchemaWithoutId(from_user=user_id,
                                      amount=config.SUBSCRIPTION_PRICE,
@@ -554,7 +560,7 @@ async def approve_pay_callback(query: CallbackQuery, state: FSMContext):
         )
     await query.answer("Оплата подтверждена", show_alert=True)
 
-    await success_event(query.from_user, admin_message, EventTypes.SUBSCRIBED)
+    await success_event(user_to_approve, admin_message, EventTypes.SUBSCRIBED)
 
 
 @all_router.callback_query(lambda q: q.data.startswith("cancel_pay"))
