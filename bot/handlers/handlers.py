@@ -821,5 +821,5 @@ async def send_instructions(chat_id: int) -> None:
             video=FSInputFile(config.RESOURCES_PATH.format("botfather.mp4")),
             caption=MessageTexts.INSTRUCTION_MESSAGE.value
         )
-        file_ids[f"botfather.mp4"] = video_message.photo[0].file_id
+        file_ids[f"botfather.mp4"] = video_message.video.file_id
         cache_resources_file_id_store.update_data(file_ids)
