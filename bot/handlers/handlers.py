@@ -704,10 +704,12 @@ async def bot_menu_handler(message: Message, state: FSMContext):
                                  "\n\nНазвание\nЦена в рублях")
         case "Запустить бота":
             await start_custom_bot(state_data['bot_id'])
-            await message.answer("Ваш бот запущен ✅")
+            await message.answer("Ваш бот запущен ✅",
+                                 reply_markup=get_bot_menu_keyboard(bot_id=state_data['bot_id'], bot_status='online'))
         case "Остановить бота":
             await stop_custom_bot(state_data['bot_id'])
-            await message.answer("Ваш бот приостановлен ❌")
+            await message.answer("Ваш бот приостановлен ❌",
+                                 reply_markup=get_bot_menu_keyboard(bot_id=state_data['bot_id'], bot_status='offline'))
         case "Удалить бота":
             await message.answer("Бот удалится вместе со всей базой продуктов безвозвратно.\n"
                                  "Напишите ПОДТВЕРДИТЬ для подтверждения удаления", reply_markup=get_back_keyboard())
