@@ -68,7 +68,7 @@ def get_back_keyboard() -> ReplyKeyboardMarkup:
     ], resize_keyboard=True)
 
 
-def get_bot_menu_keyboard(bot_id: int) -> ReplyKeyboardMarkup:
+def get_bot_menu_keyboard(bot_id: int, bot_status: str) -> ReplyKeyboardMarkup:
     return ReplyKeyboardMarkup(keyboard=[
         [
             KeyboardButton(text="Стартовое сообщение"),
@@ -82,8 +82,7 @@ def get_bot_menu_keyboard(bot_id: int) -> ReplyKeyboardMarkup:
             KeyboardButton(text="Добавить товар")
         ],
         [
-            KeyboardButton(text="Запустить бота"),
-            KeyboardButton(text="Остановить бота")
+            KeyboardButton(text="Остановить бота") if bot_status == "online" else KeyboardButton(text="Запустить бота")
         ],
         [
             KeyboardButton(text="Удалить бота")
