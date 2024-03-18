@@ -702,11 +702,11 @@ async def bot_menu_handler(message: Message, state: FSMContext):
         case "Добавить товар":
             await message.answer("Чтобы добавить товар, прикрепите его картинку и отправьте сообщение в виде:"
                                  "\n\nНазвание\nЦена в рублях")
-        case "Запустить бота":
+        case "Запустить бота 🚀":
             await start_custom_bot(state_data['bot_id'])
             await message.answer("Ваш бот запущен ✅",
                                  reply_markup=get_bot_menu_keyboard(bot_id=state_data['bot_id'], bot_status='online'))
-        case "Остановить бота":
+        case "Остановить бота ⛔":
             await stop_custom_bot(state_data['bot_id'])
             await message.answer("Ваш бот приостановлен ❌",
                                  reply_markup=get_bot_menu_keyboard(bot_id=state_data['bot_id'], bot_status='offline'))
