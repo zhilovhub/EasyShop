@@ -104,6 +104,9 @@ async def start_custom_bot(bot_id: int):
     async with aiohttp.ClientSession() as session:
         async with session.get(
                 f"http://{config.LOCAL_API_SERVER_HOST}:{config.LOCAL_API_SERVER_PORT}/start_bot/{bot_id}") as response:
+            user_bot = await bot_db.get_bot(bot_id)
+            user_bot.status = "online"
+            await bot_db.update_bot(user_bot)
             if response.status != 200:
                 raise LocalAPIException(f"API returned {response.status} status code "
                                         f"with text {await response.text()}")
@@ -113,6 +116,9 @@ async def stop_custom_bot(bot_id: int):
     async with aiohttp.ClientSession() as session:
         async with session.get(
                 f"http://{config.LOCAL_API_SERVER_HOST}:{config.LOCAL_API_SERVER_PORT}/stop_bot/{bot_id}") as response:
+            user_bot = await bot_db.get_bot(bot_id)
+            user_bot.status = "offline"
+            await bot_db.update_bot(user_bot)
             if response.status != 200:
                 raise LocalAPIException(f"API returned {response.status} status code "
                                         f"with text {await response.text()}")
@@ -304,7 +310,7 @@ async def start_command_handler(message: Message, state: FSMContext):
         user_bot_data = await user_bot.get_me()
         await message.answer(
             MessageTexts.BOT_SELECTED_MESSAGE.value.format(user_bot_data.username),
-            reply_markup=get_bot_menu_keyboard(bot_id=bot_id)
+            reply_markup=get_bot_menu_keyboard(bot_id=bot_id, bot_status=user_bots[0].status)
         )
         await state.set_state(States.BOT_MENU)
         await state.set_data({'bot_id': bot_id})
@@ -420,9 +426,10 @@ async def waiting_payment_pay_handler(message: Message, state: FSMContext):
         elif state_data and "bot_id" in state_data:
             await state.set_state(States.BOT_MENU)
             await state.set_data(state_data)
+            user_bot = await bot_db.get_bot(state_data['bot_id'])
             await message.answer(
                 "Возвращаемся в главное меню...",
-                reply_markup=get_bot_menu_keyboard(state_data["bot_id"])
+                reply_markup=get_bot_menu_keyboard(state_data["bot_id"], user_bot.status)
             )
         else:
             await state.set_state(States.WAITING_FOR_TOKEN)
@@ -473,13 +480,13 @@ async def waiting_payment_approve_handler(message: Message, state: FSMContext):
 
     if user_status in ("subscribed", "trial") and message.text == "🔙 Назад":
         state_data = await state.get_data()
-
+        user_bot = await bot_db.get_bot(state_data['bot_id'])
         if state_data and "bot_id" in state_data:
             await state.set_state(States.BOT_MENU)
             await state.set_data(state_data)
             await message.answer(
                 "Возвращаемся в главное меню (мы Вас оповестим, когда оплата пройдет модерацию)...",
-                reply_markup=get_bot_menu_keyboard(state_data["bot_id"])
+                reply_markup=get_bot_menu_keyboard(state_data["bot_id"], user_bot.status)
             )
         else:
             await state.set_state(States.WAITING_FOR_TOKEN)
@@ -547,7 +554,7 @@ async def approve_pay_callback(query: CallbackQuery, state: FSMContext):
         user_bot = Bot(user_bots[0].token)
         user_bot_data = await user_bot.get_me()
         await bot.send_message(user_id, MessageTexts.BOT_SELECTED_MESSAGE.value.format(user_bot_data.username),
-                               reply_markup=get_bot_menu_keyboard(bot_id=bot_id))
+                               reply_markup=get_bot_menu_keyboard(bot_id=bot_id, bot_status=user_bots[0].status))
         await user_state.set_state(States.BOT_MENU)
         await user_state.set_data({'bot_id': bot_id})
     else:
@@ -622,9 +629,10 @@ async def waiting_for_the_token_handler(message: Message, state: FSMContext):
             f"Unexpected error while adding new bot with token {token} from user {message.from_user.id}", exc_info=True
         )
         return await message.answer(":( Произошла ошибка при добавлении бота, попробуйте еще раз позже")
+    user_bot = await bot_db.get_bot(bot_id)
     await message.answer(
         MessageTexts.BOT_INITIALIZING_MESSAGE.value.format(bot_fullname, bot_username),
-        reply_markup=get_bot_menu_keyboard(bot_id)
+        reply_markup=get_bot_menu_keyboard(bot_id, user_bot.status)
     )
     await state.set_state(States.BOT_MENU)
     await state.set_data({"bot_id": bot_id})
@@ -696,19 +704,22 @@ async def bot_menu_handler(message: Message, state: FSMContext):
                                  "\n\nНазвание\nЦена в рублях")
         case "Запустить бота":
             await start_custom_bot(state_data['bot_id'])
-            await message.answer("Ваш бот запущен ✅")
+            await message.answer("Ваш бот запущен ✅",
+                                 reply_markup=get_bot_menu_keyboard(bot_id=state_data['bot_id'], bot_status='online'))
         case "Остановить бота":
             await stop_custom_bot(state_data['bot_id'])
-            await message.answer("Ваш бот приостановлен ❌")
+            await message.answer("Ваш бот приостановлен ❌",
+                                 reply_markup=get_bot_menu_keyboard(bot_id=state_data['bot_id'], bot_status='offline'))
         case "Удалить бота":
             await message.answer("Бот удалится вместе со всей базой продуктов безвозвратно.\n"
                                  "Напишите ПОДТВЕРДИТЬ для подтверждения удаления", reply_markup=get_back_keyboard())
             await state.set_state(States.DELETE_BOT)
             await state.set_data(state_data)
         case _:
+            user_bot = await bot_db.get_bot(state_data['bot_id'])
             await message.answer(
                 "Для навигации используйте кнопки 👇",
-                reply_markup=get_bot_menu_keyboard(state_data["bot_id"])
+                reply_markup=get_bot_menu_keyboard(state_data["bot_id"], user_bot.status)
             )
 
 
@@ -717,10 +728,11 @@ async def editing_start_message_handler(message: Message, state: FSMContext):
     message_text = message.text
     if message_text:
         state_data = await state.get_data()
+        user_bot = await bot_db.get_bot(state_data['bot_id'])
         if message_text == "🔙 Назад":
             await message.answer(
                 "Возвращаемся в меню...",
-                reply_markup=get_bot_menu_keyboard(state_data["bot_id"])
+                reply_markup=get_bot_menu_keyboard(state_data["bot_id"], user_bot.status)
             )
             await state.set_state(States.BOT_MENU)
             await state.set_data(state_data)
@@ -734,7 +746,7 @@ async def editing_start_message_handler(message: Message, state: FSMContext):
 
             await message.answer(
                 "Стартовое сообщение изменено!",
-                reply_markup=get_bot_menu_keyboard(state_data["bot_id"])
+                reply_markup=get_bot_menu_keyboard(state_data["bot_id"], user_bot.status)
             )
             await state.set_state(States.BOT_MENU)
             await state.set_data(state_data)
@@ -747,10 +759,11 @@ async def editing_default_message_handler(message: Message, state: FSMContext):
     message_text = message.text
     if message_text:
         state_data = await state.get_data()
+        user_bot = await bot_db.get_bot(state_data['bot_id'])
         if message_text == "🔙 Назад":
             await message.answer(
                 "Возвращаемся в меню...",
-                reply_markup=get_bot_menu_keyboard(state_data["bot_id"])
+                reply_markup=get_bot_menu_keyboard(state_data["bot_id"], user_bot.status)
             )
             await state.set_state(States.BOT_MENU)
             await state.set_data(state_data)
@@ -764,7 +777,7 @@ async def editing_default_message_handler(message: Message, state: FSMContext):
 
             await message.answer(
                 "Сообщение-затычка изменена!",
-                reply_markup=get_bot_menu_keyboard(state_data["bot_id"])
+                reply_markup=get_bot_menu_keyboard(state_data["bot_id"], user_bot.status)
             )
             await state.set_state(States.BOT_MENU)
             await state.set_data(state_data)
@@ -776,6 +789,7 @@ async def editing_default_message_handler(message: Message, state: FSMContext):
 async def delete_bot_handler(message: Message, state: FSMContext):
     message_text = message.text
     state_data = await state.get_data()
+    user_bot = await bot_db.get_bot(state_data['bot_id'])
     if message_text == "ПОДТВЕРДИТЬ":
         logger.info(f"Disabling bot {state_data['bot_id']}, setting deleted status to db...")
         user_bot = await bot_db.get_bot(state_data["bot_id"])
@@ -791,7 +805,7 @@ async def delete_bot_handler(message: Message, state: FSMContext):
     elif message_text == "🔙 Назад":
         await message.answer(
             "Возвращаемся в меню...",
-            reply_markup=get_bot_menu_keyboard(state_data["bot_id"])
+            reply_markup=get_bot_menu_keyboard(state_data["bot_id"], user_bot.status)
         )
         await state.set_state(States.BOT_MENU)
         await state.set_data(state_data)
