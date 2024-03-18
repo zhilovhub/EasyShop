@@ -82,7 +82,7 @@ def get_bot_menu_keyboard(bot_id: int, bot_status: str) -> ReplyKeyboardMarkup:
             KeyboardButton(text="Добавить товар")
         ],
         [
-            KeyboardButton(text="Остановить бота") if bot_status == "online" else KeyboardButton(text="Запустить бота")
+            KeyboardButton(text="Остановить бота ⛔️") if bot_status == "online" else KeyboardButton(text="Запустить бота 🚀")
         ],
         [
             KeyboardButton(text="Удалить бота")
