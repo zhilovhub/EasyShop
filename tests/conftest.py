@@ -12,9 +12,12 @@ from database.models.bot_model import BotDao
 from database.models.user_model import UserDao, UserSchema
 from database.models.order_model import OrderDao
 from database.models.product_model import ProductDao
+from database.models.payment_model import PaymentDao
 from database.models.models import Base
 
 from stoke.stoke import Stoke
+from subscription.scheduler import Scheduler
+from subscription.subscription import Subscription
 from tests.schemas import bot_schema_without_id_1, bot_schema_without_id_2, user_schema_1, user_schema_2
 
 load_dotenv()
@@ -38,6 +41,15 @@ def stoke(database: Database) -> Stoke:
 
 
 @pytest.fixture
+async def subscription(database: Database) -> Subscription:
+    _scheduler = Scheduler(os.getenv("SCHEDULER_FOR_TESTS"), "postgres", "Europe/Moscow")
+    subscription = Subscription(database, _scheduler)
+    await _scheduler.start()
+    yield subscription
+    await _scheduler.stop_scheduler()
+
+
+@pytest.fixture
 def user_db(database: Database) -> UserDao:
     return database.get_user_dao()
 
@@ -55,6 +67,11 @@ def product_db(database: Database) -> ProductDao:
 @pytest.fixture
 def order_db(database: Database) -> OrderDao:
     return database.get_order_dao()
+
+
+@pytest.fixture
+def payment_db(database: Database) -> PaymentDao:
+    return database.get_payment_dao()
 
 
 @pytest.fixture

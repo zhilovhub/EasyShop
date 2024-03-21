@@ -12,7 +12,6 @@ RESOURCES_PATH = os.getenv("PROJECT_ROOT") + "resources/{}"
 TELEGRAM_TOKEN = os.getenv("TELEGRAM_TOKEN")
 ADMINS = [int(uid.strip()) for uid in os.getenv("ADMINS").split(',')]
 ADMIN_GROUP_ID = os.getenv("ADMIN_GROUP_ID")
-SUBSCRIPTION_PRICE = 1990
 
 # Database variables
 SQLALCHEMY_URL = os.getenv("SQLALCHEMY_URL")
@@ -30,7 +29,6 @@ LOCAL_API_SERVER_PORT = int(os.getenv("WEBHOOK_LOCAL_API_PORT"))
 STORAGE_TABLE_NAME = os.getenv("STORAGE_TABLE_NAME")
 
 # Pay variables
-SBP_NUM = os.getenv("SBP_PAYMENT_NUMBER")
 SBP_URL = os.getenv("SBP_PAYMENT_URL")
 
 # Other
@@ -38,6 +36,7 @@ DEBUG = bool(int(os.getenv("DEBUG")))
 TIMEZONE = os.getenv("TIMEZONE")
 
 BOT_DEBUG_MODE = bool(int(os.getenv("BOT_DEBUG_MODE")))
+LOGS_PATH = os.getenv("PROJECT_ROOT") + "logs/"
 
 # Logging
 LOGGING_SETUP = {
@@ -53,13 +52,13 @@ LOGGING_SETUP = {
         'all_file': {
             'level': 'DEBUG' if DEBUG else 'INFO',
             'class': 'logging.FileHandler',
-            'filename': 'logs/all.log',  # путь до файла логирования
+            'filename': LOGS_PATH + "all.log",  # путь до файла логирования
             'formatter': 'log_formatter',
         },
         'error_file': {
             'level': 'WARNING',
             'class': 'logging.FileHandler',
-            'filename': 'logs/err.log',  # путь до файла логирования ошибок
+            'filename': LOGS_PATH + "err.log",  # путь до файла логирования ошибок
             'formatter': 'log_formatter',
         },
         'console': {
@@ -78,5 +77,5 @@ LOGGING_SETUP = {
 }
 logging.config.dictConfig(LOGGING_SETUP)
 logging.basicConfig(format=u'[%(asctime)s][%(levelname)s] ::: %(filename)s(%(lineno)d) -> %(message)s',
-                    level="INFO", filename='logs/all.log')
+                    level="INFO", filename=LOGS_PATH + "all.log")
 logger = logging.getLogger('logger')

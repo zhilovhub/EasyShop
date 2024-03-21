@@ -27,8 +27,6 @@ async def generate_order_id_api() -> str:
     logger.info("generated order_id already exist, regenerating...")
     await generate_order_id_api()
 
-
-
 # @router.get("/get_all_orders/{token}")
 # async def get_all_orders_api(token: str) -> list[OrderSchema]:
 #     token = token.replace('_', ':', 1)

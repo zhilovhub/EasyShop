@@ -1,7 +1,7 @@
 name: ci
 on:
   push:
-    branches: [ master_debug, release_debug]
+    branches: [ master_debug, release_debug ]
   pull_request:
     branches: [ master_debug ]
 
@@ -29,7 +29,13 @@ jobs:
             export PROJECT_ROOT=/home/runner/work/EasyShop/EasyShop/
             export FILES_PATH=/home/runner/work/EasyShop/EasyShop/Files/
             export DB_FOR_TESTS=postgresql+asyncpg://postgres:password@localhost:5432/postgres
+            export SCHEDULER_FOR_TESTS=postgresql+psycopg2://postgres:password@localhost:5432/postgres
             export ADMINS=0
+            export WEBHOOK_LOCAL_API_PORT=0
+            export BOT_DEBUG_MODE=1
+            export LOGS_PATH=$PROJECT_ROOTlogs/
+            export DESTINATION_PHONE_NUMBER=+79778506494
+            mkdir logs
             mkdir database/logs
             . venv/bin/activate
             pytest -v

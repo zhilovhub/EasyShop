@@ -3,7 +3,7 @@ from typing import Optional, Dict, Any
 from sqlalchemy.ext.asyncio import create_async_engine
 from sqlalchemy import select, insert, delete, update
 from aiogram.fsm.storage.base import BaseStorage, StorageKey, StateType
-from sqlalchemy import Table, Column, Integer, String, JSON
+from sqlalchemy import Table, Column, String, JSON
 from sqlalchemy import MetaData
 from bot.config import logger
 from bot import config
@@ -38,7 +38,7 @@ class AlchemyStorageAsync(BaseStorage, ABC):
             async with self.engine.begin() as conn:
                 await conn.execute(
                     update(self.storage_table).where(self.storage_table.c.id == f"{key.user_id}#{abs(key.chat_id)}").
-                    values(state=state.state, data={}))
+                        values(state=state.state, data={}))
             await self.engine.dispose()
             logger.debug(f"updated state for user {key.user_id} in chat {key.chat_id} to state {state.state}.")
             return None
@@ -63,7 +63,7 @@ class AlchemyStorageAsync(BaseStorage, ABC):
         async with self.engine.begin() as conn:
             await conn.execute(
                 update(self.storage_table).where(self.storage_table.c.id == f"{key.user_id}#{abs(key.chat_id)}").
-                values(data=data))
+                    values(data=data))
         await self.engine.dispose()
 
     async def get_data(self, key: StorageKey) -> Dict[str, Any]:
@@ -82,7 +82,7 @@ class AlchemyStorageAsync(BaseStorage, ABC):
         async with self.engine.begin() as conn:
             await conn.execute(
                 update(self.storage_table).where(self.storage_table.c.id == f"{key.user_id}#{abs(key.chat_id)}").
-                values(data=_data))
+                    values(data=_data))
         await self.engine.dispose()
         return _data
 

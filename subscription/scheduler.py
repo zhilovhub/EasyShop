@@ -1,15 +1,14 @@
-import logging
-from apscheduler.jobstores.base import ConflictingIdError
-from apscheduler.schedulers.asyncio import AsyncIOScheduler
-from apscheduler.jobstores.sqlalchemy import SQLAlchemyJobStore
-from bot import config
-import logging
-import logging.config
-from typing import Callable
-from datetime import datetime, timedelta
 import string
 import random
+from typing import Callable
+from datetime import datetime
 
+import logging.config
+
+from bot import config
+
+from apscheduler.schedulers.asyncio import AsyncIOScheduler
+from apscheduler.jobstores.sqlalchemy import SQLAlchemyJobStore
 
 logging.config.dictConfig(config.LOGGING_SETUP)
 logger = logging.getLogger('logger')
@@ -29,8 +28,11 @@ def singleton(class_):
 @singleton
 class Scheduler:
 
-    def __init__(self, scheduler: AsyncIOScheduler, jobstore_alias: str, timezone: str):
-        self.scheduler = scheduler
+    def __init__(self, scheduler_url: str, jobstore_alias: str, timezone: str):
+        self.scheduler = AsyncIOScheduler(
+            {'apscheduler.timezone': config.TIMEZONE},
+            jobstores={jobstore_alias: SQLAlchemyJobStore(url=scheduler_url)}
+        )
         self.jobstore_alias = jobstore_alias
         self.timezone = timezone
         # self.scheduler.add_job(func=print, trigger='interval', args=['Test'], seconds=5, jobstore=self.jobstore_alias)
@@ -61,7 +63,8 @@ class Scheduler:
             return new_id
         return await self.generate_job_id(length)
 
-    async def add_scheduled_job(self, func: Callable, run_date: datetime, args: list | tuple, job_id: str | None = None) -> str:
+    async def add_scheduled_job(self, func: Callable, run_date: datetime, args: list | tuple,
+                                job_id: str | None = None) -> str:
         if not job_id:
             job_id = await self.generate_job_id()
         logger.info(f"New scheduled task on date ({run_date}) with id ({job_id})")

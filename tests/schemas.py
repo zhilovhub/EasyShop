@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta
+from datetime import datetime
 
 from database.models.bot_model import BotSchemaWithoutId, BotSchema
 from database.models.order_model import OrderSchema, OrderStatusValues
@@ -15,8 +15,8 @@ user_schema_1 = UserSchema(
 )
 user_schema_2 = UserSchema(
     user_id=2,
-    status="new",
-    subscribed_until=datetime.now() + timedelta(days=7),
+    status="subscribed",
+    subscribed_until=datetime(2056, 3, 3, 8, 5),
     registered_at=datetime.utcnow()
 )
 
