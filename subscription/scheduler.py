@@ -31,7 +31,7 @@ class Scheduler:
     def __init__(self, scheduler_url: str, jobstore_alias: str, timezone: str):
         self.scheduler = AsyncIOScheduler(
             {'apscheduler.timezone': config.TIMEZONE},
-            jobstores={'postgres': SQLAlchemyJobStore(url=scheduler_url)}
+            jobstores={jobstore_alias: SQLAlchemyJobStore(url=scheduler_url)}
         )
         self.jobstore_alias = jobstore_alias
         self.timezone = timezone
