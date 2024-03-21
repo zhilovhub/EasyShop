@@ -153,7 +153,7 @@ async def send_subscription_expire_notify(user: UserSchema):
     if datetime.now() > actual_user.subscribed_until:
         return None
 
-    if (actual_user.subscribed_until - datetime.now()).days > 7:
+    if (actual_user.subscribed_until - datetime.now()).days > 4:
         return None
 
     text = MessageTexts.SUBSCRIPTION_EXPIRE_NOTIFY.value
