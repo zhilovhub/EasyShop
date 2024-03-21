@@ -38,6 +38,11 @@ const router = createRouter({
       path: '/services/choose-service',
       name: 'choosing-service',
       component: () => import('@/components/services/choosingTypeOfService.vue')
+    },
+    {
+      path: '/landing-page',
+      name: 'landing-page',
+      component: () => import('@/components/landing/landingPage.vue')
     }
   ]
 });
