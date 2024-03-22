@@ -27,14 +27,14 @@ async def bot_menu_photo_handler(message: Message, state: FSMContext):
     photo_file_id = message.photo[-1].file_id
 
     if message.caption is None:
-        return await message.answer("Чтобы добавить товар, прикрепи его картинку и отправь сообщение в виде:"
+        return await message.answer("Чтобы добавить товар, прикрепите его картинку и отправьте сообщение в виде:"
                                     "\n\nНазвание\nЦена в рублях")
 
     params = message.caption.strip().split('\n')
     filename = "".join(sample(string.ascii_letters + string.digits, k=5)) + ".jpg"
 
     if len(params) != 2:
-        return await message.answer("Чтобы добавить товар, прикрепи его картинку и отправь сообщение в виде:"
+        return await message.answer("Чтобы добавить товар, прикрепите его картинку и отправьте сообщение в виде:"
                                     "\n\nНазвание\nЦена в рублях")
     if params[-1].isdigit():
         price = int(params[-1])
@@ -47,6 +47,7 @@ async def bot_menu_photo_handler(message: Message, state: FSMContext):
                                    name=params[0],
                                    description="",
                                    price=price,
+                                   count=0,
                                    picture=filename)
     await db_engine.get_product_db().add_product(new_product)
     await message.answer("Товар добавлен. Можно добавить ещё")
@@ -58,12 +59,12 @@ async def bot_menu_handler(message: Message, state: FSMContext):
 
     match message.text:
         case "Стартовое сообщение":
-            await message.answer("Пришли текст, который должен присылаться пользователям, "
-                                 "когда они твоему боту отправляют /start", reply_markup=get_back_keyboard())
+            await message.answer("Пришлите текст, который должен присылаться пользователям, "
+                                 "когда они Вашему боту отправляют /start", reply_markup=get_back_keyboard())
             await state.set_state(States.EDITING_START_MESSAGE)
             await state.set_data(state_data)
         case "Сообщение затычка":
-            await message.answer("Пришли текст, который должен присылаться пользователям "
+            await message.answer("Пришлите текст, который должен присылаться пользователям "
                                  "на их любые обычные сообщения", reply_markup=get_back_keyboard())
             await state.set_state(States.EDITING_DEFAULT_MESSAGE)
             await state.set_data(state_data)
@@ -72,9 +73,10 @@ async def bot_menu_handler(message: Message, state: FSMContext):
         case "Список товаров":
             products = await db_engine.get_product_db().get_all_products(state_data["bot_id"])
             if not products:
-                await message.answer("Список товаров твоего магазина пуст")
+                await message.answer("Список товаров Вашего магазина пуст")
             else:
-                await message.answer("Список товаров твоего магазина 👇\nЧтобы удалить товар, нажми на тег рядом с ним")
+                await message.answer(
+                    "Список товаров Вашего магазина 👇\nЧтобы удалить товар, нажмите на тег рядом с ним")
                 for product in products:
                     await message.answer_photo(
                         photo=FSInputFile(os.getenv('FILES_PATH') + product.picture),
@@ -82,23 +84,26 @@ async def bot_menu_handler(message: Message, state: FSMContext):
                                 f"Цена: <b>{float(product.price)}₽</b>",
                         reply_markup=get_inline_delete_button(product.id))
         case "Добавить товар":
-            await message.answer("Чтобы добавить товар, прикрепи его картинку и отправь сообщение в виде:"
+            await message.answer("Чтобы добавить товар, прикрепите его картинку и отправьте сообщение в виде:"
                                  "\n\nНазвание\nЦена в рублях")
-        case "Запустить бота":
+        case "Запустить бота 🚀":
             await start_custom_bot(state_data['bot_id'])
-            await message.answer("Твой бот запущен ✅")
-        case "Остановить бота":
+            await message.answer("Ваш бот запущен ✅",
+                                 reply_markup=get_bot_menu_keyboard(bot_id=state_data['bot_id'], bot_status='online'))
+        case "Остановить бота ⛔":
             await stop_custom_bot(state_data['bot_id'])
-            await message.answer("Твой бот приостановлен ❌")
+            await message.answer("Ваш бот приостановлен ❌",
+                                 reply_markup=get_bot_menu_keyboard(bot_id=state_data['bot_id'], bot_status='offline'))
         case "Удалить бота":
             await message.answer("Бот удалится вместе со всей базой продуктов безвозвратно.\n"
-                                 "Напиши ПОДТВЕРДИТЬ для подтверждения удаления", reply_markup=get_back_keyboard())
+                                 "Напишите ПОДТВЕРДИТЬ для подтверждения удаления", reply_markup=get_back_keyboard())
             await state.set_state(States.DELETE_BOT)
             await state.set_data(state_data)
         case _:
+            user_bot = await bot_db.get_bot(state_data['bot_id'])
             await message.answer(
-                "Для навигации используй кнопки 👇",
-                reply_markup=get_bot_menu_keyboard(state_data["bot_id"])
+                "Для навигации используйте кнопки 👇",
+                reply_markup=get_bot_menu_keyboard(state_data["bot_id"], user_bot.status)
             )
 
 
@@ -133,6 +138,7 @@ async def process_web_app_request(event: Message):
 
         data["from_user"] = user_id
         data["status"] = "backlog"
+        data["count"] = 0
 
         order = OrderSchema(**data)
 
