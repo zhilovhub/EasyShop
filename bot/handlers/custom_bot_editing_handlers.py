@@ -15,10 +15,11 @@ async def editing_start_message_handler(message: Message, state: FSMContext):
     message_text = message.text
     if message_text:
         state_data = await state.get_data()
+        user_bot = await bot_db.get_bot(state_data['bot_id'])
         if message_text == "🔙 Назад":
             await message.answer(
-                "Возвращемся в меню...",
-                reply_markup=get_bot_menu_keyboard(state_data["bot_id"])
+                "Возвращаемся в меню...",
+                reply_markup=get_bot_menu_keyboard(state_data["bot_id"], user_bot.status)
             )
             await state.set_state(States.BOT_MENU)
             await state.set_data(state_data)
@@ -32,7 +33,7 @@ async def editing_start_message_handler(message: Message, state: FSMContext):
 
             await message.answer(
                 "Стартовое сообщение изменено!",
-                reply_markup=get_bot_menu_keyboard(state_data["bot_id"])
+                reply_markup=get_bot_menu_keyboard(state_data["bot_id"], user_bot.status)
             )
             await state.set_state(States.BOT_MENU)
             await state.set_data(state_data)
@@ -45,10 +46,11 @@ async def editing_default_message_handler(message: Message, state: FSMContext):
     message_text = message.text
     if message_text:
         state_data = await state.get_data()
+        user_bot = await bot_db.get_bot(state_data['bot_id'])
         if message_text == "🔙 Назад":
             await message.answer(
-                "Возвращемся в меню...",
-                reply_markup=get_bot_menu_keyboard(state_data["bot_id"])
+                "Возвращаемся в меню...",
+                reply_markup=get_bot_menu_keyboard(state_data["bot_id"], user_bot.status)
             )
             await state.set_state(States.BOT_MENU)
             await state.set_data(state_data)
@@ -62,7 +64,7 @@ async def editing_default_message_handler(message: Message, state: FSMContext):
 
             await message.answer(
                 "Сообщение-затычка изменена!",
-                reply_markup=get_bot_menu_keyboard(state_data["bot_id"])
+                reply_markup=get_bot_menu_keyboard(state_data["bot_id"], user_bot.status)
             )
             await state.set_state(States.BOT_MENU)
             await state.set_data(state_data)
@@ -74,6 +76,7 @@ async def editing_default_message_handler(message: Message, state: FSMContext):
 async def delete_bot_handler(message: Message, state: FSMContext):
     message_text = message.text
     state_data = await state.get_data()
+    user_bot = await bot_db.get_bot(state_data['bot_id'])
     if message_text == "ПОДТВЕРДИТЬ":
         logger.info(f"Disabling bot {state_data['bot_id']}, setting deleted status to db...")
         user_bot = await bot_db.get_bot(state_data["bot_id"])
@@ -88,13 +91,13 @@ async def delete_bot_handler(message: Message, state: FSMContext):
         await state.set_state(States.WAITING_FOR_TOKEN)
     elif message_text == "🔙 Назад":
         await message.answer(
-            "Возвращемся в меню...",
-            reply_markup=get_bot_menu_keyboard(state_data["bot_id"])
+            "Возвращаемся в меню...",
+            reply_markup=get_bot_menu_keyboard(state_data["bot_id"], user_bot.status)
         )
         await state.set_state(States.BOT_MENU)
         await state.set_data(state_data)
     else:
-        await message.answer("Напиши ПОДТВЕРДИТЬ для подтверждения удаления или вернись назад")
+        await message.answer("Напишите ПОДТВЕРДИТЬ для подтверждения удаления или вернитесь назад")
 
 
 @custom_bot_editing_router.callback_query(lambda q: q.data.startswith('product:delete'))
