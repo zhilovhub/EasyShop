@@ -24,49 +24,42 @@ cache_resources_file_id_store = JsonStore(
 
 @commands_router.message(CommandStart())
 async def start_command_handler(message: Message, state: FSMContext):
+    user_id = message.from_user.id
     try:
-        await db_engine.get_user_dao().get_user(message.from_user.id)
+        await user_db.get_user(user_id)
     except UserNotFound:
-        logger.info(f"user {message.from_user.id} not found in db, creating new instance...")
-
-        await db_engine.get_user_dao().add_user(UserSchema(
-            user_id=message.from_user.id, registered_at=datetime.utcnow(), status="new", locale="default")
+        logger.info(f"user {user_id} not found in db, creating new instance...")
+        await send_event(message.from_user, EventTypes.NEW_USER)
+        await user_db.add_user(UserSchema(
+            user_id=user_id, registered_at=datetime.utcnow(), status=UserStatusValues.NEW, locale="default",
+            subscribed_until=None)
         )
 
-    await message.answer(MessageTexts.ABOUT_MESSAGE.value)
+    await send_instructions(chat_id=user_id)
 
-    user_bots = await db_engine.get_bot_dao().get_bots(message.from_user.id)
+    user_status = (await user_db.get_user(user_id)).status
+
+    if user_status == UserStatusValues.SUBSCRIPTION_ENDED:  # TODO do not send it from States.WAITING_PAYMENT_APPROVE
+        await message.answer(
+            MessageTexts.SUBSCRIBE_END_NOTIFY.value,
+            reply_markup=create_continue_subscription_kb(bot_id=None)
+        )
+        return await state.set_state(States.SUBSCRIBE_ENDED)
+
+    user_bots = await bot_db.get_bots(user_id)
     if not user_bots:
-        await state.set_state(States.WAITING_FOR_TOKEN)
-
-        file_ids = cache_resources_file_id_store.get_data()
-        try:
-            await message.answer_media_group(
-                media=[
-                    InputMediaPhoto(media=file_ids["botFather1.jpg"], caption=MessageTexts.INSTRUCTION_MESSAGE.value),
-                    InputMediaPhoto(media=file_ids["botFather2.jpg"]),
-                    InputMediaPhoto(media=file_ids["botFather3.jpg"])
-                ]
-            )
-        except (TelegramBadRequest, KeyError) as e:
-            logger.info(f"error while sending instructions.... cache is empty, sending raw files {e}")
-            media_group = await message.answer_media_group(
-                media=[
-                    InputMediaPhoto(media=FSInputFile(config.RESOURCES_PATH.format("botFather1.jpg")), caption=MessageTexts.INSTRUCTION_MESSAGE.value),
-                    InputMediaPhoto(media=FSInputFile(config.RESOURCES_PATH.format("botFather2.jpg"))),
-                    InputMediaPhoto(media=FSInputFile(config.RESOURCES_PATH.format("botFather3.jpg"))),
-                ]
-            )
-            for ind, message in enumerate(media_group, start=1):
-                file_ids[f"botFather{ind}.jpg"] = message.photo[0].file_id
-            cache_resources_file_id_store.update_data(file_ids)
+        if user_status == UserStatusValues.NEW:
+            await message.answer(MessageTexts.FREE_TRIAL_MESSAGE.value, reply_markup=free_trial_start_kb)
+            await state.set_state(States.WAITING_FREE_TRIAL_APPROVE)
+        else:
+            await state.set_state(States.WAITING_FOR_TOKEN)
     else:
         bot_id = user_bots[0].bot_id
         user_bot = Bot(user_bots[0].token)
         user_bot_data = await user_bot.get_me()
-        await message.answer(MessageTexts.BOT_SELECTED_MESSAGE.value.replace(
-            "{selected_name}", user_bot_data.full_name
-        ),
-            reply_markup=get_bot_menu_keyboard(bot_id=bot_id))
+        await message.answer(
+            MessageTexts.BOT_SELECTED_MESSAGE.value.format(user_bot_data.username),
+            reply_markup=get_bot_menu_keyboard(bot_id=bot_id, bot_status=user_bots[0].status)
+        )
         await state.set_state(States.BOT_MENU)
         await state.set_data({'bot_id': bot_id})
