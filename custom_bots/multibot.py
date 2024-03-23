@@ -351,7 +351,12 @@ async def approve_ask_question_callback(query: CallbackQuery, state: FSMContext)
         return await query.message.edit_reply_markup(None)
     bot_data = await bot_db.get_bot_by_token(query.bot.token)
     try:
-        await query.bot.forward_message(chat_id=bot_data.created_by, from_chat_id=data[1], message_id=int(data[2]))
+        msg = await query.bot.forward_message(chat_id=bot_data.created_by, from_chat_id=data[1], message_id=int(data[2]))
+        await query.bot.send_message(chat_id=bot_data.created_by,
+                                     text=f"Новый вопрос по заказу <b>№{order.id}</b> от пользователя "
+                                          f"<b>{'@' + query.from_user.username if query.from_user.username else query.from_user.full_name}</b>.\n\n"
+                                          f"Для ответа на вопрос <b>ответьте на это сообщение</b> любым сообщением.",
+                                     reply_to_message_id=msg.message_id)
     except TelegramAPIError:
         await main_bot.send_message(chat_id=bot_data.created_by,
                                     text="Вам поступило новое <b>сообщение-вопрос</b> от клиента, "
@@ -372,6 +377,34 @@ async def cancel_ask_question_callback(query: CallbackQuery, state: FSMContext):
     await query.answer("Отправка вопроса администратору отменена", show_alert=True)
     await state.set_state(CustomUserStates.MAIN_MENU)
     await query.message.edit_reply_markup(reply_markup=None)
+
+
+@multi_bot_router.message(F.reply_to_message)
+async def handle_reply_to_message_action(message: Message, state: FSMContext):
+    bot_data = await bot_db.get_bot_by_token(message.bot.token)
+    if message.from_user.id != bot_data.created_by:
+        return
+    entities = message.entities
+    first_bold = None
+    for entity in entities:
+        if entity.type == "bold":
+            first_bold = entity
+            break
+    else:
+        logger.warning("Order Id not found in admin reply message")
+        return await message.answer("Произошла ошибка. Не удалось найти номер заказа в сообщении.")
+    order_id = message.text[first_bold[entity.offset + 1:entity.offset + entity.length + 1]]
+    try:
+        order = await order_db.get_order(order_id)
+    except OrderNotFound:
+        return await message.answer(f"Заказ с номером №{order_id} не найден.")
+    msg = await message.bot.copy_message(chat_id=order.from_user,
+                                         from_chat_id=message.chat.id,
+                                         message_id=message.message_id)
+    await message.bot.send_message(chat_id=order.from_user,
+                                   text=f"Поступил ответ на вопрос по заказу <b>№{order.id}</b>",
+                                   reply_to_message_id=msg.message_id)
+    await message.answer("Ответ отправлен.")
 
 
 async def main():
