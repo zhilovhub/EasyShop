@@ -8,8 +8,8 @@ from aiogram.types import Message, FSInputFile, InputMediaPhoto
 from magic_filter import F
 
 from bot import config
-from bot.handlers.handlers import send_instructions
-from bot.main import db_engine, subscription
+from bot.utils.send_instructions import send_instructions
+from bot.main import db_engine, subscription, bot, cache_resources_file_id_store
 from bot.middlewaries.subscription_middleware import CheckSubscriptionMiddleware
 from bot.utils import JsonStore
 from bot.config import logger
@@ -19,11 +19,6 @@ from bot.handlers.routers import commands_router, user_db, bot_db
 from bot.exceptions.exceptions import *
 from bot.utils.admin_group import send_event, EventTypes
 from database.models.user_model import UserSchema, UserStatusValues
-
-cache_resources_file_id_store = JsonStore(
-    file_path=config.RESOURCES_PATH.format("cache.json"),
-    json_store_name="RESOURCES_FILE_ID_STORE"
-)
 
 
 @commands_router.message(CommandStart())
@@ -39,7 +34,7 @@ async def start_command_handler(message: Message, state: FSMContext):
             subscribed_until=None)
         )
 
-    await send_instructions(chat_id=user_id)
+    await send_instructions(bot, user_id, cache_resources_file_id_store)
 
     user_status = (await user_db.get_user(user_id)).status
 

@@ -32,12 +32,6 @@ from magic_filter import F
 from subscription.subscription import UserHasAlreadyStartedTrial
 
 
-cache_resources_file_id_store = JsonStore(
-    file_path=config.RESOURCES_PATH.format("cache.json"),
-    json_store_name="RESOURCES_FILE_ID_STORE"
-)
-
-
 @router.callback_query(lambda q: q.data.startswith("order_"))
 async def handle_callback(query: CallbackQuery, state: FSMContext):
     state_data = await state.get_data()
@@ -140,20 +134,4 @@ async def waiting_for_the_token_handler(message: Message, state: FSMContext):
     await state.set_data({"bot_id": bot_id})
 
 
-async def send_instructions(chat_id: int) -> None:
-    file_ids = cache_resources_file_id_store.get_data()
-    try:
-        await bot.send_video(
-            chat_id=chat_id,
-            video=file_ids["botfather.mp4"],
-            caption=MessageTexts.INSTRUCTION_MESSAGE.value
-        )
-    except (TelegramBadRequest, KeyError) as e:
-        logger.info(f"error while sending instructions.... cache is empty, sending raw files {e}")
-        video_message = await bot.send_video(
-            chat_id=chat_id,
-            video=FSInputFile(config.RESOURCES_PATH.format("botfather.mp4")),
-            caption=MessageTexts.INSTRUCTION_MESSAGE.value
-        )
-        file_ids[f"botfather.mp4"] = video_message.video.file_id
-        cache_resources_file_id_store.update_data(file_ids)
+

@@ -8,10 +8,10 @@ from aiogram.types import CallbackQuery, ReplyKeyboardRemove, FSInputFile, User,
     InlineKeyboardButton, Message
 
 from bot import config
-from bot.handlers.handlers import send_instructions
+from bot.utils.send_instructions import send_instructions
 from bot.handlers.routers import subscribe_router, user_db, bot_db
 from bot.keyboards import get_bot_menu_keyboard, create_continue_subscription_kb, get_back_keyboard, free_trial_start_kb
-from bot.main import subscription, bot, dp
+from bot.main import subscription, bot, dp, cache_resources_file_id_store
 from bot.states import States
 from bot.utils import MessageTexts
 from bot.utils.admin_group import EventTypes, send_event, success_event
@@ -45,7 +45,7 @@ async def start_trial_callback(query: CallbackQuery, state: FSMContext):
 
     await state.set_state(States.WAITING_FOR_TOKEN)
 
-    await send_instructions(chat_id=query.from_user.id)
+    await send_instructions(bot, query.from_user.id, cache_resources_file_id_store)
     await query.message.answer(
         "Ваша пробная подписка активирована!\n"
         "Чтобы получить бота с магазином, воспользуйтесь инструкцией выше 👆",
@@ -122,7 +122,7 @@ async def waiting_payment_pay_handler(message: Message, state: FSMContext):
             )
         else:
             await state.set_state(States.WAITING_FOR_TOKEN)
-            await send_instructions(chat_id=user_id)
+            await send_instructions(bot, user_id, cache_resources_file_id_store)
             await message.answer("Ваш список ботов пуст, используйте инструкцию выше 👆")
         return
     elif message.content_type not in (ContentType.PHOTO, ContentType.DOCUMENT):
@@ -180,7 +180,7 @@ async def waiting_payment_approve_handler(message: Message, state: FSMContext):
             )
         else:
             await state.set_state(States.WAITING_FOR_TOKEN)
-            await send_instructions(chat_id=user_id)
+            await send_instructions(bot, user_id, cache_resources_file_id_store)
             await message.answer("Ваш список ботов пуст, используйте инструкцию выше 👆")
     else:
         await message.answer("Ваши данные отправлены на модерацию, ожидайте изменения статуса оплаты")
@@ -235,7 +235,7 @@ async def approve_pay_callback(query: CallbackQuery, state: FSMContext):
         await user_state.set_data({'bot_id': bot_id})
     else:
         await user_state.set_state(States.WAITING_FOR_TOKEN)
-        await send_instructions(chat_id=user_id)
+        await send_instructions(bot, user_id, cache_resources_file_id_store)
         await bot.send_message(
             user_id,
             "Чтобы получить бота с магазином, воспользуйтесь инструкцией выше 👆",

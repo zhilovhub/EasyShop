@@ -12,7 +12,7 @@ from subscription.scheduler import Scheduler
 
 from bot import config
 from bot.config import logger
-from bot.utils import AlchemyStorageAsync
+from bot.utils import AlchemyStorageAsync, JsonStore
 
 bot = Bot(config.TELEGRAM_TOKEN, parse_mode=ParseMode.HTML)
 storage = AlchemyStorageAsync(config.SQLALCHEMY_URL, config.STORAGE_TABLE_NAME)
@@ -21,6 +21,11 @@ db_engine: Database = Database(config.SQLALCHEMY_URL)
 
 _scheduler = Scheduler(config.SCHEDULER_URL, 'postgres', config.TIMEZONE)
 subscription = Subscription(database=db_engine, scheduler=_scheduler)
+
+cache_resources_file_id_store = JsonStore(
+    file_path=config.RESOURCES_PATH.format("cache.json"),
+    json_store_name="RESOURCES_FILE_ID_STORE"
+)
 
 
 async def on_start():
