@@ -1,6 +1,3 @@
-import os
-import string
-from random import sample
 from datetime import datetime, timedelta
 
 from typing import *
@@ -8,85 +5,32 @@ from typing import *
 from aiogram import Router, Bot, BaseMiddleware
 from aiogram.enums import ParseMode
 from aiogram.types import Message, ReplyKeyboardRemove, FSInputFile, CallbackQuery, ContentType, User
-from aiogram.filters import CommandStart
 from aiogram.exceptions import TelegramUnauthorizedError, TelegramBadRequest
 from aiogram.fsm.context import FSMContext, StorageKey
 from aiogram.utils.token import TokenValidationError, validate_token
 
-import aiohttp
 from aiohttp.client_exceptions import ClientConnectorError
 
 from bot import config
-from bot.main import bot, db_engine, dp, subscription
+from bot.main import bot, dp, subscription
 from bot.utils import JsonStore
 from bot.config import logger
 from bot.keyboards import *
+from bot.handlers.routers import user_db, bot_db, product_db, order_db, pay_db
 from bot.states.states import States
 from bot.utils.admin_group import send_event, success_event, EventTypes
+from bot.utils.custom_bot_launching import start_custom_bot, stop_custom_bot
 from bot.filters.chat_type import ChatTypeFilter
 from bot.exceptions.exceptions import *
 
-from database.models.bot_model import BotSchemaWithoutId, BotDao
-from database.models.user_model import UserSchema, UserDao, UserStatusValues
-from database.models.order_model import OrderSchema, OrderNotFound, OrderStatusValues, OrderDao
-from database.models.product_model import ProductWithoutId, ProductDao
-from database.models.payment_model import PaymentDao
+from database.models.bot_model import BotSchemaWithoutId
+from database.models.user_model import UserSchema, UserStatusValues
+from database.models.order_model import OrderNotFound, OrderStatusValues
 
 from magic_filter import F
 
-import json
-
 from subscription.subscription import UserHasAlreadyStartedTrial
 
-
-class CheckSubscriptionMiddleware(BaseMiddleware):
-    def __init__(self) -> None:
-        pass
-
-    async def __call__(
-            self,
-            handler: Callable[[CallbackQuery | Message, Dict[str, Any]], Awaitable[Any]],
-            event: CallbackQuery | Message,
-            data: Dict[str, Any]
-    ) -> Any:
-        user_id = event.from_user.id
-        message, is_message = (event, True) if isinstance(event, Message) else (event.message, False)
-        try:
-            await user_db.get_user(user_id)
-        except UserNotFound:
-            logger.info(f"user {user_id} not found in db, creating new instance...")
-            await send_event(event.from_user, EventTypes.NEW_USER)
-            await user_db.add_user(UserSchema(
-                user_id=user_id, registered_at=datetime.utcnow(), status=UserStatusValues.NEW, locale="default",
-                subscribed_until=None)
-            )
-            await message.answer(MessageTexts.ABOUT_MESSAGE.value)
-
-        if user_id not in config.ADMINS and \
-                not (await subscription.is_user_subscribed(user_id)) and \
-                message.text not in ("/start", "/check_subscription"):
-            if is_message:
-                await message.answer("Для того, чтобы пользоваться ботом, тебе нужна подписка")
-            else:
-                await event.answer("Для того, чтобы пользоваться ботом, тебе нужна подписка", show_alert=True)
-            return await check_sub_cmd(message)
-
-        return await handler(event, data)
-
-
-router = Router(name="subscribe_router")
-router.message.filter(ChatTypeFilter(chat_type='private'))
-router.message.middleware(CheckSubscriptionMiddleware())
-router.callback_query.middleware(CheckSubscriptionMiddleware())
-
-all_router = Router(name="all_router")
-all_router.message.filter(ChatTypeFilter(chat_type='private'))
-
-product_db: ProductDao = db_engine.get_product_db()
-order_db: OrderDao = db_engine.get_order_dao()
-bot_db: BotDao = db_engine.get_bot_dao()
-user_db: UserDao = db_engine.get_user_dao()
-pay_db: PaymentDao = db_engine.get_payment_dao()
 
 cache_resources_file_id_store = JsonStore(
     file_path=config.RESOURCES_PATH.format("cache.json"),
@@ -463,7 +407,7 @@ async def cancel_pay_callback(query: CallbackQuery, state: FSMContext):
 
 @router.message(States.WAITING_FOR_TOKEN)
 async def waiting_for_the_token_handler(message: Message, state: FSMContext):
-    user = await db_engine.get_user_dao().get_user(message.from_user.id)
+    user = await user_db.get_user(message.from_user.id)
     lang = user.locale
     token = message.text
     try:

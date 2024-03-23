@@ -2,6 +2,8 @@ import aiohttp
 
 from bot import config
 from bot.exceptions import LocalAPIException
+from bot.handlers.routers import bot_db
+
 
 
 async def start_custom_bot(bot_id: int):
