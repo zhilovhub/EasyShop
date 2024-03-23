@@ -6,7 +6,7 @@ from datetime import datetime
 
 from aiohttp import ClientConnectorError
 
-from aiogram import Bot
+from aiogram import Bot, F
 from aiogram.enums import ParseMode
 from aiogram.exceptions import TelegramUnauthorizedError
 from aiogram.utils.token import validate_token, TokenValidationError
@@ -14,22 +14,17 @@ from aiogram.utils.token import validate_token, TokenValidationError
 from aiogram.types import Message, FSInputFile, CallbackQuery
 from aiogram.fsm.context import FSMContext
 
-from bot.main import bot, db_engine
+from bot.main import bot, user_db, bot_db, product_db, order_db
 from bot.config import logger
 from bot.keyboards import *
 from bot.exceptions import InstanceAlreadyExists
 from bot.states.states import States
-from bot.handlers.routers import admin_bot_menu_router, order_db, user_db
+from bot.handlers.routers import admin_bot_menu_router
 from database.models.bot_model import BotSchemaWithoutId
 from bot.utils.custom_bot_launching import start_custom_bot, stop_custom_bot
 
 from database.models.order_model import OrderSchema, OrderNotFound
 from database.models.product_model import ProductWithoutId
-
-from magic_filter import F
-
-product_db = db_engine.get_product_db()
-bot_db = db_engine.get_bot_dao()
 
 
 @admin_bot_menu_router.callback_query(lambda q: q.data.startswith("order_"))
@@ -162,7 +157,7 @@ async def bot_menu_photo_handler(message: Message, state: FSMContext):
                                    price=price,
                                    count=0,
                                    picture=filename)
-    await db_engine.get_product_db().add_product(new_product)
+    await product_db.add_product(new_product)
     await message.answer("Товар добавлен. Можно добавить ещё")
 
 
@@ -184,7 +179,7 @@ async def bot_menu_handler(message: Message, state: FSMContext):
         case "Магазин":
             pass  # should be pass, it's nice
         case "Список товаров":
-            products = await db_engine.get_product_db().get_all_products(state_data["bot_id"])
+            products = await product_db.get_all_products(state_data["bot_id"])
             if not products:
                 await message.answer("Список товаров Вашего магазина пуст")
             else:

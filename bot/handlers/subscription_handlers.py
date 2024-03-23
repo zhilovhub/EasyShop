@@ -8,11 +8,11 @@ from aiogram.fsm.context import FSMContext
 from aiogram.fsm.storage.base import StorageKey
 
 from bot import config
-from bot.main import subscription, bot, dp, cache_resources_file_id_store
+from bot.main import subscription, bot, dp, cache_resources_file_id_store, user_db, bot_db
 from bot.utils import MessageTexts
 from bot.states import States
 from bot.keyboards import get_bot_menu_keyboard, create_continue_subscription_kb, get_back_keyboard, free_trial_start_kb
-from bot.handlers.routers import subscribe_router, user_db, bot_db
+from bot.handlers.routers import subscribe_router
 from bot.utils.admin_group import EventTypes, send_event, success_event
 from subscription.subscription import UserHasAlreadyStartedTrial
 from database.models.user_model import UserSchema, UserStatusValues

@@ -5,7 +5,12 @@ from aiogram import Bot, Dispatcher
 from aiogram.enums import ParseMode
 from aiogram.types import BotCommand
 
+from database.models.bot_model import BotDao
 from database.models.models import Database
+from database.models.order_model import OrderDao
+from database.models.payment_model import PaymentDao
+from database.models.product_model import ProductDao
+from database.models.user_model import UserDao
 
 from subscription.subscription import Subscription
 from subscription.scheduler import Scheduler
@@ -18,6 +23,12 @@ bot = Bot(config.TELEGRAM_TOKEN, parse_mode=ParseMode.HTML)
 storage = AlchemyStorageAsync(config.SQLALCHEMY_URL, config.STORAGE_TABLE_NAME)
 dp = Dispatcher(storage=storage)
 db_engine: Database = Database(config.SQLALCHEMY_URL)
+
+bot_db: BotDao = db_engine.get_bot_dao()
+user_db: UserDao = db_engine.get_user_dao()
+order_db: OrderDao = db_engine.get_order_dao()
+pay_db: PaymentDao = db_engine.get_payment_dao()
+product_db: ProductDao = db_engine.get_product_db()
 
 _scheduler = Scheduler(config.SCHEDULER_URL, 'postgres', config.TIMEZONE)
 subscription = Subscription(database=db_engine, scheduler=_scheduler)

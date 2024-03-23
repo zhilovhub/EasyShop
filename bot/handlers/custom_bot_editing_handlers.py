@@ -1,13 +1,11 @@
 from aiogram.types import Message, ReplyKeyboardRemove, CallbackQuery
 from aiogram.fsm.context import FSMContext
 
-from bot.main import db_engine
+from bot.main import bot_db, product_db
 from bot.config import logger
 from bot.keyboards import *
 from bot.states.states import States
 from bot.handlers.routers import custom_bot_editing_router
-
-bot_db = db_engine.get_bot_dao()
 
 
 @custom_bot_editing_router.message(States.EDITING_START_MESSAGE)
@@ -24,12 +22,12 @@ async def editing_start_message_handler(message: Message, state: FSMContext):
             await state.set_state(States.BOT_MENU)
             await state.set_data(state_data)
         else:
-            user_bot = await db_engine.get_bot_dao().get_bot(state_data["bot_id"])
+            user_bot = await bot_db.get_bot(state_data["bot_id"])
             if user_bot.settings:
                 user_bot.settings["start_msg"] = message_text
             else:
                 user_bot.settings = {"start_msg": message_text}
-            await db_engine.get_bot_dao().update_bot(user_bot)
+            await bot_db.update_bot(user_bot)
 
             await message.answer(
                 "Стартовое сообщение изменено!",
@@ -55,12 +53,12 @@ async def editing_default_message_handler(message: Message, state: FSMContext):
             await state.set_state(States.BOT_MENU)
             await state.set_data(state_data)
         else:
-            user_bot = await db_engine.get_bot_dao().get_bot(state_data["bot_id"])
+            user_bot = await bot_db.get_bot(state_data["bot_id"])
             if user_bot.settings:
                 user_bot.settings["default_msg"] = message_text
             else:
                 user_bot.settings = {"default_msg": message_text}
-            await db_engine.get_bot_dao().update_bot(user_bot)
+            await bot_db.update_bot(user_bot)
 
             await message.answer(
                 "Сообщение-затычка изменена!",
@@ -103,5 +101,5 @@ async def delete_bot_handler(message: Message, state: FSMContext):
 @custom_bot_editing_router.callback_query(lambda q: q.data.startswith('product:delete'))
 async def delete_product_handler(query: CallbackQuery):
     product_id = int(query.data.split("_")[-1])
-    await db_engine.get_product_db().delete_product(product_id)
+    await product_db.delete_product(product_id)
     await query.message.delete()

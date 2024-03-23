@@ -1,23 +1,21 @@
 from datetime import datetime
 
-from aiogram import Bot
+from aiogram import Bot, F
 from aiogram.types import Message
 from aiogram.filters import CommandStart
 from aiogram.fsm.context import FSMContext
 
-from bot.main import subscription, bot, cache_resources_file_id_store
+from bot.main import subscription, bot, cache_resources_file_id_store, user_db, bot_db
 from bot.config import logger
 from bot.keyboards import *
 from bot.states.states import States
-from bot.handlers.routers import commands_router, user_db, bot_db
+from bot.handlers.routers import commands_router
 from bot.utils.admin_group import send_event, EventTypes
 from bot.exceptions.exceptions import *
 from bot.utils.send_instructions import send_instructions
 from bot.middlewaries.subscription_middleware import CheckSubscriptionMiddleware
 
 from database.models.user_model import UserSchema, UserStatusValues
-
-from magic_filter import F
 
 
 @commands_router.message(CommandStart())
