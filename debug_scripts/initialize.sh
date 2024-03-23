@@ -9,11 +9,11 @@ pip install -r /home/debug/EasyShop/api/requirements.txt
 pip install -r /home/debug/EasyShop/bot/requirements.txt
 echo "Complete."
 echo "Creating systemd services..."
-cp /home/debug/EasyShop/debug_services/debug_api.service /etc/systemd/system/debug_api.service
-cp /home/debug/EasyShop/debug_services/debug_bot.service /etc/systemd/system/debug_bot.service
-cp /home/debug/EasyShop/debug_services/debug_multibot.service /etc/systemd/system/debug_multibot.service
+cp /home/debug/EasyShop/debug_services/debug_api.service ~/.config/systemd/user/debug_api.service
+cp /home/debug/EasyShop/debug_services/debug_bot.service ~/.config/systemd/user/debug_bot.service
+cp /home/debug/EasyShop/debug_services/debug_multibot.service ~/.config/systemd/user/debug_multibot.service
 echo "Restarting systemd daemon..."
-systemctl daemon-reload
+systemctl --user daemon-reload
 echo "Services created."
 echo "Trying upgrade migrations..."
 alembic upgrade head
