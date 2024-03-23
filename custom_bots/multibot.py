@@ -270,7 +270,7 @@ async def handle_order_callback(query: CallbackQuery):
         case "order_pre_cancel":
             await query.message.edit_reply_markup(reply_markup=keyboards.create_cancel_confirm_kb(data[1]))
         case "order_back_to_order":
-            await query.message.edit_reply_markup(reply_markup=keyboards.create_cancel_order_kb(data[1]))
+            await query.message.edit_reply_markup(reply_markup=keyboards.create_user_order_kb(data[1]))
         case "order_cancel":
             order.status = OrderStatusValues.CANCELLED
             await order_db.update_order(order)
