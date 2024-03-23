@@ -1,6 +1,6 @@
 from aiogram import Bot
-from aiogram.exceptions import TelegramBadRequest
 from aiogram.types import FSInputFile
+from aiogram.exceptions import TelegramBadRequest
 
 from bot import config
 from bot.utils import JsonStore, MessageTexts

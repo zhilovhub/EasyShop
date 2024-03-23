@@ -51,9 +51,9 @@ async def on_start():
 
 
 if __name__ == "__main__":
-    from bot.handlers.routers import admin_bot_menu_router, router, custom_bot_editing_router, commands_router
+    from bot.handlers.routers import admin_bot_menu_router, custom_bot_editing_router, commands_router, subscribe_router
     dp.include_router(admin_bot_menu_router)
-    dp.include_router(router)
+    dp.include_router(subscribe_router)
     dp.include_router(custom_bot_editing_router)
     dp.include_router(commands_router)
 

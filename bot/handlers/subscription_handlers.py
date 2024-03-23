@@ -1,23 +1,23 @@
 from datetime import timedelta, datetime
 
 from aiogram import Bot
+from aiogram.types import CallbackQuery, FSInputFile, User, Message
+from aiogram.types import ReplyKeyboardRemove, InlineKeyboardMarkup, InlineKeyboardButton
 from aiogram.enums import ContentType
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.storage.base import StorageKey
-from aiogram.types import CallbackQuery, ReplyKeyboardRemove, FSInputFile, User, InlineKeyboardMarkup, \
-    InlineKeyboardButton, Message
 
 from bot import config
-from bot.utils.send_instructions import send_instructions
-from bot.handlers.routers import subscribe_router, user_db, bot_db
-from bot.keyboards import get_bot_menu_keyboard, create_continue_subscription_kb, get_back_keyboard, free_trial_start_kb
 from bot.main import subscription, bot, dp, cache_resources_file_id_store
-from bot.states import States
 from bot.utils import MessageTexts
+from bot.states import States
+from bot.keyboards import get_bot_menu_keyboard, create_continue_subscription_kb, get_back_keyboard, free_trial_start_kb
+from bot.handlers.routers import subscribe_router, user_db, bot_db
 from bot.utils.admin_group import EventTypes, send_event, success_event
-from bot.utils.custom_bot_launching import stop_custom_bot
-from database.models.user_model import UserSchema, UserStatusValues
 from subscription.subscription import UserHasAlreadyStartedTrial
+from database.models.user_model import UserSchema, UserStatusValues
+from bot.utils.send_instructions import send_instructions
+from bot.utils.custom_bot_launching import stop_custom_bot
 
 
 @subscribe_router.callback_query(lambda q: q.data == "start_trial")
@@ -26,8 +26,10 @@ async def start_trial_callback(query: CallbackQuery, state: FSMContext):
     await query.message.edit_text(MessageTexts.FREE_TRIAL_MESSAGE.value, reply_markup=None)
     user_id = query.from_user.id
     # config.logger.info(f"starting trial subscription for user with id ({user_id} until date {subscribe_until}")
+    # TODO move logger into to subscription module
     config.logger.info(
-        f"starting trial subscription for user with id ({user_id} until date ТУТ нужно выполнить TODO")  # TODO move logger into to subscription module
+        f"starting trial subscription for user with id ({user_id} until date ТУТ нужно выполнить TODO"
+    )
 
     try:
         subscribed_until = await subscription.start_trial(query.from_user.id)
@@ -195,7 +197,7 @@ async def subscribe_ended_handler(message: Message) -> None:
 
 
 @subscribe_router.callback_query(lambda q: q.data.startswith("approve_pay"))
-async def approve_pay_callback(query: CallbackQuery, state: FSMContext):
+async def approve_pay_callback(query: CallbackQuery):
     await query.message.edit_text(query.message.text + "\n\n<b>ПОДТВЕРЖДЕНО</b>", reply_markup=None)
     user_id = int(query.data.split(':')[-1])
 

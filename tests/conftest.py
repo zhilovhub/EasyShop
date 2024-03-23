@@ -1,20 +1,17 @@
 import asyncio
 import os
 import sys
-from datetime import datetime, timedelta
-
-from dotenv import load_dotenv
 
 import pytest
+from dotenv import load_dotenv
 
-from database.models.models import Database
 from database.models.bot_model import BotDao
-from database.models.user_model import UserDao, UserSchema
-from database.models.order_model import OrderDao
-from database.models.product_model import ProductDao
-from database.models.payment_model import PaymentDao
 from database.models.models import Base
-
+from database.models.models import Database
+from database.models.order_model import OrderDao
+from database.models.payment_model import PaymentDao
+from database.models.product_model import ProductDao
+from database.models.user_model import UserDao
 from stoke.stoke import Stoke
 from subscription.scheduler import Scheduler
 from subscription.subscription import Subscription

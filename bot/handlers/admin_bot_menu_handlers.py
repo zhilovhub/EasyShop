@@ -1,30 +1,32 @@
 import json
 import os
 import string
-from datetime import datetime
 from random import sample
+from datetime import datetime
+
+from aiohttp import ClientConnectorError
 
 from aiogram import Bot
 from aiogram.enums import ParseMode
 from aiogram.exceptions import TelegramUnauthorizedError
 from aiogram.utils.token import validate_token, TokenValidationError
-from aiohttp import ClientConnectorError
-from magic_filter import F
 
 from aiogram.types import Message, FSInputFile, CallbackQuery
 from aiogram.fsm.context import FSMContext
 
-from bot.exceptions import InstanceAlreadyExists
 from bot.main import bot, db_engine
 from bot.config import logger
 from bot.keyboards import *
+from bot.exceptions import InstanceAlreadyExists
 from bot.states.states import States
 from bot.handlers.routers import admin_bot_menu_router, order_db, user_db
-from bot.utils.custom_bot_launching import start_custom_bot, stop_custom_bot
 from database.models.bot_model import BotSchemaWithoutId
+from bot.utils.custom_bot_launching import start_custom_bot, stop_custom_bot
 
 from database.models.order_model import OrderSchema, OrderNotFound
 from database.models.product_model import ProductWithoutId
+
+from magic_filter import F
 
 product_db = db_engine.get_product_db()
 bot_db = db_engine.get_bot_dao()

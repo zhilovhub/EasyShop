@@ -1,5 +1,5 @@
-from datetime import datetime
 from typing import Callable, Dict, Any, Awaitable
+from datetime import datetime
 
 from aiogram import BaseMiddleware
 from aiogram.types import CallbackQuery, Message
@@ -9,9 +9,9 @@ from bot.utils import MessageTexts
 from bot.config import logger, ADMINS
 from bot.exceptions import UserNotFound
 from bot.handlers.routers import user_db
-from bot.handlers.command_handlers import check_subscription_command_handler
 from bot.utils.admin_group import send_event, EventTypes
 from database.models.user_model import UserSchema, UserStatusValues
+from bot.handlers.command_handlers import check_subscription_command_handler
 
 
 class CheckSubscriptionMiddleware(BaseMiddleware):
