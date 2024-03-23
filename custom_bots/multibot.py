@@ -19,7 +19,7 @@ from bot.utils.storage import AlchemyStorageAsync
 from aiogram.types import Message, User, Chat, CallbackQuery
 from aiogram.filters import StateFilter
 from aiogram.utils.token import TokenValidationError, validate_token
-from aiogram.exceptions import TelegramUnauthorizedError
+from aiogram.exceptions import TelegramUnauthorizedError, TelegramAPIError
 from aiogram.client.default import DefaultBotProperties
 
 from aiogram.webhook.aiohttp_server import (
@@ -333,6 +333,43 @@ async def handle_waiting_for_question_state(message: Message, state: FSMContext)
                             msg_id=message.message_id,
                             chat_id=message.chat.id
                         ))
+
+
+@multi_bot_router.callback_query(lambda q: q.data.startswith("approve_ask_question"))
+async def approve_ask_question_callback(query: CallbackQuery, state: FSMContext):
+    state_data = await state.get_data()
+    if not state_data or 'order_id' not in state_data:
+        await state.set_state(CustomUserStates.MAIN_MENU)
+        return await query.answer("Произошла ошибка возвращаюсь в главное меню...", show_alert=True)
+    data = query.data.split(":")
+    try:
+        order = await order_db.get_order(data[1])
+    except OrderNotFound:
+        await query.answer("Ошибка при работе с заказом, возможно заказ был удалён.", show_alert=True)
+        return await query.message.edit_reply_markup(None)
+    bot_data = await bot_db.get_bot_by_token(query.bot.token)
+    try:
+        await query.bot.forward_message(chat_id=bot_data.created_by, from_chat_id=data[1], message_id=int(data[2]))
+    except TelegramAPIError:
+        await main_bot.send_message(chat_id=bot_data.created_by,
+                                    text="Вам поступило новое <b>сообщение-вопрос</b> от клиента, "
+                                         "но Вашему боту <b>не удалось Вам его отправить</b>, "
+                                         "проверьте писали ли Вы хоть раз своему боту и не заблокировали ли вы его."
+                                         f"\n\n* ссылка на Вашего бота @{(await query.bot.get_me()).username}")
+        await state.set_state(CustomUserStates.MAIN_MENU)
+        return await query.answer(":( Не удалось отправить Ваш вопрос", show_alert=True)
+    await query.message.answer("Ваш вопрос отправлен, ожидайте ответа от администратора магазина в чате.")
+    await query.message.edit_reply_markup(reply_markup=None)
+    state_data['last_question_time'] = time.time()
+    await state.set_state(CustomUserStates.MAIN_MENU)
+    await state.set_data(state_data)
+
+
+@multi_bot_router.callback_query(lambda q: q.data.startswith("cancel_ask_question"))
+async def cancel_ask_question_callback(query: CallbackQuery, state: FSMContext):
+    await query.answer("Отправка вопроса администратору отменена", show_alert=True)
+    await state.set_state(CustomUserStates.MAIN_MENU)
+    await query.message.edit_reply_markup(reply_markup=None)
 
 
 async def main():
