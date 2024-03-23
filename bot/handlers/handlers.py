@@ -38,13 +38,6 @@ cache_resources_file_id_store = JsonStore(
 )
 
 
-@all_router.message(F.text == "/clear")
-async def debug_clear(message: Message, state: FSMContext) -> None:
-    """ONLY FOR DEBUG BOT"""
-    await user_db.del_user(user_id=message.from_user.id)
-    await CheckSubscriptionMiddleware().__call__(start_command_handler, message, state)
-
-
 async def send_subscription_expire_notify(user: UserSchema):
     actual_user = await user_db.get_user(user.id)
 
@@ -183,32 +176,6 @@ async def start_trial_callback(query: CallbackQuery, state: FSMContext):
         reply_markup=ReplyKeyboardRemove()
     )
     await success_event(query.from_user, admin_message, EventTypes.STARTED_TRIAL)
-
-
-@all_router.message(F.text == "/check_subscription")
-async def check_sub_cmd(message: Message, state: FSMContext = None):
-    # TODO https://tracker.yandex.ru/BOT-17 Учесть часовые пояса клиентов
-    user_id = message.from_user.id
-    try:
-        bot_id = (await state.get_data())["bot_id"]
-    except (KeyError, AttributeError):
-        logger.warning(f"check_sub_cmd: bot_id of user {user_id} not found, setting it to None")
-        bot_id = None
-    kb = create_continue_subscription_kb(bot_id=bot_id)
-
-    user_status = await subscription.get_user_status(user_id)
-    match user_status:
-        case UserStatusValues.SUBSCRIPTION_ENDED:
-            await message.answer(f"Твоя подписка закончилась, чтобы продлить её на месяц нажми на кнопку ниже.",
-                                 reply_markup=kb)
-        case UserStatusValues.TRIAL | UserStatusValues.SUBSCRIBED:
-            await message.answer(
-                await subscription.get_when_expires_text(user_id, is_trial=(user_status == UserStatusValues.TRIAL)),
-                reply_markup=kb
-            )
-        case UserStatusValues.NEW:
-            await state.set_state(States.WAITING_FREE_TRIAL_APPROVE)
-            await message.answer(MessageTexts.FREE_TRIAL_MESSAGE.value, reply_markup=free_trial_start_kb)
 
 
 @all_router.callback_query(lambda q: q.data.startswith("continue_subscription"))
