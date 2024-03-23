@@ -66,8 +66,7 @@ async def start_command_handler(message: Message, state: FSMContext):
 async def clear_command_handler(message: Message, state: FSMContext) -> None:
     """ONLY FOR DEBUG BOT"""
     await user_db.del_user(user_id=message.from_user.id)
-    await CheckSubscriptionMiddleware(check_subscription_command_handler)\
-        .__call__(start_command_handler, message, state)
+    await CheckSubscriptionMiddleware().__call__(start_command_handler, message, state)
 
 
 @commands_router.message(F.text == "/check_subscription")
