@@ -53,5 +53,5 @@ async def success_event(user: User, message: Message, event_type: EventTypes):
             text=message_text,
             parse_mode=ParseMode.HTML
         )
-    except Exception as e:
-        logger.info(e)
+    except Exception:
+        logger.warning(f"cant edit event message in admin group (event_type: {event_type}).", exc_info=True)
