@@ -63,10 +63,10 @@ async def on_start():
 
 if __name__ == "__main__":
     from bot.handlers import admin_bot_menu_router, custom_bot_editing_router, commands_router, subscribe_router
+    dp.include_router(commands_router)  # should be first
     dp.include_router(admin_bot_menu_router)
     dp.include_router(subscribe_router)
     dp.include_router(custom_bot_editing_router)
-    dp.include_router(commands_router)
 
     for log_file in ('all.log', 'err.log'):
         with open(config.LOGS_PATH + log_file, 'a') as log:
