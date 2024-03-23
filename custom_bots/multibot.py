@@ -22,6 +22,8 @@ from aiogram.utils.token import TokenValidationError, validate_token
 from aiogram.exceptions import TelegramUnauthorizedError, TelegramAPIError
 from aiogram.client.default import DefaultBotProperties
 
+from bot.middlewaries.errors_middleware import ErrorMiddleware
+
 from aiogram.webhook.aiohttp_server import (
     TokenBasedRequestHandler,
     setup_application,
@@ -378,6 +380,9 @@ async def main():
     multibot_dispatcher = Dispatcher(storage=storage)
 
     multibot_dispatcher.include_router(multi_bot_router)
+
+    multi_bot_router.message.middleware(ErrorMiddleware)
+    multi_bot_router.callback_query.middleware(ErrorMiddleware)
 
     TokenBasedRequestHandler(
         dispatcher=multibot_dispatcher,
