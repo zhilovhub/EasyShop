@@ -4,20 +4,17 @@ from datetime import datetime
 from aiogram import BaseMiddleware
 from aiogram.types import CallbackQuery, Message
 
-from bot.main import subscription
+from bot.main import subscription, user_db
 from bot.utils import MessageTexts
 from bot.config import logger, ADMINS
 from bot.exceptions import UserNotFound
-from bot.handlers.routers import user_db
 from bot.utils.admin_group import send_event, EventTypes
+from bot.utils.check_subscription import check_subscription
+
 from database.models.user_model import UserSchema, UserStatusValues
-from bot.handlers.command_handlers import check_subscription_command_handler
 
 
 class CheckSubscriptionMiddleware(BaseMiddleware):
-    def __init__(self) -> None:
-        pass
-
     async def __call__(
             self,
             handler: Callable[[CallbackQuery | Message, Dict[str, Any]], Awaitable[Any]],
@@ -44,6 +41,6 @@ class CheckSubscriptionMiddleware(BaseMiddleware):
                 await message.answer("Для того, чтобы пользоваться ботом, тебе нужна подписка")
             else:
                 await event.answer("Для того, чтобы пользоваться ботом, тебе нужна подписка", show_alert=True)
-            return await check_subscription_command_handler(message)
+            return await check_subscription(message)
 
         return await handler(event, data)

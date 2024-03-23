@@ -5,7 +5,7 @@ from aiogram.types import Message
 from aiogram.filters import CommandStart
 from aiogram.fsm.context import FSMContext
 
-from bot.main import subscription, bot, cache_resources_file_id_store, user_db, bot_db
+from bot.main import bot, cache_resources_file_id_store, user_db, bot_db
 from bot.config import logger
 from bot.keyboards import *
 from bot.states.states import States
@@ -13,6 +13,7 @@ from bot.handlers.routers import commands_router
 from bot.utils.admin_group import send_event, EventTypes
 from bot.exceptions.exceptions import *
 from bot.utils.send_instructions import send_instructions
+from bot.utils.check_subscription import check_subscription
 from bot.middlewaries.subscription_middleware import CheckSubscriptionMiddleware
 
 from database.models.user_model import UserSchema, UserStatusValues
@@ -65,30 +66,10 @@ async def start_command_handler(message: Message, state: FSMContext):
 async def clear_command_handler(message: Message, state: FSMContext) -> None:
     """ONLY FOR DEBUG BOT"""
     await user_db.del_user(user_id=message.from_user.id)
-    await CheckSubscriptionMiddleware().__call__(start_command_handler, message, state)
+    await CheckSubscriptionMiddleware(check_subscription_command_handler)\
+        .__call__(start_command_handler, message, state)
 
 
 @commands_router.message(F.text == "/check_subscription")
-async def check_subscription_command_handler(message: Message, state: FSMContext = None):
-    # TODO https://tracker.yandex.ru/BOT-17 Учесть часовые пояса клиентов
-    user_id = message.from_user.id
-    try:
-        bot_id = (await state.get_data())["bot_id"]
-    except (KeyError, AttributeError):
-        logger.warning(f"check_sub_cmd: bot_id of user {user_id} not found, setting it to None")
-        bot_id = None
-    kb = create_continue_subscription_kb(bot_id=bot_id)
-
-    user_status = await subscription.get_user_status(user_id)
-    match user_status:
-        case UserStatusValues.SUBSCRIPTION_ENDED:
-            await message.answer(f"Твоя подписка закончилась, чтобы продлить её на месяц нажми на кнопку ниже.",
-                                 reply_markup=kb)
-        case UserStatusValues.TRIAL | UserStatusValues.SUBSCRIBED:
-            await message.answer(
-                await subscription.get_when_expires_text(user_id, is_trial=(user_status == UserStatusValues.TRIAL)),
-                reply_markup=kb
-            )
-        case UserStatusValues.NEW:
-            await state.set_state(States.WAITING_FREE_TRIAL_APPROVE)
-            await message.answer(MessageTexts.FREE_TRIAL_MESSAGE.value, reply_markup=free_trial_start_kb)
+async def check_subscription_command_handler(message: Message, state: FSMContext):
+    await check_subscription(message, state)
