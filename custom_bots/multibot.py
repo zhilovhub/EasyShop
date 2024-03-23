@@ -12,7 +12,9 @@ import ssl
 from aiogram import Bot, Dispatcher, F, Router
 from aiogram.client.session.aiohttp import AiohttpSession
 from aiogram.enums import ParseMode
-from aiogram.fsm.storage.memory import MemoryStorage
+from aiogram.fsm.state import State, StatesGroup
+from aiogram.fsm.context import FSMContext
+from bot.utils.storage import AlchemyStorageAsync
 from aiogram.types import Message, User, Chat, CallbackQuery
 from aiogram.filters import CommandStart, StateFilter
 from aiogram.utils.token import TokenValidationError, validate_token
@@ -70,7 +72,8 @@ bot_db = db_engine.get_bot_dao()
 product_db = db_engine.get_product_db()
 order_db = db_engine.get_order_dao()
 
-storage = MemoryStorage()
+storage = AlchemyStorageAsync(db_url=getenv("CUSTOM_BOT_STORAGE_DB_URL"),
+                              table_name=getenv("CUSTOM_BOT_STORAGE_TABLE_NAME"))
 
 multi_bot_router = Router(name="multibot")
 
@@ -79,6 +82,11 @@ logging.basicConfig(format=u'[%(asctime)s][%(levelname)s] ::: %(filename)s(%(lin
 logger = logging.getLogger('logger')
 
 PREV_ORDER_MSGS = JsonStore(file_path="prev_orders_msg_id.json", json_store_name="PREV_ORDER_MSGS")
+
+
+class CustomUserStates(StatesGroup):
+    MAIN_MENU = State()
+    WAITING_FOR_QUESTION = State()
 
 
 def format_locales(text: str, user: User, chat: Chat, reply_to_user: User = None) -> str:
@@ -161,14 +169,16 @@ async def get_option(param: str, token: str):
     return None
 
 
-@multi_bot_router.message(CommandStart())
-async def start_cmd(message: Message):
+@multi_bot_router.message(F.text == "/start")
+async def start_cmd(message: Message, state: FSMContext):
     start_msg = await get_option("start_msg", message.bot.token)
     web_app_button = await get_option("web_app_button", message.bot.token)
     try:
         bot = await bot_db.get_bot_by_token(message.bot.token)
     except BotNotFound:
         return await message.answer("Бот не инициализирован")
+
+    await state.set_state(CustomUserStates.MAIN_MENU)
 
     return await message.answer(
         format_locales(start_msg, message.from_user, message.chat),
@@ -232,7 +242,7 @@ async def process_web_app_request(event: Message):
     )
 
 
-@multi_bot_router.message(StateFilter(None))
+@multi_bot_router.message(StateFilter(None, CustomUserStates.MAIN_MENU))
 async def default_cmd(message: Message):
     web_app_button = await get_option("web_app_button", message.bot.token)
 
@@ -249,7 +259,7 @@ async def default_cmd(message: Message):
 
 
 @multi_bot_router.callback_query(lambda q: q.data.startswith("order_"))
-async def handle_callback(query: CallbackQuery):
+async def handle_order_callback(query: CallbackQuery):
     data = query.data.split(":")
     try:
         order = await order_db.get_order(data[1])
@@ -280,6 +290,17 @@ async def handle_callback(query: CallbackQuery):
             del msg_id_data[order.id]
 
 
+@multi_bot_router.callback_query(lambda q: q.data.startswith("ask_question"))
+async def handle_ask_question_callback(query: CallbackQuery, state: FSMContext):
+    data = query.data.split(":")
+    try:
+        order = await order_db.get_order(data[1])
+    except OrderNotFound:
+        await query.answer("Ошибка при работе с заказом, возможно заказ был удалён.", show_alert=True)
+        return await query.message.edit_reply_markup(None)
+    await state.set_state()
+
+
 async def main():
     logging.basicConfig(level=logging.INFO, stream=sys.stdout)
 
@@ -305,6 +326,9 @@ async def main():
 
     logger.info(f"setting up local api server on {LOCAL_API_SERVER_HOST}:{LOCAL_API_SERVER_PORT}")
     logger.info(f"setting up webhook server on {WEBHOOK_SERVER_HOST}:{WEBHOOK_SERVER_PORT}")
+
+    await storage.connect()
+
     await asyncio.gather(
         web._run_app(local_app, host=LOCAL_API_SERVER_HOST, port=LOCAL_API_SERVER_PORT),
         web._run_app(app, host=WEBHOOK_SERVER_HOST, port=WEBHOOK_SERVER_PORT, ssl_context=ssl_context)
