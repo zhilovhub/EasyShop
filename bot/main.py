@@ -4,6 +4,7 @@ from datetime import datetime
 from aiogram import Bot, Dispatcher
 from aiogram.enums import ParseMode
 from aiogram.types import BotCommand
+from aiogram.client.bot import DefaultBotProperties
 
 from database.models.bot_model import BotDao
 from database.models.models import Database
@@ -19,7 +20,7 @@ from bot import config
 from bot.config import logger
 from bot.utils import AlchemyStorageAsync, JsonStore
 
-bot = Bot(config.TELEGRAM_TOKEN, parse_mode=ParseMode.HTML)
+bot = Bot(config.TELEGRAM_TOKEN, default=DefaultBotProperties(parse_mode=ParseMode.HTML))
 storage = AlchemyStorageAsync(config.SQLALCHEMY_URL, config.STORAGE_TABLE_NAME)
 dp = Dispatcher(storage=storage)
 db_engine: Database = Database(config.SQLALCHEMY_URL)
