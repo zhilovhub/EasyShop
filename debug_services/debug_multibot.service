@@ -5,10 +5,10 @@ Wants=network.target
 After=syslog.target network-online.target
 
 [Service]
-Environment="PYTHONPATH=/root/DebugEasyShop"
+Environment="PYTHONPATH=/home/debug/EasyShop"
 Type=oneshot
-WorkingDirectory=/root/DebugEasyShop/custom_bots
-ExecStart=/root/DebugEasyShop/venv/bin/python3 /root/DebugEasyShop/custom_bots/multibot.py
+WorkingDirectory=/home/debug/EasyShop/custom_bots
+ExecStart=/home/debug/EasyShop/venv/bin/python3 /home/debug/EasyShop/custom_bots/multibot.py
 
 [Install]
 WantedBy=multi-user.target
