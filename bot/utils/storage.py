@@ -1,12 +1,15 @@
 from abc import ABC
 from typing import Optional, Dict, Any
-from sqlalchemy.ext.asyncio import create_async_engine
-from sqlalchemy import select, insert, delete, update
+
 from aiogram.fsm.storage.base import BaseStorage, StorageKey, StateType
-from sqlalchemy import Table, Column, String, JSON
+
 from sqlalchemy import MetaData
-from bot.config import logger
+from sqlalchemy import Table, Column, String, JSON
+from sqlalchemy import select, insert, delete, update
+from sqlalchemy.ext.asyncio import create_async_engine
+
 from bot import config
+from bot.config import logger
 
 
 class AlchemyStorageAsync(BaseStorage, ABC):

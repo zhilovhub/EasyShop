@@ -1,1 +1,5 @@
-from .handlers import router, all_router
+import bot.handlers.admin_bot_menu_handlers
+import bot.handlers.command_handlers
+import bot.handlers.custom_bot_editing_handlers
+import bot.handlers.subscription_handlers
+from .routers import admin_bot_menu_router, commands_router, subscribe_router, custom_bot_editing_router

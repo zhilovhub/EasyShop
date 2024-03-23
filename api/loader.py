@@ -1,9 +1,9 @@
-from database.models.models import Database
-import logging
 import logging.config
-from dotenv import load_dotenv
 import os
 
+from dotenv import load_dotenv
+
+from database.models.models import Database
 
 load_dotenv()
 ALCHEMY_URL = os.getenv("SQLALCHEMY_URL")
