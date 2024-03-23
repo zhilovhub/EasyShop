@@ -20,7 +20,8 @@ class EventTypes(Enum):
         "⚠⚠ Для <b>@{}</b> (<b>{}</b>) оформляется <b>ПЛАТНАЯ</b> подписка... (<b>@{}</b>)",
         "🎉✨✅ <b>@{}</b> (<b>{}</b>) оформил <b>ПЛАТНУЮ</b> подписку! (<b>@{}</b>)"
     )
-    UNKNOWN_ERROR = ("❗️ Произошла неизвестная ошибка при работе бота"
+    UNKNOWN_ERROR = ("❗️ Произошла неизвестная ошибка при работе бота."
+                     "\n\nBot: <b>@{}</b>"
                      "\n\nUsername: <b>{}</b>"
                      "\n\nUID: <b>{}</b>"
                      "\n\nError message: \n<code>{}</code>",
@@ -38,7 +39,8 @@ async def send_event(user: User, event_type: EventTypes, event_bot: Bot = bot, e
             case EventTypes.STARTED_TRIAL | EventTypes.SUBSCRIBED:
                 message_text = event_type_text.format(user.username, user.id, bot_username)
             case EventTypes.UNKNOWN_ERROR:
-                message_text = event_type_text.format('@' + user.username if user.username else user.full_name,
+                message_text = event_type_text.format(bot_username,
+                                                      '@' + user.username if user.username else user.full_name,
                                                       user.id,
                                                       err_msg)
         return await bot.send_message(
