@@ -222,7 +222,7 @@ async def process_web_app_request(event: Message):
             products,
             username,
             False
-        ), reply_markup=keyboards.create_cancel_order_kb(order.id)
+        ), reply_markup=keyboards.create_user_order_kb(order.id)
     )
     await main_bot.edit_message_reply_markup(
         main_msg.chat.id,

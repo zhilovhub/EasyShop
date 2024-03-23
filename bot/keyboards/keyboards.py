@@ -43,8 +43,11 @@ def create_change_order_status_kb(order_id: str, msg_id: int = 0, chat_id: int =
     ])
 
 
-def create_cancel_order_kb(order_id: str, msg_id: int = 0, chat_id: int = 0) -> InlineKeyboardMarkup:
+def create_user_order_kb(order_id: str, msg_id: int = 0, chat_id: int = 0) -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(inline_keyboard=[
+        [
+            InlineKeyboardButton(text="Задать вопрос", callback_data=f"ask_question:{order_id}:{msg_id}:{chat_id}")
+        ],
         [
             InlineKeyboardButton(text="Отменить заказ", callback_data=f"order_pre_cancel:{order_id}:{msg_id}:{chat_id}")
         ]
