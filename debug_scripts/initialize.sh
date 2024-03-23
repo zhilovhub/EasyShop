@@ -1,17 +1,17 @@
-if [ ! -d "/root/DebugEasyShop/venv" ]; then
+if [ ! -d "/home/debug/EasyShop/venv" ]; then
   echo "venv does not exist creating..."
-  python -m venv /root/DebugEasyShop/venv
+  python -m venv /home/debug/EasyShop/venv
 else echo "venv directory found."
 fi
-source /root/DebugEasyShop/venv/bin/activate
+source /home/debug/EasyShop/venv/bin/activate
 echo "Installing python requirements..."
-pip install -r /root/DebugEasyShop/api/requirements.txt
-pip install -r /root/DebugEasyShop/bot/requirements.txt
+pip install -r /home/debug/EasyShop/api/requirements.txt
+pip install -r /home/debug/EasyShop/bot/requirements.txt
 echo "Complete."
 echo "Creating systemd services..."
-cp /root/DebugEasyShop/debug_services/debug_api.service /etc/systemd/system/debug_api.service
-cp /root/DebugEasyShop/debug_services/debug_bot.service /etc/systemd/system/debug_bot.service
-cp /root/DebugEasyShop/debug_services/debug_multibot.service /etc/systemd/system/debug_multibot.service
+cp /home/debug/EasyShop/debug_services/debug_api.service /etc/systemd/system/debug_api.service
+cp /home/debug/EasyShop/debug_services/debug_bot.service /etc/systemd/system/debug_bot.service
+cp /home/debug/EasyShop/debug_services/debug_multibot.service /etc/systemd/system/debug_multibot.service
 echo "Restarting systemd daemon..."
 systemctl daemon-reload
 echo "Services created."
