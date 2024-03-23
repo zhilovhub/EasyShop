@@ -20,9 +20,9 @@ from bot.keyboards import *
 from bot.exceptions import InstanceAlreadyExists
 from bot.states.states import States
 from bot.handlers.routers import admin_bot_menu_router
-from database.models.bot_model import BotSchemaWithoutId
 from bot.utils.custom_bot_launching import start_custom_bot, stop_custom_bot
 
+from database.models.bot_model import BotSchemaWithoutId
 from database.models.order_model import OrderSchema, OrderNotFound
 from database.models.product_model import ProductWithoutId
 
