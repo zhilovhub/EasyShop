@@ -36,7 +36,7 @@ async def send_event(user: User, event_type: EventTypes) -> Message:
             text=message_text
         )
     except Exception:
-        logger.info(f"cant send event to admin group (event_type: {event_type}).", exc_info=True)
+        logger.warning(f"cant send event to admin group (event_type: {event_type}).", exc_info=True)
 
 
 async def success_event(user: User, message: Message, event_type: EventTypes):
