@@ -1,5 +1,6 @@
 import logging
 import sys
+import time
 from os import getenv
 from typing import Any, Dict, Union
 from datetime import datetime
@@ -304,9 +305,34 @@ async def handle_ask_question_callback(query: CallbackQuery, state: FSMContext):
     except OrderNotFound:
         await query.answer("Ошибка при работе с заказом, возможно заказ был удалён.", show_alert=True)
         return await query.message.edit_reply_markup(None)
+    state_data = await state.get_data()
+    if not state_data:
+        state_data = {"order_id": order.id}
+    else:
+        if "last_question_time" in state_data and time.time() - state_data['last_question_time'] < 1 * 60 * 60:
+            return await query.answer("Вы уже задавали вопрос недавно, пожалуйста попробуйте позже "
+                                      "(между вопросами должен пройти час)", show_alert=True)
+        state_data['order_id'] = order.id
     await state.set_state(CustomUserStates.WAITING_FOR_QUESTION)
     await query.message.answer("Вы можете отправить свой вопрос по заказу, отправив любое сообщение боту."
-                               "\n\nДля отмени введите команду /cancel")
+                               "\n\nДля отмены введите команду /cancel")
+    await state.set_data(state_data)
+
+
+@multi_bot_router.message(CustomUserStates.WAITING_FOR_QUESTION)
+async def handle_waiting_for_question_state(message: Message, state: FSMContext):
+    state_data = await state.get_data()
+    if not state_data or 'order_id' not in state_data:
+        await state.set_state(CustomUserStates.MAIN_MENU)
+        return await message.answer("Произошла ошибка возвращаюсь в главное меню...")
+    await message.reply(f"Вы уверены что хотите отправить это сообщение вопросом к заказу "
+                        f"<b>№{state_data['order_id']}</b>?"
+                        f"\n\nПосле отправки вопроса, Вы не сможете сразу отправить еще один.",
+                        reply_markup=keyboards.create_confirm_question_kb(
+                            order_id=state_data['order_id'],
+                            msg_id=message.message_id,
+                            chat_id=message.chat.id
+                        ))
 
 
 async def main():
