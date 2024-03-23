@@ -16,7 +16,7 @@ from aiogram.fsm.state import State, StatesGroup
 from aiogram.fsm.context import FSMContext
 from bot.utils.storage import AlchemyStorageAsync
 from aiogram.types import Message, User, Chat, CallbackQuery
-from aiogram.filters import CommandStart, StateFilter
+from aiogram.filters import StateFilter
 from aiogram.utils.token import TokenValidationError, validate_token
 from aiogram.exceptions import TelegramUnauthorizedError
 from aiogram.client.default import DefaultBotProperties
@@ -169,6 +169,12 @@ async def get_option(param: str, token: str):
     return None
 
 
+@multi_bot_router.message(F.text == "/cancel")
+async def cancel_cmd(message: Message, state: FSMContext):
+    await state.set_state(CustomUserStates.MAIN_MENU)
+    await message.answer("Вы перешли в основное меню.")
+
+
 @multi_bot_router.message(F.text == "/start")
 async def start_cmd(message: Message, state: FSMContext):
     start_msg = await get_option("start_msg", message.bot.token)
@@ -298,7 +304,9 @@ async def handle_ask_question_callback(query: CallbackQuery, state: FSMContext):
     except OrderNotFound:
         await query.answer("Ошибка при работе с заказом, возможно заказ был удалён.", show_alert=True)
         return await query.message.edit_reply_markup(None)
-    await state.set_state()
+    await state.set_state(CustomUserStates.WAITING_FOR_QUESTION)
+    await query.message.answer("Вы можете отправить свой вопрос по заказу, отправив любое сообщение боту."
+                               "\n\nДля отмени введите команду /cancel")
 
 
 async def main():
