@@ -12,7 +12,7 @@ from bot.utils.admin_group import send_event, EventTypes
 
 async def notify_about_error(event: CallbackQuery | Message, error_message: str):
     await event.answer(":( Произошла неизвестная ошибка.")
-    await send_event(event.from_user, EventTypes.NEW_USER, event.bot, err_msg=error_message)
+    await send_event(event.from_user, EventTypes.UNKNOWN_ERROR, event.bot, err_msg=error_message)
 
 
 class ErrorMiddleware(BaseMiddleware):
