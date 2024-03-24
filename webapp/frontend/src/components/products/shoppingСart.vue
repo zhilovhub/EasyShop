@@ -1,5 +1,5 @@
 <script>
-  import { bot_id } from '@/store/store.js'
+  import { bot_id, apiUrl } from '@/store/store.js'
 
   export default {
     name: 'ShoppingCart',
@@ -37,6 +37,9 @@
       }
     },
     methods: {
+      apiUrl() {
+        return apiUrl
+      },
       bot_id() {
         return bot_id
       },
@@ -110,7 +113,7 @@
         :key="item.id"
         class="item-block"
       >
-        <img style="border-radius: 7px; width: 67px; height: 67px; object-fit: cover;" v-if="item.picture" :src="'https://ezbots.ru:8080/files/' + item.picture" alt="img">
+        <img style="border-radius: 7px; width: 67px; height: 67px; object-fit: cover;" v-if="item.picture" :src="`${apiUrl()}/files/` + item.picture" alt="img">
         <div v-else style="width: 67px; height: 67px; border-radius: 7px; background-color: #293C47;"></div>
         <div class="text-block">
           <span style="color: #71CBFF; font-size: 15px;">{{ shortenName(item.name) }}</span>

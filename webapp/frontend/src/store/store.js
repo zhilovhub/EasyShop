@@ -4,7 +4,7 @@ let tg = window.Telegram.WebApp;
 tg.expand();
 const url = new URL(window.location.href);
 export const bot_id = url.searchParams.get('bot_id');
-const apiUrl = `https://ezbots.ru:${import.meta.env.VITE_API_PORT}`
+export const apiUrl = `https://ezbots.ru:${import.meta.env.VITE_API_PORT}`
 export const Store = new Vuex.Store({
   state: {
     bot_id: bot_id,
