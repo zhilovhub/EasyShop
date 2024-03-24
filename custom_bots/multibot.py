@@ -369,16 +369,17 @@ async def handle_reply_to_message_action(message: Message, state: FSMContext):
     bot_data = await bot_db.get_bot_by_token(message.bot.token)
     if message.from_user.id != bot_data.created_by:
         return default_cmd(message, state)
-    entities = message.entities
-    first_bold = None
-    for entity in entities:
-        if entity.type == "bold":
-            first_bold = entity
-            break
-    else:
-        logger.warning("Order Id not found in admin reply message")
-        return await message.answer("Произошла ошибка. Не удалось найти номер заказа в сообщении.")
-    order_id = message.text[first_bold[entity.offset + 1:entity.offset + entity.length + 1]]
+    # entities = message.entities
+    # first_bold = None
+    # for entity in entities:
+    #     if entity.type == "bold":
+    #         first_bold = entity
+    #         break
+    # else:
+    #     logger.warning("Order Id not found in admin reply message")
+    #     return await message.answer("Произошла ошибка. Не удалось найти номер заказа в сообщении.")
+    order_id = message.text.split('№')[-1].split()[0]
+    # order_id = message.text[first_bold[entity.offset + 1:entity.offset + entity.length + 1]]
     try:
         order = await order_db.get_order(order_id)
     except OrderNotFound:
