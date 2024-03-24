@@ -251,22 +251,6 @@ async def process_web_app_request(event: Message):
     )
 
 
-@multi_bot_router.message(StateFilter(None, CustomUserStates.MAIN_MENU))
-async def default_cmd(message: Message):
-    web_app_button = await get_option("web_app_button", message.bot.token)
-
-    try:
-        bot = await bot_db.get_bot_by_token(message.bot.token)
-    except BotNotFound:
-        return await message.answer("Бот не инициализирован.")
-
-    default_msg = await get_option("default_msg", message.bot.token)
-    await message.answer(
-        format_locales(default_msg, message.from_user, message.chat),
-        reply_markup=keyboards.get_custom_bot_menu_keyboard(web_app_button, bot.bot_id)
-    )
-
-
 @multi_bot_router.callback_query(lambda q: q.data.startswith("order_"))
 async def handle_order_callback(query: CallbackQuery):
     data = query.data.split(":")
@@ -384,7 +368,7 @@ async def cancel_ask_question_callback(query: CallbackQuery, state: FSMContext):
 async def handle_reply_to_message_action(message: Message, state: FSMContext):
     bot_data = await bot_db.get_bot_by_token(message.bot.token)
     if message.from_user.id != bot_data.created_by:
-        return
+        return default_cmd(message, state)
     entities = message.entities
     first_bold = None
     for entity in entities:
@@ -406,6 +390,22 @@ async def handle_reply_to_message_action(message: Message, state: FSMContext):
                                    text=f"Поступил ответ на вопрос по заказу <b>№{order.id}</b>",
                                    reply_to_message_id=msg.message_id)
     await message.answer("Ответ отправлен.")
+
+
+@multi_bot_router.message(StateFilter(None, CustomUserStates.MAIN_MENU))
+async def default_cmd(message: Message, state: FSMContext):
+    web_app_button = await get_option("web_app_button", message.bot.token)
+
+    try:
+        bot = await bot_db.get_bot_by_token(message.bot.token)
+    except BotNotFound:
+        return await message.answer("Бот не инициализирован.")
+
+    default_msg = await get_option("default_msg", message.bot.token)
+    await message.answer(
+        format_locales(default_msg, message.from_user, message.chat),
+        reply_markup=keyboards.get_custom_bot_menu_keyboard(web_app_button, bot.bot_id)
+    )
 
 
 async def main():
