@@ -27,6 +27,30 @@ from database.models.order_model import OrderSchema, OrderNotFound
 from database.models.product_model import ProductWithoutId
 
 
+@admin_bot_menu_router.message(F.web_app_data)
+async def process_web_app_request(event: Message):
+    user_id = event.from_user.id
+    try:
+        data = json.loads(event.web_app_data.data)
+        logger.info(f"receive web app data: {data}")
+
+        data["from_user"] = user_id
+        data["status"] = "backlog"
+        data["count"] = 0
+
+        order = OrderSchema(**data)
+
+        logger.info(f"order with id #{order.id} created")
+    except Exception:
+        logger.warning("error while creating order", exc_info=True)
+        return await event.answer("Произошла ошибка при создании заказа, попробуйте еще раз.")
+
+    try:
+        await send_new_order_notify(order, user_id)
+    except Exception as ex:
+        logger.warning("error while sending test order notification", exc_info=True)
+
+
 @admin_bot_menu_router.callback_query(lambda q: q.data.startswith("order_"))
 async def handle_callback(query: CallbackQuery, state: FSMContext):
     state_data = await state.get_data()
@@ -235,27 +259,3 @@ async def send_order_change_status_notify(order: OrderSchema):
     text = f"Новый статус заказ <b>#{order.id}</b>\n<b>{order.status}</b>"
     await bot.send_message(user_bot.created_by, text)
     await bot.send_message(order.from_user, text)
-
-
-@admin_bot_menu_router.message(F.web_app_data)
-async def process_web_app_request(event: Message):
-    user_id = event.from_user.id
-    try:
-        data = json.loads(event.web_app_data.data)
-        logger.info(f"receive web app data: {data}")
-
-        data["from_user"] = user_id
-        data["status"] = "backlog"
-        data["count"] = 0
-
-        order = OrderSchema(**data)
-
-        logger.info(f"order with id #{order.id} created")
-    except Exception:
-        logger.warning("error while creating order", exc_info=True)
-        return await event.answer("Произошла ошибка при создании заказа, попробуйте еще раз.")
-
-    try:
-        await send_new_order_notify(order, user_id)
-    except Exception as ex:
-        logger.warning("error while sending test order notification", exc_info=True)
