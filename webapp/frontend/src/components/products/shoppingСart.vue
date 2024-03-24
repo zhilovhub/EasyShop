@@ -110,7 +110,7 @@
         :key="item.id"
         class="item-block"
       >
-        <img style="border-radius: 7px; width: 67px; height: 67px; object-fit: cover;" v-if="item.picture" :src="'https://ezbots.ru:8080/files/' + item.picture" alt="img">
+        <img style="border-radius: 7px; width: 67px; height: 67px; object-fit: cover;" v-if="item.picture" :src="'https://ezbots.ru:${import.meta.env.VITE_API_PORT}/files/' + item.picture" alt="img">
         <div v-else style="width: 67px; height: 67px; border-radius: 7px; background-color: #293C47;"></div>
         <div class="text-block">
           <span style="color: #71CBFF; font-size: 15px;">{{ shortenName(item.name) }}</span>

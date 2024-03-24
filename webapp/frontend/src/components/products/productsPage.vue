@@ -25,7 +25,7 @@
           class="item-block"
           style="position: relative;"
       >
-        <img style="border-radius: 10px; width: 100%; height: 100%; object-fit: cover; margin: 5px auto;" v-if="item.picture" :src="'https://ezbots.ru:8080/files/' + item.picture" alt="img">
+        <img style="border-radius: 10px; width: 100%; height: 100%; object-fit: cover; margin: 5px auto;" v-if="item.picture" :src="'https://ezbots.ru:${import.meta.env.VITE_API_PORT}/files/' + item.picture" alt="img">
         <div style="margin-bottom: 10px">
         <span style="color: #71CBFF; font-size: 15px;">
           {{ shortenName(item.name) }}
