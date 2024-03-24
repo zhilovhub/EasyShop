@@ -378,7 +378,7 @@ async def handle_reply_to_message_action(message: Message, state: FSMContext):
     # else:
     #     logger.warning("Order Id not found in admin reply message")
     #     return await message.answer("Произошла ошибка. Не удалось найти номер заказа в сообщении.")
-    order_id = message.text.split('№')[-1].split()[0]
+    order_id = message.reply_to_message.text.split('№')[-1].split()[0]
     # order_id = message.text[first_bold[entity.offset + 1:entity.offset + entity.length + 1]]
     try:
         order = await order_db.get_order(order_id)
