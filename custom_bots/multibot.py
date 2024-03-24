@@ -414,8 +414,8 @@ async def main():
 
     multibot_dispatcher.include_router(multi_bot_router)
 
-    multi_bot_router.message.middleware(ErrorMiddleware)
-    multi_bot_router.callback_query.middleware(ErrorMiddleware)
+    multi_bot_router.message.middleware(ErrorMiddleware())
+    multi_bot_router.callback_query.middleware(ErrorMiddleware())
 
     TokenBasedRequestHandler(
         dispatcher=multibot_dispatcher,
