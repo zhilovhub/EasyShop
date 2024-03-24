@@ -351,7 +351,7 @@ async def approve_ask_question_callback(query: CallbackQuery, state: FSMContext)
         return await query.message.edit_reply_markup(None)
     bot_data = await bot_db.get_bot_by_token(query.bot.token)
     try:
-        msg = await query.bot.forward_message(chat_id=bot_data.created_by, from_chat_id=data[1], message_id=int(data[2]))
+        msg = await query.bot.forward_message(chat_id=bot_data.created_by, from_chat_id=query.message.chat.id, message_id=int(data[2]))
         await query.bot.send_message(chat_id=bot_data.created_by,
                                      text=f"Новый вопрос по заказу <b>№{order.id}</b> от пользователя "
                                           f"<b>{'@' + query.from_user.username if query.from_user.username else query.from_user.full_name}</b>.\n\n"
@@ -364,6 +364,7 @@ async def approve_ask_question_callback(query: CallbackQuery, state: FSMContext)
                                          "проверьте писали ли Вы хоть раз своему боту и не заблокировали ли вы его."
                                          f"\n\n* ссылка на Вашего бота @{(await query.bot.get_me()).username}")
         await state.set_state(CustomUserStates.MAIN_MENU)
+        logger.info("cant send order question to admin", exc_info=True)
         return await query.answer(":( Не удалось отправить Ваш вопрос", show_alert=True)
     await query.message.answer("Ваш вопрос отправлен, ожидайте ответа от администратора магазина в чате.")
     await query.message.edit_reply_markup(reply_markup=None)
