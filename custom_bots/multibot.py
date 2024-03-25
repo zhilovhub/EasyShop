@@ -17,7 +17,7 @@ from aiogram.fsm.state import State, StatesGroup
 from aiogram.fsm.context import FSMContext
 from bot.utils.storage import AlchemyStorageAsync
 from aiogram.types import Message, User, Chat, CallbackQuery
-from aiogram.filters import StateFilter
+from aiogram.filters import StateFilter, CommandStart
 from aiogram.utils.token import TokenValidationError, validate_token
 from aiogram.exceptions import TelegramUnauthorizedError, TelegramAPIError
 from aiogram.client.default import DefaultBotProperties
@@ -172,13 +172,23 @@ async def get_option(param: str, token: str):
     return None
 
 
-@multi_bot_router.message(F.text == "/cancel")
-async def cancel_cmd(message: Message, state: FSMContext):
-    await state.set_state(CustomUserStates.MAIN_MENU)
-    await message.answer("Вы перешли в основное меню.")
+@multi_bot_router.message(StateFilter(None))
+async def default_cmd(message: Message):
+    web_app_button = await get_option("web_app_button", message.bot.token)
+
+    try:
+        bot = await bot_db.get_bot_by_token(message.bot.token)
+    except BotNotFound:
+        return await message.answer("Бот не инициализирован")
+
+    default_msg = await get_option("default_msg", message.bot.token)
+    await message.answer(
+        format_locales(default_msg, message.from_user, message.chat),
+        reply_markup=keyboards.get_custom_bot_menu_keyboard(web_app_button, bot.bot_id)
+    )
 
 
-@multi_bot_router.message(F.text == "/start")
+@multi_bot_router.message(CommandStart())
 async def start_cmd(message: Message, state: FSMContext):
     start_msg = await get_option("start_msg", message.bot.token)
     web_app_button = await get_option("web_app_button", message.bot.token)
@@ -286,22 +296,27 @@ async def handle_order_callback(query: CallbackQuery):
 @multi_bot_router.callback_query(lambda q: q.data.startswith("ask_question"))
 async def handle_ask_question_callback(query: CallbackQuery, state: FSMContext):
     data = query.data.split(":")
+
     try:
         order = await order_db.get_order(data[1])
     except OrderNotFound:
-        await query.answer("Ошибка при работе с заказом, возможно заказ был удалён.", show_alert=True)
+        await query.answer("Ошибка при работе с заказом, возможно заказ был удалён", show_alert=True)
         return await query.message.edit_reply_markup(None)
+
     state_data = await state.get_data()
     if not state_data:
         state_data = {"order_id": order.id}
     else:
         if "last_question_time" in state_data and time.time() - state_data['last_question_time'] < 1 * 60 * 60:
-            return await query.answer("Вы уже задавали вопрос недавно, пожалуйста попробуйте позже "
+            return await query.answer("Вы уже задавали вопрос недавно, пожалуйста, попробуйте позже "
                                       "(между вопросами должен пройти час)", show_alert=True)
         state_data['order_id'] = order.id
+
     await state.set_state(CustomUserStates.WAITING_FOR_QUESTION)
-    await query.message.answer("Вы можете отправить свой вопрос по заказу, отправив любое сообщение боту."
-                               "\n\nДля отмены введите команду /cancel")
+    await query.message.answer(
+        "Вы можете отправить свой вопрос по заказу, отправив любое сообщение боту",
+        reply_markup=keyboards.get_back_keyboard()
+    )
     await state.set_data(state_data)
 
 
@@ -391,22 +406,6 @@ async def handle_reply_to_message_action(message: Message, state: FSMContext):
                                    text=f"Поступил ответ на вопрос по заказу <b>№{order.id}</b>",
                                    reply_to_message_id=msg.message_id)
     await message.answer("Ответ отправлен.")
-
-
-@multi_bot_router.message(StateFilter(None, CustomUserStates.MAIN_MENU))
-async def default_cmd(message: Message, state: FSMContext):
-    web_app_button = await get_option("web_app_button", message.bot.token)
-
-    try:
-        bot = await bot_db.get_bot_by_token(message.bot.token)
-    except BotNotFound:
-        return await message.answer("Бот не инициализирован.")
-
-    default_msg = await get_option("default_msg", message.bot.token)
-    await message.answer(
-        format_locales(default_msg, message.from_user, message.chat),
-        reply_markup=keyboards.get_custom_bot_menu_keyboard(web_app_button, bot.bot_id)
-    )
 
 
 async def main():
