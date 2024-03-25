@@ -323,12 +323,14 @@ async def handle_ask_question_callback(query: CallbackQuery, state: FSMContext):
 @multi_bot_router.message(CustomUserStates.WAITING_FOR_QUESTION)
 async def handle_waiting_for_question_state(message: Message, state: FSMContext):
     state_data = await state.get_data()
+
     if not state_data or 'order_id' not in state_data:
         await state.set_state(CustomUserStates.MAIN_MENU)
         return await message.answer("Произошла ошибка возвращаюсь в главное меню...")
+
     await message.reply(f"Вы уверены что хотите отправить это сообщение вопросом к заказу "
                         f"<b>№{state_data['order_id']}</b>?"
-                        f"\n\nПосле отправки вопроса, Вы не сможете сразу отправить еще один.",
+                        f"\n\nПосле отправки вопроса, Вы сможете отправить следующий <b>минимум через 1 час</b>",
                         reply_markup=keyboards.create_confirm_question_kb(
                             order_id=state_data['order_id'],
                             msg_id=message.message_id,
