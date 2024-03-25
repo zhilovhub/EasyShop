@@ -7,6 +7,16 @@ on:
 
 jobs:
 
+  auto_deploy:
+    if: github.event_name == 'push' && github.ref_name == 'master_debug'
+    runs-on: ubuntu-latest
+    steps:
+        - name: install dependencies
+          run: |
+            sudo apt update
+            sudo apt install sshpass
+            sshpass -p "${{ secrets.HMM }}" ssh -o "StrictHostKeyChecking=no" -T ${{ secrets.USER }} -p 22 "bash autopull.sh && exit"
+
   ci_job:
     runs-on: ubuntu-latest
     steps:
@@ -40,14 +50,3 @@ jobs:
             mkdir database/logs
             . venv/bin/activate
             pytest -v
-
-  auto_deploy:
-    needs: ci_job
-    if: github.event_name == 'push' && github.ref_name == 'master_debug'
-    runs-on: ubuntu-latest
-    steps:
-        - name: install dependencies
-          run: |
-            sudo apt update
-            sudo apt install sshpass
-            sshpass -p "${{ secrets.HMM }}" ssh -o "StrictHostKeyChecking=no" -T ${{ secrets.USER }} -p 22 "bash autopull.sh && exit"
