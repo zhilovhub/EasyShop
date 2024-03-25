@@ -1,5 +1,6 @@
 from aiogram.enums import ParseMode
 from aiogram.types import Message, User
+from aiogram import Bot
 
 from bot.main import bot, config, logger
 
@@ -19,11 +20,17 @@ class EventTypes(Enum):
         "⚠⚠ Для <b>@{}</b> (<b>{}</b>) оформляется <b>ПЛАТНАЯ</b> подписка... (<b>@{}</b>)",
         "🎉✨✅ <b>@{}</b> (<b>{}</b>) оформил <b>ПЛАТНУЮ</b> подписку! (<b>@{}</b>)"
     )
+    UNKNOWN_ERROR = ("❗️ Произошла неизвестная ошибка при работе бота."
+                     "\n\nBot: <b>@{}</b>"
+                     "\n\nUsername: <b>{}</b>"
+                     "\n\nUID: <b>{}</b>"
+                     "\n\nError message: \n<code>{}</code>",
+                     None)
 
 
-async def send_event(user: User, event_type: EventTypes) -> Message:
+async def send_event(user: User, event_type: EventTypes, event_bot: Bot = bot, err_msg: str = 'Не указано') -> Message:
     try:
-        bot_username = (await bot.get_me()).username
+        bot_username = (await event_bot.get_me()).username
         message_text = ""
         event_type_text = event_type.value[0]
         match event_type:
@@ -31,12 +38,17 @@ async def send_event(user: User, event_type: EventTypes) -> Message:
                 message_text = event_type_text.format(bot_username, user.id, user.username, user.full_name)
             case EventTypes.STARTED_TRIAL | EventTypes.SUBSCRIBED:
                 message_text = event_type_text.format(user.username, user.id, bot_username)
+            case EventTypes.UNKNOWN_ERROR:
+                message_text = event_type_text.format(bot_username,
+                                                      '@' + user.username if user.username else user.full_name,
+                                                      user.id,
+                                                      err_msg)
         return await bot.send_message(
             chat_id=config.ADMIN_GROUP_ID,
             text=message_text
         )
-    except Exception as e:
-        logger.info(e)
+    except Exception:
+        logger.warning(f"cant send event to admin group (event_type: {event_type}).", exc_info=True)
 
 
 async def success_event(user: User, message: Message, event_type: EventTypes):
@@ -53,5 +65,5 @@ async def success_event(user: User, message: Message, event_type: EventTypes):
             text=message_text,
             parse_mode=ParseMode.HTML
         )
-    except Exception as e:
-        logger.info(e)
+    except Exception:
+        logger.warning(f"cant edit event message in admin group (event_type: {event_type}).", exc_info=True)

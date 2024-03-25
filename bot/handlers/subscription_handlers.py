@@ -17,7 +17,7 @@ from bot.utils.admin_group import EventTypes, send_event, success_event
 from subscription.subscription import UserHasAlreadyStartedTrial
 from database.models.user_model import UserSchema, UserStatusValues
 from bot.utils.send_instructions import send_instructions
-from bot.utils.custom_bot_launching import stop_custom_bot
+from bot.utils.custom_bot_api import stop_custom_bot
 
 
 @subscribe_router.callback_query(lambda q: q.data == "start_trial")
