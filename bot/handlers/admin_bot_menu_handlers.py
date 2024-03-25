@@ -14,7 +14,7 @@ from aiogram.utils.token import validate_token, TokenValidationError
 from aiogram.types import Message, FSInputFile, CallbackQuery
 from aiogram.fsm.context import FSMContext
 
-from bot.main import bot, user_db, bot_db, product_db, order_db
+from bot.main import bot, user_db, bot_db, product_db, order_db, QUESTION_MESSAGES
 from bot.config import logger
 from bot.keyboards import *
 from bot.exceptions import InstanceAlreadyExists
@@ -237,6 +237,32 @@ async def bot_menu_handler(message: Message, state: FSMContext):
                 "Для навигации используйте кнопки 👇",
                 reply_markup=get_bot_menu_keyboard(state_data["bot_id"], user_bot.status)
             )
+
+
+@admin_bot_menu_router.message(F.reply_to_message)
+async def handle_reply_to_question(message: Message, state: FSMContext):
+    question_messages_data = QUESTION_MESSAGES.get_data()
+    question_message_id = message.reply_to_message.message_id
+    if not question_message_id in question_messages_data:
+        return await bot_menu_handler(message, state)
+
+    order_id = question_messages_data["order_id"]
+    try:
+        order = await order_db.get_order(order_id)
+    except OrderNotFound:
+        return await message.answer(f"Заказ с номером №{order_id} не найден")
+
+    custom_bot = await bot_db.get_bot_by_created_by(created_by=message.from_user.id)
+    await Bot(token=custom_bot.token).send_message(chat_id=order.from_user,
+                                                   text=f"Поступил ответ на вопрос по заказу <b>№{order.id}</b>\n\n\n"
+                                                        f"{message.text}",
+                                                   reply_to_message_id=question_messages_data[
+                                                       "question_from_custom_bot_message_id"])
+    await message.answer("Ответ отправлен")
+
+    del question_messages_data[question_message_id]
+    QUESTION_MESSAGES.update_data(question_messages_data)
+    # TODO delete KD of
 
 
 async def send_new_order_notify(order: OrderSchema, user_id: int):
