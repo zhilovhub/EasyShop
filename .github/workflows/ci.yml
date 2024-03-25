@@ -6,6 +6,7 @@ on:
     branches: [ master_debug ]
 
 jobs:
+
   ci_job:
     runs-on: ubuntu-latest
     steps:
