@@ -1,7 +1,7 @@
 name: ci
 on:
   push:
-    branches: [ master_debug, release_debug ]
+    branches: [ master_debug, master_release ]
   pull_request:
     branches: [ master_debug ]
 
@@ -39,3 +39,14 @@ jobs:
             mkdir database/logs
             . venv/bin/activate
             pytest -v
+
+  auto_deploy:
+    needs: ci_job
+    if: github.event_name == 'push' && github.ref_name == 'master_debug'
+    runs-on: ubuntu-latest
+    steps:
+        - name: install dependencies
+          run: |
+            sudo apt update
+            sudo apt install sshpass
+            sshpass -p "${{ secrets.HMM }}" ssh -o "StrictHostKeyChecking=no" -T ${{ secrets.USER }} -p 22 "bash autopull.sh && exit"
