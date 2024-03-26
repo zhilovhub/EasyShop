@@ -54,6 +54,39 @@ async def process_web_app_request(event: Message):
         logger.warning("error while sending test order notification", exc_info=True)
 
 
+@admin_bot_menu_router.message(F.reply_to_message)
+async def handle_reply_to_question(message: Message, state: FSMContext):
+    question_messages_data = QUESTION_MESSAGES.get_data()
+    question_message_id = message.reply_to_message.message_id
+    if not question_message_id in question_messages_data:
+        return await bot_menu_handler(message, state)
+
+    order_id = question_messages_data["order_id"]
+    try:
+        order = await order_db.get_order(order_id)
+    except OrderNotFound:
+        return await message.answer(f"Заказ с номером №{order_id} не найден")
+
+    custom_bot = await bot_db.get_bot_by_created_by(created_by=message.from_user.id)
+    await Bot(token=custom_bot.token).send_message(chat_id=order.from_user,
+                                                   text=f"Поступил ответ на вопрос по заказу <b>№{order.id}</b>\n\n\n"
+                                                        f"<i>{message.text}</i>",
+                                                   reply_to_message_id=question_messages_data[
+                                                       "question_from_custom_bot_message_id"])
+    await message.answer("Ответ отправлен")
+
+    del question_messages_data[question_message_id]
+    QUESTION_MESSAGES.update_data(question_messages_data)
+    user_state = FSMContext(storage=custom_bot_storage, key=StorageKey(
+        chat_id=order.from_user,
+        user_id=order.from_user,
+        bot_id=bot.id))
+    user_state_data = await user_state.get_data()
+    if "last_question_time" in user_state_data:
+        del user_state_data["last_question_time"]
+        await user_state.set_data(user_state_data)
+
+
 @admin_bot_menu_router.callback_query(lambda q: q.data.startswith("order_"))
 async def handle_callback(query: CallbackQuery, state: FSMContext):
     state_data = await state.get_data()
@@ -240,39 +273,6 @@ async def bot_menu_handler(message: Message, state: FSMContext):
                 "Для навигации используйте кнопки 👇",
                 reply_markup=get_bot_menu_keyboard(state_data["bot_id"], user_bot.status)
             )
-
-
-@admin_bot_menu_router.message(F.reply_to_message)
-async def handle_reply_to_question(message: Message, state: FSMContext):
-    question_messages_data = QUESTION_MESSAGES.get_data()
-    question_message_id = message.reply_to_message.message_id
-    if not question_message_id in question_messages_data:
-        return await bot_menu_handler(message, state)
-
-    order_id = question_messages_data["order_id"]
-    try:
-        order = await order_db.get_order(order_id)
-    except OrderNotFound:
-        return await message.answer(f"Заказ с номером №{order_id} не найден")
-
-    custom_bot = await bot_db.get_bot_by_created_by(created_by=message.from_user.id)
-    await Bot(token=custom_bot.token).send_message(chat_id=order.from_user,
-                                                   text=f"Поступил ответ на вопрос по заказу <b>№{order.id}</b>\n\n\n"
-                                                        f"{message.text}",
-                                                   reply_to_message_id=question_messages_data[
-                                                       "question_from_custom_bot_message_id"])
-    await message.answer("Ответ отправлен")
-
-    del question_messages_data[question_message_id]
-    QUESTION_MESSAGES.update_data(question_messages_data)
-    user_state = FSMContext(storage=custom_bot_storage, key=StorageKey(
-        chat_id=order.from_user,
-        user_id=order.from_user,
-        bot_id=bot.id))
-    user_state_data = await user_state.get_data()
-    if "last_question_time" in user_state_data:
-        del user_state_data["last_question_time"]
-        await user_state.set_data(user_state_data)
 
 
 async def send_new_order_notify(order: OrderSchema, user_id: int):

@@ -360,7 +360,7 @@ async def approve_ask_question_callback(query: CallbackQuery, state: FSMContext)
         message = await main_bot.send_message(chat_id=bot_data.created_by,
                                               text=f"Новый вопрос по заказу <b>#{order.id}</b> от пользователя "
                                                    f"<b>{'@' + query.from_user.username if query.from_user.username else query.from_user.full_name}</b>.\n\n\n"
-                                                   f"{query.message.text}\n\n\n"
+                                                   f"<i>{query.message.reply_to_message.text}</i>\n\n\n"
                                                    f"Для ответа на вопрос <b>зажмите это сообщение</b> и ответьте на него")
         question_messages_data = QUESTION_MESSAGES.get_data()
         question_messages_data[message.message_id] = {
