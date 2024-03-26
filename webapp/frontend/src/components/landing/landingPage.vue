@@ -1,6 +1,6 @@
 <script>
-import CommodityBusiness from './CommodityBusiness.vue';
-import ServicesSector from './ServicesSector.vue';
+import CommodityBusiness from './commodityBusiness.vue';
+import ServicesSector from './servicesSector.vue';
 export default {
   data() {
     return {
