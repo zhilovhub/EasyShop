@@ -77,7 +77,7 @@ class BotDao(Dao):
 
         return BotSchema.model_validate(res)
 
-    async def get_bot_by_created_by(self, created_by: int) -> BotSchema:  # TODO write test
+    async def get_bot_by_created_by(self, created_by: int) -> BotSchema:
         if not isinstance(created_by, int):
             raise InvalidParameterFormat(
                 "created_by must be type of int")
@@ -147,4 +147,3 @@ class BotDao(Dao):
         await self.engine.dispose()
 
         self.logger.info(f"successfully delete bot with bot_id = {bot_id} from db")
-
