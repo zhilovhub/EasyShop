@@ -78,7 +78,7 @@ class BotDao(Dao):
         return BotSchema.model_validate(res)
 
     async def get_bot_by_created_by(self, created_by: int) -> BotSchema:  # TODO write test
-        if not isinstance(created_by, int)
+        if not isinstance(created_by, int):
             raise InvalidParameterFormat(
                 "created_by must be type of int")
 

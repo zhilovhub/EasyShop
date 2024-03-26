@@ -4,6 +4,7 @@ import string
 from random import sample
 from datetime import datetime
 
+from aiogram.fsm.storage.base import StorageKey
 from aiohttp import ClientConnectorError
 
 from aiogram import Bot, F
@@ -21,6 +22,8 @@ from bot.exceptions import InstanceAlreadyExists
 from bot.states.states import States
 from bot.handlers.routers import admin_bot_menu_router
 from bot.utils.custom_bot_api import start_custom_bot, stop_custom_bot
+
+from custom_bots.multibot import storage as custom_bot_storage
 
 from database.models.bot_model import BotSchemaWithoutId
 from database.models.order_model import OrderSchema, OrderNotFound
@@ -86,7 +89,7 @@ async def handle_callback(query: CallbackQuery, state: FSMContext):
             await Bot(bot_token, parse_mode=ParseMode.HTML).edit_message_text(
                 order.convert_to_notification_text(products=products),
                 reply_markup=None if data[0] in ("order_finish", "order_cancel") else
-                create_cancel_order_kb(order.id, int(data[2]), int(data[3])),
+                create_user_order_kb(order.id, int(data[2]), int(data[3])),
                 chat_id=data[3],
                 message_id=int(data[2]))
 
@@ -262,7 +265,14 @@ async def handle_reply_to_question(message: Message, state: FSMContext):
 
     del question_messages_data[question_message_id]
     QUESTION_MESSAGES.update_data(question_messages_data)
-    # TODO delete KD of
+    user_state = FSMContext(storage=custom_bot_storage, key=StorageKey(
+        chat_id=order.from_user,
+        user_id=order.from_user,
+        bot_id=bot.id))
+    user_state_data = await user_state.get_data()
+    if "last_question_time" in user_state_data:
+        del user_state_data["last_question_time"]
+        await user_state.set_data(user_state_data)
 
 
 async def send_new_order_notify(order: OrderSchema, user_id: int):
