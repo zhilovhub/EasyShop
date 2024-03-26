@@ -1,79 +1,123 @@
 <script>
+import CommodityBusiness from './CommodityBusiness.vue';
+import ServicesSector from './ServicesSector.vue';
+export default {
+  data() {
+    return {
+      selectedComponent: 'commodity-business'
+    }
+  },
+  components: {
+    CommodityBusiness,
+    ServicesSector
+  },
+  mounted() {
+    document.getElementById('scrollButton').addEventListener('click', function() {
+      // Пролистываем к элементу с id "section"
+      document.getElementById('why-tg').scrollIntoView({ behavior: 'smooth' });
+    });
+  },
+  methods: {
+    toggle(event, componentName) {
+      this.selectedComponent = componentName;
+      const element = event.target;
+      const elements = document.querySelectorAll('.choosing-for-what div');
+
+      elements.forEach(el => {
+        if (el.classList.contains('isActive')) {
+          el.classList.remove('isActive');
+        }
+      });
+
+      element.classList.add('isActive');
+    }
+  }
+}
 
 </script>
 
 <template>
+  <svg style="position: absolute" width="100%" height="343" viewBox="0 0 1920 343" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <rect x="39.6416" y="-201.808" width="394.523" height="390.959" rx="43.5" transform="rotate(45 39.6416 -201.808)" stroke="url(#paint0_linear_0_1)" stroke-width="13"/>
+    <rect x="302.821" y="-69.636" width="223.296" height="221.264" rx="45.5" transform="rotate(45 302.821 -69.636)" stroke="url(#paint1_linear_0_1)" stroke-width="9"/>
+    <rect x="1817.82" y="-108.808" width="219.296" height="217.264" rx="43.5" transform="rotate(45 1817.82 -108.808)" stroke="url(#paint2_linear_0_1)" stroke-width="13"/>
+    <rect x="1649.41" y="91.5355" width="94.0274" height="93.1613" rx="17.5" transform="rotate(45 1649.41 91.5355)" stroke="url(#paint3_linear_0_1)" stroke-width="5"/>
+    <rect x="497.41" y="123.536" width="94.0274" height="93.1613" rx="17.5" transform="rotate(45 497.41 123.536)" stroke="url(#paint4_linear_0_1)" stroke-width="5"/>
+    <rect x="858.913" y="-64.4645" width="137.546" height="136.299" rx="17.5" transform="rotate(45 858.913 -64.4645)" stroke="url(#paint5_linear_0_1)" stroke-width="5"/>
+    <defs>
+      <linearGradient id="paint0_linear_0_1" x1="243.403" y1="-211" x2="243.403" y2="192.959" gradientUnits="userSpaceOnUse">
+        <stop stop-color="#168ECD"/>
+        <stop offset="1" stop-color="#8705AB"/>
+      </linearGradient>
+      <linearGradient id="paint1_linear_0_1" x1="418.969" y1="-76" x2="418.969" y2="154.264" gradientUnits="userSpaceOnUse">
+        <stop stop-color="#168ECD"/>
+        <stop offset="1" stop-color="#8705AB"/>
+      </linearGradient>
+      <linearGradient id="paint2_linear_0_1" x1="1933.97" y1="-118" x2="1933.97" y2="112.264" gradientUnits="userSpaceOnUse">
+        <stop stop-color="#168ECD"/>
+        <stop offset="1" stop-color="#8705AB"/>
+      </linearGradient>
+      <linearGradient id="paint3_linear_0_1" x1="1698.92" y1="88" x2="1698.92" y2="186.161" gradientUnits="userSpaceOnUse">
+        <stop stop-color="#168ECD"/>
+        <stop offset="1" stop-color="#8705AB"/>
+      </linearGradient>
+      <linearGradient id="paint4_linear_0_1" x1="546.924" y1="120" x2="546.924" y2="218.161" gradientUnits="userSpaceOnUse">
+        <stop stop-color="#168ECD"/>
+        <stop offset="1" stop-color="#8705AB"/>
+      </linearGradient>
+      <linearGradient id="paint5_linear_0_1" x1="930.186" y1="-68" x2="930.186" y2="73.2988" gradientUnits="userSpaceOnUse">
+        <stop stop-color="#168ECD"/>
+        <stop offset="1" stop-color="#8705AB"/>
+      </linearGradient>
+    </defs>
+  </svg>
   <header>
-    <svg width="1920" height="343" viewBox="0 0 1920 343" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <rect x="39.6416" y="-201.808" width="394.523" height="390.959" rx="43.5" transform="rotate(45 39.6416 -201.808)" stroke="url(#paint0_linear_0_1)" stroke-width="13"/>
-      <rect x="302.821" y="-69.636" width="223.296" height="221.264" rx="45.5" transform="rotate(45 302.821 -69.636)" stroke="url(#paint1_linear_0_1)" stroke-width="9"/>
-      <rect x="1817.82" y="-108.808" width="219.296" height="217.264" rx="43.5" transform="rotate(45 1817.82 -108.808)" stroke="url(#paint2_linear_0_1)" stroke-width="13"/>
-      <rect x="1649.41" y="91.5355" width="94.0274" height="93.1613" rx="17.5" transform="rotate(45 1649.41 91.5355)" stroke="url(#paint3_linear_0_1)" stroke-width="5"/>
-      <rect x="497.41" y="123.536" width="94.0274" height="93.1613" rx="17.5" transform="rotate(45 497.41 123.536)" stroke="url(#paint4_linear_0_1)" stroke-width="5"/>
-      <rect x="858.913" y="-64.4645" width="137.546" height="136.299" rx="17.5" transform="rotate(45 858.913 -64.4645)" stroke="url(#paint5_linear_0_1)" stroke-width="5"/>
-      <defs>
-        <linearGradient id="paint0_linear_0_1" x1="243.403" y1="-211" x2="243.403" y2="192.959" gradientUnits="userSpaceOnUse">
-          <stop stop-color="#168ECD"/>
-          <stop offset="1" stop-color="#8705AB"/>
-        </linearGradient>
-        <linearGradient id="paint1_linear_0_1" x1="418.969" y1="-76" x2="418.969" y2="154.264" gradientUnits="userSpaceOnUse">
-          <stop stop-color="#168ECD"/>
-          <stop offset="1" stop-color="#8705AB"/>
-        </linearGradient>
-        <linearGradient id="paint2_linear_0_1" x1="1933.97" y1="-118" x2="1933.97" y2="112.264" gradientUnits="userSpaceOnUse">
-          <stop stop-color="#168ECD"/>
-          <stop offset="1" stop-color="#8705AB"/>
-        </linearGradient>
-        <linearGradient id="paint3_linear_0_1" x1="1698.92" y1="88" x2="1698.92" y2="186.161" gradientUnits="userSpaceOnUse">
-          <stop stop-color="#168ECD"/>
-          <stop offset="1" stop-color="#8705AB"/>
-        </linearGradient>
-        <linearGradient id="paint4_linear_0_1" x1="546.924" y1="120" x2="546.924" y2="218.161" gradientUnits="userSpaceOnUse">
-          <stop stop-color="#168ECD"/>
-          <stop offset="1" stop-color="#8705AB"/>
-        </linearGradient>
-        <linearGradient id="paint5_linear_0_1" x1="930.186" y1="-68" x2="930.186" y2="73.2988" gradientUnits="userSpaceOnUse">
-          <stop stop-color="#168ECD"/>
-          <stop offset="1" stop-color="#8705AB"/>
-        </linearGradient>
-      </defs>
-    </svg>
-    <img class="phones" src="@/assets/landing/phones.png">
+    <img class="phones" src="@/assets/landing/phones.png" alt="phones">
     <div class="title-div">
       <img src="@/assets/landing/logo.svg" alt="logo">
       <div>Ваш магазин в Telegram <br> за 5 минут <br> <span>без программирования</span></div>
-      <button>Попробовать <br> <span>бесплатно 7 дней</span></button>
+      <button id="scrollButton">Попробовать <br> <span>бесплатно 7 дней</span></button>
     </div>
+    <img class="arrow-down" src="@/assets/arrow-down.png" alt="arrow-down-with-animation">
   </header>
+  <div id="why-tg" class="why-telegram">
+    <span>Почему Telegram?</span>
+    <img src="@/assets/landing/why-telegram.svg" alt="why-telegram">
+    <button>Открыть новый отдел продаж</button>
+  </div>
+  <div class="choosing-for-what">
+    <div @click="toggle($event, 'commodity-business')" data-text="Для товарного бизнеса" class="isActive">Для товарного бизнеса</div>
+    <div @click="toggle($event, 'services-sector')" data-text="Для сферы услуг">Для сферы услуг</div>
+  </div>
+  <component :is="selectedComponent"></component>
 </template>
 
 <style scoped lang="scss">
 *{
   box-sizing: border-box;
   font-family: 'Montserrat', sans-serif;
-  font-size: 15px;
   line-height: 18.29px;
   color: #FFFFFF;
 }
 
 header{
-  width: 100vw;
   height: 100vh;
   background-color: #0A1526;
+  padding: 0 150px;
   .title-div {
     display: flex;
     flex-direction: column;
     align-items: baseline;
     position: absolute;
     color: #DBE0E9;
-    top: 30%;
-    left: 10%;
+    top: 25%;
     max-width: 750px;
     div {
       font-family: 'Montserrat', sans-serif;
       font-size: 55px;
       font-weight: 500;
       line-height: 67px;
+      margin: 20px 0;
       span {
         font-size: 55px;
         font-weight: 800;
@@ -82,7 +126,6 @@ header{
     }
     img {
       width: 750px;
-      margin: 10px;
     }
     button {
       font-family: "Exo 2", sans-serif;
@@ -98,6 +141,9 @@ header{
       cursor: pointer;
       color: white;
       background: linear-gradient(93.61deg, #8C00AA -0.76%, #02A3D4 100%);
+      &:hover, &:active{
+        background: linear-gradient(93.61deg, #8C00AA80 -0.76%, #02A3D480 100%)
+      }
       span {
         font-family: "Exo 2", sans-serif;
         font-weight: 700;
@@ -111,5 +157,130 @@ header{
     right: 5%;
     top: 10%;
   }
+  .arrow-down {
+    position: absolute;
+    cursor: pointer;
+    right: 47.5%;
+    top: 95vh;
+    animation: moveArrow 1s alternate-reverse infinite;
+  }
 }
+
+@keyframes moveArrow {
+  from{
+    transform: translateY(-20px);
+  }
+  to{
+    transform: translateY(0);
+  }
+}
+
+.why-telegram {
+  background-color: #FFFFFF;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-around;
+  padding: 0 150px;
+  span {
+    color: transparent;
+    -webkit-background-clip: text;
+    font-size: 96px;
+    line-height: 116px;
+    font-family: "Exo 2", sans-serif;
+    font-weight: 800;
+    background-clip: text;
+    margin: 50px 0;
+    background-image: linear-gradient(89.57deg, #810CAD -0.55%, #0C96D1 68.69%);
+  }
+  img {
+    width: 100%;
+    margin: 50px 0;
+  }
+  button {
+    font-family: "Exo 2", sans-serif;
+    font-weight: 800;
+    line-height: 52px;
+    font-size: 48px;
+    border: none;
+    outline: none;
+    width: 55%;
+    height: 136px;
+    border-radius: 100px;
+    cursor: pointer;
+    color: white;
+    margin: 50px 0;
+    background: linear-gradient(93.61deg, #8C00AA -0.76%, #02A3D4 100%);
+    &:hover, &:active{
+      background: linear-gradient(93.61deg, #8C00AA80 -0.76%, #02A3D480 100%)
+    }
+  }
+}
+
+.choosing-for-what {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(50%, 2fr));
+  justify-content: space-around;
+  font-family: "Exo 2", sans-serif;
+  font-weight: 800;
+  font-size: 48px;
+  line-height: 58px;
+  background-color: white;
+  padding-top: 100px;
+  div {
+    width: 100%;
+    padding-top: 50px;
+    text-align: center;
+    position: relative;
+    z-index: 1;
+    border-bottom: 25px solid;
+    cursor: pointer;
+    height: 175px;
+    border-image: linear-gradient(89.92deg, rgba(128, 13, 173, 0.3) 0%, rgba(13, 149, 208, 0.3) 100%);
+    border-image-slice: 1;
+    font-family: "Exo 2", sans-serif;
+    font-weight: 800;
+    font-size: 48px;
+    line-height: 58px;
+    background: linear-gradient(89.57deg, #810CAD -0.55%, #0C96D1 68.69%);
+    color: transparent;
+    -webkit-background-clip: text;
+    background-clip: text;
+    &:not(.isActive)::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: #E3EAFD4D;
+    }
+  }
+  .isActive {
+    z-index: 1;
+    background: #E3EAFD;
+    border-image: linear-gradient(89.92deg, #800DAD 0%, #0D95D0 100%);
+    border-image-slice: 1;
+    color: transparent;
+    //не удалять
+    &::before {
+      font-weight: 800;
+      padding-top: 50px;
+      content: attr(data-text);
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: -1;
+      /* Применяем градиент к тексту */
+      background: linear-gradient(89.57deg, #810CAD -0.55%, #0C96D1 68.69%);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+    }
+  }
+}
+
+
 </style>
