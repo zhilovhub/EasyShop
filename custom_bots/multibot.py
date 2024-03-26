@@ -17,7 +17,7 @@ from aiogram.fsm.state import State, StatesGroup
 from aiogram.fsm.context import FSMContext
 from bot.utils.storage import AlchemyStorageAsync
 from aiogram.types import Message, User, Chat, CallbackQuery
-from aiogram.filters import StateFilter, CommandStart
+from aiogram.filters import CommandStart
 from aiogram.utils.token import TokenValidationError, validate_token
 from aiogram.exceptions import TelegramUnauthorizedError, TelegramAPIError
 from aiogram.client.default import DefaultBotProperties
@@ -173,39 +173,6 @@ async def get_option(param: str, token: str):
     return None
 
 
-@multi_bot_router.message(CustomUserStates.MAIN_MENU)
-async def default_cmd(message: Message):
-    web_app_button = await get_option("web_app_button", message.bot.token)
-
-    try:
-        bot = await bot_db.get_bot_by_token(message.bot.token)
-    except BotNotFound:
-        return await message.answer("Бот не инициализирован")
-
-    default_msg = await get_option("default_msg", message.bot.token)
-    await message.answer(
-        format_locales(default_msg, message.from_user, message.chat),
-        reply_markup=keyboards.get_custom_bot_menu_keyboard(web_app_button, bot.bot_id)
-    )
-
-
-@multi_bot_router.message(CommandStart())
-async def start_cmd(message: Message, state: FSMContext):
-    start_msg = await get_option("start_msg", message.bot.token)
-    web_app_button = await get_option("web_app_button", message.bot.token)
-    try:
-        bot = await bot_db.get_bot_by_token(message.bot.token)
-    except BotNotFound:
-        return await message.answer("Бот не инициализирован")
-
-    await state.set_state(CustomUserStates.MAIN_MENU)
-
-    return await message.answer(
-        format_locales(start_msg, message.from_user, message.chat),
-        reply_markup=keyboards.get_custom_bot_menu_keyboard(web_app_button, bot.bot_id)
-    )
-
-
 @multi_bot_router.message(F.web_app_data)
 async def process_web_app_request(event: Message):
     user_id = event.from_user.id
@@ -259,6 +226,39 @@ async def process_web_app_request(event: Message):
         main_msg.message_id,
         reply_markup=keyboards.create_change_order_status_kb(order.id, msg.message_id, msg.chat.id,
                                                              current_status=order.status)
+    )
+
+
+@multi_bot_router.message(CommandStart())
+async def start_cmd(message: Message, state: FSMContext):
+    start_msg = await get_option("start_msg", message.bot.token)
+    web_app_button = await get_option("web_app_button", message.bot.token)
+    try:
+        bot = await bot_db.get_bot_by_token(message.bot.token)
+    except BotNotFound:
+        return await message.answer("Бот не инициализирован")
+
+    await state.set_state(CustomUserStates.MAIN_MENU)
+
+    return await message.answer(
+        format_locales(start_msg, message.from_user, message.chat),
+        reply_markup=keyboards.get_custom_bot_menu_keyboard(web_app_button, bot.bot_id)
+    )
+
+
+@multi_bot_router.message(CustomUserStates.MAIN_MENU)
+async def default_cmd(message: Message):
+    web_app_button = await get_option("web_app_button", message.bot.token)
+
+    try:
+        bot = await bot_db.get_bot_by_token(message.bot.token)
+    except BotNotFound:
+        return await message.answer("Бот не инициализирован")
+
+    default_msg = await get_option("default_msg", message.bot.token)
+    await message.answer(
+        format_locales(default_msg, message.from_user, message.chat),
+        reply_markup=keyboards.get_custom_bot_menu_keyboard(web_app_button, bot.bot_id)
     )
 
 
