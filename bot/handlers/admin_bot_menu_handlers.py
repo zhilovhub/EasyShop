@@ -71,8 +71,8 @@ async def handle_reply_to_question(message: Message, state: FSMContext):
         return await message.answer(f"Заказ с номером №{order_id} не найден")
 
     custom_bot = await bot_db.get_bot_by_created_by(created_by=message.from_user.id)
-    await Bot(token=custom_bot.token).send_message(chat_id=order.from_user,
-                                                   text=f"Поступил ответ на вопрос по заказу <b>№{order.id}</b>\n\n\n"
+    await Bot(token=custom_bot.token, parse_mode=ParseMode.HTML).send_message(chat_id=order.from_user,
+                                                   text=f"Поступил ответ на вопрос по заказу <b>#{order.id}</b> 👇\n"
                                                         f"<i>{message.text}</i>",
                                                    reply_to_message_id=question_messages_data[question_message_id][
                                                        "question_from_custom_bot_message_id"])
