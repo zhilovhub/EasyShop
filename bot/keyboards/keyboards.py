@@ -58,9 +58,7 @@ def create_confirm_question_kb(order_id: str, msg_id: int, chat_id: int) -> Inli
     return InlineKeyboardMarkup(inline_keyboard=[
         [
             InlineKeyboardButton(text="✅",
-                                 callback_data=f"approve_ask_question:{order_id}:{msg_id}:{chat_id}")
-        ],
-        [
+                                 callback_data=f"approve_ask_question:{order_id}:{msg_id}:{chat_id}"),
             InlineKeyboardButton(text="❌",
                                  callback_data=f"cancel_ask_question")
         ],
