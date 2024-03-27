@@ -64,7 +64,7 @@ async def handle_reply_to_question(message: Message, state: FSMContext):
         )
         return await bot_menu_handler(message, state)
 
-    order_id = question_messages_data["order_id"]
+    order_id = question_messages_data[question_message_id]["order_id"]
     try:
         order = await order_db.get_order(order_id)
     except OrderNotFound:
@@ -74,7 +74,7 @@ async def handle_reply_to_question(message: Message, state: FSMContext):
     await Bot(token=custom_bot.token).send_message(chat_id=order.from_user,
                                                    text=f"Поступил ответ на вопрос по заказу <b>№{order.id}</b>\n\n\n"
                                                         f"<i>{message.text}</i>",
-                                                   reply_to_message_id=question_messages_data[
+                                                   reply_to_message_id=question_messages_data[question_message_id][
                                                        "question_from_custom_bot_message_id"])
     await message.answer("Ответ отправлен")
 
