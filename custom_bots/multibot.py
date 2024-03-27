@@ -350,6 +350,7 @@ async def approve_ask_question_callback(query: CallbackQuery, state: FSMContext)
 
     if not state_data or 'order_id' not in state_data:
         await state.set_state(CustomUserStates.MAIN_MENU)
+        await query.message.edit_reply_markup(None)
         return await query.answer("Произошла ошибка возвращаюсь в главное меню...", show_alert=True)
 
     data = query.data.split(":")
@@ -383,8 +384,8 @@ async def approve_ask_question_callback(query: CallbackQuery, state: FSMContext)
         await state.set_state(CustomUserStates.MAIN_MENU)
         return await query.answer(":( Не удалось отправить Ваш вопрос", show_alert=True)
 
+    await query.message.edit_text("Ваш вопрос отправлен, ожидайте ответа от администратора магазина в этом чате")
     await query.message.edit_reply_markup(reply_markup=None)
-    await query.message.answer("Ваш вопрос отправлен, ожидайте ответа от администратора магазина в этом чате")
 
     state_data['last_question_time'] = time.time()
 
