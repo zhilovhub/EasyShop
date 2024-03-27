@@ -33,6 +33,7 @@ from database.models.models import Database
 from database.models.bot_model import BotNotFound
 from database.models.order_model import OrderSchema, OrderStatusValues, OrderNotFound
 
+from bot import config
 from bot.utils import JsonStore
 from bot.keyboards import keyboards
 
@@ -85,7 +86,10 @@ logging.basicConfig(format=u'[%(asctime)s][%(levelname)s] ::: %(filename)s(%(lin
 logger = logging.getLogger('logger')
 
 PREV_ORDER_MSGS = JsonStore(file_path="prev_orders_msg_id.json", json_store_name="PREV_ORDER_MSGS")
-QUESTION_MESSAGES = JsonStore(file_path="question_messages.json", json_store_name="QUESTION_MESSAGES")
+QUESTION_MESSAGES = JsonStore(
+    file_path=config.RESOURCES_PATH.format("question_messages.json"),
+    json_store_name="QUESTION_MESSAGES"
+)
 
 
 class CustomUserStates(StatesGroup):
