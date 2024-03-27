@@ -77,6 +77,22 @@ class BotDao(Dao):
 
         return BotSchema.model_validate(res)
 
+    async def get_bot_by_created_by(self, created_by: int) -> BotSchema:
+        if not isinstance(created_by, int):
+            raise InvalidParameterFormat(
+                "created_by must be type of int")
+
+        async with self.engine.begin() as conn:
+            raw_res = await conn.execute(select(Bot).where(Bot.created_by == created_by))
+        await self.engine.dispose()
+
+        res = raw_res.fetchone()
+        if res is None:
+            raise BotNotFound(f"bot with created_by = {created_by} not found in database")
+
+        self.logger.info(f"get_bot_by_created_by method created_by: {created_by} success")
+        return BotSchema.model_validate(res)
+
     async def get_bot_by_token(self, bot_token: str) -> BotSchema:
         try:
             validate_token(bot_token)
@@ -131,4 +147,3 @@ class BotDao(Dao):
         await self.engine.dispose()
 
         self.logger.info(f"successfully delete bot with bot_id = {bot_id} from db")
-

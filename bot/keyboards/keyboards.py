@@ -57,11 +57,9 @@ def create_user_order_kb(order_id: str, msg_id: int = 0, chat_id: int = 0) -> In
 def create_confirm_question_kb(order_id: str, msg_id: int, chat_id: int) -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(inline_keyboard=[
         [
-            InlineKeyboardButton(text="Подтвердить отправку вопроса",
-                                 callback_data=f"approve_ask_question:{order_id}:{msg_id}:{chat_id}")
-        ],
-        [
-            InlineKeyboardButton(text="Отменить отправку вопроса",
+            InlineKeyboardButton(text="✅",
+                                 callback_data=f"approve_ask_question:{order_id}:{msg_id}:{chat_id}"),
+            InlineKeyboardButton(text="❌",
                                  callback_data=f"cancel_ask_question")
         ],
     ])

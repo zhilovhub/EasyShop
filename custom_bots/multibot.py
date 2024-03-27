@@ -17,7 +17,7 @@ from aiogram.fsm.state import State, StatesGroup
 from aiogram.fsm.context import FSMContext
 from bot.utils.storage import AlchemyStorageAsync
 from aiogram.types import Message, User, Chat, CallbackQuery
-from aiogram.filters import StateFilter
+from aiogram.filters import CommandStart
 from aiogram.utils.token import TokenValidationError, validate_token
 from aiogram.exceptions import TelegramUnauthorizedError, TelegramAPIError
 from aiogram.client.default import DefaultBotProperties
@@ -30,11 +30,12 @@ from aiogram.webhook.aiohttp_server import (
 )
 
 from database.models.models import Database
-from database.models.order_model import OrderSchema, OrderStatusValues, OrderNotFound
 from database.models.bot_model import BotNotFound
+from database.models.order_model import OrderSchema, OrderStatusValues, OrderNotFound
 
-from bot.keyboards import keyboards
+from bot import config
 from bot.utils import JsonStore
+from bot.keyboards import keyboards
 
 import json
 
@@ -85,6 +86,10 @@ logging.basicConfig(format=u'[%(asctime)s][%(levelname)s] ::: %(filename)s(%(lin
 logger = logging.getLogger('logger')
 
 PREV_ORDER_MSGS = JsonStore(file_path="prev_orders_msg_id.json", json_store_name="PREV_ORDER_MSGS")
+QUESTION_MESSAGES = JsonStore(
+    file_path=config.RESOURCES_PATH.format("question_messages.json"),
+    json_store_name="QUESTION_MESSAGES"
+)
 
 
 class CustomUserStates(StatesGroup):
@@ -172,29 +177,6 @@ async def get_option(param: str, token: str):
     return None
 
 
-@multi_bot_router.message(F.text == "/cancel")
-async def cancel_cmd(message: Message, state: FSMContext):
-    await state.set_state(CustomUserStates.MAIN_MENU)
-    await message.answer("Вы перешли в основное меню.")
-
-
-@multi_bot_router.message(F.text == "/start")
-async def start_cmd(message: Message, state: FSMContext):
-    start_msg = await get_option("start_msg", message.bot.token)
-    web_app_button = await get_option("web_app_button", message.bot.token)
-    try:
-        bot = await bot_db.get_bot_by_token(message.bot.token)
-    except BotNotFound:
-        return await message.answer("Бот не инициализирован")
-
-    await state.set_state(CustomUserStates.MAIN_MENU)
-
-    return await message.answer(
-        format_locales(start_msg, message.from_user, message.chat),
-        reply_markup=keyboards.get_custom_bot_menu_keyboard(web_app_button, bot.bot_id)
-    )
-
-
 @multi_bot_router.message(F.web_app_data)
 async def process_web_app_request(event: Message):
     user_id = event.from_user.id
@@ -251,13 +233,46 @@ async def process_web_app_request(event: Message):
     )
 
 
+@multi_bot_router.message(CommandStart())
+async def start_cmd(message: Message, state: FSMContext):
+    start_msg = await get_option("start_msg", message.bot.token)
+    web_app_button = await get_option("web_app_button", message.bot.token)
+    try:
+        bot = await bot_db.get_bot_by_token(message.bot.token)
+    except BotNotFound:
+        return await message.answer("Бот не инициализирован")
+
+    await state.set_state(CustomUserStates.MAIN_MENU)
+
+    return await message.answer(
+        format_locales(start_msg, message.from_user, message.chat),
+        reply_markup=keyboards.get_custom_bot_menu_keyboard(web_app_button, bot.bot_id)
+    )
+
+
+@multi_bot_router.message(CustomUserStates.MAIN_MENU)
+async def default_cmd(message: Message):
+    web_app_button = await get_option("web_app_button", message.bot.token)
+
+    try:
+        bot = await bot_db.get_bot_by_token(message.bot.token)
+    except BotNotFound:
+        return await message.answer("Бот не инициализирован")
+
+    default_msg = await get_option("default_msg", message.bot.token)
+    await message.answer(
+        format_locales(default_msg, message.from_user, message.chat),
+        reply_markup=keyboards.get_custom_bot_menu_keyboard(web_app_button, bot.bot_id)
+    )
+
+
 @multi_bot_router.callback_query(lambda q: q.data.startswith("order_"))
 async def handle_order_callback(query: CallbackQuery):
     data = query.data.split(":")
     try:
         order = await order_db.get_order(data[1])
     except OrderNotFound:
-        await query.answer("Ошибка при работе с заказом, возможно статус уже изменился.", show_alert=True)
+        await query.answer("Ошибка при работе с заказом, возможно статус уже изменился", show_alert=True)
         return await query.message.edit_reply_markup(None)
     match data[0]:
         case "order_pre_cancel":
@@ -286,34 +301,42 @@ async def handle_order_callback(query: CallbackQuery):
 @multi_bot_router.callback_query(lambda q: q.data.startswith("ask_question"))
 async def handle_ask_question_callback(query: CallbackQuery, state: FSMContext):
     data = query.data.split(":")
+
     try:
         order = await order_db.get_order(data[1])
     except OrderNotFound:
-        await query.answer("Ошибка при работе с заказом, возможно заказ был удалён.", show_alert=True)
+        await query.answer("Ошибка при работе с заказом, возможно заказ был удалён", show_alert=True)
         return await query.message.edit_reply_markup(None)
+
     state_data = await state.get_data()
     if not state_data:
         state_data = {"order_id": order.id}
     else:
         if "last_question_time" in state_data and time.time() - state_data['last_question_time'] < 1 * 60 * 60:
-            return await query.answer("Вы уже задавали вопрос недавно, пожалуйста попробуйте позже "
+            return await query.answer("Вы уже задавали вопрос недавно, пожалуйста, попробуйте позже "
                                       "(между вопросами должен пройти час)", show_alert=True)
         state_data['order_id'] = order.id
+
     await state.set_state(CustomUserStates.WAITING_FOR_QUESTION)
-    await query.message.answer("Вы можете отправить свой вопрос по заказу, отправив любое сообщение боту."
-                               "\n\nДля отмены введите команду /cancel")
+    await query.message.answer(
+        "Вы можете отправить свой вопрос по заказу, отправив любое сообщение боту",
+        reply_markup=keyboards.get_back_keyboard()
+    )
     await state.set_data(state_data)
 
 
 @multi_bot_router.message(CustomUserStates.WAITING_FOR_QUESTION)
 async def handle_waiting_for_question_state(message: Message, state: FSMContext):
     state_data = await state.get_data()
+
     if not state_data or 'order_id' not in state_data:
         await state.set_state(CustomUserStates.MAIN_MENU)
         return await message.answer("Произошла ошибка возвращаюсь в главное меню...")
+
     await message.reply(f"Вы уверены что хотите отправить это сообщение вопросом к заказу "
-                        f"<b>№{state_data['order_id']}</b>?"
-                        f"\n\nПосле отправки вопроса, Вы не сможете сразу отправить еще один.",
+                        f"<b>#{state_data['order_id']}</b>?"
+                        f"\n\nПосле отправки вопроса, Вы сможете отправить следующий <b>минимум через 1 час</b> или "
+                        f"<b>после ответа администратора</b>",
                         reply_markup=keyboards.create_confirm_question_kb(
                             order_id=state_data['order_id'],
                             msg_id=message.message_id,
@@ -324,89 +347,58 @@ async def handle_waiting_for_question_state(message: Message, state: FSMContext)
 @multi_bot_router.callback_query(lambda q: q.data.startswith("approve_ask_question"))
 async def approve_ask_question_callback(query: CallbackQuery, state: FSMContext):
     state_data = await state.get_data()
+
     if not state_data or 'order_id' not in state_data:
         await state.set_state(CustomUserStates.MAIN_MENU)
+        await query.message.edit_reply_markup(None)
         return await query.answer("Произошла ошибка возвращаюсь в главное меню...", show_alert=True)
+
     data = query.data.split(":")
     try:
         order = await order_db.get_order(data[1])
     except OrderNotFound:
-        await query.answer("Ошибка при работе с заказом, возможно заказ был удалён.", show_alert=True)
+        await query.answer("Ошибка при работе с заказом, возможно заказ был удалён", show_alert=True)
         return await query.message.edit_reply_markup(None)
+
     bot_data = await bot_db.get_bot_by_token(query.bot.token)
     try:
-        msg = await query.bot.forward_message(chat_id=bot_data.created_by, from_chat_id=query.message.chat.id, message_id=int(data[2]))
-        await query.bot.send_message(chat_id=bot_data.created_by,
-                                     text=f"Новый вопрос по заказу <b>№{order.id}</b> от пользователя "
-                                          f"<b>{'@' + query.from_user.username if query.from_user.username else query.from_user.full_name}</b>.\n\n"
-                                          f"Для ответа на вопрос <b>ответьте на это сообщение</b> любым сообщением.",
-                                     reply_to_message_id=msg.message_id)
+        message = await main_bot.send_message(chat_id=bot_data.created_by,
+                                              text=f"Новый вопрос по заказу <b>#{order.id}</b> от пользователя "
+                                                   f"<b>{'@' + query.from_user.username if query.from_user.username else query.from_user.full_name}</b> 👇\n\n"
+                                                   f"<i>{query.message.reply_to_message.text}</i>\n\n"
+                                                   f"Для ответа на вопрос <b>зажмите это сообщение</b> и ответьте на него")
+        question_messages_data = QUESTION_MESSAGES.get_data()
+        question_messages_data[message.message_id] = {
+            "question_from_custom_bot_message_id": data[2],
+            "order_id": order.id
+        }
+        QUESTION_MESSAGES.update_data(question_messages_data)
     except TelegramAPIError:
         await main_bot.send_message(chat_id=bot_data.created_by,
                                     text="Вам поступило новое <b>сообщение-вопрос</b> от клиента, "
                                          "но Вашему боту <b>не удалось Вам его отправить</b>, "
-                                         "проверьте писали ли Вы хоть раз своему боту и не заблокировали ли вы его."
+                                         "проверьте писали ли Вы хоть раз своему боту и не заблокировали ли вы его"
                                          f"\n\n* ссылка на Вашего бота @{(await query.bot.get_me()).username}")
-        await state.set_state(CustomUserStates.MAIN_MENU)
+
         logger.info("cant send order question to admin", exc_info=True)
+        await state.set_state(CustomUserStates.MAIN_MENU)
         return await query.answer(":( Не удалось отправить Ваш вопрос", show_alert=True)
-    await query.message.answer("Ваш вопрос отправлен, ожидайте ответа от администратора магазина в чате.")
-    await query.message.edit_reply_markup(reply_markup=None)
+
+    await query.message.edit_text(
+        "Ваш вопрос отправлен, ожидайте ответа от администратора магазина в этом чате", reply_markup=None
+    )
+
     state_data['last_question_time'] = time.time()
+
     await state.set_state(CustomUserStates.MAIN_MENU)
     await state.set_data(state_data)
 
 
 @multi_bot_router.callback_query(lambda q: q.data.startswith("cancel_ask_question"))
 async def cancel_ask_question_callback(query: CallbackQuery, state: FSMContext):
-    await query.answer("Отправка вопроса администратору отменена", show_alert=True)
+    await query.answer("Отправка вопроса администратору отменена\nВозвращаемся в меню", show_alert=True)
     await state.set_state(CustomUserStates.MAIN_MENU)
     await query.message.edit_reply_markup(reply_markup=None)
-
-
-@multi_bot_router.message(F.reply_to_message)
-async def handle_reply_to_message_action(message: Message, state: FSMContext):
-    bot_data = await bot_db.get_bot_by_token(message.bot.token)
-    if message.from_user.id != bot_data.created_by:
-        return default_cmd(message, state)
-    # entities = message.entities
-    # first_bold = None
-    # for entity in entities:
-    #     if entity.type == "bold":
-    #         first_bold = entity
-    #         break
-    # else:
-    #     logger.warning("Order Id not found in admin reply message")
-    #     return await message.answer("Произошла ошибка. Не удалось найти номер заказа в сообщении.")
-    order_id = message.reply_to_message.text.split('№')[-1].split()[0]
-    # order_id = message.text[first_bold[entity.offset + 1:entity.offset + entity.length + 1]]
-    try:
-        order = await order_db.get_order(order_id)
-    except OrderNotFound:
-        return await message.answer(f"Заказ с номером №{order_id} не найден.")
-    msg = await message.bot.copy_message(chat_id=order.from_user,
-                                         from_chat_id=message.chat.id,
-                                         message_id=message.message_id)
-    await message.bot.send_message(chat_id=order.from_user,
-                                   text=f"Поступил ответ на вопрос по заказу <b>№{order.id}</b>",
-                                   reply_to_message_id=msg.message_id)
-    await message.answer("Ответ отправлен.")
-
-
-@multi_bot_router.message(StateFilter(None, CustomUserStates.MAIN_MENU))
-async def default_cmd(message: Message, state: FSMContext):
-    web_app_button = await get_option("web_app_button", message.bot.token)
-
-    try:
-        bot = await bot_db.get_bot_by_token(message.bot.token)
-    except BotNotFound:
-        return await message.answer("Бот не инициализирован.")
-
-    default_msg = await get_option("default_msg", message.bot.token)
-    await message.answer(
-        format_locales(default_msg, message.from_user, message.chat),
-        reply_markup=keyboards.get_custom_bot_menu_keyboard(web_app_button, bot.bot_id)
-    )
 
 
 async def main():

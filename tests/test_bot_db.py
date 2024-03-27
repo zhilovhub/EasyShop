@@ -28,6 +28,17 @@ class TestBotDb:
         bot = await bot_db.get_bot_by_token(bot_schema_1.token)
         assert bot == bot_schema_1
 
+    async def test_get_bot_by_created_by(self, bot_db: BotDao, before_add_bot) -> None:
+        """BotDao.get_bot_by_created_by"""
+        with pytest.raises(InvalidParameterFormat):
+            await bot_db.get_bot_by_created_by("100000A000:AaA5AaAaAaAaAaAaAaAaAaAaAaAaAaAaA")
+
+        with pytest.raises(BotNotFound):
+            await bot_db.get_bot_by_created_by(bot_schema_1.created_by + 1)
+
+        bot = await bot_db.get_bot_by_created_by(bot_schema_1.created_by)
+        assert bot == bot_schema_1
+
     async def test_get_bots(self, bot_db: BotDao, before_add_two_bots) -> None:
         """BotDao.get_bots"""
         bots = await bot_db.get_bots()

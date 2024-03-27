@@ -4,6 +4,7 @@ import string
 from random import sample
 from datetime import datetime
 
+from aiogram.fsm.storage.base import StorageKey
 from aiohttp import ClientConnectorError
 
 from aiogram import Bot, F
@@ -14,13 +15,15 @@ from aiogram.utils.token import validate_token, TokenValidationError
 from aiogram.types import Message, FSInputFile, CallbackQuery
 from aiogram.fsm.context import FSMContext
 
-from bot.main import bot, user_db, bot_db, product_db, order_db
+from bot.main import bot, user_db, bot_db, product_db, order_db, QUESTION_MESSAGES
 from bot.config import logger
 from bot.keyboards import *
 from bot.exceptions import InstanceAlreadyExists
 from bot.states.states import States
 from bot.handlers.routers import admin_bot_menu_router
 from bot.utils.custom_bot_api import start_custom_bot, stop_custom_bot
+
+from custom_bots.multibot import storage as custom_bot_storage
 
 from database.models.bot_model import BotSchemaWithoutId
 from database.models.order_model import OrderSchema, OrderNotFound
@@ -49,6 +52,42 @@ async def process_web_app_request(event: Message):
         await send_new_order_notify(order, user_id)
     except Exception as ex:
         logger.warning("error while sending test order notification", exc_info=True)
+
+
+@admin_bot_menu_router.message(F.reply_to_message)
+async def handle_reply_to_question(message: Message, state: FSMContext):
+    question_messages_data = QUESTION_MESSAGES.get_data()
+    question_message_id = str(message.reply_to_message.message_id)
+    if not question_message_id in question_messages_data:
+        logger.info(
+            f"{message.from_user.id}: replied message with message_id {question_message_id} not found in question_messages_data"
+        )
+        return await bot_menu_handler(message, state)
+
+    order_id = question_messages_data[question_message_id]["order_id"]
+    try:
+        order = await order_db.get_order(order_id)
+    except OrderNotFound:
+        return await message.answer(f"Заказ с номером №{order_id} не найден")
+
+    custom_bot = await bot_db.get_bot_by_created_by(created_by=message.from_user.id)
+    await Bot(token=custom_bot.token, parse_mode=ParseMode.HTML).send_message(chat_id=order.from_user,
+                                                   text=f"Поступил ответ на вопрос по заказу <b>#{order.id}</b> 👇\n\n"
+                                                        f"<i>{message.text}</i>",
+                                                   reply_to_message_id=question_messages_data[question_message_id][
+                                                       "question_from_custom_bot_message_id"])
+    await message.answer("Ответ отправлен")
+
+    del question_messages_data[question_message_id]
+    QUESTION_MESSAGES.update_data(question_messages_data)
+    user_state = FSMContext(storage=custom_bot_storage, key=StorageKey(
+        chat_id=order.from_user,
+        user_id=order.from_user,
+        bot_id=bot.id))
+    user_state_data = await user_state.get_data()
+    if "last_question_time" in user_state_data:
+        del user_state_data["last_question_time"]
+        await user_state.set_data(user_state_data)
 
 
 @admin_bot_menu_router.callback_query(lambda q: q.data.startswith("order_"))
@@ -86,7 +125,7 @@ async def handle_callback(query: CallbackQuery, state: FSMContext):
             await Bot(bot_token, parse_mode=ParseMode.HTML).edit_message_text(
                 order.convert_to_notification_text(products=products),
                 reply_markup=None if data[0] in ("order_finish", "order_cancel") else
-                create_cancel_order_kb(order.id, int(data[2]), int(data[3])),
+                create_user_order_kb(order.id, int(data[2]), int(data[3])),
                 chat_id=data[3],
                 message_id=int(data[2]))
 

@@ -38,6 +38,10 @@ cache_resources_file_id_store = JsonStore(
     file_path=config.RESOURCES_PATH.format("cache.json"),
     json_store_name="RESOURCES_FILE_ID_STORE"
 )
+QUESTION_MESSAGES = JsonStore(
+    file_path=config.RESOURCES_PATH.format("question_messages.json"),
+    json_store_name="QUESTION_MESSAGES"
+)
 
 
 async def on_start():

@@ -15,7 +15,7 @@ jobs:
           run: |
             sudo apt update
             sudo apt install sshpass
-            sshpass -p "${{ secrets.HMM }}" ssh -o "StrictHostKeyChecking=no" -T ${{ secrets.USER }} -p 22 "bash autopull.sh && exit"
+            sshpass -p "${{ secrets.HMM }}" ssh -o "StrictHostKeyChecking=no" -T ${{ secrets.USER }} -p 22 "bash autopull.sh & exit"
 
   ci_job:
     runs-on: ubuntu-latest
