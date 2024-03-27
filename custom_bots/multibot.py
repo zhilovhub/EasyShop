@@ -330,7 +330,7 @@ async def handle_waiting_for_question_state(message: Message, state: FSMContext)
         return await message.answer("Произошла ошибка возвращаюсь в главное меню...")
 
     await message.reply(f"Вы уверены что хотите отправить это сообщение вопросом к заказу "
-                        f"<b>№{state_data['order_id']}</b>?"
+                        f"<b>#{state_data['order_id']}</b>?"
                         f"\n\nПосле отправки вопроса, Вы сможете отправить следующий <b>минимум через 1 час</b> или "
                         f"<b>после ответа администратора</b>",
                         reply_markup=keyboards.create_confirm_question_kb(
