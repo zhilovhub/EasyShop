@@ -58,7 +58,7 @@ async def process_web_app_request(event: Message):
 async def handle_reply_to_question(message: Message, state: FSMContext):
     question_messages_data = QUESTION_MESSAGES.get_data()
     question_message_id = message.reply_to_message.message_id
-    if not question_message_id in question_messages_data:
+    if not str(question_message_id) in question_messages_data:
         logger.info(
             f"{message.from_user.id}: replied message with message_id {question_message_id} not found in question_messages_data"
         )
