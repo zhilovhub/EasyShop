@@ -384,8 +384,9 @@ async def approve_ask_question_callback(query: CallbackQuery, state: FSMContext)
         await state.set_state(CustomUserStates.MAIN_MENU)
         return await query.answer(":( Не удалось отправить Ваш вопрос", show_alert=True)
 
-    await query.message.edit_text("Ваш вопрос отправлен, ожидайте ответа от администратора магазина в этом чате")
-    await query.message.edit_reply_markup(reply_markup=None)
+    await query.message.edit_text(
+        "Ваш вопрос отправлен, ожидайте ответа от администратора магазина в этом чате", reply_markup=None
+    )
 
     state_data['last_question_time'] = time.time()
 
