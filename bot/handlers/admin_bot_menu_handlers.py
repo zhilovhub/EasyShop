@@ -38,6 +38,7 @@ async def process_web_app_request(event: Message):
         logger.info(f"receive web app data: {data}")
 
         data["from_user"] = user_id
+        data["payment_method"] = "Картой Онлайн"
         data["status"] = "backlog"
         data["count"] = 0
 

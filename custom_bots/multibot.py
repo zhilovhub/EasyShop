@@ -190,6 +190,7 @@ async def process_web_app_request(event: Message):
         order_data = {k: v for k, v in data.items() if k in order_params}
 
         order_data["from_user"] = user_id
+        order_data["payment_method"] = "Картой Онлайн"
         order_data["status"] = "backlog"
         order_data["count"] = 0
 
