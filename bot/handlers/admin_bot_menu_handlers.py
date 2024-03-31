@@ -111,6 +111,9 @@ async def handle_callback(query: CallbackQuery, state: FSMContext):
             await query.message.edit_reply_markup(reply_markup=create_change_order_status_kb(
                 data[1], int(data[2]), int(data[3]), current_status=order.status))
         case "order_finish" | "order_cancel" | "order_process" | "order_backlog" | "order_waiting_payment":
+            if order.status.value == data[0]:
+                await query.answer("Этот статус уже выставлен")
+
             order.status = {
                 "order_cancel": OrderStatusValues.CANCELLED,
                 "order_finish": OrderStatusValues.FINISHED,
