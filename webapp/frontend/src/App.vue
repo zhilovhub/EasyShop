@@ -3,6 +3,8 @@
 </template>
 
 <script>
+document.body.style.zoom = "100%";
+
 const textarea = document.querySelectorAll('textarea');
 textarea.forEach(textarea => {
   textarea.addEventListener('blur', function() {
