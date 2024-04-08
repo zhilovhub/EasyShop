@@ -168,7 +168,11 @@ def is_bot_token(value: str) -> Union[bool, Dict[str, Any]]:
 
 
 async def get_option(param: str, token: str):
-    bot_info = await bot_db.get_bot_by_token(token)
+    try:
+        bot_info = await bot_db.get_bot_by_token(token)
+    except BotNotFound:
+        return await Bot(token).delete_webhook()
+
     options = bot_info.settings
     if options is None:
         return None
