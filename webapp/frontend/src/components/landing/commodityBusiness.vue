@@ -5,9 +5,10 @@ import { Swiper, SwiperSlide } from 'swiper/vue';
 
 import 'swiper/swiper-bundle.min.css'
 import 'swiper/swiper.min.css'
+import { Navigation } from 'swiper'
 
 // import required modules
-import { Navigation } from 'swiper/modules';
+
 
 export default {
   components: {
@@ -72,14 +73,14 @@ export default {
     </div>
 
     <div class="swiper-container">
-    <swiper
-      :slidesPerView="3"
-      :spaceBetween="50"
-      :navigation="{
+      <swiper
+        :slidesPerView="3"
+        :spaceBetween="50"
+        :navigation="{
         prevEl: '.swiper-button-prev',
         nextEl: '.swiper-button-next'
       }"
-      :breakpoints="{
+        :breakpoints="{
         '1024': {
           slidesPerView: 3,
           spaceBetween: 40
@@ -97,13 +98,13 @@ export default {
           spaceBetween: 10
         }
       }"
-      :modules="modules"
-      class="themes-selector">
-      <swiper-slide><img src="@/assets/landing/themes/blue-theme-phone.png" alt="blue-phone"></swiper-slide>
-      <swiper-slide><img src="@/assets/landing/themes/green-theme-phone.png" alt="green-phone"></swiper-slide>
-      <swiper-slide><img src="@/assets/landing/themes/purple-theme-phone.png" alt="purple-phone"></swiper-slide>
-      <swiper-slide><img src="@/assets/landing/themes/purple-theme-phone.png" alt="purple-phone"></swiper-slide>
-    </swiper>
+        :modules="modules"
+        class="themes-selector">
+        <swiper-slide><img src="@/assets/landing/themes/blue-theme-phone.png" alt="blue-phone"></swiper-slide>
+        <swiper-slide><img src="@/assets/landing/themes/green-theme-phone.png" alt="green-phone"></swiper-slide>
+        <swiper-slide><img src="@/assets/landing/themes/purple-theme-phone.png" alt="purple-phone"></swiper-slide>
+        <swiper-slide><img src="@/assets/landing/themes/purple-theme-phone.png" alt="purple-phone"></swiper-slide>
+      </swiper>
       <div class="swiper-button-prev"><img src="@/assets/landing/themes/arrow-left.svg" alt="arrow-left"></div>
       <div class="swiper-button-next"><img src="@/assets/landing/themes/arrow-right.svg" alt="arrow-right"></div>
     </div>
@@ -195,6 +196,7 @@ export default {
   flex-direction: column;
   justify-content: space-evenly;
   align-items: center;
+
   .arrow {
     margin: -150px;
   }
@@ -204,18 +206,22 @@ export default {
   width: 100%;
   display: flex;
   justify-content: space-between;
+
   .text-block:nth-child(even) {
     text-align: right;
   }
+
   .text-block:nth-child(odd) {
     text-align: left;
   }
+
   .text-block {
     white-space: normal; /* or break-spaces */
     display: flex;
     flex-direction: column;
     width: 45vw;
     overflow-wrap: break-word;
+
     .gradient {
       color: transparent;
       -webkit-background-clip: text;
@@ -227,6 +233,7 @@ export default {
       background-image: linear-gradient(89.57deg, #810CAD -0.55%, #0C96D1 68.69%);
       padding-bottom: 50px;
     }
+
     span {
       font-family: Montserrat, sans-serif;
       font-size: 48px;
@@ -234,6 +241,7 @@ export default {
       line-height: 58px;
       color: #0A1526;
     }
+
     span:first-child {
       padding-top: 150px;
     }
@@ -242,9 +250,11 @@ export default {
 
 .block:first-child {
   padding-left: 150px;
+
   .text-block {
     padding-top: 50px;
   }
+
   margin-bottom: -250px;
 }
 
@@ -255,10 +265,12 @@ export default {
 .custom {
   background-color: #E3EAFD;
   padding: 150px;
+
   .custom-text {
     display: flex;
     flex-direction: column;
     width: 50vw;
+
     .custom-description {
       color: #7A14AF;
       font-weight: 500;
@@ -282,6 +294,7 @@ export default {
   display: flex;
   flex-direction: column;
   align-items: center;
+
   button {
     font-family: "Exo 2", sans-serif;
     font-weight: 800;
@@ -296,10 +309,12 @@ export default {
     color: white;
     margin: 50px 0;
     background: linear-gradient(93.61deg, #8C00AA -0.76%, #02A3D4 100%);
-    &:hover, &:active{
+
+    &:hover, &:active {
       background: linear-gradient(93.61deg, #8C00AA80 -0.76%, #02A3D480 100%)
     }
   }
+
   span {
     max-width: 400px;
     font-family: Montserrat, sans-serif;
@@ -314,6 +329,7 @@ export default {
 .additionally {
   background-color: #FFFFFF;
   padding: 150px;
+
   .gradient {
     color: transparent;
     -webkit-background-clip: text;
@@ -324,6 +340,7 @@ export default {
     background-clip: text;
     background-image: linear-gradient(89.57deg, #810CAD -0.55%, #0C96D1 68.69%);
   }
+
   img {
     display: block;
     margin: 75px auto;
@@ -333,6 +350,7 @@ export default {
 .wrapper-selector {
   background-color: #E3EAFD;
   padding: 50px 150px 150px;
+
   .comment-selector {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(33%, 1fr));
@@ -341,6 +359,7 @@ export default {
     padding-left: 0;
     flex-wrap: nowrap;
     margin-top: 50px;
+
     &::before {
       content: '';
       width: 10%;
@@ -354,6 +373,7 @@ export default {
       top: 0;
       z-index: 1;
     }
+
     &::after {
       content: '';
       width: 10%;
@@ -367,12 +387,15 @@ export default {
       top: 0;
       z-index: 1;
     }
+
     .comment-block:first-child {
       margin-left: 50px;
     }
+
     .comment-block:last-child {
       margin-right: 50px;
     }
+
     .comment-block {
       white-space: nowrap;
       background-color: #F2F6FF;
@@ -383,6 +406,7 @@ export default {
       border-radius: 50px;
       margin: 0 10px;
       padding: 50px 25px 10px;
+
       .title-text {
         font-size: 36px;
         font-family: "Exo 2", sans-serif;
@@ -390,10 +414,12 @@ export default {
         color: #5D36B8;
         margin-left: 10px;
       }
+
       .comment-tile {
         display: flex;
         align-items: center;
       }
+
       .comment-text {
         white-space: normal;
         font-size: 24px;
@@ -401,6 +427,7 @@ export default {
         font-weight: 400;
         margin: 15px 0;
       }
+
       img {
         width: 110px;
       }
@@ -421,6 +448,7 @@ export default {
 .tariffs {
   background-color: #FFFFFF;
   padding: 50px 150px;
+
   .tariffs-description {
     display: block;
     font-family: Montserrat, sans-serif;
@@ -435,16 +463,19 @@ footer {
   max-width: 100%;
   background-color: #0A1526;
   position: relative;
+
   span {
     display: block;
     color: #ACBBD5;
     font-family: Montserrat, sans-serif;
     font-size: 40px;
     font-weight: 700;
+
     img {
       margin-right: 15px;
     }
   }
+
   .licensor {
     position: absolute;
     bottom: 50px;
@@ -453,6 +484,7 @@ footer {
     display: flex;
     justify-content: space-between;
     align-items: center;
+
     span {
       font-size: 32px;
       font-weight: 500;
@@ -465,26 +497,32 @@ footer {
   position: relative;
   width: 95%;
   margin: 50px 75px 0;
+
   .swiper {
     width: 95%;
     height: 95%;
+
     .swiper-slide {
       text-align: center;
       display: flex;
       justify-content: center;
       align-items: center;
+
       img {
         display: block;
         width: 100%;
       }
     }
   }
-  .swiper-button-prev{
+
+  .swiper-button-prev {
     left: -50px;
   }
-  .swiper-button-next{
+
+  .swiper-button-next {
     right: -50px;
   }
+
   .swiper-button-prev::after, .swiper-button-next::after {
     content: '';
   }

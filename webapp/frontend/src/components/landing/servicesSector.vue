@@ -5,9 +5,10 @@ import { Swiper, SwiperSlide } from 'swiper/vue';
 
 import 'swiper/swiper-bundle.min.css'
 import 'swiper/swiper.min.css'
+import { Navigation } from 'swiper'
 
 // import required modules
-import { Navigation } from 'swiper/modules';
+
 
 export default {
   components: {
