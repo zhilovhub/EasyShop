@@ -3,9 +3,15 @@
 import { Swiper, SwiperSlide } from 'swiper/vue';
 
 // Import Swiper styles
-import 'swiper/css';
+// swiper bundle styles
+import 'swiper/swiper-bundle.min.css'
 
-import 'swiper/css/navigation';
+// swiper core styles
+import 'swiper/swiper.min.css'
+
+// modules styles
+import 'swiper/components/navigation/navigation.min.css'
+import 'swiper/components/pagination/pagination.min.css'
 
 // import required modules
 import { Navigation } from 'swiper/modules';
