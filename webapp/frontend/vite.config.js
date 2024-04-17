@@ -28,3 +28,10 @@ export default defineConfig({
       cert: fs.readFileSync(env.VITE_SSL_CERT_PATH)
     }}
 })
+
+// eslint-disable-next-line no-undef
+module.exports = {
+  optimizeDeps: {
+    include: ["swiper/vue"],
+  },
+}
