@@ -11,7 +11,8 @@
     "format": "prettier --write src/"
   },
   "dependencies": {
-    "swiper": "^11.1.1",
+    "swapper": "^1.1.6",
+    "swiper": "^7.4.1",
     "vue": "^3.4.15",
     "vue-router": "^4.2.5",
     "vuex": "^4.1.0",
