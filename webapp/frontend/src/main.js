@@ -1,4 +1,5 @@
 let tg = window.Telegram.WebApp;
+import 'swiper/swiper.min.css'
 tg.expand();
 
 import './assets/main.css'
