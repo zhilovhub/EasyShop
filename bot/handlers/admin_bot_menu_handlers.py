@@ -252,6 +252,8 @@ async def bot_menu_callback_handler(query: CallbackQuery, state: FSMContext):
             await query.message.answer("Введите текст, который будет отображаться у пользователей Вашего бота "
                                        "при <b>любом</b> их сообщении: ", reply_markup=get_back_keyboard())
             await query.answer()
+            await state.set_state(States.EDITING_DEFAULT_MESSAGE)
+            await state.set_data(state_data)
         case "start_bot":
             await start_custom_bot(state_data['bot_id'])
             await query.message.edit_text(
