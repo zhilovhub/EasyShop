@@ -30,7 +30,7 @@ export default defineConfig({
   },
   build: {
     rollupOptions: {
-      external: ['swiper/vue', 'swiper/swiper-bundle.min.css']
+      external: ['swiper/vue', 'swiper/swiper-bundle.min.css', 'swiper/swiper.min.css', 'swiper/modules']
     }
   }
 })
