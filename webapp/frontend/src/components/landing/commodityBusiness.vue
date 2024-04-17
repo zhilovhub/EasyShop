@@ -3,7 +3,7 @@
 import { Swiper, SwiperSlide } from 'swiper/vue';
 
 // Import Swiper styles
-import 'swiper/css';
+import 'swiper/swiper.min.css'
 
 import 'swiper/css/navigation';
 
