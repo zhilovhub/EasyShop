@@ -314,14 +314,26 @@ async def bot_menu_handler(message: Message, state: FSMContext):  # TODO complet
     state_data = await state.get_data()
     custom_bot = await bot_db.get_bot(state_data['bot_id'])
 
-    await message.answer(
-        "Для навигации используйте кнопки 👇",
-        reply_markup=get_reply_bot_menu_keyboard(bot_id=state_data["bot_id"])
-    )
-    await message.answer(
-        MessageTexts.BOT_MENU_MESSAGE.value.format((await Bot(custom_bot.token).get_me()).username),
-        reply_markup=get_inline_bot_menu_keyboard(custom_bot.status)
-    )
+    match message.text:
+        case "⚙ Настройки бота":
+            await message.answer(
+                MessageTexts.BOT_MENU_MESSAGE.value.format((await Bot(custom_bot.token).get_me()).username),
+                reply_markup=get_inline_bot_menu_keyboard(custom_bot.status)
+            )
+
+        case "☎ Контакты":
+            await message.answer(
+                MessageTexts.CONTACTS.value
+            )
+        case _:
+            await message.answer(
+                "Для навигации используйте кнопки 👇",
+                reply_markup=get_reply_bot_menu_keyboard(bot_id=state_data["bot_id"])
+            )
+            await message.answer(
+                MessageTexts.BOT_MENU_MESSAGE.value.format((await Bot(custom_bot.token).get_me()).username),
+                reply_markup=get_inline_bot_menu_keyboard(custom_bot.status)
+            )
 
 
 async def send_new_order_notify(order: OrderSchema, user_id: int):
