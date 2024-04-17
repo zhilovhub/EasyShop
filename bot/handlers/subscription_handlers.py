@@ -11,7 +11,8 @@ from bot import config
 from bot.main import subscription, bot, dp, cache_resources_file_id_store, user_db, bot_db
 from bot.utils import MessageTexts
 from bot.states import States
-from bot.keyboards import get_bot_menu_keyboard, create_continue_subscription_kb, get_back_keyboard, free_trial_start_kb
+from bot.keyboards import create_continue_subscription_kb, get_back_keyboard, free_trial_start_kb, \
+    get_reply_bot_menu_keyboard, get_inline_bot_menu_keyboard
 from bot.handlers.routers import subscribe_router
 from bot.utils.admin_group import EventTypes, send_event, success_event
 from subscription.subscription import UserHasAlreadyStartedTrial
@@ -117,10 +118,15 @@ async def waiting_payment_pay_handler(message: Message, state: FSMContext):
         elif state_data and "bot_id" in state_data:
             await state.set_state(States.BOT_MENU)
             await state.set_data(state_data)
-            user_bot = await bot_db.get_bot(state_data['bot_id'])
+            custom_bot = await bot_db.get_bot(state_data['bot_id'])
+
             await message.answer(
                 "Возвращаемся в главное меню...",
-                reply_markup=get_bot_menu_keyboard(state_data["bot_id"], user_bot.status)
+                reply_markup=get_reply_bot_menu_keyboard(bot_id=state_data["bot_id"])
+            )
+            await message.answer(
+                MessageTexts.BOT_MENU_MESSAGE.value.format((await Bot(custom_bot.token).get_me()).username),
+                reply_markup=get_inline_bot_menu_keyboard(custom_bot.status)
             )
         else:
             await state.set_state(States.WAITING_FOR_TOKEN)
@@ -172,13 +178,18 @@ async def waiting_payment_approve_handler(message: Message, state: FSMContext):
 
     if user_status in (UserStatusValues.SUBSCRIBED, UserStatusValues.TRIAL) and message.text == "🔙 Назад":
         state_data = await state.get_data()
-        user_bot = await bot_db.get_bot(state_data['bot_id'])
+        custom_bot = await bot_db.get_bot(state_data['bot_id'])
         if state_data and "bot_id" in state_data:
             await state.set_state(States.BOT_MENU)
             await state.set_data(state_data)
+
             await message.answer(
                 "Возвращаемся в главное меню (мы Вас оповестим, когда оплата пройдет модерацию)...",
-                reply_markup=get_bot_menu_keyboard(state_data["bot_id"], user_bot.status)
+                reply_markup=get_reply_bot_menu_keyboard(bot_id=state_data["bot_id"])
+            )
+            await message.answer(
+                MessageTexts.BOT_MENU_MESSAGE.value.format((await Bot(custom_bot.token).get_me()).username),
+                reply_markup=get_inline_bot_menu_keyboard(custom_bot.status)
             )
         else:
             await state.set_state(States.WAITING_FOR_TOKEN)
@@ -220,7 +231,6 @@ async def approve_pay_callback(query: CallbackQuery):
         subscribed_until=subscribed_until,
     )
 
-    await bot.send_message(user_id, "Оплата подписки подтверждена ✅")
     user_bots = await bot_db.get_bots(user_id)
     user_state = FSMContext(storage=dp.storage, key=StorageKey(
         chat_id=user_id,
@@ -229,14 +239,24 @@ async def approve_pay_callback(query: CallbackQuery):
 
     if user_bots:
         bot_id = user_bots[0].bot_id
-        user_bot = Bot(user_bots[0].token)
-        user_bot_data = await user_bot.get_me()
-        await bot.send_message(user_id, MessageTexts.BOT_SELECTED_MESSAGE.value.format(user_bot_data.username),
-                               reply_markup=get_bot_menu_keyboard(bot_id=bot_id, bot_status=user_bots[0].status))
+        custom_bot = Bot(user_bots[0].token)
+        user_bot_data = await custom_bot.get_me()
+
+        await bot.send_message(
+            user_id,
+            "Оплата подписки подтверждена ✅",
+            reply_markup=get_reply_bot_menu_keyboard(bot_id)
+        )
+        await bot.send_message(
+            user_id,
+            MessageTexts.BOT_MENU_MESSAGE.value.format(user_bot_data.username),
+            reply_markup=get_inline_bot_menu_keyboard(user_bots[0].status)
+        )
         await user_state.set_state(States.BOT_MENU)
         await user_state.set_data({'bot_id': bot_id})
     else:
         await user_state.set_state(States.WAITING_FOR_TOKEN)
+        await bot.send_message(user_id, "Оплата подписки подтверждена ✅")
         await send_instructions(bot, None, user_id, cache_resources_file_id_store)
         await bot.send_message(
             user_id,
