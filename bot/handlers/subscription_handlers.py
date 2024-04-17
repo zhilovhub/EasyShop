@@ -47,7 +47,7 @@ async def start_trial_callback(query: CallbackQuery, state: FSMContext):
 
     await state.set_state(States.WAITING_FOR_TOKEN)
 
-    await send_instructions(bot, query.from_user.id, cache_resources_file_id_store)
+    await send_instructions(bot, None, query.from_user.id, cache_resources_file_id_store)
     await query.message.answer(
         "Ваша пробная подписка активирована!\n"
         "Чтобы получить бота с магазином, воспользуйтесь инструкцией выше 👆",
@@ -124,7 +124,7 @@ async def waiting_payment_pay_handler(message: Message, state: FSMContext):
             )
         else:
             await state.set_state(States.WAITING_FOR_TOKEN)
-            await send_instructions(bot, user_id, cache_resources_file_id_store)
+            await send_instructions(bot, None, user_id, cache_resources_file_id_store)
             await message.answer("Ваш список ботов пуст, используйте инструкцию выше 👆")
         return
     elif message.content_type not in (ContentType.PHOTO, ContentType.DOCUMENT):
@@ -182,7 +182,7 @@ async def waiting_payment_approve_handler(message: Message, state: FSMContext):
             )
         else:
             await state.set_state(States.WAITING_FOR_TOKEN)
-            await send_instructions(bot, user_id, cache_resources_file_id_store)
+            await send_instructions(bot, None, user_id, cache_resources_file_id_store)
             await message.answer("Ваш список ботов пуст, используйте инструкцию выше 👆")
     else:
         await message.answer("Ваши данные отправлены на модерацию, ожидайте изменения статуса оплаты")
@@ -237,7 +237,7 @@ async def approve_pay_callback(query: CallbackQuery):
         await user_state.set_data({'bot_id': bot_id})
     else:
         await user_state.set_state(States.WAITING_FOR_TOKEN)
-        await send_instructions(bot, user_id, cache_resources_file_id_store)
+        await send_instructions(bot, None, user_id, cache_resources_file_id_store)
         await bot.send_message(
             user_id,
             "Чтобы получить бота с магазином, воспользуйтесь инструкцией выше 👆",
