@@ -82,26 +82,51 @@ def get_back_keyboard() -> ReplyKeyboardMarkup:
     ], resize_keyboard=True)
 
 
-def get_bot_menu_keyboard(bot_id: int, bot_status: str) -> ReplyKeyboardMarkup:
-    return ReplyKeyboardMarkup(keyboard=[
-        [
-            KeyboardButton(text="Стартовое сообщение"),
-            KeyboardButton(text="Сообщение затычка")
+def get_reply_bot_menu_keyboard(bot_id: int) -> ReplyKeyboardMarkup:
+    return ReplyKeyboardMarkup(
+        keyboard=[
+            [KeyboardButton(text="⚙ Настройки бота"), KeyboardButton(text="☎ Контакты")],
+            [KeyboardButton(text="🛍 Мой магазин", web_app=make_webapp_info(bot_id=bot_id))]
         ],
-        [
-            KeyboardButton(text="Магазин", web_app=make_webapp_info(bot_id)),
-            KeyboardButton(text="Список товаров")
+        resize_keyboard=True
+    )
+
+
+def get_inline_bot_goods_menu_keyboard() -> InlineKeyboardMarkup:
+    return InlineKeyboardMarkup(
+        inline_keyboard=[
+            [
+                InlineKeyboardButton(text="🧮 Количество товаров", callback_data="bot_menu:goods_count"),
+                InlineKeyboardButton(text="📋 Список товаров", callback_data="bot_menu:goods_list")
+            ],
+            [
+                InlineKeyboardButton(text="🆕 Добавить товар", callback_data="bot_menu:add_new_good"),
+            ],
+            [
+                InlineKeyboardButton(text="🔙 Назад", callback_data="bot_menu:back_from_goods"),
+            ],
         ],
-        [
-            KeyboardButton(text="Добавить товар")
+    )
+
+
+def get_inline_bot_menu_keyboard(bot_status: str) -> InlineKeyboardMarkup:
+    return InlineKeyboardMarkup(
+        inline_keyboard=[
+            [
+                InlineKeyboardButton(text="👋 Приветственный текст", callback_data="bot_menu:start_text"),
+                InlineKeyboardButton(text="🗣 Текст объяснения", callback_data="bot_menu:explain_text")
+            ],
+            [
+                InlineKeyboardButton(text="Остановить бота ⛔", callback_data="bot_menu:stop_bot")
+                if bot_status == "online" else InlineKeyboardButton(
+                    text="Запустить бота 🚀", callback_data="bot_menu:start_bot"),
+                InlineKeyboardButton(text="📦 Мои товары", callback_data="bot_menu:goods")
+            ],
+            [
+                InlineKeyboardButton(text="🗑 Удалить бота", callback_data="bot_menu:delete_bot")
+            ]
         ],
-        [
-            KeyboardButton(text="Остановить бота ⛔") if bot_status == "online" else KeyboardButton(text="Запустить бота 🚀")
-        ],
-        [
-            KeyboardButton(text="Удалить бота")
-        ]
-    ], resize_keyboard=True, one_time_keyboard=False)
+    )
 
 
 def get_custom_bot_menu_keyboard(button_text: str, bot_id: int) -> ReplyKeyboardMarkup:
