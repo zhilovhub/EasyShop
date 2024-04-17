@@ -1,26 +1,25 @@
 <script>
+// Import Swiper Vue.js components
+import { Swiper, SwiperSlide } from 'swiper/vue';
+
+// Import Swiper styles
+import 'swiper/css';
+
+import 'swiper/css/navigation';
+
+// import required modules
+import { Navigation } from 'swiper/modules';
+
 export default {
-  data() {
+  components: {
+    Swiper,
+    SwiperSlide,
+  },
+  setup() {
     return {
-      comments: [
-        {
-          name: 'Иван',
-          comment: 'Впечатлен конструктором EzShop! Он удобен и легок в использовании. Особенно удобно, что можно делать покупки и заказывать услуги прямо в мессенджере. Спасибо за такой замечательный сервис, который делает жизнь проще, а коммуникацию с клиентом более удобной!',
-          id: 1
-        },
-        {
-          name: 'Мария',
-          comment: 'Очень довольна работой магазина внутри Телеграм, который был создан в конструкторе Ezshop. Удобно выбирать и заказывать товары, быстрая обработка заказов. Спасибо за качественный продукт! ',
-          id: 2
-        },
-        {
-          name: 'Дмитрий',
-          comment: 'Я рад поделиться положительным отзывом о сервисе Ezshop! Этот конструктор стал для меня незаменимым инструментом для развития моего магазина. Благодарю команду за отличный продукт, который делает мой бизнес более продвинутым и уникальным!',
-          id: 3
-        }
-      ]
-    }
-  }
+      modules: [Navigation],
+    };
+  },
 }
 </script>
 
@@ -73,10 +72,41 @@ export default {
       <span class="custom-description">Выберите дизайн, который подходит для вашего бизнеса*</span>
     </div>
 
-    <div class="themes-selector">
-      <img src="@/assets/landing/themes/blue-theme-phone.png" alt="blue-theme-phone">
-      <img src="@/assets/landing/themes/green-theme-phone.png" alt="green-theme-phone">
-      <img src="@/assets/landing/themes/purple-theme-phone.png" alt="purple-theme-phone">
+    <div class="swiper-container">
+    <swiper
+      :slidesPerView="3"
+      :spaceBetween="50"
+      :navigation="{
+        prevEl: '.swiper-button-prev',
+        nextEl: '.swiper-button-next'
+      }"
+      :breakpoints="{
+        '1024': {
+          slidesPerView: 3,
+          spaceBetween: 40
+      },
+        '768': {
+          slidesPerView: 3,
+          spaceBetween: 30
+      },
+        '640': {
+          slidesPerView: 2,
+          spaceBetween: 20
+      },
+        '320': {
+          slidesPerView: 1,
+          spaceBetween: 10
+        }
+      }"
+      :modules="modules"
+      class="themes-selector">
+      <swiper-slide><img src="@/assets/landing/themes/blue-theme-phone.png" alt="blue-phone"></swiper-slide>
+      <swiper-slide><img src="@/assets/landing/themes/green-theme-phone.png" alt="green-phone"></swiper-slide>
+      <swiper-slide><img src="@/assets/landing/themes/purple-theme-phone.png" alt="purple-phone"></swiper-slide>
+      <swiper-slide><img src="@/assets/landing/themes/purple-theme-phone.png" alt="purple-phone"></swiper-slide>
+    </swiper>
+      <div class="swiper-button-prev"><img src="@/assets/landing/themes/arrow-left.svg" alt="arrow-left"></div>
+      <div class="swiper-button-next"><img src="@/assets/landing/themes/arrow-right.svg" alt="arrow-right"></div>
     </div>
     <span class="themes-description">*или закажите индивидуальный дизайн у нас!</span>
   </div>
@@ -97,19 +127,42 @@ export default {
 
   <div class="wrapper-selector">
     <span class="gradient">Отзывы</span>
-    <ul class="comment-selector">
-      <li
-        v-for="comment in comments"
-        :key="comment.id"
-        class="comment-block"
-        style="position: relative;">
-        <div class="comment-tile">
-          <img src="../../assets/landing/user-logo.png" alt="user-logo">
-          <span class="title-text">{{comment.name}}</span>
-        </div>
-        <div class="comment-text">{{comment.comment}}</div>
-      </li>
-    </ul>
+    <div class="swiper-container">
+      <swiper
+        :slidesPerView="3"
+        :spaceBetween="50"
+        :navigation="{
+        prevEl: '.swiper-button-prev',
+        nextEl: '.swiper-button-next'
+      }"
+        :breakpoints="{
+        '1024': {
+          slidesPerView: 3,
+          spaceBetween: 40
+      },
+        '768': {
+          slidesPerView: 3,
+          spaceBetween: 30
+      },
+        '640': {
+          slidesPerView: 2,
+          spaceBetween: 20
+      },
+        '320': {
+          slidesPerView: 1,
+          spaceBetween: 10
+        }
+      }"
+        :modules="modules"
+        class="themes-selector">
+        <swiper-slide><img src="@/assets/landing/comments/comment-ivan.svg" alt="comment-ivan"></swiper-slide>
+        <swiper-slide><img src="@/assets/landing/comments/comment-maria.svg" alt="comment-maria"></swiper-slide>
+        <swiper-slide><img src="@/assets/landing/comments/comment-dmitry.svg" alt="comment-dmitry"></swiper-slide>
+        <swiper-slide><img src="@/assets/landing/comments/comment-dmitry.svg" alt="comment-dmitry"></swiper-slide>
+      </swiper>
+      <div class="swiper-button-prev"><img src="@/assets/landing/themes/arrow-left.svg" alt="arrow-left"></div>
+      <div class="swiper-button-next"><img src="@/assets/landing/themes/arrow-right.svg" alt="arrow-right"></div>
+    </div>
   </div>
 
   <div class="tariffs">
@@ -123,8 +176,8 @@ export default {
       <img src="@/assets/landing/revert-logo.svg" alt="revert-logo">
       <span>Контакты</span>
       <div style="margin: 25px 0">
-      <span><img src="@/assets/landing/tg.svg" alt="tg">TG - @EzShopOfficial </span>
-      <span><img src="@/assets/landing/mail.svg" alt="mail">Почта - EzShopMax398@ya.ru</span>
+        <span><img src="@/assets/landing/tg.svg" alt="tg">TG - @EzShopOfficial </span>
+        <span><img src="@/assets/landing/mail.svg" alt="mail">Почта - EzShopMax398@ya.ru</span>
       </div>
     </div>
     <div class="licensor">
@@ -214,40 +267,7 @@ export default {
       font-family: Montserrat, sans-serif;
     }
   }
-  .themes-selector {
-    display: flex;
-    justify-content: space-around;
-    z-index: 1;
-    position: relative;
-    padding: 50px 100px 25px;
-    img {
-      width: 30%;
-    }
-    &::before {
-      content: '';
-      width: 10%;
-      height: 100%;
-      background-image: url("@/assets/landing/themes/arrow-left.svg");
-      background-repeat: no-repeat;
-      background-position: center left;
-      position: absolute;
-      cursor: pointer;
-      left: 0;
-      top: 0;
-    }
-    &::after {
-      content: '';
-      width: 10%;
-      height: 100%;
-      background-image: url("@/assets/landing/themes/arrow-right.svg");
-      background-repeat: no-repeat;
-      background-position: center right;
-      position: absolute;
-      cursor: pointer;
-      right: 0;
-      top: 0;
-    }
-  }
+
   .themes-description {
     margin: 0 125px;
     color: #4156C0;
@@ -438,6 +458,36 @@ footer {
       font-size: 32px;
       font-weight: 500;
     }
+  }
+}
+
+
+.swiper-container {
+  position: relative;
+  width: 95%;
+  margin: 50px 75px 0;
+  .swiper {
+    width: 95%;
+    height: 95%;
+    .swiper-slide {
+      text-align: center;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      img {
+        display: block;
+        width: 100%;
+      }
+    }
+  }
+  .swiper-button-prev{
+    left: -50px;
+  }
+  .swiper-button-next{
+    right: -50px;
+  }
+  .swiper-button-prev::after, .swiper-button-next::after {
+    content: '';
   }
 }
 </style>
