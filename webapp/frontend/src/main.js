@@ -13,7 +13,9 @@ import Vuex from "vuex";
 import {Store} from "./store/store.js"
 
 const app = createApp(App)
-app.use(Swiper, SwiperSlide, Navigation)
+// eslint-disable-next-line vue/multi-word-component-names
+app.component("swiper", Swiper)
+app.component("swiper-slide", SwiperSlide)
 app.use(router)
 app.use(Vuex)
 app.use(Store)
