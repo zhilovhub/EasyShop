@@ -2,6 +2,7 @@
 // Import Swiper Vue.js components
 import { Swiper, SwiperSlide } from '@SwiperVue';
 import { Navigation } from '@Swiper'
+
 export default {
   components: {
     Swiper,
