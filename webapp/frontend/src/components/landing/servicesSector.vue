@@ -1,11 +1,7 @@
 <script>
 // Import Swiper Vue.js components
-import { Swiper, SwiperSlide } from 'swiper/vue';
-
-import "swiper/swiper.min.css"
-//
+import { Swiper, SwiperSlide } from '@SwiperVue';
 import { Navigation } from 'swiper'
-
 export default {
   components: {
     Swiper,
@@ -73,9 +69,9 @@ export default {
         :slidesPerView="3"
         :spaceBetween="50"
         :navigation="{
-        prevEl: '.swiper-button-prev',
-        nextEl: '.swiper-button-next'
-      }"
+          prevEl: '.swiper-button-prev',
+          nextEl: '.swiper-button-next'
+        }"
         :breakpoints="{
         '1024': {
           slidesPerView: 3,
@@ -128,8 +124,8 @@ export default {
         :slidesPerView="3"
         :spaceBetween="50"
         :navigation="{
-        prevEl: '.swiper-button-prev',
-        nextEl: '.swiper-button-next'
+          prevEl: '.swiper-button-prev',
+          nextEl: '.swiper-button-next'
       }"
         :breakpoints="{
         '1024': {

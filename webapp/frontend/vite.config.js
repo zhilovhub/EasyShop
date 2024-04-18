@@ -3,6 +3,7 @@ import { defineConfig, loadEnv } from 'vite'
 import vue from '@vitejs/plugin-vue'
 import vueJsx from '@vitejs/plugin-vue-jsx'
 import fs from 'fs';
+import path from 'path'
 
 const env = loadEnv(
   'all',
@@ -45,7 +46,11 @@ export default defineConfig({
   ],
   resolve: {
     alias: {
-      '@': fileURLToPath(new URL('./src', import.meta.url))
+      '@': fileURLToPath(new URL('./src', import.meta.url)),
+      "@SwiperBundle": fileURLToPath(new URL('./node_modules/swiper/swiper-bundle.esm.js', import.meta.url)),
+      "@SwiperBundleCss": fileURLToPath(new URL('./node_modules/swiper/swiper-bundle.min.css', import.meta.url)),
+      "@Swiper": fileURLToPath(new URL('./node_modules/swiper/swiper.esm.js', import.meta.url)),
+      "@SwiperVue": fileURLToPath(new URL('./node_modules/swiper/vue/swiper-vue.js', import.meta.url)),
     }
   },
   server: {
