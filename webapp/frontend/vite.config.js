@@ -25,5 +25,10 @@ export default defineConfig({
       key: fs.readFileSync(env.VITE_SSL_KEY_PATH),
       cert: fs.readFileSync(env.VITE_SSL_CERT_PATH)
     }
+  },
+  build: {
+    rollupOptions: {
+      external: ['swiper/vue']
+    }
   }
 })
