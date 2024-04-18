@@ -1,7 +1,7 @@
 let tg = window.Telegram.WebApp;
 import "@SwiperBundleCss"; //import css
 import { Swiper, SwiperSlide } from "@SwiperVue"; //import component
-import SwiperCore, { Pagination, Scrollbar, Navigation } from "swiper"; //import swiper core and plugins
+import SwiperCore, { Pagination, Scrollbar, Navigation } from "@Swiper"; //import swiper core and plugins
 SwiperCore.use([Pagination, Scrollbar, Navigation]); //declare two plugins
 tg.expand();
 
