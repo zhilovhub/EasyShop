@@ -26,24 +26,4 @@ export default defineConfig({
       cert: fs.readFileSync(env.VITE_SSL_CERT_PATH)
     }
   },
-  modules: [
-    'virtual',
-    'keyboard',
-    'navigation',
-    'pagination',
-    'scrollbar',
-    'parallax',
-    'zoom',
-    'controller',
-    'a11y',
-    'history',
-    'hash-navigation',
-    'autoplay',
-    'effect-fade',
-    'effect-cube',
-    'effect-flip',
-    'effect-coverflow',
-    'effect-creative',
-    'effect-cards',
-  ],
 })
