@@ -28,7 +28,11 @@ export default defineConfig({
   },
   build: {
     rollupOptions: {
-      external: ['swiper/vue']
+      external: [
+        'swiper/vue',
+        'swiper/css',
+        'swiper/modules/navigation',
+      ]
     }
   }
 })
