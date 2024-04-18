@@ -36,6 +36,9 @@ export default defineConfig({
     'effect-creative',
     'effect-cards',
   ],
+  build: {
+    transpile: ['swiper']
+  },
   plugins: [
     vue(),
     vueJsx(),
