@@ -310,18 +310,18 @@ async def bot_menu_callback_handler(query: CallbackQuery, state: FSMContext):
 
 
 @admin_bot_menu_router.message(States.BOT_MENU)
-async def bot_menu_handler(message: Message, state: FSMContext):  # TODO completely remove
+async def bot_menu_handler(message: Message, state: FSMContext):
     state_data = await state.get_data()
     custom_bot = await bot_db.get_bot(state_data['bot_id'])
 
     match message.text:
-        case "⚙ Настройки бота":
+        case ReplyBotMenuButtons.SETTINGS.value:
             await message.answer(
                 MessageTexts.BOT_MENU_MESSAGE.value.format((await Bot(custom_bot.token).get_me()).username),
                 reply_markup=get_inline_bot_menu_keyboard(custom_bot.status)
             )
 
-        case "☎ Контакты":
+        case ReplyBotMenuButtons.CONTACTS.value:
             await message.answer(
                 MessageTexts.CONTACTS.value
             )

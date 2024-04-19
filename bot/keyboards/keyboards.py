@@ -1,3 +1,4 @@
+from enum import Enum
 from typing import Optional
 
 from aiogram.utils.keyboard import InlineKeyboardMarkup, InlineKeyboardButton, ReplyKeyboardMarkup, KeyboardButton
@@ -82,11 +83,22 @@ def get_back_keyboard() -> ReplyKeyboardMarkup:
     ], resize_keyboard=True)
 
 
+class ReplyBotMenuButtons(Enum):
+    SETTINGS = "⚙ Настройки бота"
+    CONTACTS = "☎ Контакты"
+    SHOP = "🛍 Мой магазин"
+
+
 def get_reply_bot_menu_keyboard(bot_id: int) -> ReplyKeyboardMarkup:
     return ReplyKeyboardMarkup(
         keyboard=[
-            [KeyboardButton(text="⚙ Настройки бота"), KeyboardButton(text="☎ Контакты")],
-            [KeyboardButton(text="🛍 Мой магазин", web_app=make_webapp_info(bot_id=bot_id))]
+            [
+                KeyboardButton(text=ReplyBotMenuButtons.SETTINGS.value),
+                KeyboardButton(text=ReplyBotMenuButtons.CONTACTS.value)
+            ],
+            [
+                KeyboardButton(text=ReplyBotMenuButtons.SHOP.value, web_app=make_webapp_info(bot_id=bot_id))
+            ]
         ],
         resize_keyboard=True
     )
