@@ -278,6 +278,12 @@ async def bot_menu_callback_handler(query: CallbackQuery, state: FSMContext):
 
             await state.set_state(States.DELETE_BOT)
             await state.set_data(state_data)
+        case "statistic":
+            await query.message.answer(
+                "Статистика:\n\n"
+                "👨🏻‍🦱 Всего пользователей: 0"
+            )
+            await query.answer()
         case "goods":
             await query.message.edit_text("Меню склада:", reply_markup=get_inline_bot_goods_menu_keyboard())
         case "goods_count":

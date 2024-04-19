@@ -129,9 +129,12 @@ def get_inline_bot_menu_keyboard(bot_status: str) -> InlineKeyboardMarkup:
                 InlineKeyboardButton(text="🗣 Текст объяснения", callback_data="bot_menu:explain_text")
             ],
             [
-                InlineKeyboardButton(text="Остановить бота ⛔", callback_data="bot_menu:stop_bot")
+                InlineKeyboardButton(text="⛔ Остановить бота", callback_data="bot_menu:stop_bot")
                 if bot_status == "online" else InlineKeyboardButton(
-                    text="Запустить бота 🚀", callback_data="bot_menu:start_bot"),
+                    text="🚀 Запустить бота", callback_data="bot_menu:start_bot"),
+            ],
+            [
+                InlineKeyboardButton(text="📊 Статистика", callback_data="bot_menu:statistic"),
                 InlineKeyboardButton(text="📦 Мои товары", callback_data="bot_menu:goods")
             ],
             [
