@@ -1,22 +1,23 @@
-from sqlalchemy import BigInteger, Column, String
+from sqlalchemy import BigInteger, Column, String, ForeignKey
 from sqlalchemy.ext.asyncio import AsyncEngine
 
 from pydantic import BaseModel, Field
 
 from database.models import Base
+from database.models.bot_model import Bot
 from database.models.dao import Dao
 
 
 class CustomBotUser(Base):
     __tablename__ = "custom_bot_users"
 
-    user_id = Column("user_id", BigInteger, primary_key=True)
-    status = Column("status", String(55))
+    bot_id = Column(ForeignKey(Bot.bot_id), primary_key=True)
+    user_id = Column(BigInteger, primary_key=True)
 
 
 class CustomBotUserSchema(BaseModel):
-    user_id: str
-    status: str = Field(max_length=55)
+    bot_id: int
+    user_id: int
 
 
 class CustomBotUserDao(Dao):
