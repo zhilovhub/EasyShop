@@ -1,3 +1,4 @@
+from aiogram import Bot
 from aiogram.types import Message, ReplyKeyboardRemove, CallbackQuery
 from aiogram.fsm.context import FSMContext
 
@@ -13,26 +14,34 @@ async def editing_start_message_handler(message: Message, state: FSMContext):
     message_text = message.text
     if message_text:
         state_data = await state.get_data()
-        user_bot = await bot_db.get_bot(state_data['bot_id'])
+        custom_bot = await bot_db.get_bot(state_data['bot_id'])
         if message_text == "🔙 Назад":
             await message.answer(
-                "Возвращаемся в меню...",
-                reply_markup=get_bot_menu_keyboard(state_data["bot_id"], user_bot.status)
+                "Возвращаемся в главное меню...",
+                reply_markup=get_reply_bot_menu_keyboard(bot_id=state_data["bot_id"])
+            )
+            await message.answer(
+                MessageTexts.BOT_MENU_MESSAGE.value.format((await Bot(custom_bot.token).get_me()).username),
+                reply_markup=get_inline_bot_menu_keyboard(custom_bot.status)
             )
             await state.set_state(States.BOT_MENU)
             await state.set_data(state_data)
         else:
-            user_bot = await bot_db.get_bot(state_data["bot_id"])
-            if user_bot.settings:
-                user_bot.settings["start_msg"] = message_text
+            if custom_bot.settings:
+                custom_bot.settings["start_msg"] = message_text
             else:
-                user_bot.settings = {"start_msg": message_text}
-            await bot_db.update_bot(user_bot)
+                custom_bot.settings = {"start_msg": message_text}
+            await bot_db.update_bot(custom_bot)
 
             await message.answer(
                 "Стартовое сообщение изменено!",
-                reply_markup=get_bot_menu_keyboard(state_data["bot_id"], user_bot.status)
+                reply_markup=get_reply_bot_menu_keyboard(bot_id=state_data["bot_id"])
             )
+            await message.answer(
+                MessageTexts.BOT_MENU_MESSAGE.value.format((await Bot(custom_bot.token).get_me()).username),
+                reply_markup=get_inline_bot_menu_keyboard(custom_bot.status)
+            )
+
             await state.set_state(States.BOT_MENU)
             await state.set_data(state_data)
     else:
@@ -44,25 +53,32 @@ async def editing_default_message_handler(message: Message, state: FSMContext):
     message_text = message.text
     if message_text:
         state_data = await state.get_data()
-        user_bot = await bot_db.get_bot(state_data['bot_id'])
+        custom_bot = await bot_db.get_bot(state_data['bot_id'])
         if message_text == "🔙 Назад":
             await message.answer(
-                "Возвращаемся в меню...",
-                reply_markup=get_bot_menu_keyboard(state_data["bot_id"], user_bot.status)
+                "Возвращаемся в главное меню...",
+                reply_markup=get_reply_bot_menu_keyboard(bot_id=state_data["bot_id"])
+            )
+            await message.answer(
+                MessageTexts.BOT_MENU_MESSAGE.value.format((await Bot(custom_bot.token).get_me()).username),
+                reply_markup=get_inline_bot_menu_keyboard(custom_bot.status)
             )
             await state.set_state(States.BOT_MENU)
             await state.set_data(state_data)
         else:
-            user_bot = await bot_db.get_bot(state_data["bot_id"])
-            if user_bot.settings:
-                user_bot.settings["default_msg"] = message_text
+            if custom_bot.settings:
+                custom_bot.settings["default_msg"] = message_text
             else:
-                user_bot.settings = {"default_msg": message_text}
-            await bot_db.update_bot(user_bot)
+                custom_bot.settings = {"default_msg": message_text}
+            await bot_db.update_bot(custom_bot)
 
             await message.answer(
                 "Сообщение-затычка изменена!",
-                reply_markup=get_bot_menu_keyboard(state_data["bot_id"], user_bot.status)
+                reply_markup=get_reply_bot_menu_keyboard(bot_id=state_data["bot_id"])
+            )
+            await message.answer(
+                MessageTexts.BOT_MENU_MESSAGE.value.format((await Bot(custom_bot.token).get_me()).username),
+                reply_markup=get_inline_bot_menu_keyboard(custom_bot.status)
             )
             await state.set_state(States.BOT_MENU)
             await state.set_data(state_data)
@@ -74,12 +90,11 @@ async def editing_default_message_handler(message: Message, state: FSMContext):
 async def delete_bot_handler(message: Message, state: FSMContext):
     message_text = message.text
     state_data = await state.get_data()
-    user_bot = await bot_db.get_bot(state_data['bot_id'])
+    custom_bot = await bot_db.get_bot(state_data['bot_id'])
     if message_text == "ПОДТВЕРДИТЬ":
         logger.info(f"Disabling bot {state_data['bot_id']}, setting deleted status to db...")
-        user_bot = await bot_db.get_bot(state_data["bot_id"])
-        user_bot.status = "Deleted"
-        await bot_db.del_bot(user_bot.bot_id)
+        custom_bot.status = "Deleted"
+        await bot_db.del_bot(custom_bot.bot_id)
 
         await message.answer(
             "Бот удален",
@@ -89,8 +104,12 @@ async def delete_bot_handler(message: Message, state: FSMContext):
         await state.set_state(States.WAITING_FOR_TOKEN)
     elif message_text == "🔙 Назад":
         await message.answer(
-            "Возвращаемся в меню...",
-            reply_markup=get_bot_menu_keyboard(state_data["bot_id"], user_bot.status)
+            "Возвращаемся в главное меню...",
+            reply_markup=get_reply_bot_menu_keyboard(bot_id=state_data["bot_id"])
+        )
+        await message.answer(
+            MessageTexts.BOT_MENU_MESSAGE.value.format((await Bot(custom_bot.token).get_me()).username),
+            reply_markup=get_inline_bot_menu_keyboard(custom_bot.status)
         )
         await state.set_state(States.BOT_MENU)
         await state.set_data(state_data)

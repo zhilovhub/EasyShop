@@ -51,4 +51,9 @@ class MessageTexts(Enum):
 
     DEFAULT_START_MESSAGE = "Здравствуйте, <b>{name}</b>! Для открытия магазина нажмите на кнопку магазин"
 
-    BOT_SELECTED_MESSAGE = "Выбран бот <b>@{}</b>\nГотовьтесь к росту продаж"
+    BOT_MENU_MESSAGE = "Меню бота @{}:"
+
+    CONTACTS = f"Генеральный директор:\n" \
+               f"Тг: <b>@maxzim398</b>\n\n" \
+               f"Технический директор:\n" \
+               f"Тг: <b>@Ilyyasha</b>"
