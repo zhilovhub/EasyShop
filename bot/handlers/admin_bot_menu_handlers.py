@@ -15,7 +15,7 @@ from aiogram.utils.token import validate_token, TokenValidationError
 from aiogram.types import Message, FSInputFile, CallbackQuery
 from aiogram.fsm.context import FSMContext
 
-from bot.main import bot, user_db, bot_db, product_db, order_db, QUESTION_MESSAGES
+from bot.main import bot, user_db, bot_db, product_db, order_db, custom_bot_user_db, QUESTION_MESSAGES
 from bot.config import logger
 from bot.keyboards import *
 from bot.exceptions import InstanceAlreadyExists
@@ -278,6 +278,13 @@ async def bot_menu_callback_handler(query: CallbackQuery, state: FSMContext):
 
             await state.set_state(States.DELETE_BOT)
             await state.set_data(state_data)
+        case "statistic":
+            users = await custom_bot_user_db.get_custom_bot_users(bot_id=state_data["bot_id"])
+            await query.message.answer(
+                f"Статистика:\n\n"
+                f"👨🏻‍🦱 Всего пользователей: {len(users)}"
+            )
+            await query.answer()
         case "goods":
             await query.message.edit_text("Меню склада:", reply_markup=get_inline_bot_goods_menu_keyboard())
         case "goods_count":
