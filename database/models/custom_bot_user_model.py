@@ -18,7 +18,7 @@ class CustomBotUserNotFound(Exception):
 class CustomBotUser(Base):
     __tablename__ = "custom_bot_users"
 
-    bot_id = Column(ForeignKey(Bot.bot_id), primary_key=True)
+    bot_id = Column(ForeignKey(Bot.bot_id, ondelete="CASCADE"), primary_key=True)
     user_id = Column(BigInteger, primary_key=True)
 
 
