@@ -32,7 +32,8 @@ async def start_command_handler(message: Message, state: FSMContext):
             subscribed_until=None)
         )
 
-    await send_instructions(bot, user_id, cache_resources_file_id_store)
+    user_bots = await bot_db.get_bots(user_id)
+    await send_instructions(bot, user_bots[0].bot_id if user_bots else None, user_id, cache_resources_file_id_store)
 
     user_status = (await user_db.get_user(user_id)).status
 
@@ -43,7 +44,6 @@ async def start_command_handler(message: Message, state: FSMContext):
         )
         return await state.set_state(States.SUBSCRIBE_ENDED)
 
-    user_bots = await bot_db.get_bots(user_id)
     if not user_bots:
         if user_status == UserStatusValues.NEW:
             await message.answer(MessageTexts.FREE_TRIAL_MESSAGE.value, reply_markup=free_trial_start_kb)
@@ -55,8 +55,8 @@ async def start_command_handler(message: Message, state: FSMContext):
         user_bot = Bot(user_bots[0].token)
         user_bot_data = await user_bot.get_me()
         await message.answer(
-            MessageTexts.BOT_SELECTED_MESSAGE.value.format(user_bot_data.username),
-            reply_markup=get_bot_menu_keyboard(bot_id=bot_id, bot_status=user_bots[0].status)
+            MessageTexts.BOT_MENU_MESSAGE.value.format(user_bot_data.username),
+            reply_markup=get_inline_bot_menu_keyboard(user_bots[0].status)
         )
         await state.set_state(States.BOT_MENU)
         await state.set_data({'bot_id': bot_id})

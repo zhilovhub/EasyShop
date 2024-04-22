@@ -29,6 +29,7 @@ from aiogram.webhook.aiohttp_server import (
     setup_application,
 )
 
+from database.models.custom_bot_user_model import CustomBotUserNotFound
 from database.models.models import Database
 from database.models.bot_model import BotNotFound
 from database.models.order_model import OrderSchema, OrderStatusValues, OrderNotFound
@@ -71,10 +72,11 @@ WEB_APP_URL = f"{getenv('WEB_APP_URL')}:{getenv('WEB_APP_PORT')}/products-page/?
 LOCAL_API_SERVER_HOST = getenv("WEBHOOK_LOCAL_API_URL")
 LOCAL_API_SERVER_PORT = int(getenv("WEBHOOK_LOCAL_API_PORT"))
 
-db_engine = Database(sqlalchemy_url=getenv("SQLALCHEMY_URL"))
+db_engine: Database = Database(sqlalchemy_url=getenv("SQLALCHEMY_URL"))
 bot_db = db_engine.get_bot_dao()
 product_db = db_engine.get_product_db()
 order_db = db_engine.get_order_dao()
+custom_bot_user_db = db_engine.get_custom_bot_user_db()
 
 storage = AlchemyStorageAsync(db_url=getenv("CUSTOM_BOT_STORAGE_DB_URL"),
                               table_name=getenv("CUSTOM_BOT_STORAGE_TABLE_NAME"))
@@ -244,6 +246,13 @@ async def start_cmd(message: Message, state: FSMContext):
     web_app_button = await get_option("web_app_button", message.bot.token)
     try:
         bot = await bot_db.get_bot_by_token(message.bot.token)
+        try:
+            await custom_bot_user_db.get_custom_bot_user(bot.bot_id, message.from_user.id)
+        except CustomBotUserNotFound:
+            logger.info(
+                f"custom_user {message.from_user.id} of bot_id {bot.bot_id} not found in db, creating new instance..."
+            )
+            await custom_bot_user_db.add_custom_bot_user(bot.bot_id, message.from_user.id)
     except BotNotFound:
         return await message.answer("Бот не инициализирован")
 
