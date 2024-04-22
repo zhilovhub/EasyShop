@@ -33,7 +33,7 @@ class CustomBotUserDao(Dao):
 
     async def get_custom_bot_user(self, bot_id: int, user_id: int) -> int:  # TODO write tests
         async with self.engine.begin() as conn:
-            raw_res = conn.execute(select(CustomBotUser).where(
+            raw_res = await conn.execute(select(CustomBotUser).where(
                 CustomBotUser.bot_id == bot_id and CustomBotUser.user_id == user_id)
             )
         await self.engine.dispose()
