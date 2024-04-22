@@ -13,7 +13,6 @@ from database.models import Base
 from database.models.dao import Dao
 
 from .bot_model import Bot
-from .category_model import Category
 
 
 class ProductNotFound(Exception):
@@ -28,13 +27,13 @@ class Product(Base):
     bot_id = Column(ForeignKey(Bot.bot_id, ondelete="CASCADE"), nullable=False)
 
     name = Column(String(55), unique=True, nullable=False)  # TODO add test for unique name
-    category = Column(ForeignKey(Category.id, ondelete="SET NULL"))
+    category = Column(String)
     description = Column(String(255), nullable=False)
     article = Column(String)
     price = Column(Integer, nullable=False)
     count = Column(BigInteger, nullable=False, default=0)
     picture = Column(String)
-    extra_options = Column(JSON, default="{}")
+    extra_options = Column(JSON)
 
 
 class ProductWithoutId(BaseModel):
@@ -43,13 +42,13 @@ class ProductWithoutId(BaseModel):
     bot_id: int = Field(frozen=True)
 
     name: str = Field(max_length=55)
-    category: int
+    category: str
     description: str = Field(max_length=255)
-    article: Optional[str | None]
+    article: str
     price: int
     count: int
     picture: Optional[str | None]
-    extra_options: Optional[dict | None] = {}
+    extra_options: dict
 
 
 class ProductSchema(ProductWithoutId):

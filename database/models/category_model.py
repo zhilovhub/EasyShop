@@ -24,7 +24,7 @@ class Category(Base):
 class CategorySchemaWithoutId(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
-    bot_id: int = Field(frozen=True)
+    bot_id = Field(frozen=True)
     name: str
 
 
@@ -32,7 +32,7 @@ class CategorySchema(CategorySchemaWithoutId):
     id: int = Field(frozen=True)
 
 
-class CategoryDao(Dao):  # TODO write tests
+class CategoryDao(Dao):
     def __init__(self, engine: AsyncEngine, logger) -> None:
         super().__init__(engine, logger)
 
