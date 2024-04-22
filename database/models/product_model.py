@@ -13,6 +13,7 @@ from database.models import Base
 from database.models.dao import Dao
 
 from .bot_model import Bot
+from .category_model import Category
 
 
 class ProductNotFound(Exception):
@@ -27,7 +28,7 @@ class Product(Base):
     bot_id = Column(ForeignKey(Bot.bot_id, ondelete="CASCADE"), nullable=False)
 
     name = Column(String(55), unique=True, nullable=False)  # TODO add test for unique name
-    category = Column(String)
+    category = Column(ForeignKey(Category.id, ondelete="SET NULL"))
     description = Column(String(255), nullable=False)
     article = Column(String)
     price = Column(Integer, nullable=False)
