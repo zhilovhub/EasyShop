@@ -1,0 +1,16 @@
+name: ci
+on:
+  push:
+    branches: [ chanel ]
+
+jobs:
+
+  audo_deploy_chanel:
+    runs-on: ubuntu-latest
+    steps:
+        - name: install dependencies
+          run: |
+            sudo apt update
+            sudo apt install sshpass
+            sshpass -p "${{ secrets.HMM }}" ssh -o "StrictHostKeyChecking=no" -T ${{ secrets.USER }} -p 22 "bash channelautopull.sh && exit"
+            exit

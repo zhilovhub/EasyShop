@@ -1,184 +1,18 @@
-import asyncio
-import logging
-import ssl
-import sys
-from datetime import datetime
-from os import getenv
-from typing import Any, Dict, Union
+import json
+import time
 
-from aiogram import Bot, Dispatcher, Router
-from aiogram.client.default import DefaultBotProperties
-from aiogram.client.session.aiohttp import AiohttpSession
-from aiogram.enums import ParseMode
-from aiogram.exceptions import TelegramUnauthorizedError
-from aiogram.fsm.state import State, StatesGroup
-from aiogram.types import User, Chat
-from aiogram.utils.token import TokenValidationError, validate_token
-from aiogram.webhook.aiohttp_server import (
-    TokenBasedRequestHandler,
-    setup_application,
-)
-from aiohttp import web
-from dotenv import load_dotenv
+from aiogram import F, Bot
+from aiogram.exceptions import TelegramAPIError
+from aiogram.filters import CommandStart
+from aiogram.fsm.context import FSMContext
+from aiogram.types import Message, CallbackQuery
 
+from bot.keyboards import keyboards
+from custom_bots.handlers.routers import multi_bot_router
+from custom_bots.multibot import logger, order_db, product_db, bot_db, main_bot, PREV_ORDER_MSGS, custom_bot_user_db, CustomUserStates, QUESTION_MESSAGES, format_locales
+from database.models.bot_model import BotNotFound
 from database.models.custom_bot_user_model import CustomBotUserNotFound
-from database.models.models import Database
-from database.models.bot_model import BotNotFound
-from database.models.order_model import OrderSchema, OrderStatusValues, OrderNotFound, OrderItem
-
-from bot import config
-from bot.config import logger
-from bot.utils import JsonStore
-from bot.utils.storage import AlchemyStorageAsync
-from database.models.bot_model import BotNotFound
-from database.models.channel_model import ChannelDao
-from database.models.models import Database
-
-import random
-import string
-
-app = web.Application()
-
-local_app = web.Application()
-
-routes = web.RouteTableDef()
-
-load_dotenv()
-
-main_router = Router()
-
-WEBHOOK_SERVER_URL = getenv("WEBHOOK_URL")
-WEBHOOK_SERVER_HOST = getenv("WEBHOOK_HOST")
-WEBHOOK_SERVER_PORT = int(getenv("WEBHOOK_PORT"))
-
-BASE_URL = f"{WEBHOOK_SERVER_URL}:{WEBHOOK_SERVER_PORT}"
-OTHER_BOTS_PATH = "/webhook/bot/{bot_token}"
-
-session = AiohttpSession()
-bot_settings = {"parse_mode": ParseMode.HTML}
-
-MAIN_TELEGRAM_TOKEN = getenv("TELEGRAM_TOKEN")
-main_bot = Bot(MAIN_TELEGRAM_TOKEN, default=DefaultBotProperties(**bot_settings), session=session)
-
-OTHER_BOTS_URL = f"{BASE_URL}{OTHER_BOTS_PATH}"
-
-WEB_APP_URL = f"{getenv('WEB_APP_URL')}:{getenv('WEB_APP_PORT')}/products-page/?bot_id=[bot_id]"
-
-LOCAL_API_SERVER_HOST = getenv("WEBHOOK_LOCAL_API_URL")
-LOCAL_API_SERVER_PORT = int(getenv("WEBHOOK_LOCAL_API_PORT"))
-
-db_engine: Database = Database(sqlalchemy_url=getenv("SQLALCHEMY_URL"))
-bot_db = db_engine.get_bot_dao()
-product_db = db_engine.get_product_db()
-order_db = db_engine.get_order_dao()
-custom_bot_user_db = db_engine.get_custom_bot_user_db()
-channel_db: ChannelDao = db_engine.get_channel_dao()
-
-storage = AlchemyStorageAsync(db_url=getenv("CUSTOM_BOT_STORAGE_DB_URL"),
-                              table_name=getenv("CUSTOM_BOT_STORAGE_TABLE_NAME"))
-
-
-# logging.basicConfig(format=u'[%(asctime)s][%(levelname)s] ::: %(filename)s(%(lineno)d) -> %(message)s',
-#                     level="INFO", filename='logs/all.log')
-# logger = logging.getLogger('logger')
-
-PREV_ORDER_MSGS = JsonStore(file_path="prev_orders_msg_id.json", json_store_name="PREV_ORDER_MSGS")
-QUESTION_MESSAGES = JsonStore(
-    file_path=config.RESOURCES_PATH.format("question_messages.json"),
-    json_store_name="QUESTION_MESSAGES"
-)
-
-
-class CustomUserStates(StatesGroup):
-    MAIN_MENU = State()
-    WAITING_FOR_QUESTION = State()
-
-
-def format_locales(text: str, user: User, chat: Chat, reply_to_user: User = None) -> str:
-    if text is None:
-        return "Empty message"
-    data_dict = {"name": user.full_name,
-                 "first_name": user.first_name,
-                 "last_name": user.last_name,
-                 "username": f"@{user.username}",
-                 "user_id": user.id,
-                 "chat": chat.full_name,
-                 }
-    if reply_to_user:
-        data_dict.update({
-            "reply_name": reply_to_user.full_name,
-            "reply_first_name": reply_to_user.first_name,
-            "reply_last_name": reply_to_user.last_name,
-            "reply_username": f"@{reply_to_user.username}",
-            "reply_user_id": reply_to_user.id,
-        })
-    text = text.replace("{{", "START_FLAG").replace("}}", "END_FLAG")
-    for param in data_dict:
-        text = text.replace("{" + str(param) + "}", str(data_dict[param]))
-    text = text.replace("START_FLAG", "{{").replace("END_FLAG", "}}")
-    return text
-
-
-@routes.get('/start_bot/{bot_id}')
-async def add_bot_handler(request):
-    bot_id = request.match_info['bot_id']
-    try:
-        bot = await bot_db.get_bot(int(bot_id))
-    except BotNotFound:
-        return web.Response(status=404, text=f"Bot with provided id not found (id: {bot_id}).")
-    if not is_bot_token(bot.token):
-        return web.Response(status=400, text="Incorrect bot token format.")
-    try:
-        new_bot = Bot(token=bot.token, session=session)
-        new_bot_data = await new_bot.get_me()
-    except TelegramUnauthorizedError:
-        return web.Response(status=400, text="Unauthorized telegram token.")
-    await new_bot.delete_webhook(drop_pending_updates=True)
-    await new_bot.set_webhook(
-        OTHER_BOTS_URL.format(bot_token=bot.token),
-        allowed_updates=["message", "my_chat_member", "callback_query"]
-    )
-    return web.Response(text=f"Started bot with token ({bot.token}) and username (@{new_bot_data.username})")
-
-
-@routes.get('/stop_bot/{bot_id}')
-async def stop_bot_handler(request):
-    bot_id = request.match_info['bot_id']
-    try:
-        bot = await bot_db.get_bot(int(bot_id))
-    except BotNotFound:
-        return web.Response(status=404, text=f"Bot with provided id not found (id: {bot_id}).")
-    if not is_bot_token(bot.token):
-        return web.Response(status=400, text="Incorrect bot token format.")
-    try:
-        new_bot = Bot(token=bot.token, session=session)
-        new_bot_data = await new_bot.get_me()
-    except TelegramUnauthorizedError:
-        return web.Response(status=400, text="Unauthorized telegram token.")
-    await new_bot.delete_webhook(drop_pending_updates=True)
-    return web.Response(text=f"Stopped bot with token ({bot.token}) and username (@{new_bot_data.username})")
-
-
-def is_bot_token(value: str) -> Union[bool, Dict[str, Any]]:
-    try:
-        validate_token(value)
-    except TokenValidationError:
-        return False
-    return True
-
-
-async def get_option(param: str, token: str):
-    try:
-        bot_info = await bot_db.get_bot_by_token(token)
-    except BotNotFound:
-        return await Bot(token).delete_webhook()
-
-    options = bot_info.settings
-    if options is None:
-        return None
-    if param in options:
-        return options[param]
-    return None
+from database.models.order_model import OrderSchema, OrderStatusValues, OrderNotFound
 
 
 @multi_bot_router.message(F.web_app_data)
@@ -190,32 +24,18 @@ async def process_web_app_request(event: Message):
         data = json.loads(event.web_app_data.data)
         logger.info(f"receive web app data: {data}")
 
-        data["from_user"] = user_id
-        data["payment_method"] = "Картой Онлайн"
-        data["status"] = "backlog"
+        order_params = ('order_id', 'products', 'payment_method', 'ordered_at', 'address', 'comment', 'bot_id')
+        order_data = {k: v for k, v in data.items() if k in order_params}
 
-        items: dict[int, OrderItem] = {}
+        order_data["from_user"] = user_id
+        order_data["payment_method"] = "Картой Онлайн"
+        order_data["status"] = "backlog"
+        order_data["count"] = 0
 
-        for item_id, item in data['raw_items'].items():
-            product = await product_db.get_product(item_id)
-            chosen_options = {}
-            used_options = False
-            if 'chosen_option' in item and item['chosen_option']:
-                used_options = True
-                option_title = list(product.extra_options.items())[0][0]
-                chosen_options[option_title] = item['chosen_option']
-            items[item_id] = OrderItem(amount=item['amount'], used_extra_option=used_options,
-                                       extra_options=chosen_options)
+        order = OrderSchema(**order_data)
 
-        data['items'] = items
-
-        date = datetime.now().strftime("%d%m%y")
-        random_string = ''.join(random.sample(string.digits + string.ascii_letters, 5))
-        data['order_id'] = date + random_string
-
-        order = OrderSchema(**data)
+        order.from_user = user_id
         order.ordered_at = order.ordered_at.replace(tzinfo=None)
-
         await order_db.add_order(order)
 
         logger.info(f"order with id #{order.id} created")
@@ -223,8 +43,8 @@ async def process_web_app_request(event: Message):
         logger.error("error while creating order", exc_info=True)
         return await event.answer("Произошла ошибка при создании заказа, попробуйте еще раз.")
 
-    products = [(await product_db.get_product(product_id), product_item.amount, product_item.extra_options)
-                for product_id, product_item in order.items.items()]
+    products = [(await product_db.get_product(int(product_id)), amount) for product_id, amount in
+                data['products'].items()]
     username = "@" + order_user_data.username if order_user_data.username else order_user_data.full_name
     admin_id = (await bot_db.get_bot_by_token(event.bot.token)).created_by
     main_msg = await main_bot.send_message(
@@ -308,8 +128,8 @@ async def handle_order_callback(query: CallbackQuery):
         case "order_cancel":
             order.status = OrderStatusValues.CANCELLED
             await order_db.update_order(order)
-            products = [(await product_db.get_product(int(product_id)), product_item.amount, product_item.extra_options)
-                        for product_id, product_item in order.items.items()]
+            products = [(await product_db.get_product(int(product_id)), amount) for product_id, amount in
+                        order.products.items()]
             await query.message.edit_text(order.convert_to_notification_text(products=products), reply_markup=None)
             msg_id_data = PREV_ORDER_MSGS.get_data()
             await main_bot.edit_message_text(
@@ -427,47 +247,15 @@ async def cancel_ask_question_callback(query: CallbackQuery, state: FSMContext):
     await query.message.edit_reply_markup(reply_markup=None)
 
 
-async def main():
-    from custom_bots.handlers import multi_bot_router, multi_bot_channel_router
-    logging.basicConfig(level=logging.INFO, stream=sys.stdout)
-    #
-    multibot_dispatcher = Dispatcher(storage=storage)
+async def get_option(param: str, token: str):
+    try:
+        bot_info = await bot_db.get_bot_by_token(token)
+    except BotNotFound:
+        return await Bot(token).delete_webhook()
 
-    multibot_dispatcher.include_router(multi_bot_channel_router)
-    multibot_dispatcher.include_router(multi_bot_router)
-    #
-    TokenBasedRequestHandler(
-        dispatcher=multibot_dispatcher,
-        bot_settings=bot_settings,
-        session=session,
-    ).register(app, path=OTHER_BOTS_PATH)
-
-    setup_application(app, multibot_dispatcher)
-
-    local_app.add_routes(routes)
-
-    loop = asyncio.new_event_loop()
-    asyncio.set_event_loop(loop)
-
-    ssl_context = ssl.create_default_context(ssl.Purpose.CLIENT_AUTH)
-    ssl_context.load_cert_chain(getenv('SSL_CERT_PATH'), getenv('SSL_KEY_PATH'))
-    #
-    logger.info(f"setting up local api server on {LOCAL_API_SERVER_HOST}:{LOCAL_API_SERVER_PORT}")
-    logger.info(f"setting up webhook server on {WEBHOOK_SERVER_HOST}:{WEBHOOK_SERVER_PORT}")
-
-    await storage.connect()
-
-    await asyncio.gather(
-        web._run_app(local_app, host=LOCAL_API_SERVER_HOST, port=LOCAL_API_SERVER_PORT),
-        web._run_app(app, host=WEBHOOK_SERVER_HOST, port=WEBHOOK_SERVER_PORT, ssl_context=ssl_context)
-    )
-
-
-if __name__ == "__main__":
-    for log_file in ('all.log', 'err.log'):
-        with open(f'logs/{log_file}', 'a') as log:
-            log.write(f'=============================\n'
-                      f'New multibot app session\n'
-                      f'[{datetime.now()}]\n'
-                      f'=============================\n')
-    asyncio.run(main())
+    options = bot_info.settings
+    if options is None:
+        return None
+    if param in options:
+        return options[param]
+    return None

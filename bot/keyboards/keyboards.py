@@ -1,12 +1,10 @@
 from enum import Enum
 from typing import Optional
 
-from aiogram.types import WebAppInfo
-from bot.config import WEB_APP_URL, WEB_APP_PORT
-
 from aiogram.utils.keyboard import InlineKeyboardMarkup, InlineKeyboardButton, ReplyKeyboardMarkup, KeyboardButton
 
-from bot.utils import make_webapp_info, MessageTexts
+from bot.utils.keyboard_utils import *
+from bot.utils import MessageTexts
 
 from database.models.order_model import OrderStatusValues
 
@@ -80,9 +78,9 @@ def create_cancel_confirm_kb(order_id: str, msg_id: int = 0, chat_id: int = 0) -
     ])
 
 
-def get_back_keyboard() -> ReplyKeyboardMarkup:
+def get_back_keyboard(back_text: str = MessageTexts.BACK_BUTTON_TEXT.value) -> ReplyKeyboardMarkup:
     return ReplyKeyboardMarkup(keyboard=[
-        [KeyboardButton(text=MessageTexts.BACK_BUTTON_TEXT.value)]
+        [KeyboardButton(text=back_text)]
     ], resize_keyboard=True)
 
 
@@ -122,13 +120,115 @@ def get_inline_bot_goods_menu_keyboard() -> InlineKeyboardMarkup:
                 InlineKeyboardButton(text="🆕 Добавить товар", callback_data="bot_menu:add_new_good"),
             ],
             [
-                InlineKeyboardButton(text="🔙 Назад", callback_data="bot_menu:back_from_goods"),
+                InlineKeyboardButton(text="🔙 Назад", callback_data="bot_menu:back_to_menu"),
             ],
         ],
     )
 
 
-def get_inline_bot_menu_keyboard(bot_status: str) -> InlineKeyboardMarkup:
+async def get_competition_menu_keyboard(competition_id: int) -> InlineKeyboardMarkup:
+    callback_metadata = str(competition_id)
+    return InlineKeyboardMarkup(
+        inline_keyboard=[
+            [
+                InlineKeyboardButton(text="Название (для Вас)", callback_data="competition_menu:name:" + callback_metadata)
+            ],
+            [
+                InlineKeyboardButton(text="Содержание", callback_data="competition_menu:description:" + callback_metadata),
+                InlineKeyboardButton(text="Медиафайлы", callback_data="competition_menu:media_files:" + callback_metadata),
+            ],
+            [
+                InlineKeyboardButton(text="Длительность", callback_data="competition_menu:" + callback_metadata),
+                InlineKeyboardButton(text="Условия", callback_data="competition_menu:" + callback_metadata),
+            ],
+            [
+                # InlineKeyboardButton(text="Рандомайзер", callback_data="competition_menu:" + callback_metadata),
+            ],
+            [
+                InlineKeyboardButton(text="Кнопка", callback_data="competition_menu:" + callback_metadata),
+            ],
+            # [
+            #     InlineKeyboardButton(text="Аналитика", callback_data="competition_menu:" + callback_metadata),
+            # ],
+            [
+                InlineKeyboardButton(text="🔙 Назад", callback_data="competition_menu:back_to_competitions_list:" + callback_metadata),
+                InlineKeyboardButton(text="🔎 Предпросмотр", callback_data="competition_menu:demo:" + callback_metadata),
+                InlineKeyboardButton(text="⏭ Дальше", callback_data="competition_menu:" + callback_metadata),
+            ]
+        ],
+    )
+
+
+async def get_competitions_list_keyboard(bot_id: int, channel_id: int) -> InlineKeyboardMarkup:
+    callback_metadata = f":{bot_id}:{channel_id}"
+    competitions = await get_bot_competitions(channel_id, bot_id)
+
+    return InlineKeyboardMarkup(
+        inline_keyboard=[
+            *[
+                [InlineKeyboardButton(text=i.name, callback_data=f"competitions_list:competition" + callback_metadata + f":{i.competition_id}")]
+                for i in competitions
+            ],
+            [
+                InlineKeyboardButton(text="🔙 Назад", callback_data="competitions_list:back_to_channel_menu" + callback_metadata)
+            ]
+        ],
+    )
+
+
+async def get_inline_channel_menu_keyboard(bot_id: int, channel_id: int) -> InlineKeyboardMarkup:
+    callback_metadata = f":{bot_id}:{channel_id}"
+
+    return InlineKeyboardMarkup(
+        inline_keyboard=[
+            [
+                InlineKeyboardButton(text="🎲 Созданные конкурсы", callback_data="channel_menu:competitions_list" + callback_metadata),
+                InlineKeyboardButton(text="🆕 Создать конкурс", callback_data="channel_menu:create_competition" + callback_metadata)
+            ],
+            [
+                InlineKeyboardButton(text="🛑 Выйти из канала", callback_data="channel_menu:leave_channel" + callback_metadata)
+            ],
+            [
+                InlineKeyboardButton(text="🔙 Назад", callback_data="channel_menu:back_to_channels_list" + callback_metadata)
+            ]
+        ],
+    )
+
+
+async def get_inline_bot_channels_list_keyboard(bot_id: int) -> InlineKeyboardMarkup:
+    all_channels = await get_bot_channels(bot_id=bot_id)
+
+    channels_buttons = [
+        InlineKeyboardButton(text='@' + channel[1], callback_data=f"bot_menu:channel:{channel[0].channel_id}") for channel in all_channels
+    ]
+    resized_channels_buttons = [channels_buttons[i:i + 4] for i in range(0, len(channels_buttons), 4)]
+
+    return InlineKeyboardMarkup(inline_keyboard=[
+        *resized_channels_buttons,
+        [
+            InlineKeyboardButton(text="🔙 Назад", callback_data="bot_menu:back_to_menu"),
+            InlineKeyboardButton(
+                text="📢 Добавить в канал",
+                callback_data="bot_menu:add_to_channel",
+                url=f"https://t.me/{await get_bot_username(bot_id)}?startchannel"
+            )
+        ],
+    ])
+
+
+async def get_inline_bot_menu_keyboard(bot_id: int) -> InlineKeyboardMarkup:
+
+    channel_inline_button = InlineKeyboardButton(
+                    text="📢 Добавить в канал",
+                    callback_data="bot_menu:add_to_channel",
+                    url=f"https://t.me/{await get_bot_username(bot_id)}?startchannel"
+        ) if not await get_bot_channels(bot_id=bot_id) else \
+        InlineKeyboardButton(
+            text="📢 Каналы бота",
+            callback_data="bot_menu:channels"
+        )
+
+
     return InlineKeyboardMarkup(
         inline_keyboard=[
             [
@@ -137,12 +237,15 @@ def get_inline_bot_menu_keyboard(bot_status: str) -> InlineKeyboardMarkup:
             ],
             [
                 InlineKeyboardButton(text="⛔ Остановить бота", callback_data="bot_menu:stop_bot")
-                if bot_status == "online" else InlineKeyboardButton(
+                if await get_bot_status(bot_id) == "online" else InlineKeyboardButton(
                     text="🚀 Запустить бота", callback_data="bot_menu:start_bot"),
             ],
             [
                 InlineKeyboardButton(text="📊 Статистика", callback_data="bot_menu:statistic"),
                 InlineKeyboardButton(text="📦 Мои товары", callback_data="bot_menu:goods")
+            ],
+            [
+                channel_inline_button
             ],
             [
                 InlineKeyboardButton(text="🗑 Удалить бота", callback_data="bot_menu:delete_bot")

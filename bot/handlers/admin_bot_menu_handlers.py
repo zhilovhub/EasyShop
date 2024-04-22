@@ -225,7 +225,7 @@ async def waiting_for_the_token_handler(message: Message, state: FSMContext):
     )
     await message.answer(
         MessageTexts.BOT_MENU_MESSAGE.value.format(bot_username),
-        reply_markup=get_inline_bot_menu_keyboard(user_bot.status)
+        reply_markup=await get_inline_bot_menu_keyboard(user_bot.bot_id)
     )
     await state.set_state(States.BOT_MENU)
     await state.set_data({"bot_id": bot_id})
@@ -271,7 +271,7 @@ async def bot_menu_photo_handler(message: Message, state: FSMContext):
 @admin_bot_menu_router.callback_query(lambda query: query.data.startswith("bot_menu"))
 async def bot_menu_callback_handler(query: CallbackQuery, state: FSMContext):
     state_data = await state.get_data()
-    query_data = query.data.split(":")[-1]
+    query_data = query.data.split(":")[1]
 
     match query_data:
         case "start_text":
@@ -292,7 +292,7 @@ async def bot_menu_callback_handler(query: CallbackQuery, state: FSMContext):
             await query.message.edit_text(
                 query.message.text,
                 parse_mode=ParseMode.HTML,
-                reply_markup=get_inline_bot_menu_keyboard(bot_status="online")
+                reply_markup=await get_inline_bot_menu_keyboard(state_data['bot_id'])
             )
             await query.answer("Ваш бот запущен ✅", show_alert=True)
         case "stop_bot":
@@ -300,7 +300,7 @@ async def bot_menu_callback_handler(query: CallbackQuery, state: FSMContext):
             await query.message.edit_text(
                 query.message.text,
                 parse_mode=ParseMode.HTML,
-                reply_markup=get_inline_bot_menu_keyboard(bot_status="offline")
+                reply_markup=await get_inline_bot_menu_keyboard(state_data['bot_id'])
             )
             await query.answer("Ваш бот приостановлен ❌", show_alert=True)
         case "delete_bot":
@@ -342,11 +342,26 @@ async def bot_menu_callback_handler(query: CallbackQuery, state: FSMContext):
             await query.message.answer("Чтобы добавить товар, прикрепите его картинку и отправьте сообщение в виде:"
                                        "\n\nНазвание\nЦена в рублях")
             await query.answer()
-        case "back_from_goods":
+        case "back_to_menu":
             custom_bot = await bot_db.get_bot(state_data['bot_id'])
             await query.message.edit_text(
                 MessageTexts.BOT_MENU_MESSAGE.value.format((await Bot(custom_bot.token).get_me()).username),
-                reply_markup=get_inline_bot_menu_keyboard(custom_bot.status)
+                reply_markup=await get_inline_bot_menu_keyboard(custom_bot.bot_id)
+            )
+        case "channels":
+            custom_bot = await bot_db.get_bot(state_data["bot_id"])
+            await query.message.edit_text(
+                MessageTexts.BOT_CHANNELS_LIST_MESSAGE.value.format((await Bot(custom_bot.token).get_me()).username),
+                reply_markup=await get_inline_bot_channels_list_keyboard(custom_bot.bot_id)
+            )
+        case "channel":
+            custom_bot = await bot_db.get_bot(state_data["bot_id"])
+            custom_tg_bot = Bot(custom_bot.token)
+            channel_id = int(query.data.split(":")[-1])
+            channel_username = (await custom_tg_bot.get_chat(channel_id)).username
+            await query.message.edit_text(
+                MessageTexts.BOT_CHANNEL_MENU_MESSAGE.value.format(channel_username, (await custom_tg_bot.get_me()).username),
+                reply_markup=await get_inline_channel_menu_keyboard(custom_bot.bot_id, int(query.data.split(":")[-1]))
             )
 
 
@@ -359,7 +374,7 @@ async def bot_menu_handler(message: Message, state: FSMContext):
         case ReplyBotMenuButtons.SETTINGS.value:
             await message.answer(
                 MessageTexts.BOT_MENU_MESSAGE.value.format((await Bot(custom_bot.token).get_me()).username),
-                reply_markup=get_inline_bot_menu_keyboard(custom_bot.status)
+                reply_markup=await get_inline_bot_menu_keyboard(custom_bot.bot_id)
             )
 
         case ReplyBotMenuButtons.CONTACTS.value:
@@ -373,7 +388,7 @@ async def bot_menu_handler(message: Message, state: FSMContext):
             )
             await message.answer(
                 MessageTexts.BOT_MENU_MESSAGE.value.format((await Bot(custom_bot.token).get_me()).username),
-                reply_markup=get_inline_bot_menu_keyboard(custom_bot.status)
+                reply_markup=await get_inline_bot_menu_keyboard(custom_bot.bot_id)
             )
 
 
