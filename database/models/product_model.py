@@ -34,7 +34,7 @@ class Product(Base):
     price = Column(Integer, nullable=False)
     count = Column(BigInteger, nullable=False, default=0)
     picture = Column(String)
-    extra_options = Column(JSON)
+    extra_options = Column(JSON, default="{}")
 
 
 class ProductWithoutId(BaseModel):
@@ -45,11 +45,11 @@ class ProductWithoutId(BaseModel):
     name: str = Field(max_length=55)
     category: int
     description: str = Field(max_length=255)
-    article: str
+    article: Optional[str | None]
     price: int
     count: int
     picture: Optional[str | None]
-    extra_options: dict
+    extra_options: dict = {}
 
 
 class ProductSchema(ProductWithoutId):

@@ -1,6 +1,7 @@
 from datetime import datetime
 
 from database.models.bot_model import BotSchemaWithoutId, BotSchema
+from database.models.category_model import CategorySchemaWithoutId
 from database.models.order_model import OrderSchema, OrderStatusValues
 from database.models.product_model import ProductWithoutId, ProductSchema
 from database.models.user_model import UserSchema
@@ -64,6 +65,10 @@ order_schema_2 = OrderSchema(
     address="Москва",
     status=OrderStatusValues.BACKLOG,
     comment="Позвонтить за 20 минут"
+)
+
+category_schema = CategorySchemaWithoutId(
+
 )
 
 product_schema_without_id_1 = ProductWithoutId(
