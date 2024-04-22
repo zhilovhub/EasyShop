@@ -2,13 +2,13 @@ import os
 
 from sqlalchemy.ext.asyncio import create_async_engine
 
+from database.models import Base
 from database.models.bot_model import BotDao
 from database.models.user_model import UserDao
 from database.models.order_model import OrderDao
 from database.models.product_model import ProductDao
 from database.models.custom_bot_user_model import CustomBotUserDao
 from database.models.payment_model import PaymentDao
-from database.models import Base
 
 import logging.config
 import logging
