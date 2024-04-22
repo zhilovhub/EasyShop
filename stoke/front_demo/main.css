@@ -1,5 +1,5 @@
 .wrapper {
-    max-width: 600px;
+    max-width: 1000px;
     margin: 0 auto;
     display: flex;
     flex-direction: row;
@@ -16,35 +16,6 @@ section {
     align-items: center;
     justify-content: space-around;
     padding: 10px;
-    margin-top: 10px;
-    margin-bottom: 10px;
-}
-
-.title {
-    padding: 5px;
-    background: rgba(30, 30, 30, 0.75);
-    border-radius: 10px;
-    width: 100%;
-    text-align: center;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: #eeeeee;
-}
-
-#products_list {
-    display: flex;
-    flex-direction: column;
-    justify-content: space-around;
-}
-
-#products_list div {
-    background: #252525;
-    width: 90%;
-    padding: 10px;
-    border: black 1px;
-    border-radius: 10px;
-    margin: 5px;
 }
 
 .action_button {
@@ -55,67 +26,9 @@ section {
     width: 50%;
     text-align: center;
     color: #1E1E1E;
-    transition: 0.2s;
+    transition: 0.5s;
 }
 
 .action_button:hover {
     background: #d3fff0;
-}
-
-.main_action_input_button {
-    input {border:0;outline:0;}
-    input:focus {outline:none!important;}
-    width: 100%;
-    margin-left: 0;
-    border: 0;
-}
-
-.sub_action_input_button {
-    border: 0;
-    transition: 0.2s;
-    background: #959595;
-    border-radius: 10px;
-    margin: 5px;
-    padding: 10px;
-    input {border:0;outline:0;}
-    input:focus {outline:none!important;}
-}
-
-.sub_action_input_button:hover {
-    background: #d3d3d3;
-}
-
-/*.extra_opts_dict {*/
-/*    display: flex;*/
-/*    justify-content: space-between;*/
-/*}*/
-
-input {
-    width: 100%;
-    min-height: 40px;
-    margin: 5px;
-}
-
-label {
-    margin: 5px;
-}
-
-select {
-    margin: 5px;
-    width: 100%;
-    min-height: 40px;
-}
-
-.action_buttons {
-    margin: 10px;
-    width: 100%;
-    display: flex;
-    justify-content: space-between;
-}
-
-#add_form {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    width: 90%;
 }
