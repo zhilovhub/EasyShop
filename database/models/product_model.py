@@ -43,7 +43,7 @@ class ProductWithoutId(BaseModel):
     bot_id: int = Field(frozen=True)
 
     name: str = Field(max_length=55)
-    category: str
+    category: int
     description: str = Field(max_length=255)
     article: str
     price: int
