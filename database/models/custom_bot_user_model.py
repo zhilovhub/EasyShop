@@ -62,7 +62,7 @@ class CustomBotUserDao(Dao):
 
         async with self.engine.begin() as conn:
             try:
-                await conn.execute(insert(CustomBotUserDao).values(bot_id=bot_id, user_id=user_id))
+                await conn.execute(insert(CustomBotUser).values(bot_id=bot_id, user_id=user_id))
             except IntegrityError:
                 raise InstanceAlreadyExists(f"user_id {user_id} of bot_id {bot_id} already exists in db or bot_id with "
                                             f"bot_id = {bot_id} does not exist")
