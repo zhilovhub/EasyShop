@@ -206,7 +206,7 @@ export default {
       <img src="@/assets/landing/revert-logo.svg" alt="revert-logo">
       <span>Контакты</span>
       <div style="margin: 25px 0">
-        <span><img src="@/assets/landing/tg.svg" alt="tg">TG - @<a href="https://t.me/EzShopOfficial">EzShopOfficial</a></span>
+        <span><img src="@/assets/landing/tg.svg" alt="tg">TG - <a href="https://t.me/EzShopOfficial">@EzShopOfficial</a></span>
         <span><img src="@/assets/landing/mail.svg" alt="mail">Почта - EzShopMax398@ya.ru</span>
       </div>
     </div>
