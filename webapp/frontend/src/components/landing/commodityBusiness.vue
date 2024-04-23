@@ -4,6 +4,32 @@ import { Swiper, SwiperSlide } from '@SwiperVue';
 import { Navigation } from '@Swiper'
 
 export default {
+  data () {
+    return {
+      comments: [
+        {
+          name: 'Иван',
+          comment: 'Впечатлен конструктором EzShop! Он удобен и легок в использовании. Особенно удобно, что можно делать покупки и заказывать услуги прямо в мессенджере. Спасибо за такой замечательный сервис, который делает жизнь проще, а коммуникацию с клиентом более удобной!',
+          id: 1
+        },
+        {
+          name: 'Мария',
+          comment: 'Очень довольна работой магазина внутри Телеграм, который был создан в конструкторе Ezshop. Удобно выбирать и заказывать товары, быстрая обработка заказов. Спасибо за качественный продукт! ',
+          id: 2
+        },
+        {
+          name: 'Дмитрий',
+          comment: 'Я рад поделиться положительным отзывом о сервисе Ezshop! Этот конструктор стал для меня незаменимым инструментом для развития моего магазина. Благодарю команду за отличный продукт, который делает мой бизнес более продвинутым и уникальным!',
+          id: 3
+        },
+        {
+          name: 'Саша',
+          comment: 'Я рад поделиться положительным отзывом о сервисе Ezshop! Этот конструктор стал для меня незаменимым инструментом для развития моего магазина. Благодарю команду за отличный продукт, который делает мой бизнес более продвинутым и уникальным!',
+          id: 4
+        }
+      ]
+    }
+  },
   components: {
     Swiper,
     SwiperSlide,
@@ -93,15 +119,19 @@ export default {
       }"
         :modules="modules"
         class="themes-selector">
-        <swiper-slide><img src="@/assets/landing/themes/blue-theme-phone.png" alt="blue-phone"></swiper-slide>
-        <swiper-slide><img src="@/assets/landing/themes/green-theme-phone.png" alt="green-phone"></swiper-slide>
-        <swiper-slide><img src="@/assets/landing/themes/purple-theme-phone.png" alt="purple-phone"></swiper-slide>
-        <swiper-slide><img src="@/assets/landing/themes/purple-theme-phone.png" alt="purple-phone"></swiper-slide>
+        <swiper-slide><img src="@/assets/landing/themes/blue-theme-phone.png" alt="blue-phone" draggable="false"></swiper-slide>
+        <swiper-slide><img src="@/assets/landing/themes/green-theme-phone.png" alt="green-phone" draggable="false"></swiper-slide>
+        <swiper-slide><img src="@/assets/landing/themes/purple-theme-phone.png" alt="purple-phone" draggable="false"></swiper-slide>
+        <swiper-slide><img src="@/assets/landing/themes/purple-theme-phone.png" alt="purple-phone" draggable="false"></swiper-slide>
       </swiper>
-      <div class="swiper-button-prev"><img src="@/assets/landing/themes/arrow-left.svg" alt="arrow-left"></div>
-      <div class="swiper-button-next"><img src="@/assets/landing/themes/arrow-right.svg" alt="arrow-right"></div>
+      <div class="swiper-button-prev"><img src="@/assets/landing/themes/arrow-left.png" draggable="false" alt="arrow-left"></div>
+      <div class="swiper-button-next"><img src="@/assets/landing/themes/arrow-right.png" draggable="false" alt="arrow-right"></div>
     </div>
-    <span class="themes-description">*или закажите индивидуальный дизайн у нас!</span>
+    <div class="themes-description">
+      <div class="text-wrapper">
+        <span>*или закажите индивидуальный дизайн у нас!</span>
+      </div>
+    </div>
   </div>
 
   <div class="button-selector">
@@ -123,23 +153,23 @@ export default {
     <div class="swiper-container">
       <swiper
         :slidesPerView="3"
-        :spaceBetween="50"
+        :spaceBetween="30"
         :navigation="{
           prevEl: '.swiper-button-prev',
           nextEl: '.swiper-button-next'
       }"
         :breakpoints="{
-        '1024': {
+        '1400': {
           slidesPerView: 3,
-          spaceBetween: 40
+          spaceBetween: 10
       },
         '768': {
           slidesPerView: 3,
-          spaceBetween: 30
+          spaceBetween: 20
       },
         '640': {
           slidesPerView: 2,
-          spaceBetween: 20
+          spaceBetween: 10
       },
         '320': {
           slidesPerView: 1,
@@ -148,13 +178,20 @@ export default {
       }"
         :modules="modules"
         class="themes-selector">
-        <swiper-slide><img src="@/assets/landing/comments/comment-ivan.svg" alt="comment-ivan"></swiper-slide>
-        <swiper-slide><img src="@/assets/landing/comments/comment-maria.svg" alt="comment-maria"></swiper-slide>
-        <swiper-slide><img src="@/assets/landing/comments/comment-dmitry.svg" alt="comment-dmitry"></swiper-slide>
-        <swiper-slide><img src="@/assets/landing/comments/comment-dmitry.svg" alt="comment-dmitry"></swiper-slide>
+        <swiper-slide
+          v-for="comment in comments"
+          :key="comment.id"
+          class="comment-block"
+        >
+          <div class="comment-title">
+            <img src="../../assets/landing/comments/user-logo.png" alt="user-logo">
+            <span class="title-text">{{comment.name}}</span>
+          </div>
+          <div class="comment-text">{{comment.comment}}</div>
+        </swiper-slide>
       </swiper>
-      <div class="swiper-button-prev"><img src="@/assets/landing/themes/arrow-left.svg" alt="arrow-left"></div>
-      <div class="swiper-button-next"><img src="@/assets/landing/themes/arrow-right.svg" alt="arrow-right"></div>
+      <div class="swiper-button-prev"><img src="@/assets/landing/themes/arrow-left.png" alt="arrow-left"></div>
+      <div class="swiper-button-next"><img src="@/assets/landing/themes/arrow-right.png" alt="arrow-right"></div>
     </div>
   </div>
 
@@ -191,7 +228,7 @@ export default {
   align-items: center;
 
   .arrow {
-    margin: -150px;
+    margin: -75px;
   }
 }
 
@@ -273,11 +310,16 @@ export default {
   }
 
   .themes-description {
-    margin: 0 125px;
+    max-width: 100%;
+    margin: 0 auto;
     color: #4156C0;
     font-size: 40px;
     font-weight: 500;
     font-family: Montserrat, sans-serif;
+  }
+
+  .text-wrapper {
+    padding-left: 125px;
   }
 }
 
@@ -337,94 +379,6 @@ export default {
   img {
     display: block;
     margin: 75px auto;
-  }
-}
-
-.wrapper-selector {
-  background-color: #E3EAFD;
-  padding: 50px 150px 150px;
-
-  .comment-selector {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(33%, 1fr));
-    width: 100%;
-    position: relative;
-    padding-left: 0;
-    flex-wrap: nowrap;
-    margin-top: 50px;
-
-    &::before {
-      content: '';
-      width: 10%;
-      height: 100%;
-      background-image: url("@/assets/landing/themes/arrow-left.svg");
-      background-repeat: no-repeat;
-      background-position: center left;
-      position: absolute;
-      cursor: pointer;
-      left: -50px;
-      top: 0;
-      z-index: 1;
-    }
-
-    &::after {
-      content: '';
-      width: 10%;
-      height: 100%;
-      background-image: url("@/assets/landing/themes/arrow-right.svg");
-      background-repeat: no-repeat;
-      background-position: center right;
-      position: absolute;
-      cursor: pointer;
-      right: -50px;
-      top: 0;
-      z-index: 1;
-    }
-
-    .comment-block:first-child {
-      margin-left: 50px;
-    }
-
-    .comment-block:last-child {
-      margin-right: 50px;
-    }
-
-    .comment-block {
-      white-space: nowrap;
-      background-color: #F2F6FF;
-      list-style-type: none;
-      display: flex;
-      flex-direction: column;
-      justify-content: start;
-      border-radius: 50px;
-      margin: 0 10px;
-      padding: 50px 25px 10px;
-
-      .title-text {
-        font-size: 36px;
-        font-family: "Exo 2", sans-serif;
-        font-weight: 800;
-        color: #5D36B8;
-        margin-left: 10px;
-      }
-
-      .comment-tile {
-        display: flex;
-        align-items: center;
-      }
-
-      .comment-text {
-        white-space: normal;
-        font-size: 24px;
-        font-family: Montserrat, sans-serif;
-        font-weight: 400;
-        margin: 15px 0;
-      }
-
-      img {
-        width: 110px;
-      }
-    }
   }
 }
 
@@ -509,15 +463,267 @@ footer {
   }
 
   .swiper-button-prev {
-    left: -50px;
+    width: 84px;
+    left: -75px;
   }
 
   .swiper-button-next {
-    right: -50px;
+    width: 84px;
+    right: -75px;
   }
 
   .swiper-button-prev::after, .swiper-button-next::after {
     content: '';
+  }
+}
+
+.wrapper-selector {
+  background-color: #E3EAFD;
+  padding: 50px 150px 150px;
+  .swiper-container {
+    width: 100%;
+    .swiper-button-prev {
+      width: 84px;
+      left: -75px;
+    }
+    .swiper-button-next {
+      width: 84px;
+      right: -75px;
+    }
+    .swiper {
+      width: 100%;
+      .comment-block {
+        display: flex;
+        flex-direction: column;
+        max-width: 570px;
+        height: 570px;
+        background-color: #F2F6FF;
+        border-radius: 50px;
+        white-space: nowrap;
+        list-style-type: none;
+        justify-content: start;
+        padding: 50px 25px 10px;
+        .comment-title {
+          display: flex;
+          flex-direction: row;
+          align-items: center;
+          width: 100%;
+          text-align: left;
+
+          .title-text {
+            font-size: 36px;
+            font-family: "Exo 2", sans-serif;
+            font-weight: 800;
+            color: #5D36B8;
+            margin-left: 10px;
+          }
+        }
+
+        .comment-text {
+          text-align: left;
+          white-space: normal;
+          font-size: 24px;
+          font-family: Montserrat, sans-serif;
+          font-weight: 400;
+          margin: 30px 0;
+        }
+
+        img {
+          width: 110px;
+        }
+      }
+    }
+  }
+}
+
+img {
+  max-width: 100%;
+  user-drag: none;
+  -webkit-user-drag: none;
+  user-select: none;
+  -moz-user-select: none;
+  -webkit-user-select: none;
+  -ms-user-select: none;
+}
+
+@media screen and (max-width: 1400px) {
+  .block {
+    .text-block {
+      .gradient {
+        font-size: 72px;
+        line-height: 72px;
+      }
+      span {
+        font-size: 36px;
+      }
+    }
+    img {
+      max-width: 50%;
+    }
+    margin: 50px 0;
+  }
+  main{
+    .arrow {
+      max-width: 300px;
+      margin: -75px;
+    }
+  }
+  .arrow {
+    max-width: 300px;
+    margin: -75px;
+  }
+  .block:first-child {
+    margin-bottom: 0;
+  }
+  .block:nth-child(2) {
+    margin: 100px 0;
+  }
+  .custom {
+    padding: 50px 150px;
+    .custom-text {
+      .custom-description {
+        font-size: 32px;
+      }
+    }
+    .text-wrapper {
+      font-size: 28px;
+    }
+  }
+  .tariffs {
+    .tariffs-description {
+      font-size: 36px;
+    }
+  }
+  .additionally {
+    .gradient {
+      font-size: 72px;
+    }
+  }
+  .gradient {
+    font-size: 72px;
+  }
+  .wrapper-selector .swiper-container {
+    margin: 50px 40px 0;
+    .swiper{
+      .comment-block {
+        padding: 25px 15px 10px;
+        .comment-title {
+          .title-text {
+            font-size: 32px;
+            font-family: "Exo 2", sans-serif;
+            font-weight: 800;
+            color: #5D36B8;
+          }
+        }
+        .comment-text {
+          font-size: 19px;
+          margin: 30px 0;
+        }
+        img {
+          width: 96px;
+        }
+      }
+    }
+  }
+}
+
+@media screen and (max-width: 1200px) {
+  .main {
+    padding: 0;
+  }
+  .block {
+    .text-block {
+      .gradient {
+        font-size: 58px;
+        line-height: 58px;
+      }
+      span {
+        font-size: 24px;
+        line-height: 24px;
+      }
+    }
+    img {
+      max-width: 50%;
+    }
+    margin: 50px 0;
+  }
+  main{
+    .arrow {
+      max-width: 175px;
+      margin: -75px;
+    }
+  }
+  .arrow {
+    max-width: 175px;
+    margin: -75px;
+  }
+  .swiper-container {
+    width: 95%;
+    margin: 50px 40px 0;
+
+    .swiper-button-prev {
+      left: -60px;
+    }
+
+    .swiper-button-next {
+      right: -60px;
+    }
+  }
+  .custom {
+    .text-wrapper {
+      padding-left: 60px;
+    }
+  }
+  .button-selector {
+    button {
+      font-size: 32px;
+      line-height: 32px;
+    }
+  }
+  .additionally {
+    padding: 50px 150px;
+    .gradient {
+      font-size: 64px;
+      line-height: 64px;
+    }
+  }
+  .gradient {
+    font-size: 64px;
+    line-height: 64px;
+  }
+  .tariffs {
+    .tariffs-description {
+      font-size: 32px;
+    }
+  }
+  .custom {
+    padding: 0 150px;
+  }
+  .button-selector {
+    padding: 50px 150px;
+  }
+  .wrapper-selector .swiper-container {
+    margin: 40px 30px 0;
+    .swiper{
+      .comment-block {
+        padding: 25px 15px 10px;
+        .comment-title {
+          .title-text {
+            font-size: 24px;
+            font-family: "Exo 2", sans-serif;
+            font-weight: 800;
+            color: #5D36B8;
+          }
+        }
+        .comment-text {
+          font-size: 16px;
+          margin: 30px 0;
+        }
+        img {
+          width: 72px;
+        }
+      }
+    }
   }
 }
 </style>

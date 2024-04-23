@@ -16,6 +16,9 @@ export default {
       // Пролистываем к элементу с id "section"
       document.getElementById('why-tg').scrollIntoView({ behavior: 'smooth' });
     });
+    document.getElementById('scrollArrow').addEventListener('click', function() {
+      document.getElementById('why-tg').scrollIntoView({ behavior: 'smooth' });
+    });
   },
   methods: {
     toggle(event, componentName) {
@@ -78,7 +81,7 @@ export default {
       <div>Ваш магазин в Telegram <br> за 5 минут <br> <span>без программирования</span></div>
       <button id="scrollButton">Попробовать <br> <span>бесплатно 7 дней</span></button>
     </div>
-    <img class="arrow-down" src="@/assets/arrow-down.png" alt="arrow-down-with-animation">
+    <a id="scrollArrow"><img class="arrow-down" src="@/assets/arrow-down.png" alt="arrow-down-with-animation"></a>
   </header>
   <div id="why-tg" class="why-telegram">
     <span>Почему Telegram?</span>
@@ -111,7 +114,7 @@ header{
     position: absolute;
     color: #DBE0E9;
     top: 25%;
-    max-width: 750px;
+    max-width: 750vw;
     div {
       font-family: 'Montserrat', sans-serif;
       font-size: 55px;
@@ -282,5 +285,73 @@ header{
   }
 }
 
+@media screen and (max-width: 1400px) {
+  header {
+    .title-div {
+      max-width: 40%;
+      div {
+        font-size: 2.5rem;
+        span {
+          font-size: 36px;
+          font-weight: 800;
+          line-height: 67px;
+        }
+      }
+      img {
+        width: 75%;
+      }
+      button {
+        line-height: 26px;
+        margin: 0;
+        font-size: 26px;
+        width: 75%;
+        height: 130px;
+      }
+    }
+  }
+  .why-telegram {
+    button {
+      line-height: 36px;
+      font-size: 36px;
+    }
+  }
+}
 
+@media screen and (max-width: 1200px) {
+  header {
+    .title-div {
+      max-width: 37.5%;
+      div {
+        margin: 10px 0;
+        font-size: 1.5rem;
+        line-height: 2.5rem;
+        span {
+          font-size: 36px;
+          font-weight: 800;
+          line-height: 2.5rem;
+        }
+      }
+      img {
+        width: 75%;
+      }
+      button {
+        margin: 0;
+        font-size: 1.5rem;
+        width: 100%;
+        height: 100px;
+      }
+    }
+  }
+  .choosing-for-what {
+    div {
+      border-bottom: 15px solid;
+    }
+  }
+  .why-telegram {
+    button {
+      line-height: 32px;
+      font-size: 32px;
+    }
+  }
+}
 </style>
