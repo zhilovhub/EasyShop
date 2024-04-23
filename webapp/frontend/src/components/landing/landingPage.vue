@@ -21,19 +21,20 @@ export default {
     });
   },
   methods: {
-    toggle(event, componentName) {
-      this.selectedComponent = componentName;
-      const element = event.target;
-      const elements = document.querySelectorAll('.choosing-for-what div');
-
-      elements.forEach(el => {
-        if (el.classList.contains('isActive')) {
-          el.classList.remove('isActive');
-        }
-      });
-
-      element.classList.add('isActive');
-    }
+    // Логика для смены компонентов
+    // toggle(event, componentName) {
+    //   this.selectedComponent = componentName;
+    //   const element = event.target;
+    //   const elements = document.querySelectorAll('.choosing-for-what div');
+    //
+    //   elements.forEach(el => {
+    //     if (el.classList.contains('isActive')) {
+    //       el.classList.remove('isActive');
+    //     }
+    //   });
+    //
+    //   element.classList.add('isActive');
+    // }
   }
 }
 
@@ -90,7 +91,7 @@ export default {
   </div>
   <div class="choosing-for-what">
     <div @click="toggle($event, 'commodity-business')" data-text="Для товарного бизнеса" class="isActive">Для товарного бизнеса</div>
-    <div @click="toggle($event, 'services-sector')" data-text="Для сферы услуг">Для сферы услуг</div>
+<!--    <div @click="toggle($event, 'services-sector')" data-text="Для сферы услуг">Для сферы услуг</div>-->
   </div>
   <component :is="selectedComponent"></component>
 </template>
@@ -221,9 +222,9 @@ header{
 }
 
 .choosing-for-what {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(50%, 2fr));
-  justify-content: space-around;
+  //display: grid;
+  //grid-template-columns: repeat(auto-fill, minmax(50%, 2fr));
+  //justify-content: space-around;
   font-family: "Exo 2", sans-serif;
   font-weight: 800;
   font-size: 48px;
