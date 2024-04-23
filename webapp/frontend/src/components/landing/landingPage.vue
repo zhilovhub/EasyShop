@@ -291,7 +291,7 @@ header{
     .title-div {
       max-width: 40%;
       div {
-        font-size: 2.5rem;
+        font-size: 40px;
         span {
           font-size: 36px;
           font-weight: 800;
@@ -324,12 +324,12 @@ header{
       max-width: 37.5%;
       div {
         margin: 10px 0;
-        font-size: 1.5rem;
-        line-height: 2.5rem;
+        font-size: 24px;
+        line-height: 40px;
         span {
           font-size: 36px;
           font-weight: 800;
-          line-height: 2.5rem;
+          line-height: 40px;
         }
       }
       img {
@@ -337,7 +337,7 @@ header{
       }
       button {
         margin: 0;
-        font-size: 1.5rem;
+        font-size: 24px;
         width: 100%;
         height: 100px;
       }
