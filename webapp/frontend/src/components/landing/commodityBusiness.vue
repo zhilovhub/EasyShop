@@ -420,6 +420,9 @@ footer {
     a {
       color: #ACBBD5;
       font-weight: 700;
+      :visited {
+        color: #ACBBD5;
+      }
     }
     img {
       margin-right: 15px;
