@@ -39,6 +39,11 @@ export default {
       modules: [Navigation],
     };
   },
+  methods: {
+    redirectToBot() {
+      window.location.href = "https://t.me/ezShopOfficial_bot";
+    }
+  }
 }
 </script>
 
@@ -135,7 +140,7 @@ export default {
   </div>
 
   <div class="button-selector">
-    <button>Попробовать сейчас</button>
+    <button @click="redirectToBot">Попробовать сейчас</button>
     <span>7 дней бесплатно без ввода карточки!</span>
   </div>
 
@@ -198,15 +203,15 @@ export default {
   <div class="tariffs">
     <span class="gradient">Тарифы</span>
     <span class="tariffs-description">Бесплатно 7 дней, а затем по доступной цене индивидуально для вас!</span>
-    <img style="margin: 50px 0" src="@/assets/landing/tariffs.svg" alt="tariffs">
+    <img style="margin: 50px auto" src="@/assets/landing/tariffs.svg" alt="tariffs">
   </div>
 
   <footer>
     <div class="wrapper-contacts">
       <img src="@/assets/landing/revert-logo.svg" alt="revert-logo">
-      <span>Контакты</span>
+      <span style="font-weight: 700">Контакты</span>
       <div style="margin: 25px 0">
-        <span><img src="@/assets/landing/tg.svg" alt="tg">TG - <a href="https://t.me/EzShopOfficial">@EzShopOfficial</a></span>
+        <span><img src="@/assets/landing/tg.svg" alt="tg">TG - <a target="_blank" href="https://t.me/EzShopOfficial">@EzShopOfficial</a></span>
         <span><img src="@/assets/landing/mail.svg" alt="mail">Почта - EzShopMax398@ya.ru</span>
       </div>
     </div>
@@ -416,8 +421,8 @@ footer {
     color: #ACBBD5;
     font-family: Montserrat, sans-serif;
     font-size: 40px;
-    font-weight: 700;
     a {
+      text-decoration-line: underline;
       color: #ACBBD5;
       font-weight: 700;
       :visited {
@@ -550,6 +555,14 @@ img {
   -moz-user-select: none;
   -webkit-user-select: none;
   -ms-user-select: none;
+}
+
+a {
+  text-decoration: none;
+  color: #FFFFFF;
+  :visited {
+    color: #ACBBD5;
+  }
 }
 
 @media screen and (max-width: 1600px) {

@@ -21,6 +21,9 @@ export default {
     });
   },
   methods: {
+    redirectToBot() {
+      window.location.href = "https://t.me/ezShopOfficial_bot";
+    },
     // Логика для смены компонентов
     // toggle(event, componentName) {
     //   this.selectedComponent = componentName;
@@ -47,14 +50,14 @@ export default {
     <div class="title-div">
       <img src="@/assets/landing/logo.svg" alt="logo">
       <div>Ваш магазин в Telegram <br> за 5 минут <br> <span>без программирования</span></div>
-      <button id="scrollButton">Попробовать <br> <span>бесплатно 7 дней</span></button>
+      <button id="scrollButton" @click="redirectToBot">Попробовать <br> <span>бесплатно 7 дней</span></button>
     </div>
     <a id="scrollArrow"><img class="arrow-down" src="@/assets/arrow-down.png" alt="arrow-down-with-animation"></a>
   </header>
   <div id="why-tg" class="why-telegram">
     <span>Почему Telegram?</span>
     <img src="@/assets/landing/why-telegram.svg" alt="why-telegram">
-    <button>Открыть новый отдел продаж</button>
+    <button @click="redirectToBot">Открыть новый отдел продаж</button>
   </div>
   <div class="choosing-for-what">
     <div @click="toggle($event, 'commodity-business')" data-text="Для товарного бизнеса" class="isActive">Для товарного бизнеса</div>
@@ -82,7 +85,8 @@ header{
     align-items: baseline;
     position: relative;
     color: #DBE0E9;
-    top: 25%;
+    top: 50%;
+    transform: translateY(-50%);
     max-width: 750vw;
     div {
       font-family: 'Montserrat', sans-serif;
@@ -166,14 +170,10 @@ header{
     background-image: linear-gradient(89.57deg, #810CAD -0.55%, #0C96D1 68.69%);
   }
   img {
-    width: 100%;
+    width: 80%;
     margin: 50px 0;
   }
   button {
-    font-family: "Exo 2", sans-serif;
-    font-weight: 800;
-    line-height: 52px;
-    font-size: 48px;
     border: none;
     outline: none;
     width: 55%;
@@ -182,6 +182,10 @@ header{
     cursor: pointer;
     color: white;
     margin: 50px 0;
+    font-family: "Exo 2", sans-serif;
+    font-weight: 800;
+    line-height: 52px;
+    font-size: 48px;
     background: linear-gradient(93.61deg, #8C00AA -0.76%, #02A3D4 100%);
     &:hover, &:active{
       background: linear-gradient(93.61deg, #8C00AA80 -0.76%, #02A3D480 100%)
