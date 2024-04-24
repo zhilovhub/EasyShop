@@ -153,7 +153,7 @@ export default {
     <div class="swiper-container">
       <swiper
         :slidesPerView="3"
-        :spaceBetween="30"
+        :spaceBetween="50"
         :navigation="{
           prevEl: '.swiper-button-prev',
           nextEl: '.swiper-button-next'
@@ -449,7 +449,7 @@ footer {
 .swiper-container {
   position: relative;
   width: 95%;
-  margin: 50px 75px 0;
+  margin: 50px 25px 0;
 
   .swiper {
     width: 95%;
@@ -470,12 +470,12 @@ footer {
 
   .swiper-button-prev {
     width: 84px;
-    left: -75px;
+    left: -50px;
   }
 
   .swiper-button-next {
     width: 84px;
-    right: -75px;
+    right: -50px;
   }
 
   .swiper-button-prev::after, .swiper-button-next::after {
@@ -487,7 +487,7 @@ footer {
   background-color: #E3EAFD;
   padding: 50px 150px 150px;
   .swiper-container {
-    width: 100%;
+    width: 95%;
     .swiper-button-prev {
       width: 84px;
       left: -75px;
@@ -552,7 +552,7 @@ img {
   -ms-user-select: none;
 }
 
-@media screen and (max-width: 1400px) {
+@media screen and (max-width: 1600px) {
   .block {
     .text-block {
       .gradient {
