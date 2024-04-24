@@ -9,47 +9,45 @@
 <script src="load_categories.js"></script>
 <script src="create_product.js"></script>
 <div class="wrapper">
-    <div class="title">
     <h2>Добавление товара</h2>
-    </div>
     <section id="back">
         <a class="action_button" id="back_to_products" onclick="location.href='manage_products.html';">Назад к товарам</a>
     </section>
     <section>
         <form id="add_form">
             <h3 id="main_options">Основные параметры</h3>
-          <label for="product_name">Название товара</label>
-          <input type="text" id="product_name" name="product_name" value="" placeholder="название">
+          <label for="product_name">Название товара</label><br>
+          <input type="text" id="product_name" name="product_name" value="" placeholder="название"><br>
 
-            <label for="category">Категория товара</label>
+            <label for="category">Категория товара</label><br>
             <select name="category" id="category">
 <!--              <option value="products">Продукты</option>-->
 <!--              <option value="clothes">Одежда</option>-->
 <!--              <option value="games">Игры</option>-->
-            </select>
+            </select><br>
 
-          <label for="description">Описание</label>
-          <input type="text" id="description" name="description" value="" placeholder="описание">
+          <label for="description">Описание</label><br>
+          <input type="text" id="description" name="description" value="" placeholder="описание"><br>
 
-            <label for="article">Артикул</label>
-          <input type="text" id="article" name="article" value="" placeholder="article">
+            <label for="article">Артикул</label><br>
+          <input type="text" id="article" name="article" value="" placeholder="article"><br>
 
-            <label for="price">Цена</label>
-          <input type="number" step="1" id="price" name="price" value="" placeholder="100">
+            <label for="price">Цена</label><br>
+          <input type="number" step="1" id="price" name="price" value="" placeholder="100"><br>
 
-            <label for="stock">Кол-во на складе</label>
-          <input type="number" step="1" id="stock" name="stock" value="" placeholder="100">
+            <label for="stock">Кол-во на складе</label><br>
+          <input type="number" step="1" id="stock" name="stock" value="" placeholder="100"><br>
 
-            <label for="picture">Путь до фото</label>
-          <input type="text" id="picture" name="picture" value="" placeholder="/img/photo1.jpg">
+            <label for="picture">Путь до фото</label><br>
+          <input type="text" id="picture" name="picture" value="" placeholder="/img/photo1.jpg"><br>
                 <h3 id="extra_options">Дополнительные опции</h3>
-                <label for="extra_1">Модель</label>
-              <input type="text" id="extra_1" name="extra_1" value="">
-                <label for="extra_2">Цвет</label>
-              <input type="text" id="extra_2" name="extra_2" value="">
+                <label for="extra_1">Модель</label><br>
+              <input type="text" id="extra_1" name="extra_1" value=""><br>
+                <label for="extra_2">Цвет</label><br>
+              <input type="text" id="extra_2" name="extra_2" value=""><br>
             <div class="action_buttons">
                 <input type="button" value="Добавить опцию" class="sub_action_input_button">
-                <input type="button" value="Удалить опцию" class="sub_action_input_button">
+                <input type="button" value="Удалить опцию" class="sub_action_input_button"><br>
             </div>
           <input type="button" onClick="sendForm(this.form)" class="main_action_input_button action_button" value="Создать товар">
         </form>

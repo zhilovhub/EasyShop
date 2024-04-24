@@ -30,29 +30,4 @@ function displayProducts(data) {
       product_card.innerHTML = "<h3>" + product.name + "</h3><p>" + product.description + "</p>";
       productsSection.appendChild(product_card);
   }
-
-  // // cocktail image
-  // const cocktailImg = document.createElement("img");
-  // cocktailImg.src = cocktail.strDrinkThumb;
-  // cocktailDiv.appendChild(cocktailImg);
-  // document.body.style.backgroundImage = "url('" + cocktail.strDrinkThumb + "')";
-  // // cocktail ingredients
-  // const cocktailIngredients = document.createElement("ul");
-  // cocktailDiv.appendChild(cocktailIngredients);
-  // const getIngredients = Object.keys(cocktail)
-  //   .filter(function (ingredient) {
-  //     return ingredient.indexOf("strIngredient") == 0;
-  //   })
-  //   .reduce(function (ingredients, ingredient) {
-  //     if (cocktail[ingredient] != null) {
-  //       ingredients[ingredient] = cocktail[ingredient];
-  //     }
-  //     return ingredients;
-  //   }, {});
-  // for (let key in getIngredients) {
-  //   let value = getIngredients[key];
-  //   listItem = document.createElement("li");
-  //   listItem.innerHTML = value;
-  //   cocktailIngredients.appendChild(listItem);
-  // }
 }
