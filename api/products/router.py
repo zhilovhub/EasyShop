@@ -1,4 +1,4 @@
-from database.models.product_model import ProductSchema, ProductNotFound
+from database.models.product_model import ProductSchema, ProductNotFound, ProductWithoutId, ProductDao
 from loader import db_engine, logger
 from fastapi import HTTPException, APIRouter
 
@@ -9,7 +9,7 @@ router = APIRouter(
     tags=["products"],
     responses={404: {"description": "Product not found"}},
 )
-db = db_engine.get_product_db()
+db: ProductDao = db_engine.get_product_db()
 
 
 @router.get("/get_all_products/{bot_id}")
@@ -33,3 +33,12 @@ async def get_product_api(bot_id: int, product_id: int) -> ProductSchema:
         raise HTTPException(status_code=500, detail="Internal error.")
     return product
 
+
+@router.post("/add_product")
+async def add_product_api(new_product: ProductWithoutId) -> int:
+    try:
+        product_id = await db.add_product(new_product)
+    except Exception:
+        logger.error("Error while execute add_product db_method", exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal error.")
+    return product_id
