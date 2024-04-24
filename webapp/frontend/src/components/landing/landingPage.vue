@@ -12,10 +12,6 @@ export default {
     // ServicesSector
   },
   mounted() {
-    document.getElementById('scrollButton').addEventListener('click', function() {
-      // Пролистываем к элементу с id "section"
-      document.getElementById('why-tg').scrollIntoView({ behavior: 'smooth' });
-    });
     document.getElementById('scrollArrow').addEventListener('click', function() {
       document.getElementById('why-tg').scrollIntoView({ behavior: 'smooth' });
     });
@@ -50,7 +46,7 @@ export default {
     <div class="title-div">
       <img src="@/assets/landing/logo.svg" alt="logo">
       <div>Ваш магазин в Telegram <br> за 5 минут <br> <span>без программирования</span></div>
-      <button id="scrollButton" @click="redirectToBot">Попробовать <br> <span>бесплатно 7 дней</span></button>
+      <button @click="redirectToBot">Попробовать <br> <span>бесплатно 7 дней</span></button>
     </div>
     <a id="scrollArrow"><img class="arrow-down" src="@/assets/arrow-down.png" alt="arrow-down-with-animation"></a>
   </header>
