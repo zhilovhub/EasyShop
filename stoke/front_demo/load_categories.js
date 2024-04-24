@@ -1,4 +1,4 @@
-fetch("https://ezbots.ru:2024/api/products/get_all_products/25",
+fetch("https://ezbots.ru:2024/api/products/get_all_categories/25",
     {
     method: "GET",
     headers: {
@@ -16,18 +16,20 @@ fetch("https://ezbots.ru:2024/api/products/get_all_products/25",
   })
   .then(data => {
     console.log(data);
-    displayProducts(data)
+    showCats(data)
   })
   .catch((error) => console.error("FETCH ERROR:", error));
 
 
-function displayProducts(data) {
-  const productsSection = document.getElementById("products_list");
+function showCats(data) {
+  const catsList = document.getElementById("category");
   for (let i in data){
-      let product = data[i]
-      console.log(product)
-      const product_card = document.createElement("div");
-      product_card.innerHTML = "<h3>" + product.name + "</h3><p>" + product.description + "</p>";
-      productsSection.appendChild(product_card);
+      let cat = data[i]
+      console.log(cat)
+      const cat_option = document.createElement("option");
+      cat_option.value = cat.id;
+      cat_option.label = cat.name;
+      cat_option.innerHTML = cat.name;
+      catsList.appendChild(cat_option);
   }
 }
