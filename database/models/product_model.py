@@ -49,7 +49,7 @@ class ProductWithoutId(BaseModel):
     price: int
     count: int
     picture: Optional[str | None]
-    extra_options: dict = {}
+    extra_options: Optional[dict | None] = {}
 
 
 class ProductSchema(ProductWithoutId):
