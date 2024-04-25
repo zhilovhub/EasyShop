@@ -74,16 +74,24 @@ section {
 /*}*/
 
 input {
-    width: 80%;
+    width: 100%;
+    min-height: 40px;
+    margin: 5px;
+}
+
+label {
+    margin: 5px;
 }
 
 select {
-    width: 80%;
+    margin: 5px;
+    width: 100%;
+    min-height: 40px;
 }
 
 .action_buttons {
     margin: 10px;
-    width: 80%;
+    width: 100%;
     display: flex;
     justify-content: space-between;
 }
