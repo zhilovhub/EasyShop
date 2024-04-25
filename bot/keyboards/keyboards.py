@@ -2,6 +2,7 @@ from enum import Enum
 from typing import Optional
 
 from aiogram.types import WebAppInfo
+from bot.config import WEB_APP_URL, WEB_APP_PORT
 
 from aiogram.utils.keyboard import InlineKeyboardMarkup, InlineKeyboardButton, ReplyKeyboardMarkup, KeyboardButton
 
