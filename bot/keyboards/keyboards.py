@@ -1,6 +1,8 @@
 from enum import Enum
 from typing import Optional
 
+from aiogram.types import WebAppInfo
+
 from aiogram.utils.keyboard import InlineKeyboardMarkup, InlineKeyboardButton, ReplyKeyboardMarkup, KeyboardButton
 
 from bot.utils import make_webapp_info, MessageTexts
