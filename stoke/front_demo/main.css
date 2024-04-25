@@ -1,5 +1,5 @@
 .wrapper {
-    max-width: 600px;
+    max-width: 1000px;
     margin: 0 auto;
     display: flex;
     flex-direction: row;
@@ -20,27 +20,10 @@ section {
     margin-bottom: 10px;
 }
 
-.title {
-    padding: 5px;
-    background: rgba(30, 30, 30, 0.75);
-    border-radius: 10px;
-    width: 100%;
-    text-align: center;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: #eeeeee;
-}
-
-#products_list {
-    display: flex;
-    flex-direction: column;
-    justify-content: space-around;
-}
-
 #products_list div {
+    align-self: flex-start;
     background: #252525;
-    width: 90%;
+    width: 95%;
     padding: 10px;
     border: black 1px;
     border-radius: 10px;
