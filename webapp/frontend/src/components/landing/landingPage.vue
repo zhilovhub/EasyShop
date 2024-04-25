@@ -270,11 +270,14 @@ header{
         width: 75%;
       }
       button {
-        line-height: 26px;
+        line-height: 32px;
         margin: 0;
-        font-size: 26px;
+        font-size: 32px;
         width: 75%;
         height: 130px;
+        span {
+          font-size: 18px;
+        }
       }
     }
   }
