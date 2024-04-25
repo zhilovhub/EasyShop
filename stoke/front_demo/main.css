@@ -20,6 +20,18 @@ section {
     margin-bottom: 10px;
 }
 
+.title {
+    padding: 5px;
+    background: rgba(30, 30, 30, 0.75);
+    border-radius: 10px;
+    width: 100%;
+    text-align: center;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #eeeeee;
+}
+
 #products_list {
     display: flex;
     flex-direction: column;
