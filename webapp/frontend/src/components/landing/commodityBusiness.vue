@@ -208,9 +208,9 @@ export default {
 
   <footer>
     <div class="wrapper-contacts">
-      <img src="@/assets/landing/revert-logo.svg" alt="revert-logo">
-      <span style="font-weight: 700">Контакты</span>
-      <div style="margin: 25px 0">
+      <img class="revert-logo" src="@/assets/landing/revert-logo.svg" alt="revert-logo">
+      <span class="contacts-span" >Контакты</span>
+      <div>
         <span><img src="@/assets/landing/tg.svg" alt="tg">TG - <a target="_blank" href="https://t.me/EzShopOfficial">@EzShopOfficial</a></span>
         <span><img src="@/assets/landing/mail.svg" alt="mail">Почта - EzShopMax398@ya.ru</span>
       </div>
@@ -416,6 +416,14 @@ footer {
   background-color: #0A1526;
   position: relative;
 
+  .wrapper-contacts {
+    .contacts-span {
+      font-weight: 700;
+    }
+    div {
+      margin: 25px 0;
+    }
+  }
   span {
     display: block;
     color: #ACBBD5;
@@ -644,6 +652,26 @@ a {
       }
     }
   }
+
+  footer {
+    span {
+      font-size: 28px;
+    }
+    .revert-logo {
+      width: 35%;
+    }
+    .wrapper-contacts {
+      .contacts-span {
+        margin: 10px 0;
+      }
+    }
+    .licensor {
+      span {
+        font-size: 22px;
+        font-weight: 500;
+      }
+    }
+  }
 }
 
 @media screen and (max-width: 1200px) {
@@ -741,6 +769,29 @@ a {
         img {
           width: 72px;
         }
+      }
+    }
+  }
+
+  footer {
+    .wrapper-contacts {
+      .contacts-span {
+        margin: 10px 0;
+      }
+    }
+    span {
+      font-size: 24px;
+    }
+    img {
+      width: 25px;
+    }
+    .revert-logo {
+      width: 30%;
+    }
+    .licensor {
+      span {
+        font-size: 18px;
+        font-weight: 500;
       }
     }
   }

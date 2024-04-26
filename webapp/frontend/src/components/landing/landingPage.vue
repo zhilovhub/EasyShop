@@ -82,7 +82,7 @@ header{
     position: relative;
     color: #DBE0E9;
     top: 50%;
-    transform: translateY(-50%);
+    transform: translateY(-35%);
     max-width: 750vw;
     div {
       font-family: 'Montserrat', sans-serif;
@@ -257,9 +257,10 @@ header{
 @media screen and (max-width: 1600px) {
   header {
     .title-div {
-      max-width: 50%;
+      max-width: 60%;
       div {
         font-size: 40px;
+        margin: 20px 0 35px;
         span {
           font-size: 36px;
           font-weight: 800;
@@ -273,12 +274,15 @@ header{
         line-height: 32px;
         margin: 0;
         font-size: 32px;
-        width: 75%;
-        height: 130px;
+        width: 65%;
+        height: 100px;
         span {
           font-size: 18px;
         }
       }
+    }
+    .phones {
+      width: 40%;
     }
   }
   .why-telegram {
@@ -294,7 +298,7 @@ header{
     .title-div {
       max-width: 37.5%;
       div {
-        margin: 10px 0;
+        margin: 15px 0 20px;
         font-size: 24px;
         line-height: 40px;
         span {
@@ -304,13 +308,16 @@ header{
         }
       }
       img {
-        width: 75%;
+        width: 110%;
       }
       button {
         margin: 0;
         font-size: 24px;
         width: 100%;
-        height: 100px;
+        height: 75px;
+        span {
+          font-size: 16px;
+        }
       }
     }
   }
