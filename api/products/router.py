@@ -1,7 +1,8 @@
 from database.models.category_model import CategorySchema, CategoryDao
 from database.models.product_model import ProductSchema, ProductNotFound, ProductWithoutId, ProductDao
 from loader import db_engine, logger
-from fastapi import HTTPException, APIRouter
+from fastapi import HTTPException, APIRouter, File, UploadFile
+from typing import Annotated
 
 
 PATH = "/api/products"
@@ -54,3 +55,25 @@ async def get_all_categories_api(bot_id: int) -> list[CategorySchema]:
         logger.error("Error while execute get_all_categories db_method", exc_info=True)
         raise HTTPException(status_code=500, detail="Internal error.")
     return categories
+
+
+@router.post("/send_product_csv_file")
+async def send_product_csv_api(bot_id: int, file: Annotated[bytes, File()]) -> bool:
+    try:
+        # convert csv logic
+        pass
+    except Exception:
+        logger.error("Error while execute send_product_csv api method", exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal error.")
+    return True
+
+
+@router.get("/get_products_csv_file")
+async def get_product_csv_api(bot_id: int) -> Annotated[bytes, File()]:
+    try:
+        # get csv logic
+        pass
+    except Exception:
+        logger.error("Error while execute get_product_csv api method", exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal error.")
+    return bytes(200)
