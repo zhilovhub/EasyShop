@@ -1,6 +1,6 @@
 from typing import Optional
 
-from sqlalchemy import BigInteger, Column, String, ForeignKey, Integer
+from sqlalchemy import BigInteger, Column, String, ForeignKey, Integer, JSON
 from sqlalchemy import select, insert, delete, update
 from sqlalchemy.ext.asyncio import AsyncEngine
 from sqlalchemy.dialects.postgresql import insert as upsert
@@ -13,6 +13,7 @@ from database.models import Base
 from database.models.dao import Dao
 
 from .bot_model import Bot
+from .category_model import Category
 
 
 class ProductNotFound(Exception):
@@ -25,22 +26,30 @@ class Product(Base):
 
     id = Column(BigInteger, primary_key=True)
     bot_id = Column(ForeignKey(Bot.bot_id, ondelete="CASCADE"), nullable=False)
+
     name = Column(String(55), unique=True, nullable=False)  # TODO add test for unique name
+    category = Column(ForeignKey(Category.id, ondelete="SET NULL"))
     description = Column(String(255), nullable=False)
+    article = Column(String)
     price = Column(Integer, nullable=False)
     count = Column(BigInteger, nullable=False, default=0)
     picture = Column(String)
+    extra_options = Column(JSON, default="{}")
 
 
 class ProductWithoutId(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
     bot_id: int = Field(frozen=True)
+
     name: str = Field(max_length=55)
+    category: int
     description: str = Field(max_length=255)
+    article: Optional[str | None]
     price: int
     count: int
     picture: Optional[str | None]
+    extra_options: Optional[dict | None] = {}
 
 
 class ProductSchema(ProductWithoutId):
