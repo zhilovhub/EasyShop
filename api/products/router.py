@@ -48,6 +48,16 @@ async def add_product_api(new_product: ProductWithoutId) -> int:
     return product_id
 
 
+@router.post("/edit_product")
+async def add_product_api(product: ProductSchema) -> bool:
+    try:
+        await product_db.update_product(product)
+    except Exception:
+        logger.error("Error while execute update_product db_method", exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal error.")
+    return True
+
+
 @router.get("/get_all_categories/{bot_id}")
 async def get_all_categories_api(bot_id: int) -> list[CategorySchema]:
     try:
