@@ -67,8 +67,7 @@ class CSVFileInputModel(BaseModel):
 @router.post("/send_product_csv_file")
 async def send_product_csv_api(payload: CSVFileInputModel) -> bool:
     try:
-        # convert csv logic
-        pass
+        logger.info(f"get new csv file from api method bytes: {payload.file}")
     except Exception:
         logger.error("Error while execute send_product_csv api method", exc_info=True)
         raise HTTPException(status_code=500, detail="Internal error.")
