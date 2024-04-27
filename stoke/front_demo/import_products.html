@@ -13,12 +13,10 @@
         <a class="action_button" id="back_to_main" onclick="location.href='index.html';">Назад на главную</a>
     </section>
     <section>
-        <form id="add_form" action="https://ezbots.ru:2024/api/products/send_product_csv_file" method="post" enctype="multipart/form-data">
-            <label for="bot_id">Bot ID</label>
-            <input id="bot_id" name="bot_id" type="number" step="1" value="25">
+        <form id="add_form">
             <label for="fileSelect">csv/excel таблица с товарами</label>
             <input id="fileSelect" name="fileSelect" type="file" accept=".csv, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/vnd.ms-excel" />
-        <button type="submit" class="main_action_input_button action_button">Импортировать</button>
+            <input type="button" onClick="sendCsv(this.form)" class="main_action_input_button action_button" value="Импортировать">
         </form>
     </section>
 </div>
