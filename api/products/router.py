@@ -58,16 +58,6 @@ async def add_product_api(product: ProductSchema) -> bool:
     return True
 
 
-@router.get("/get_all_categories/{bot_id}")
-async def get_all_categories_api(bot_id: int) -> list[CategorySchema]:
-    try:
-        categories = await category_db.get_all_categories(bot_id)
-    except Exception:
-        logger.error("Error while execute get_all_categories db_method", exc_info=True)
-        raise HTTPException(status_code=500, detail="Internal error.")
-    return categories
-
-
 class CSVFileInputModel(BaseModel):
     """Models updatable field of a profile instance"""
     bot_id: int

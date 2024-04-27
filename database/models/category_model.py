@@ -66,7 +66,7 @@ class CategoryDao(Dao):  # TODO write tests
         return res
 
     @validate_call
-    async def add_category(self, new_category: CategorySchemaWithoutId) -> None:
+    async def add_category(self, new_category: CategorySchemaWithoutId) -> int:
         if type(new_category) != CategorySchemaWithoutId:
             raise InvalidParameterFormat("category_schema must be type of CategorySchemaWithoutId")
 
@@ -76,9 +76,10 @@ class CategoryDao(Dao):  # TODO write tests
                 raise SameCategoryNameAlreadyExists(
                     f"category name {new_category.name} already exists in bot_id = {new_category.bot_id}"
                 )
-            await conn.execute(insert(Category).values(new_category.model_dump()))
+            cat_id = (await conn.execute(insert(Category).values(new_category.model_dump()))).inserted_primary_key[0]
 
         self.logger.info(f"successfully add new_category {new_category} to db")
+        return cat_id
 
     @validate_call
     async def update_category(self, updated_category: CategorySchema) -> None:
