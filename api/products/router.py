@@ -61,7 +61,7 @@ async def get_all_categories_api(bot_id: int) -> list[CategorySchema]:
 class CSVFileInputModel(BaseModel):
     """Models updatable field of a profile instance"""
     bot_id: int
-    file: bytearray
+    file: bytes
 
 
 @router.post("/send_product_csv_file")
