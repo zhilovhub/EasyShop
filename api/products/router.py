@@ -3,6 +3,7 @@ from database.models.product_model import ProductSchema, ProductNotFound, Produc
 from loader import db_engine, logger
 from fastapi import HTTPException, APIRouter, File, UploadFile
 from typing import Annotated
+from pydantic import BaseModel
 
 
 PATH = "/api/products"
@@ -57,8 +58,14 @@ async def get_all_categories_api(bot_id: int) -> list[CategorySchema]:
     return categories
 
 
-@router.post("/send_product_csv_file")
-async def send_product_csv_api(bot_id: int, file: Annotated[bytes, File()]) -> bool:
+class CSVFileInputModel(BaseModel):
+    """Models updatable field of a profile instance"""
+    bot_id: int
+    file: bytes
+
+
+@router.post("/send_product_csv_file/")
+async def send_product_csv_api(payload: CSVFileInputModel) -> bool:
     try:
         # convert csv logic
         pass
