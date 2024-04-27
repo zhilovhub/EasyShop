@@ -64,7 +64,7 @@ class CSVFileInputModel(BaseModel):
     file: bytes
 
 
-@router.post("/send_product_csv_file/")
+@router.post("/send_product_csv_file", response_model=dict)
 async def send_product_csv_api(payload: CSVFileInputModel) -> bool:
     try:
         # convert csv logic
