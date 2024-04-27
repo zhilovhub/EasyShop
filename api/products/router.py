@@ -68,7 +68,7 @@ async def send_product_csv_api(bot_id: int, file: Annotated[bytes, File()]) -> b
     return True
 
 
-@router.get("/get_products_csv_file")
+@router.get("/get_products_csv_file/{bot_id}")
 async def get_product_csv_api(bot_id: int) -> Annotated[bytes, File()]:
     try:
         # get csv logic
