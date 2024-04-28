@@ -1,7 +1,9 @@
 from database.models.category_model import CategorySchema, CategoryDao
 from database.models.product_model import ProductSchema, ProductNotFound, ProductWithoutId, ProductDao
 from loader import db_engine, logger
-from fastapi import HTTPException, APIRouter
+from fastapi import HTTPException, APIRouter, File, UploadFile
+from typing import Annotated
+from pydantic import BaseModel
 
 
 PATH = "/api/products"
@@ -46,11 +48,38 @@ async def add_product_api(new_product: ProductWithoutId) -> int:
     return product_id
 
 
-@router.get("/get_all_categories/{bot_id}")
-async def get_all_categories_api(bot_id: int) -> list[CategorySchema]:
+@router.post("/edit_product")
+async def edit_product_api(product: ProductSchema) -> bool:
     try:
-        categories = await category_db.get_all_categories(bot_id)
+        await product_db.update_product(product)
     except Exception:
-        logger.error("Error while execute get_all_categories db_method", exc_info=True)
+        logger.error("Error while execute update_product db_method", exc_info=True)
         raise HTTPException(status_code=500, detail="Internal error.")
-    return categories
+    return True
+
+
+class CSVFileInputModel(BaseModel):
+    """Models updatable field of a profile instance"""
+    bot_id: int
+    file: bytes
+
+
+@router.post("/send_product_csv_file")
+async def send_product_csv_api(payload: CSVFileInputModel) -> bool:
+    try:
+        logger.info(f"get new csv file from api method bytes: {payload.file}")
+    except Exception:
+        logger.error("Error while execute send_product_csv api method", exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal error.")
+    return True
+
+
+@router.get("/get_products_csv_file/{bot_id}")
+async def get_product_csv_api(bot_id: int) -> Annotated[bytes, File()]:
+    try:
+        # get csv logic
+        pass
+    except Exception:
+        logger.error("Error while execute get_product_csv api method", exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal error.")
+    return bytes(200)

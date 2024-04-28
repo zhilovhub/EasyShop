@@ -4,6 +4,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
 import datetime
 from orders.router import router as order_router
+from categories.router import router as category_router
 from products.router import router as product_router
 from files.router import router as files_router
 
@@ -13,16 +14,21 @@ tags_metadata = [
         "description": "Operations with products.",
     },
     {
+        "name": "categories",
+        "description": "Operations with product categories.",
+    },
+    {
         "name": "orders",
         "description": "Operations with orders.",
     },
     {
         "name": "files",
         "description": "Operations with project files.",
-    }
+    },
 ]
 app = FastAPI(openapi_tags=tags_metadata)
 app.include_router(order_router)
+app.include_router(category_router)
 app.include_router(product_router)
 app.include_router(files_router)
 

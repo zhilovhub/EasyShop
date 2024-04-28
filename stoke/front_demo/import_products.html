@@ -6,16 +6,19 @@
     <link rel="stylesheet" href="main.css">
 </head>
 <body>
+<script src="import_export.js"></script>
 <div class="wrapper">
-    <div class="title"><h2>Импорт товаров</h2></div>
+    <div class="title">
+    <h2>Импорт товаров</h2>
+    </div>
     <section id="back">
         <a class="action_button" id="back_to_main" onclick="location.href='index.html';">Назад на главную</a>
     </section>
     <section>
         <form id="add_form">
             <label for="fileSelect">csv/excel таблица с товарами</label>
-            <input id="fileSelect" type="file" accept=".csv, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/vnd.ms-excel" />
-            <input type="button" onClick="importFromFile(this.form)" class="main_action_input_button action_button" value="Импортировать">
+            <input id="fileSelect" name="fileSelect" type="file" accept=".csv, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/vnd.ms-excel" />
+            <input type="button" onClick="sendCsv(this.form)" class="main_action_input_button action_button" value="Импортировать">
         </form>
     </section>
 </div>
