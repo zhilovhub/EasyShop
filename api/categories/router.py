@@ -27,19 +27,19 @@ async def get_all_categories_api(bot_id: int) -> list[CategorySchema]:
 
 
 @router.post("/add_category")
-async def add_product_api(new_cat: CategorySchemaWithoutId) -> int:
+async def add_category_api(new_category: CategorySchemaWithoutId) -> int:
     try:
-        cat_id = await category_db.add_category(new_cat)
+        cat_id = await category_db.add_category(new_category)
     except Exception:
         logger.error("Error while execute add_category db_method", exc_info=True)
         raise HTTPException(status_code=500, detail="Internal error.")
     return cat_id
 
 
-@router.post("/edit_product")
-async def add_product_api(cat: CategorySchema) -> bool:
+@router.post("/edit_category")
+async def edit_category_api(category: CategorySchema) -> bool:
     try:
-        await category_db.update_category(cat)
+        await category_db.update_category(category)
     except Exception:
         logger.error("Error while execute update_category db_method", exc_info=True)
         raise HTTPException(status_code=500, detail="Internal error.")

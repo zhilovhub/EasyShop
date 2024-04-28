@@ -49,7 +49,7 @@ async def add_product_api(new_product: ProductWithoutId) -> int:
 
 
 @router.post("/edit_product")
-async def add_product_api(product: ProductSchema) -> bool:
+async def edit_product_api(product: ProductSchema) -> bool:
     try:
         await product_db.update_product(product)
     except Exception:
