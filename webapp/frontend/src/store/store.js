@@ -9,7 +9,23 @@ export const Store = new Vuex.Store({
   state: {
     bot_id: bot_id,
     itemsAddToCartArray: [],
-    items: [],
+    items: [{
+      "bot_id": 0,
+      "name": "модель кроссовок",
+      "description": "string",
+      "price": 5000,
+      "count": 0,
+      "picture": 'https://th.bing.com/th/id/OIP.3S7vYZFSXZvIL89KCcpNoAHaHa?rs=1&pid=ImgDetMain',
+      "id": 0
+    },{
+      "bot_id": 0,
+      "name": "модель кроссовокккк",
+      "description": "модель кроссовок",
+      "price": 3200,
+      "count": 0,
+      "picture": 'https://th.bing.com/th/id/OIP.3S7vYZFSXZvIL89KCcpNoAHaHa?rs=1&pid=ImgDetMain',
+      "id": 1
+    }],
     generatedOrderId: '',
     paymentMethod: '',
     address: '',
@@ -98,7 +114,7 @@ export const Store = new Vuex.Store({
         }
         const data = await response.json();
 
-        commit('setItems', data);
+        // commit('setItems', data);
       } catch (error) {
         console.error('There was a problem with the fetch operation:', error);
       }
