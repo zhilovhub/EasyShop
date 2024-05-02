@@ -218,8 +218,8 @@
   font-size: 20px;
   button {
     font-size: 36px;
-    max-width: 30px;
-    max-height: 30px;
+    max-width: 20px;
+    max-height: 20px;
     background-color: var(--app-card-background-color);
     &:hover {
       opacity: 0.7;
