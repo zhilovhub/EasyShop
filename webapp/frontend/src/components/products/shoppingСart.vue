@@ -212,15 +212,14 @@
   width: 126px;
   height: 41px;
   display: flex;
-
+  justify-content: space-around;
   align-items: center;
   font-weight: 500;
   font-size: 20px;
   button {
-    font-size: 40px;
-    width: 35px;
-    height: 35px;
-    margin: 0 15px;
+    font-size: 36px;
+    max-width: 30px;
+    max-height: 30px;
     background-color: var(--app-card-background-color);
     &:hover {
       opacity: 0.7;
