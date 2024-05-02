@@ -110,13 +110,13 @@
           </div>
           <div class="buttons">
             <div class="countDivBtn">
-              <button
+              <div
                 @click="decrementCount(item)"
-              >-</button>
+              >-</div>
               {{item.count}}
-              <button
+              <div
                 @click="incrementCount(item)"
-              >+</button>
+              >+</div>
             </div>
 <!--            <div class="calcBtn">-->
 <!--              <button-->
@@ -216,10 +216,8 @@
   align-items: center;
   font-weight: 500;
   font-size: 20px;
-  button {
+  div {
     font-size: 36px;
-    max-width: 20px;
-    max-height: 20px;
     background-color: var(--app-card-background-color);
     &:hover {
       opacity: 0.7;
