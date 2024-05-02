@@ -276,4 +276,16 @@ textarea {
 //}
 
 
+@media screen and (max-height: 625px) {
+  .address-container {
+   padding-top: 10px;
+  }
+  .pay-container {
+    padding-top: 10px;
+  }
+  .comment-block {
+    padding-top: 10px;
+  }
+}
+
 </style>
