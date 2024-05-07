@@ -8,36 +8,27 @@
 }
 
 :root {
-  --app-background-color-light: #E7E7E7;
-  --app-background-color-dark: #0C0C0C;
-  --app-card-background-color-light: #FFFFFF;
-  --app-card-background-color-dark: #222222;
-  --app-text-color-dark: #FFFFFF;
-  --app-text-color-light: #111111;
-  --app-button-bgcolor-light: #E7E7E7;
-  --app-button-bgcolor-dark: #0C0C0C;
-  --app-hr-border-color-light: #D9D9D9;
-  --app-hr-border-color-dark: #3E3E3E;
+  --app-background-color: #E7E7E7;
+  --app-card-background-color: #FFFFFF;
+  --app-text-color: #111111;
+  --app-button-bgcolor: #E7E7E7;
+  --app-hr-border-color: #D9D9D9;
 }
 
 [data-theme='light'] {
-  :root {
-    --app-background-color: var(--app-background-color-light);
-    --app-card-background-color: var(--app-card-background-color-light);
-    --app-text-color: var(--app-text-color-light);
-    --app-button-bgcolor: var(--app-button-bgcolor-light);
-    --app-hr-border-color: var(--app-hr-border-color-light)
-  }
+  --app-background-color: #E7E7E7;
+  --app-card-background-color: #FFFFFF;
+  --app-text-color: #111111;
+  --app-button-bgcolor: #E7E7E7;
+  --app-hr-border-color: #D9D9D9;
 }
 
 [data-theme='dark'] {
-  :root {
-    --app-background-color: var(--app-background-color-dark);
-    --app-card-background-color: var(--app-card-background-color-dark);
-    --app-text-color: var(--app-text-color-dark);
-    --app-button-bgcolor: var(--app-button-bgcolor-dark);
-    --app-hr-border-color: var(--app-hr-border-color-dark)
-  }
+  --app-background-color: #0C0C0C;
+  --app-card-background-color: #222222;
+  --app-text-color: #FFFFFF;
+  --app-button-bgcolor: #0C0C0C;
+  --app-hr-border-color: #3E3E3E;
 }
 
 body {
