@@ -23,7 +23,8 @@
       <span>Бренд</span>
       <div class="brand-filter">
         <div class="brand" v-for="brand in brands" :id="brand" @click="toggleImage($event, brand)">
-          <img :src="brand.isActive ? this.imageMarkedCircle : imageCircle" alt="brand image">
+          <img v-if="brand.isActive" src="@/assets/markedcircle.png" alt="brand image">
+          <img v-else src="@/assets/circle.png" alt="brand image">
           <span>{{brand.name}}</span>
         </div>
       </div>
@@ -35,8 +36,8 @@
 export default {
   data() {
     return {
-      imageCircle: '/home/debug/EasyShop/Files/assets/circle.png',
-      imageMarkedCircle: '/home/debug/EasyShop/Files/assets/markedcircle.png',
+      imageCircle: '',
+      imageMarkedCircle: '',
       fromPrice: null,
       toPrice: null
     }
