@@ -21,13 +21,6 @@
         const parts = price.toString().split(/(?=(?:\d{3})+$)/);
         return parts.join(' ') + ' ₽';
       },
-      totalPriceForButton() {
-        let price = this.itemsAddToCartArray.reduce((total, item) => total + item.price*item.count, 0);
-        if (price <= 0) {
-          return 'Заказать: 0 ₽'
-        }
-        return 'Заказать: ' + price + ' ₽'
-      },
       totalCount() {
         let count = this.itemsAddToCartArray.reduce((total, item) => total + item.count, 0);
         return count + ' товаров на сумму'
@@ -217,7 +210,7 @@ textarea {
   //  -webkit-appearance: none;
   //  -moz-appearance: none;
   //  appearance: none;
-  //  background-image: url('../../assets/arrow-down.png') !important;
+  //  background-image: url('../../assets/arrow-down.svg') !important;
   //  background-position: center right 20px;
   //  background-repeat: no-repeat;
   //  background-size: auto 15%;

@@ -10,22 +10,50 @@ export const Store = new Vuex.Store({
     bot_id: bot_id,
     itemsAddToCartArray: [],
     items: [{
-      "bot_id": 0,
+      "bot_id": 1,
       "name": "модель кроссовок",
-      "description": "string",
+      "description": "Шикарные кроссы с технологией air, позваляющие почувствовать ходьбу по-новому, на разработки были потрачены года - оно того стоило.... Шикарные кроссы с технологией air, позваляющие почувствовать ходьбу по-новому, на разработки были потрачены года - оно того стоило.... а разработки были потрачены года - оно того стоило... а разработки были потрачены года - оно того стоило...",
       "price": 5000,
       "count": 0,
       "picture": 'https://th.bing.com/th/id/OIP.3S7vYZFSXZvIL89KCcpNoAHaHa?rs=1&pid=ImgDetMain',
-      "id": 0
-    },{
-      "bot_id": 0,
-      "name": "модель кроссовокккк",
-      "description": "модель кроссовок",
+      "id": 1,
+      "sizes": [36, 36, 36, 36, 36, 36, 36, 36, 36],
+      "ranked": 4.5
+    },
+      {
+      "bot_id": 2,
+      "name": "nike air 2",
+      "description": "Посиругоисовриымиигуыивмивигивормгукынмршырмшгуышкщрммтшукршгкурмщкушкрмшугкмшуткршуршаркгрмуощышроркшгршытсршгрыырсощшуы",
       "price": 3200,
       "count": 0,
       "picture": 'https://th.bing.com/th/id/OIP.3S7vYZFSXZvIL89KCcpNoAHaHa?rs=1&pid=ImgDetMain',
-      "id": 1
+      "id": 2,
+      "sizes": [36, 36, 36, 36, 36, 36, 36, 36, 36],
+      "ranked": 5.0
     }],
+    filteredItems: [],
+    brands: [
+      {
+      "name": "Gucci",
+      "IsActive": false
+      },
+      {
+        "name": "Gucci",
+        "IsActive": false
+      },
+      {
+        "name": "Gucci",
+        "IsActive": false
+      },
+      {
+        "name": "Gucci",
+        "IsActive": false
+      },
+      {
+        "name": "Gucci",
+        "IsActive": false
+      },
+    ],
     generatedOrderId: '',
     paymentMethod: '',
     address: '',
