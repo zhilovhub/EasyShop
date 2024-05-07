@@ -171,6 +171,10 @@
   display: flex;
   flex-direction: column;
   padding: 5% 5% 0;
+  span {
+    font-size: var(--app-text-color);
+    font-weight: 750;
+  }
 }
 
 textarea {
@@ -178,14 +182,15 @@ textarea {
   width: 100%;
   height: 43px;
   border-radius: 15px;
+  display: flex;
+  align-items: center;
   margin: 10px auto;
   white-space: pre-wrap;
   resize: none;
-  padding: 8.5px 20px;
-  align-items: center;
-  border: 1px solid #20282C;
+  padding: 11px 20px;
+  border: 1px solid var(--app-card-background-color);
   font-family: 'Montserrat', sans-serif;
-  font-weight: 500;
+  font-weight: 600;
   font-size: 15px;
   &:focus {
     outline: none;
@@ -201,6 +206,10 @@ textarea {
   display: flex;
   flex-direction: column;
   padding: 5% 5% 0;
+  span {
+    font-size: var(--app-text-color);
+    font-weight: 750;
+  }
   //select {
   //  width: 100%;
   //  height: 50px;
@@ -227,6 +236,10 @@ textarea {
   display: flex;
   flex-direction: column;
   padding: 5% 5%;
+  span {
+    font-size: var(--app-text-color);
+    font-weight: 750;
+  }
 }
 
 

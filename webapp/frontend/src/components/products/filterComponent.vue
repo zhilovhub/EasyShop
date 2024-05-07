@@ -23,7 +23,7 @@
       <span>Бренд</span>
       <div class="brand-filter">
         <div class="brand" v-for="brand in brands" @click="toggleImage($event, brand)">
-          <img :src="brand.isActive ? 'src/assets/checkmarkcircle.svg' : 'src/assets/circle.svg'" alt="brand image">
+          <img :src="brand.isActive ? '@/assets/checkmarkcircle.svg' : '@/assets/circle.svg'" alt="brand image">
           <span>{{brand.name}}</span>
         </div>
       </div>
@@ -61,6 +61,14 @@ export default {
 </script>
 
 <style scoped lang="scss">
+*{
+  box-sizing: border-box;
+  font-family: 'Montserrat', sans-serif;
+  font-size: 16px;
+  font-weight: 500;
+  color: var(--app-text-color);
+}
+
 .wrapper {
   width: 100vw;
   height: 100vh;
@@ -89,7 +97,7 @@ export default {
   margin-top: 10px;
   input {
     width: 48.5%;
-    background-color: var(--app-card-background-color);
+    background-color: var(--app-hr-border-color);
     border-radius: 15px;
     height: 60px;
     resize: none;
@@ -98,6 +106,9 @@ export default {
     color: var(--app-text-color);
     box-shadow: none;
     border: none;
+    &::placeholder {
+      color: var(--app-text-color);
+    }
     &:focus {
       outline: 2px solid var(--app-text-color);
     }
@@ -117,7 +128,7 @@ export default {
     justify-content: center;
     height: 30px;
     border-radius: 30px;
-    background-color: var(--app-card-background-color);
+    background-color: var(--app-hr-border-color);
   }
 }
 
@@ -133,7 +144,7 @@ export default {
     border-radius: 30px;
     display: flex;
     align-items: center;
-    background-color: var(--app-card-background-color);
+    background-color: var(--app-hr-border-color);
     img {
       width: 13px;
       height: 13px;

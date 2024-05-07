@@ -327,7 +327,7 @@ export default {
       width: 100%;
       height: 40px;
       background-color: var(--app-button-bgcolor);
-      box-shadow: 0 4px 4px 0 rgb(0, 0, 0, 25%);
+      box-shadow: 0 1px 2px 0 rgb(0, 0, 0, 25%);
       font-weight: 550;
       border-radius: 15px;
       cursor: pointer;

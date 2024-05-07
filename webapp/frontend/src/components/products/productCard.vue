@@ -102,6 +102,7 @@ export default {
   box-sizing: border-box;
   font-family: 'Montserrat', sans-serif;
   font-size: 15px;
+  font-weight: 500;
   line-height: 18.29px;
   color: var(--app-text-color);
 }
@@ -149,6 +150,13 @@ img {
 
 .size {
   margin: 10px 0;
+  padding: 0;
+  .span-block {
+    padding: 20px 5% 10px;
+  }
+  .swiper-container {
+    margin: 0 0 0 5%;
+  }
 }
 
 .swiper-container {
@@ -185,7 +193,15 @@ h1 {
 }
 
 .feedback {
+  margin: 10px 0;
+  padding: 0;
   height: 230px;
+  .span-block {
+    padding: 20px 5% 10px;
+  }
+  .swiper-container {
+    margin: 0 0 0 5%;
+  }
   .feedback-block {
     width: 209px;
     height: 166px;
