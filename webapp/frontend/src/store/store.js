@@ -5,6 +5,11 @@ tg.expand();
 const url = new URL(window.location.href);
 export const bot_id = url.searchParams.get('bot_id');
 export const apiUrl = `https://ezbots.ru:${import.meta.env.VITE_API_PORT}`
+if (tg.colorScheme === 'dark') {
+  document.documentElement.setAttribute('data-theme', 'dark');
+} else {
+  document.documentElement.setAttribute('data-theme', 'light');
+}
 export const Store = new Vuex.Store({
   state: {
     bot_id: bot_id,
