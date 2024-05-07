@@ -23,7 +23,7 @@
       <span>Бренд</span>
       <div class="brand-filter">
         <div class="brand" v-for="brand in brands" @click="toggleImage($event, brand)">
-          <img :src="brand.isActive ? '/assets/checkmarkcircle.svg' : '/assets/circle.svg'" alt="brand image">
+          <img :src="brand.isActive ? 'src/assets/markedcircle.png' : 'src/assets/circle.png'" alt="brand image">
           <span>{{brand.name}}</span>
         </div>
       </div>
