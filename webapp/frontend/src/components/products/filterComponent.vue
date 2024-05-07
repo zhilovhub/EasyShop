@@ -35,8 +35,8 @@
 export default {
   data() {
     return {
-      imageCircle: '../src/assets/circle.png',
-      imageMarkedCircle: '../src/assets/markedcircle.png',
+      imageCircle: '../../assets/circle.png',
+      imageMarkedCircle: '../../assets/markedcircle.png',
       fromPrice: null,
       toPrice: null
     }
