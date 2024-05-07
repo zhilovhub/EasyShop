@@ -118,8 +118,7 @@ import FilterComponent from '/src/components/products/filterComponent.vue'
 let tg = window.Telegram.WebApp;
 
 Telegram.WebApp.onEvent('mainButtonClicked', function(){
-  window.location.href = "/products-page/shopping-cart/";
-  this.$store.commit("addToSessionStorage");
+  this.relocation();
 });
 
 export default {
@@ -189,6 +188,10 @@ export default {
     receivedData(data) {
       this.fromPrice = data.fromPrice;
       this.toPrice = data.toPrice;
+    },
+    relocation() {
+      this.$store.commit("addToSessionStorage");
+      window.location.href = "/products-page/shopping-cart/";
     },
     // animationButton(item, $event) {
     //   $event.target.classList.add('animation-button');
