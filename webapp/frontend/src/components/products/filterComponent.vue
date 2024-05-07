@@ -22,8 +22,8 @@
     <div class="block">
       <span>Бренд</span>
       <div class="brand-filter">
-        <div class="brand" v-for="brand in brands" @click="toggleImage($event, brand)">
-          <img src="@/assets/circle.png" alt="brand image">
+        <div class="brand" v-for="brand in brands" :id="brand" @click="toggleImage($event, brand)">
+          <img :src="brand.isActive ? this.imageMarkedCircle : imageCircle" alt="brand image">
           <span>{{brand.name}}</span>
         </div>
       </div>
@@ -35,6 +35,8 @@
 export default {
   data() {
     return {
+      imageCircle: 'src/assets/circle.png',
+      imageMarkedCircle: 'src/assets/markedcircle.png',
       fromPrice: null,
       toPrice: null
     }
@@ -46,11 +48,12 @@ export default {
       this.$emit("close");
     },
     toggleImage(event, brand) {
+      console.log(brand)
       brand.isActive = !brand.isActive;
     },
     groupFilters() {
       this.$emit("group", {fromPrice: this.fromPrice, toPrice: this.toPrice})
-    }
+    },
   },
   computed: {
     brands() {
