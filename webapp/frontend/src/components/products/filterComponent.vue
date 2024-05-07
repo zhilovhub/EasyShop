@@ -3,7 +3,9 @@
     <div class="block">
       <div class="span-block">
         <h1>Фильтры</h1>
-        <img @click="closeFilterComponent" src="@/assets/close.svg" alt="close" >
+        <svg @click="closeFilterComponent" width="13" height="13" viewBox="0 0 13 13" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+          <path d="M7.6493 6.50023L12.7624 1.38765C13.0798 1.07026 13.0798 0.55566 12.7624 0.238291C12.445 -0.0791046 11.9304 -0.0791046 11.6131 0.238291L6.50047 5.3514L1.3879 0.238291C1.0705 -0.0791046 0.555904 -0.0791046 0.238535 0.238291C-0.0788351 0.555686 -0.0788605 1.07028 0.238535 1.38765L5.35164 6.50023L0.238535 11.6128C-0.0788605 11.9302 -0.0788605 12.4448 0.238535 12.7622C0.55593 13.0796 1.07053 13.0796 1.3879 12.7622L6.50047 7.64905L11.613 12.7622C11.9304 13.0796 12.445 13.0796 12.7624 12.7622C13.0798 12.4448 13.0798 11.9302 12.7624 11.6128L7.6493 6.50023Z" fill="currentColor"/>
+        </svg>
       </div>
     </div>
     <div class="block">
@@ -14,9 +16,9 @@
       </div>
     </div>
     <div class="block based-filter">
-      <div>По популярности</div>
-      <div>По популярности</div>
-      <div>По популярности</div>
+      <div @click="chooseOption($event.target)" class="filterOnBased">По популярности</div>
+      <div @click="chooseOption($event.target)" class="filterOnBased">По популярности</div>
+      <div @click="chooseOption($event.target)" class="filterOnBased">По популярности</div>
     </div>
     <hr style="border: 1px solid var(--app-hr-border-color); width: 90%; margin: 2.5% auto;">
     <div class="block">
@@ -54,6 +56,13 @@ export default {
     groupFilters() {
       this.$emit("group", {fromPrice: this.fromPrice, toPrice: this.toPrice})
     },
+    chooseOption(target) {
+      const allSizes = document.querySelectorAll('.filterOnBased');
+      allSizes.forEach(size => {
+        size.classList.remove('chosen');
+      });
+      target.classList.add('chosen');
+    }
   },
   computed: {
     brands() {
@@ -132,6 +141,9 @@ export default {
     height: 30px;
     border-radius: 30px;
     background-color: var(--app-hr-border-color);
+  }
+  .chosen {
+    border: 3px solid #9EDCFF;
   }
 }
 

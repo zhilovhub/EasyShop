@@ -106,7 +106,6 @@
     </ul>
   </div>
   </div>
-  <RouterLink :to="`/products-page/shopping-cart?bot_id=${bot_id()}`" v-if="itemsAddToCartArray.length>0"><button @click="itemsAddToCart" class="addToCartBtn">В Корзину</button></RouterLink>
 </template>
 
 <script>
@@ -116,6 +115,10 @@ import * as https from 'https'
 import router from '@/router/router.js'
 import FilterComponent from '/src/components/products/filterComponent.vue'
 let tg = window.Telegram.WebApp;
+
+Telegram.WebApp.onEvent('mainButtonClicked', function(){
+  window.href = "/products-page/shopping-cart`"
+});
 
 export default {
   name: 'productsPage',
@@ -287,7 +290,7 @@ export default {
   margin: 20px 5%;
   input {
     width: 100%;
-    padding: 0 20px;
+    padding: 10px 20px;
     border-radius: 15px;
     background-color: var(--app-card-background-color);
     color: var(--app-text-color);
@@ -372,26 +375,6 @@ export default {
   position: absolute;
   right: 10px;
   top: 10px;
-}
-
-.addToCartBtn {
-  width: 100%;
-  height: 62px;
-  color: #0C0C0C;
-  background-color: #59C0F9;
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  cursor: pointer;
-  box-shadow: none;
-  border: none;
-  font-size: 20px;
-  font-weight: bold;
-  font-family: 'Montserrat', sans-serif;
-  z-index: 10;
-  &:hover{
-    background-color: #82ccec;
-  }
 }
 
 //.animation-button {

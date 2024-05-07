@@ -1,7 +1,14 @@
 <script>
-  import { bot_id, apiUrl } from '@/store/store.js'
+let tg = window.Telegram.WebApp;
 
-  export default {
+tg.MainButton.text = "Начать оформление";
+Telegram.WebApp.onEvent('mainButtonClicked', function(){
+  window.href = "/products-page/order-details"
+});
+
+import { bot_id, apiUrl } from '@/store/store.js'
+
+export default {
     name: 'ShoppingCart',
     data() {
       return {
@@ -82,21 +89,21 @@
         let tempItemsAddToCartArray = sessionStorage.getItem('itemsAddToCartArray')
         tempItemsAddToCartArray = JSON.parse(tempItemsAddToCartArray);
         sessionStorage.setItem('itemsAddToCartArray', JSON.stringify(tempItemsAddToCartArray));
-        window.location.href = "/products-page?bot_id=" + vm.$store.state.bot_id;
+        window.location.href = "/products-page";
       }
     },
     beforeUnmount() {
       this.$store.state.comment = this.inputValue;
     }
-  }
+}
 </script>
 
 <template>
   <div class="wrapper">
   <div class="container-items">
     <div class="title">
-      <span @click="backToMainPage" style="font-weight: bold; font-size: 20px">Ваш заказ</span>
-      <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+      <span style="font-weight: bold; font-size: 20px">Ваш заказ</span>
+      <svg @click="backToMainPage" width="24" height="24" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
         <path d="M0.4852 8.08809L10.3472 14.0051C10.8572 14.3111 11.4282 14.4641 12.0002 14.4641C12.5712 14.4641 13.1432 14.3111 13.6532 14.0051L23.5142 8.08809C23.8152 7.90709 23.9992 7.58209 23.9992 7.23109C23.9992 6.88009 23.8152 6.55409 23.5142 6.37409L13.6542 0.456088C12.6332 -0.156912 11.3672 -0.156912 10.3472 0.456088L0.4852 6.37309C0.1842 6.55409 0.000199499 6.87909 0.000199499 7.23009C0.000199499 7.58109 0.1842 7.90709 0.4852 8.08709V8.08809ZM11.3762 2.17109C11.7602 1.94109 12.2392 1.94109 12.6242 2.17109L21.0562 7.23109L12.6242 12.2911C12.2392 12.5211 11.7602 12.5211 11.3752 12.2911L2.9442 7.23009L11.3762 2.17109ZM24.0002 20.0001C24.0002 20.5531 23.5522 21.0001 23.0002 21.0001H21.0002V23.0001C21.0002 23.5531 20.5522 24.0001 20.0002 24.0001C19.4482 24.0001 19.0002 23.5531 19.0002 23.0001V21.0001H17.0002C16.4482 21.0001 16.0002 20.5531 16.0002 20.0001C16.0002 19.4471 16.4482 19.0001 17.0002 19.0001H19.0002V17.0001C19.0002 16.4471 19.4482 16.0001 20.0002 16.0001C20.5522 16.0001 21.0002 16.4471 21.0002 17.0001V19.0001H23.0002C23.5522 19.0001 24.0002 19.4471 24.0002 20.0001ZM12.8572 23.2861C12.6692 23.5981 12.3382 23.7711 11.9992 23.7711C11.8242 23.7711 11.6462 23.7251 11.4852 23.6281L0.4852 17.0291C0.0111995 16.7451 -0.141801 16.1311 0.1422 15.6571C0.4252 15.1831 1.0392 15.0291 1.5142 15.3141L12.5142 21.9141C12.9882 22.1981 13.1412 22.8121 12.8572 23.2861ZM23.8572 11.0901C24.1412 11.5641 23.9882 12.1781 23.5142 12.4621L12.5142 19.0621C12.3552 19.1571 12.1782 19.2051 11.9992 19.2051C11.8202 19.2051 11.6432 19.1571 11.4842 19.0621L0.4852 12.4621C0.0111995 12.1781 -0.141801 11.5641 0.1422 11.0901C0.4252 10.6151 1.0392 10.4621 1.5142 10.7471L11.9992 17.0381L22.4842 10.7471C22.9582 10.4631 23.5732 10.6161 23.8572 11.0901Z" fill="currentColor"/>
       </svg>
     </div>
@@ -150,7 +157,7 @@
     <hr style="border: 1px solid var(--app-hr-border-color); width: 90%; margin: 0 auto">
   </div>
 <!--  <textarea v-model="inputValue" placeholder="Добавить комментарий..."/>-->
-  <RouterLink :to="`/products-page/order-details?bot_id=${bot_id()}`" ><button class="btnTotalPrice">Начать оформление</button></RouterLink>
+
 </template>
 
 <style scoped lang="scss">
@@ -241,26 +248,6 @@
     &:hover {
       opacity: 0.7;
     }
-  }
-}
-
-.btnTotalPrice {
-  width: 100%;
-  height: 62px;
-  color: #0C0C0C;
-  background-color: #59C0F9;
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  cursor: pointer;
-  box-shadow: none;
-  border: none;
-  font-size: 20px;
-  font-weight: bold;
-  font-family: 'Montserrat', sans-serif;
-  z-index: 10;
-  &:hover{
-    background-color: #82ccec;
   }
 }
 

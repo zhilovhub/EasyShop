@@ -1,4 +1,10 @@
 <script>
+let tg = window.Telegram.WebApp;
+
+tg.MainButton.text = "Отправить";
+Telegram.WebApp.onEvent('mainButtonClicked', function(){
+  this.orderBtnClicked();
+});
   export default {
     name: 'orderDetails',
     data() {
@@ -111,7 +117,6 @@
     <span>Комментарий</span>
     <textarea placeholder="Добавьте комментарий" v-model="commentValue"></textarea>
   </div>
-    <button @click="orderBtnClicked()" class="btnTotalPrice">Отправить</button>
   </div>
 <!--  <div class="footer">-->
 <!--    <div style="margin: 0 0 10px">-->
@@ -239,27 +244,6 @@ textarea {
   span {
     font-size: var(--app-text-color);
     font-weight: 750;
-  }
-}
-
-
-.btnTotalPrice {
-  width: 100%;
-  height: 62px;
-  color: #0C0C0C;
-  background-color: #59C0F9;
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  cursor: pointer;
-  box-shadow: none;
-  border: none;
-  font-size: 20px;
-  font-weight: bold;
-  font-family: 'Montserrat', sans-serif;
-  z-index: 10;
-  &:hover{
-    background-color: #82ccec;
   }
 }
 
