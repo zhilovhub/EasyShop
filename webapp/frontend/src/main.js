@@ -11,7 +11,6 @@ import App from './App.vue'
 import router from './router/router.js'
 import Vuex from "vuex";
 import {Store} from "./store/store.js"
-import autofocus from 'vue-autofocus-directive';
 
 
 const app = createApp(App)
@@ -23,7 +22,6 @@ app.use(router)
 app.use(Vuex)
 app.use(Store)
 app.mount('#app')
-app.directive('autofocus', autofocus)
 
 
 

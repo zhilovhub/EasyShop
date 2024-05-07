@@ -2,7 +2,7 @@
   <FilterComponent @group="receivedData" @close="filterComponentIs = false" v-if="filterComponentIs"/>
   <div v-else>
   <div class="input-block" v-if="inputIsActive">
-    <input autofocus v-autofocus @focusout="toggleInput" v-model="inputValue" placeholder="Введите название продукта">
+    <input autofocus @focusout="toggleInput" v-model="inputValue" placeholder="Введите название продукта">
   </div>
   <div v-else class="header">
     <span>Каталог</span>
