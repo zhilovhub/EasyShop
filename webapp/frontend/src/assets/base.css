@@ -47,22 +47,3 @@ body {
   width: 25px;
 }
 
-::-webkit-scrollbar-track {
-  background: #0A1526;
-}
-::-webkit-scrollbar-thumb {
-  scrollbar-width: thin;
-  scrollbar-color: green black;
-  background: linear-gradient(45deg, #EECFBA, #C5DDE8);
-  border-radius: 20px;
-  border: 3px solid #050c26;
-}
-::-webkit-scrollbar-thumb {
-  background: #d2d2d2;
-  border-radius: 8px;
-  border: 3px solid #0A1526;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: white;
-}
