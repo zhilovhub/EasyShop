@@ -118,6 +118,7 @@ import FilterComponent from '/src/components/products/filterComponent.vue'
 let tg = window.Telegram.WebApp;
 
 Telegram.WebApp.onEvent('mainButtonClicked', function(){
+  this.$store.commit("addToSessionStorage");
   window.location.href = "/products-page/shopping-cart/"
 });
 
@@ -163,7 +164,6 @@ export default {
     },
     itemsAddToCart() {
       this.$store.state.itemsAddToCartArray = this.$store.state.items.filter(item => item.count > 0);
-      this.$store.commit("addToSessionStorage");
       if (this.itemsAddToCartArray.length> 0) {
         tg.MainButton.show();
       } else {
@@ -227,6 +227,7 @@ export default {
       const BackButton = window.Telegram.WebApp.BackButton;
       window.Telegram.WebApp.onEvent('backButtonClicked', () => {
         this.toggleInput();
+        BackButton.hide();
       });
       if (value) {
         BackButton.show();
