@@ -163,6 +163,7 @@ export default {
     },
     itemsAddToCart() {
       this.$store.state.itemsAddToCartArray = this.$store.state.items.filter(item => item.count > 0);
+      this.$store.commit("addToSessionStorage");
       if (this.itemsAddToCartArray.length> 0) {
         tg.MainButton.show();
       } else {
