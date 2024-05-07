@@ -35,8 +35,8 @@
 export default {
   data() {
     return {
-      imageCircle: 'src/assets/circle.png',
-      imageMarkedCircle: 'src/assets/markedcircle.png',
+      imageCircle: '../src/assets/circle.png',
+      imageMarkedCircle: '../src/assets/markedcircle.png',
       fromPrice: null,
       toPrice: null
     }
@@ -48,7 +48,6 @@ export default {
       this.$emit("close");
     },
     toggleImage(event, brand) {
-      console.log(brand)
       brand.isActive = !brand.isActive;
     },
     groupFilters() {
