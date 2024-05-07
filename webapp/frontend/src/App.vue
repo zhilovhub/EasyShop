@@ -3,6 +3,7 @@
 </template>
 
 <script>
+
 document.body.style.zoom = "100%";
 
 const textarea = document.querySelectorAll('textarea');

@@ -115,6 +115,7 @@ import { apiUrl, bot_id } from '@/store/store.js'
 import * as https from 'https'
 import router from '@/router/router.js'
 import FilterComponent from '/src/components/products/filterComponent.vue'
+let tg = window.Telegram.WebApp;
 
 export default {
   name: 'productsPage',
@@ -158,6 +159,11 @@ export default {
     },
     itemsAddToCart() {
       this.$store.state.itemsAddToCartArray = this.$store.state.items.filter(item => item.count > 0);
+      if (this.itemsAddToCartArray.length> 0) {
+        tg.MainButton.show();
+      } else {
+        tg.MainButton.hide();
+      }
     },
     shortenName(name) {
       if (!name) return '';
@@ -354,8 +360,6 @@ export default {
   color: #FFFFFF;
   font-size: 24px;
 }
-
-
 
 .circle {
   border-radius: 100%;

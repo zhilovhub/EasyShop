@@ -2,6 +2,9 @@ import Vuex from 'vuex'
 
 let tg = window.Telegram.WebApp;
 tg.expand();
+tg.MainButton.text = "В корзину";
+tg.MainButton.color = "#59C0F9";
+tg.MainButton.textColor = "#0C0C0C";
 const url = new URL(window.location.href);
 export const bot_id = url.searchParams.get('bot_id');
 export const apiUrl = `https://ezbots.ru:${import.meta.env.VITE_API_PORT}`
