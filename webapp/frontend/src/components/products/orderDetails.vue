@@ -1,10 +1,11 @@
 <script>
 let tg = window.Telegram.WebApp;
-
 tg.MainButton.text = "Отправить";
 Telegram.WebApp.onEvent('mainButtonClicked', function(){
   this.orderBtnClicked();
 });
+tg.MainButton.show();
+
   export default {
     name: 'orderDetails',
     data() {

@@ -5,6 +5,7 @@ tg.MainButton.text = "Начать оформление";
 Telegram.WebApp.onEvent('mainButtonClicked', function(){
   window.location.href = "/products-page/order-details/"
 });
+tg.MainButton.show();
 
 import { bot_id, apiUrl } from '@/store/store.js'
 
