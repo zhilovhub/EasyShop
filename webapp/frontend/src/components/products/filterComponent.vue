@@ -10,7 +10,7 @@
       <span>Цена, ₽</span>
       <div class="block-textarea">
         <input v-model="fromPrice" type="number" min="0" placeholder="От">
-        <input v-model="toPrice" type="number" max="0" placeholder="До">
+        <input v-model="toPrice" type="number" :min="this.fromPrice" placeholder="До">
       </div>
     </div>
     <div class="block based-filter">
@@ -23,7 +23,7 @@
       <span>Бренд</span>
       <div class="brand-filter">
         <div class="brand" v-for="brand in brands" @click="toggleImage($event, brand)">
-          <img :src="brand.isActive ? '@/assets/checkmarkcircle.svg' : '@/assets/circle.svg'" alt="brand image">
+          <img :src="brand.isActive ? '/src/assets/checkmarkcircle.svg' : '/src/assets/circle.svg'" alt="brand image">
           <span>{{brand.name}}</span>
         </div>
       </div>

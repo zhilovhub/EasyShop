@@ -53,10 +53,10 @@ export default defineConfig({
       "@SwiperVue": fileURLToPath(new URL('./node_modules/swiper/vue/swiper-vue.js', import.meta.url)),
     }
   },
-  server: {
-    https: {
-      key: fs.readFileSync(env.VITE_SSL_KEY_PATH),
-      cert: fs.readFileSync(env.VITE_SSL_CERT_PATH)
-    }
-  },
+  // server: {
+  //   https: {
+  //     key: fs.readFileSync(env.VITE_SSL_KEY_PATH),
+  //     cert: fs.readFileSync(env.VITE_SSL_CERT_PATH)
+  //   }
+  // },
 })
