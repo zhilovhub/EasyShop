@@ -1,4 +1,5 @@
 <template>
+  <br>
   <FilterComponent @group="receivedData" @close="filterComponentIs = false" v-if="filterComponentIs"/>
   <div v-else>
   <div class="input-block" v-if="inputIsActive">
@@ -220,6 +221,23 @@ export default {
       });
     },
   },
+  watch: {
+    inputIsActive(value) {
+      const BackButton = window.Telegram.WebApp.BackButton;
+      if (value) {
+        BackButton.show();
+        BackButton.onClick(() => {
+          BackButton.hide();
+          this.toggleInput();
+        });
+        window.Telegram.WebApp.onEvent('backButtonClicked', () => {
+          this.toggleInput();
+        });
+      } else {
+        BackButton.hide();
+      }
+    }
+  },
   mounted() {
     this.itemsAddToCart();
   //   this.$store.dispatch('itemsInit').then(() => {
@@ -268,7 +286,7 @@ export default {
 
 .header {
   max-width: 100%;
-  margin: 20px 5%;
+  margin: 0 5%;
   display: flex;
   justify-content: space-between;
   align-items: center;
