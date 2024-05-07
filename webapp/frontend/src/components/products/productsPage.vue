@@ -118,7 +118,7 @@ import FilterComponent from '/src/components/products/filterComponent.vue'
 let tg = window.Telegram.WebApp;
 
 Telegram.WebApp.onEvent('mainButtonClicked', function(){
-  window.href = "/products-page/shopping-cart`"
+  window.location.href = "/products-page/shopping-cart`"
 });
 
 export default {
@@ -224,13 +224,13 @@ export default {
   watch: {
     inputIsActive(value) {
       const BackButton = window.Telegram.WebApp.BackButton;
+      window.Telegram.WebApp.onEvent('backButtonClicked', () => {
+        this.toggleInput();
+      });
       if (value) {
         BackButton.show();
         BackButton.onClick(() => {
           BackButton.hide();
-          this.toggleInput();
-        });
-        window.Telegram.WebApp.onEvent('backButtonClicked', () => {
           this.toggleInput();
         });
       } else {

@@ -3,7 +3,7 @@ let tg = window.Telegram.WebApp;
 
 tg.MainButton.text = "Начать оформление";
 Telegram.WebApp.onEvent('mainButtonClicked', function(){
-  window.href = "/products-page/order-details"
+  window.location.href = "/products-page/order-details"
 });
 
 import { bot_id, apiUrl } from '@/store/store.js'
