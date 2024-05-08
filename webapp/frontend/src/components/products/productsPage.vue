@@ -4,9 +4,8 @@
   <div class="input-block" v-if="inputIsActive">
     <input autofocus @focusout="toggleInput" v-model="inputValue" placeholder="Введите название продукта">
   </div>
-    <br>
   <div v-else class="header">
-
+    <br>
     <span>Каталог</span>
     <div class="images">
       <svg @click="toggleFilterComponent()" width="20" height="20" viewBox="0 0 20 20" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
