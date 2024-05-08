@@ -121,6 +121,14 @@ Telegram.WebApp.onEvent('mainButtonClicked', function(){
   window.location.href = "/products-page/shopping-cart/";
 });
 
+window.Telegram.WebApp.onEvent('backButtonClicked', () => {
+  this.fromPrice = null;
+  this.toPrice = null;
+  this.inputValue = ''
+  this.inputIsActive = !this.inputIsActive;
+  tg.BackButton.hide();
+});
+
 export default {
   name: 'productsPage',
   components: { FilterComponent },
@@ -225,18 +233,15 @@ export default {
   watch: {
     inputIsActive(value) {
       const BackButton = window.Telegram.WebApp.BackButton;
-      window.Telegram.WebApp.onEvent('backButtonClicked', () => {
-        this.toggleInput();
-        BackButton.hide();
-      });
       if (value) {
         BackButton.show();
         BackButton.onClick(() => {
+          this.fromPrice = null;
+          this.toPrice = null;
+          this.inputValue = ''
+          this.inputIsActive = !this.inputIsActive;
           BackButton.hide();
-          this.toggleInput();
         });
-      } else {
-        BackButton.hide();
       }
     }
   },
