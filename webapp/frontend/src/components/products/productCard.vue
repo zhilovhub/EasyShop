@@ -54,13 +54,20 @@
       </div>
       <span>{{productObject.ranked}}★</span>
     </div>
-    <RouterLink :to="`/products-page`"><button @click="addToShoppingCart">Начать оформление</button></RouterLink>
   </div>
 </template>
 
 <script>
 import { Swiper, SwiperSlide } from '@SwiperVue';
 import { Navigation } from '@Swiper'
+
+let tg = window.Telegram.WebApp;
+tg.MainButton.text = "Начать оформление";
+Telegram.WebApp.onEvent('mainButtonClicked', function(){
+  this.addToShoppingCart();
+});
+tg.MainButton.show();
+
 export default {
   components: { SwiperSlide, Swiper },
   data() {

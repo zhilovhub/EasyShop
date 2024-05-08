@@ -1,6 +1,6 @@
 <template>
-  <br>
   <FilterComponent @group="receivedData" @close="filterComponentIs = false" v-if="filterComponentIs"/>
+  <br>
   <div v-else>
   <div class="input-block" v-if="inputIsActive">
     <input autofocus @focusout="toggleInput" v-model="inputValue" placeholder="Введите название продукта">

@@ -35,6 +35,9 @@
 </template>
 
 <script>
+let tg = window.Telegram.WebApp;
+tg.MainButton.hide();
+
 export default {
   data() {
     return {

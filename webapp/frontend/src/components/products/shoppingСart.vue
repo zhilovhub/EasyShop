@@ -3,7 +3,7 @@ let tg = window.Telegram.WebApp;
 
 tg.MainButton.text = "Начать оформление";
 Telegram.WebApp.onEvent('mainButtonClicked', function(){
-  window.location.href = "/products-page/order-details/"
+  window.location.href = "/products-page/order-details/";
 });
 tg.MainButton.show();
 
@@ -157,6 +157,7 @@ export default {
   </div>
     <hr style="border: 1px solid var(--app-hr-border-color); width: 90%; margin: 0 auto">
   </div>
+
 <!--  <textarea v-model="inputValue" placeholder="Добавить комментарий..."/>-->
 
 </template>
