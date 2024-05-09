@@ -65,10 +65,12 @@ let tg = window.Telegram.WebApp;
 tg.MainButton.text = "Начать оформление";
 Telegram.WebApp.onEvent('mainButtonClicked', function(){
   window.location.href = "/products-page";
-  console.log(1);
   this.addToShoppingCart();
-  console.log(2);
 });
+Telegram.WebApp.onEvent('mainButtonClicked', function(){
+  this.addToShoppingCart();
+});
+
 tg.MainButton.show();
 
 export default {
