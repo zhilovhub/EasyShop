@@ -1,11 +1,5 @@
 <script>
-// let tg = window.Telegram.WebApp;
-// tg.MainButton.text = "Отправить";
-// Telegram.WebApp.onEvent('mainButtonClicked', function(){
-//   this.orderBtnClicked();
-// });
-// tg.MainButton.show();
-
+let tg = window.Telegram.WebApp;
   export default {
     name: 'orderDetails',
     data() {
@@ -46,6 +40,11 @@
       WebApp.onEvent('backButtonClicked', function() {
         window.location.href = "/products-page/shopping-cart?bot_id=" + vm.$store.state.bot_id;
       });
+      tg.MainButton.text = "Отправить";
+      Telegram.WebApp.onEvent('mainButtonClicked', function(){
+        this.orderBtnClicked();
+      });
+      tg.MainButton.show();
     },
     methods: {
       orderBtnClicked() {

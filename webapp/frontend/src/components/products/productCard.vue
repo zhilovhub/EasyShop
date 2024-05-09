@@ -61,14 +61,6 @@
 import { Swiper, SwiperSlide } from '@SwiperVue';
 import { Navigation } from '@Swiper'
 
-let tg = window.Telegram.WebApp;
-tg.MainButton.text = "Начать оформление";
-Telegram.WebApp.onEvent('mainButtonClicked', function(){
-  window.location.href = "/products-page";
-});
-
-tg.MainButton.show();
-
 export default {
   components: { SwiperSlide, Swiper },
   data() {
@@ -117,7 +109,13 @@ export default {
     },
   },
   mounted() {
-    this.addToShoppingCart();
+    let tg = window.Telegram.WebApp;
+    tg.MainButton.text = "Начать оформление";
+    Telegram.WebApp.onEvent('mainButtonClicked', function(){
+      this.addToShoppingCart();
+      window.location.href = "/products-page";
+    });
+    tg.MainButton.show();
   }
 };
 </script>
