@@ -112,13 +112,13 @@ export default {
       window.location.href = "/products-page";
     }
   },
-  mounted() {
-    let vm = this;
-    let tg = window.Telegram.WebApp;
-    tg.MainButton.text = "Начать оформление";
-    tg.MainButton.show();
-    Telegram.WebApp.onEvent('mainButtonClicked', vm.backToMainPage());
-  }
+  // mounted() {
+  //   let vm = this;
+  //   let tg = window.Telegram.WebApp;
+  //   tg.MainButton.text = "Начать оформление";
+  //   tg.MainButton.show();
+  //   Telegram.WebApp.onEvent('mainButtonClicked', vm.backToMainPage());
+  // }
 };
 </script>
 

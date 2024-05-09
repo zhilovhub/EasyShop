@@ -117,6 +117,9 @@ import FilterComponent from '/src/components/products/filterComponent.vue'
 let tg = window.Telegram.WebApp;
 
 Telegram.WebApp.onEvent('mainButtonClicked', function(){
+  console.log(1);
+  console.log(2);
+  console.log(3);
   window.location.href = "/products-page/shopping-cart/";
 });
 
