@@ -117,8 +117,6 @@ import FilterComponent from '/src/components/products/filterComponent.vue'
 let tg = window.Telegram.WebApp;
 
 Telegram.WebApp.onEvent('mainButtonClicked', function(){
-  this.$store.commit("addToSessionStorage");
-  console.log(1)
   window.location.href = "/products-page/shopping-cart/";
 });
 
@@ -173,8 +171,10 @@ export default {
     itemsAddToCart() {
       this.$store.state.itemsAddToCartArray = this.$store.state.items.filter(item => item.count > 0);
       if (this.itemsAddToCartArray.length> 0) {
+        this.$store.commit("addToSessionStorage");
         tg.MainButton.show();
       } else {
+        this.$store.commit("addToSessionStorage");
         tg.MainButton.hide();
       }
     },
@@ -278,10 +278,6 @@ export default {
   //   });
   //    this.$store.commit("fetchOrderId");
   //    this.$store.commit("checkOrderId");
-  },
-  beforeUnmount() {
-    this.$store.commit("addToSessionStorage");
-    console.log(2);
   }
 };
 </script>

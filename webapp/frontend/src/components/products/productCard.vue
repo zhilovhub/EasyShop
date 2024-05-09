@@ -61,6 +61,19 @@
 import { Swiper, SwiperSlide } from '@SwiperVue';
 import { Navigation } from '@Swiper'
 
+let tg = window.Telegram.WebApp;
+tg.MainButton.text = "Начать оформление";
+Telegram.WebApp.onEvent('mainButtonClicked', function(){
+  backToMainPage();
+});
+
+function backToMainPage() {
+  window.location.href = "/products-page";
+  this.addToShoppingCart();
+}
+
+tg.MainButton.show();
+
 export default {
   components: { SwiperSlide, Swiper },
   data() {
@@ -107,18 +120,7 @@ export default {
         item => item.id === this.productId ? ({ ...item, count: item.count + 1 }) : item);
       this.$store.commit("addToSessionStorage");
     },
-    backToMainPage() {
-      this.addToShoppingCart();
-      window.location.href = "/products-page";
-    }
-  },
-  // mounted() {
-  //   let vm = this;
-  //   let tg = window.Telegram.WebApp;
-  //   tg.MainButton.text = "Начать оформление";
-  //   tg.MainButton.show();
-  //   Telegram.WebApp.onEvent('mainButtonClicked', vm.backToMainPage());
-  // }
+  }
 };
 </script>
 
