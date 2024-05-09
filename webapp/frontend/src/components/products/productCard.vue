@@ -114,9 +114,16 @@ export default {
     tg.MainButton.text = "Начать оформление";
     Telegram.WebApp.onEvent('mainButtonClicked', function(){
       this.addToShoppingCart();
+      window.Telegram.WebApp.offEvent('mainButtonClicked');
       window.location.href = "/products-page";
     });
     tg.MainButton.show();
+    let WebApp = window.Telegram.WebApp;
+    const BackButton = WebApp.BackButton;
+    BackButton.show();
+    WebApp.onEvent('backButtonClicked', function() {
+      window.location.href = "/products-page"
+    });
   }
 };
 </script>

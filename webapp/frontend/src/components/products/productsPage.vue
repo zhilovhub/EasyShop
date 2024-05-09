@@ -170,7 +170,8 @@ export default {
       return name.length > 18 ? name.substring(0, 15) + '...' : name;
     },
     redirectToProductCard(itemId) {
-      router.push('products-page/' + itemId)
+      window.Telegram.WebApp.offEvent('mainButtonClicked');
+      router.push('products-page/' + itemId);
     },
     toggleInput() {
       const BackButton = window.Telegram.WebApp.BackButton;
@@ -185,6 +186,7 @@ export default {
       }
     },
     toggleFilterComponent() {
+      window.Telegram.WebApp.offEvent('mainButtonClicked');
       this.filterComponentIs = !this.filterComponentIs;
     },
     receivedData(data) {
