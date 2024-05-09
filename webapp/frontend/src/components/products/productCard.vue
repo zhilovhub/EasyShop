@@ -113,10 +113,10 @@ export default {
     let tg = window.Telegram.WebApp;
     tg.MainButton.text = "Начать оформление";
     Telegram.WebApp.onEvent('mainButtonClicked', function(){
-      this.addToShoppingCart();
-      window.location.href = "/products-page";
       window.Telegram.WebApp.offEvent('mainButtonClicked');
       tg.MainButton.hide();
+      this.addToShoppingCart();
+      window.location.href = "/products-page";
     });
     tg.MainButton.show();
     let WebApp = window.Telegram.WebApp;
@@ -124,6 +124,8 @@ export default {
     BackButton.show();
     WebApp.onEvent('backButtonClicked', function() {
       window.location.href = "/products-page"
+      window.Telegram.WebApp.offEvent('mainButtonClicked');
+      tg.MainButton.hide();
     });
   }
 };
