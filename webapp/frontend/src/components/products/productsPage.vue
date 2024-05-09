@@ -116,11 +116,10 @@ import router from '@/router/router.js'
 import FilterComponent from '/src/components/products/filterComponent.vue'
 let tg = window.Telegram.WebApp;
 
-Telegram.WebApp.onEvent('mainButtonClicked', function(){
-  console.log(1);
-  console.log(2);
-  console.log(3);
-  window.location.href = "/products-page/shopping-cart/";
+Telegram.WebApp.onEvent('mainButtonClicked', async function(){
+  await this.itemsAddToCart().then(e => {
+    window.location.href = "/products-page/shopping-cart/";
+  });
 });
 
 window.Telegram.WebApp.onEvent('backButtonClicked', () => {
@@ -158,7 +157,6 @@ export default {
     incrementCount(item) {
       if (item && typeof item.count === 'number') {
         item.count += 1;
-        this.itemsAddToCart();
       } else {
         console.error('Ошибка: объект item или count не определены.');
       }
@@ -166,7 +164,6 @@ export default {
     decrementCount(item) {
       if (item && typeof item.count === 'number') {
         item.count -= 1;
-        this.itemsAddToCart()
       } else {
         console.error('Ошибка: объект item или count не определены.');
       }
