@@ -64,12 +64,11 @@ import { Navigation } from '@Swiper'
 let tg = window.Telegram.WebApp;
 tg.MainButton.text = "Начать оформление";
 Telegram.WebApp.onEvent('mainButtonClicked', function(){
-  this.addToShoppingCart();
+  console.log(1);
+  console.log(2);
+  console.log(3);
 });
 
-Telegram.WebApp.onEvent('mainButtonClicked', function(){
-  window.location.href = "/products-page";
-});
 
 tg.MainButton.show();
 
