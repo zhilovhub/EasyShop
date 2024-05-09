@@ -118,7 +118,7 @@ let tg = window.Telegram.WebApp;
 
 Telegram.WebApp.onEvent('mainButtonClicked', async function(){
   await this.itemsAddToCart().then(e => {
-    window.location.href = "/products-page/shopping-cart/";
+    this.$store.commit("addToSessionStorage");
   });
 });
 
@@ -157,6 +157,7 @@ export default {
     incrementCount(item) {
       if (item && typeof item.count === 'number') {
         item.count += 1;
+        this.itemsAddToCart();
       } else {
         console.error('Ошибка: объект item или count не определены.');
       }
@@ -164,13 +165,13 @@ export default {
     decrementCount(item) {
       if (item && typeof item.count === 'number') {
         item.count -= 1;
+        this.itemsAddToCart();
       } else {
         console.error('Ошибка: объект item или count не определены.');
       }
     },
     itemsAddToCart() {
       this.$store.state.itemsAddToCartArray = this.$store.state.items.filter(item => item.count > 0);
-      this.$store.commit("addToSessionStorage");
       if (this.itemsAddToCartArray.length> 0) {
         tg.MainButton.show();
       } else {
