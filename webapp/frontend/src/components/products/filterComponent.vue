@@ -36,7 +36,11 @@
 
 <script>
 let tg = window.Telegram.WebApp;
-tg.MainButton.hide();
+tg.MainButton.text = "Применить";
+Telegram.WebApp.onEvent('mainButtonClicked', function(){
+  this.closeFilterComponent();
+});
+tg.MainButton.show();
 
 export default {
   data() {

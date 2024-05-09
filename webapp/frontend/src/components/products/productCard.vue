@@ -20,23 +20,23 @@
         >{{size}}</swiper-slide>
       </swiper>
     </div>
-    <div @click="toggleDescription" class="block block-description" :style="{ height: descriptionVisible ? 'auto' : '140px' }">
+    <div @click="toggleDescription" class="block block-description" :style="{ height: descriptionVisible ? 'auto' : '70px' }">
       <div class="span-block">
         <h1>Описание</h1>
         <svg style="cursor: pointer" width="19" height="9" viewBox="0 0 19 9" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
           <path d="M19.0032 0.796349C19.0038 0.900537 18.9839 1.00382 18.9445 1.10028C18.9051 1.19673 18.847 1.28446 18.7737 1.35843L12.3057 7.82635C11.938 8.19497 11.5012 8.48744 11.0203 8.68699C10.5394 8.88654 10.0239 8.98926 9.50324 8.98926C8.98258 8.98926 8.46704 8.88654 7.98614 8.68699C7.50524 8.48744 7.06843 8.19497 6.70074 7.82635L0.232823 1.35843C0.159009 1.28462 0.100456 1.19699 0.0605087 1.10055C0.0205609 1.0041 9.72324e-08 0.900737 9.76995e-08 0.796349C9.81665e-08 0.691959 0.0205609 0.588593 0.0605087 0.492151C0.100456 0.395709 0.159009 0.30808 0.232823 0.234265C0.306636 0.160452 0.394266 0.101898 0.490709 0.0619507C0.587151 0.0220032 0.690517 0.00144292 0.794906 0.00144292C0.899294 0.00144292 1.00266 0.0220032 1.0991 0.0619507C1.19555 0.101898 1.28318 0.160452 1.35699 0.234265L7.82491 6.70218C8.27022 7.14694 8.87386 7.39676 9.50324 7.39676C10.1326 7.39676 10.7363 7.14694 11.1816 6.70218L17.6495 0.234266C17.7231 0.160064 17.8106 0.101168 17.9071 0.0609753C18.0036 0.0207836 18.1071 9.17687e-05 18.2116 9.17699e-05C18.3161 9.17712e-05 18.4196 0.0207836 18.516 0.0609753C18.6125 0.101168 18.7001 0.160064 18.7737 0.234266C18.847 0.308239 18.9051 0.395968 18.9445 0.492422C18.9839 0.588877 19.0038 0.69216 19.0032 0.796349Z" fill="currentColor"/>
         </svg>
       </div>
-      <span >{{productObject.description}}</span>
+      <span v-if="descriptionVisible" >{{productObject.description}}</span>
     </div>
-    <div class="block feedback">
+    <div @click="toggleFeedback" class="block feedback" :style="{ height: feedbackVisible ? 'auto' : '70px' }">
       <div class="span-block">
         <h1>Отзывы</h1>
         <svg style="cursor: pointer" width="19" height="9" viewBox="0 0 19 9" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
           <path d="M19.0032 0.796349C19.0038 0.900537 18.9839 1.00382 18.9445 1.10028C18.9051 1.19673 18.847 1.28446 18.7737 1.35843L12.3057 7.82635C11.938 8.19497 11.5012 8.48744 11.0203 8.68699C10.5394 8.88654 10.0239 8.98926 9.50324 8.98926C8.98258 8.98926 8.46704 8.88654 7.98614 8.68699C7.50524 8.48744 7.06843 8.19497 6.70074 7.82635L0.232823 1.35843C0.159009 1.28462 0.100456 1.19699 0.0605087 1.10055C0.0205609 1.0041 9.72324e-08 0.900737 9.76995e-08 0.796349C9.81665e-08 0.691959 0.0205609 0.588593 0.0605087 0.492151C0.100456 0.395709 0.159009 0.30808 0.232823 0.234265C0.306636 0.160452 0.394266 0.101898 0.490709 0.0619507C0.587151 0.0220032 0.690517 0.00144292 0.794906 0.00144292C0.899294 0.00144292 1.00266 0.0220032 1.0991 0.0619507C1.19555 0.101898 1.28318 0.160452 1.35699 0.234265L7.82491 6.70218C8.27022 7.14694 8.87386 7.39676 9.50324 7.39676C10.1326 7.39676 10.7363 7.14694 11.1816 6.70218L17.6495 0.234266C17.7231 0.160064 17.8106 0.101168 17.9071 0.0609753C18.0036 0.0207836 18.1071 9.17687e-05 18.2116 9.17699e-05C18.3161 9.17712e-05 18.4196 0.0207836 18.516 0.0609753C18.6125 0.101168 18.7001 0.160064 18.7737 0.234266C18.847 0.308239 18.9051 0.395968 18.9445 0.492422C18.9839 0.588877 19.0038 0.69216 19.0032 0.796349Z" fill="currentColor"/>
         </svg>
       </div>
-      <swiper
+      <swiper v-if="feedbackVisible"
         :slidesPerView="1.6"
         :spaceBetween="10"
         class="swiper-container">
@@ -45,14 +45,14 @@
         <swiper-slide class="feedback-block"></swiper-slide>
       </swiper>
     </div>
-    <div class="block ranked">
+    <div @click="toggleRanked" class="block ranked" :style="{ height: rankedVisible ? '90px' : '70px' }">
       <div class="span-block">
         <h1>Оценка</h1>
         <svg style="cursor: pointer" width="19" height="9" viewBox="0 0 19 9" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
           <path d="M19.0032 0.796349C19.0038 0.900537 18.9839 1.00382 18.9445 1.10028C18.9051 1.19673 18.847 1.28446 18.7737 1.35843L12.3057 7.82635C11.938 8.19497 11.5012 8.48744 11.0203 8.68699C10.5394 8.88654 10.0239 8.98926 9.50324 8.98926C8.98258 8.98926 8.46704 8.88654 7.98614 8.68699C7.50524 8.48744 7.06843 8.19497 6.70074 7.82635L0.232823 1.35843C0.159009 1.28462 0.100456 1.19699 0.0605087 1.10055C0.0205609 1.0041 9.72324e-08 0.900737 9.76995e-08 0.796349C9.81665e-08 0.691959 0.0205609 0.588593 0.0605087 0.492151C0.100456 0.395709 0.159009 0.30808 0.232823 0.234265C0.306636 0.160452 0.394266 0.101898 0.490709 0.0619507C0.587151 0.0220032 0.690517 0.00144292 0.794906 0.00144292C0.899294 0.00144292 1.00266 0.0220032 1.0991 0.0619507C1.19555 0.101898 1.28318 0.160452 1.35699 0.234265L7.82491 6.70218C8.27022 7.14694 8.87386 7.39676 9.50324 7.39676C10.1326 7.39676 10.7363 7.14694 11.1816 6.70218L17.6495 0.234266C17.7231 0.160064 17.8106 0.101168 17.9071 0.0609753C18.0036 0.0207836 18.1071 9.17687e-05 18.2116 9.17699e-05C18.3161 9.17712e-05 18.4196 0.0207836 18.516 0.0609753C18.6125 0.101168 18.7001 0.160064 18.7737 0.234266C18.847 0.308239 18.9051 0.395968 18.9445 0.492422C18.9839 0.588877 19.0038 0.69216 19.0032 0.796349Z" fill="currentColor"/>
         </svg>
       </div>
-      <span>{{productObject.ranked}}★</span>
+      <span v-if="rankedVisible">{{productObject.ranked}}★</span>
     </div>
   </div>
 </template>
@@ -64,7 +64,10 @@ import { Navigation } from '@Swiper'
 let tg = window.Telegram.WebApp;
 tg.MainButton.text = "Начать оформление";
 Telegram.WebApp.onEvent('mainButtonClicked', function(){
+  window.location.href = "/products-page";
+  console.log(1);
   this.addToShoppingCart();
+  console.log(2);
 });
 tg.MainButton.show();
 
@@ -73,7 +76,9 @@ export default {
   data() {
     return {
       productId: parseInt(this.$route.params.id),
-      descriptionVisible: false
+      descriptionVisible: false,
+      feedbackVisible: false,
+      rankedVisible: false,
     }
   },
   setup() {
@@ -100,6 +105,12 @@ export default {
     },
     toggleDescription() {
       this.descriptionVisible = !this.descriptionVisible;
+    },
+    toggleFeedback() {
+      this.feedbackVisible = !this.feedbackVisible;
+    },
+    toggleRanked() {
+      this.rankedVisible = !this.rankedVisible;
     },
     addToShoppingCart() {
       this.$store.state.items = this.$store.state.items.map(
@@ -193,7 +204,7 @@ h1 {
 .block-description {
   overflow-y: hidden;
   transition: height 0.3s ease;
-  min-height: 140px;
+  min-height: 55px;
   word-wrap: normal;
   overflow-wrap: break-word;
   h1 {
@@ -203,7 +214,7 @@ h1 {
 
 .feedback {
   margin: 10px 0;
-  padding: 0;
+  padding: 0 0 5% 0;
   height: 230px;
   .span-block {
     padding: 20px 5% 10px;
@@ -220,8 +231,8 @@ h1 {
 }
 
 .ranked {
-  height: 90px;
-  margin-bottom: 80px;
+  min-height: 55px;
+  margin-bottom: 40px;
   h1 {
     margin-bottom: 10px;
   }

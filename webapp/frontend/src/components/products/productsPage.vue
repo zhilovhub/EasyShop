@@ -5,7 +5,6 @@
     <input autofocus @focusout="toggleInput" v-model="inputValue" placeholder="Введите название продукта">
   </div>
   <div v-else class="header">
-    <br>
     <span>Каталог</span>
     <div class="images">
       <svg @click="toggleFilterComponent()" width="20" height="20" viewBox="0 0 20 20" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
@@ -294,6 +293,7 @@ export default {
 .header {
   max-width: 100%;
   margin: 0 5%;
+  padding-top: 20px;
   display: flex;
   justify-content: space-between;
   align-items: center;
