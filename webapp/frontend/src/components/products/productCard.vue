@@ -105,6 +105,7 @@ export default {
     addToShoppingCart() {
       this.$store.state.items = this.$store.state.items.map(
         item => item.id === this.productId ? ({ ...item, count: item.count + 1 }) : item);
+      this.$store.state.itemsAddToCartArray = this.$store.state.items;
       this.$store.commit("addToSessionStorage");
     },
   },
