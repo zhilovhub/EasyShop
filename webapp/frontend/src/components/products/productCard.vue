@@ -64,13 +64,8 @@ import { Navigation } from '@Swiper'
 let tg = window.Telegram.WebApp;
 tg.MainButton.text = "Начать оформление";
 Telegram.WebApp.onEvent('mainButtonClicked', function(){
-  backToMainPage();
-});
-
-function backToMainPage() {
-  this.addToShoppingCart();
   window.location.href = "/products-page";
-}
+});
 
 tg.MainButton.show();
 
@@ -120,6 +115,9 @@ export default {
         item => item.id === this.productId ? ({ ...item, count: item.count + 1 }) : item);
       this.$store.commit("addToSessionStorage");
     },
+  },
+  mounted() {
+    this.addToShoppingCart();
   }
 };
 </script>
