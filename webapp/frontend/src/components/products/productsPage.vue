@@ -171,6 +171,7 @@ export default {
     },
     redirectToProductCard(itemId) {
       window.Telegram.WebApp.offEvent('mainButtonClicked');
+      tg.MainButton.hide();
       router.push('products-page/' + itemId);
     },
     toggleInput() {
@@ -187,6 +188,7 @@ export default {
     },
     toggleFilterComponent() {
       window.Telegram.WebApp.offEvent('mainButtonClicked');
+      tg.MainButton.hide();
       this.filterComponentIs = !this.filterComponentIs;
     },
     receivedData(data) {

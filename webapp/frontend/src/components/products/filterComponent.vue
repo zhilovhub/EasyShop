@@ -75,6 +75,7 @@ export default {
     tg.MainButton.text = "Применить";
     Telegram.WebApp.onEvent('mainButtonClicked', function(){
       this.closeFilterComponent();
+      tg.MainButton.hide();
     });
   }
 };
