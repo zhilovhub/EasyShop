@@ -68,8 +68,8 @@ Telegram.WebApp.onEvent('mainButtonClicked', function(){
 });
 
 function backToMainPage() {
-  window.location.href = "/products-page";
   this.addToShoppingCart();
+  window.location.href = "/products-page";
 }
 
 tg.MainButton.show();
