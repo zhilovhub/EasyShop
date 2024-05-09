@@ -1,12 +1,4 @@
 <script>
-// let tg = window.Telegram.WebApp;
-//
-// tg.MainButton.text = "Начать оформление";
-// Telegram.WebApp.onEvent('mainButtonClicked', function(){
-//   window.location.href = "/products-page/order-details/";
-// });
-// tg.MainButton.show();
-
 import { bot_id, apiUrl } from '@/store/store.js'
 
 export default {
@@ -31,6 +23,12 @@ export default {
           sessionStorage.setItem('itemsAddToCartArray', JSON.stringify(tempItemsAddToCartArray));
           window.location.href = "/products-page?bot_id=" + vm.$store.state.bot_id;
       });
+      let tg = window.Telegram.WebApp;
+      tg.MainButton.text = "Начать оформление";
+      Telegram.WebApp.onEvent('mainButtonClicked', function(){
+        window.location.href = "/products-page/order-details/";
+      });
+      tg.MainButton.show();
     },
     computed: {
       itemsAddToCartArray() {
