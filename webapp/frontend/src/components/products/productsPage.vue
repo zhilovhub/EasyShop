@@ -114,20 +114,7 @@ import { apiUrl, bot_id } from '@/store/store.js'
 import * as https from 'https'
 import router from '@/router/router.js'
 import FilterComponent from '/src/components/products/filterComponent.vue'
-let tg = window.Telegram.WebApp;
-
-Telegram.WebApp.onEvent('mainButtonClicked', function(){
-  window.location.href = "/products-page/shopping-cart/";
-});
-
-window.Telegram.WebApp.onEvent('backButtonClicked', () => {
-  this.fromPrice = null;
-  this.toPrice = null;
-  this.inputValue = ''
-  this.inputIsActive = !this.inputIsActive;
-  tg.BackButton.hide();
-});
-
+const tg = window.Telegram.WebApp;
 export default {
   name: 'productsPage',
   components: { FilterComponent },
@@ -171,10 +158,8 @@ export default {
     itemsAddToCart() {
       this.$store.state.itemsAddToCartArray = this.$store.state.items.filter(item => item.count > 0);
       if (this.itemsAddToCartArray.length> 0) {
-        this.$store.commit("addToSessionStorage");
         tg.MainButton.show();
       } else {
-        this.$store.commit("addToSessionStorage");
         tg.MainButton.hide();
       }
     },
@@ -186,10 +171,16 @@ export default {
       router.push('products-page/' + itemId)
     },
     toggleInput() {
+      const BackButton = window.Telegram.WebApp.BackButton;
       this.fromPrice = null;
       this.toPrice = null;
       this.inputValue = ''
       this.inputIsActive = !this.inputIsActive;
+      if (this.inputIsActive) {
+        BackButton.show();
+      } else {
+        BackButton.hide();
+      }
     },
     toggleFilterComponent() {
       this.filterComponentIs = !this.filterComponentIs;
@@ -230,23 +221,19 @@ export default {
       });
     },
   },
-  watch: {
-    inputIsActive(value) {
-      const BackButton = window.Telegram.WebApp.BackButton;
-      if (value) {
-        BackButton.show();
-        BackButton.onClick(() => {
-          this.fromPrice = null;
-          this.toPrice = null;
-          this.inputValue = ''
-          this.inputIsActive = !this.inputIsActive;
-          BackButton.hide();
-        });
-      }
-    }
-  },
   mounted() {
     this.itemsAddToCart();
+    Telegram.WebApp.onEvent('mainButtonClicked', function(){
+      this.$store.commit("addToSessionStorage");
+      window.location.href = "/products-page/shopping-cart/";
+    });
+    window.Telegram.WebApp.onEvent('backButtonClicked', () => {
+      this.fromPrice = null;
+      this.toPrice = null;
+      this.inputValue = ''
+      this.inputIsActive = !this.inputIsActive;
+      tg.BackButton.hide();
+    });
   //   this.$store.dispatch('itemsInit').then(() => {
   //     this.isLoading = false;
   //     let tempCheckItems = sessionStorage.getItem('itemsAddToCartArray');
