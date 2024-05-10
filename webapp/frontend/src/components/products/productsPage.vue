@@ -190,8 +190,8 @@ export default {
       }
     },
     toggleFilterComponent() {
-      Telegram.WebApp.offEvent('mainButtonClicked', this);
-      Telegram.WebApp.offEvent('backButtonClicked', this);
+      Telegram.WebApp.offEvent('mainButtonClicked', this.toggleFilterComponent);
+      Telegram.WebApp.offEvent('backButtonClicked', this.toggleInput);
       window.Telegram.WebApp.MainButton.hide();
       window.Telegram.WebApp.BackButton.hide();
       this.filterComponentIs = !this.filterComponentIs;

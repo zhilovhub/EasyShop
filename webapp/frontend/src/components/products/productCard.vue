@@ -107,18 +107,18 @@ export default {
         item => item.id === this.productId ? ({ ...item, count: item.count + 1 }) : item);
       sessionStorage.setItem('itemsAddToCartArray', JSON.stringify(this.$store.state.items.filter(item => item.count > 0)));
       this.$store.commit("addToSessionStorage");
-      Telegram.WebApp.offEvent('mainButtonClicked', this);
-      Telegram.WebApp.offEvent('backButtonClicked', this);
+      Telegram.WebApp.offEvent('mainButtonClicked', this.addToShoppingCart);
+      Telegram.WebApp.offEvent('backButtonClicked', this.backButtonMethod);
       Telegram.WebApp.BackButton.hide();
       Telegram.WebApp.MainButton.hide();
       window.location.href = "/products-page";
     },
     backButtonMethod() {
-      window.location.href = "/products-page"
-      Telegram.WebApp.offEvent('mainButtonClicked', this);
-      Telegram.WebApp.offEvent('backButtonClicked', this);
+      Telegram.WebApp.offEvent('mainButtonClicked', this.addToShoppingCart);
+      Telegram.WebApp.offEvent('backButtonClicked', this.backButtonMethod);
       Telegram.WebApp.MainButton.hide();
       Telegram.WebApp.BackButton.hide();
+      window.location.href = "/products-page"
     }
   },
   mounted() {

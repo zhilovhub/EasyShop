@@ -49,8 +49,8 @@ export default {
     closeFilterComponent() {
       Telegram.WebApp.MainButton.hide();
       Telegram.WebApp.BackButton.hide();
-      Telegram.WebApp.offEvent('mainButtonClicked', this);
-      Telegram.WebApp.offEvent('backButtonClicked', this);
+      Telegram.WebApp.offEvent('mainButtonClicked', this.closeFilterComponent);
+      Telegram.WebApp.offEvent('backButtonClicked', this.closeFilterComponent);
       this.groupFilters();
       this.$emit("close");
     },
@@ -78,8 +78,8 @@ export default {
     tg.MainButton.show();
     tg.BackButton.show();
     tg.MainButton.text = "Применить";
-    tg.onEvent('mainButtonClicked', this.closeFilterComponent);
-    tg.onEvent('backButtonClicked', this.closeFilterComponent);
+    Telegram.WebApp.onEvent('mainButtonClicked', this.closeFilterComponent);
+    Telegram.WebApp.onEvent('backButtonClicked', this.closeFilterComponent);
   }
 };
 </script>
