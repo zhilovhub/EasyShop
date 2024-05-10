@@ -113,10 +113,13 @@ export default {
     let tg = window.Telegram.WebApp;
     tg.MainButton.text = "Начать оформление";
     tg.onEvent('mainButtonClicked', function(){
-      tg.offEvent('mainButtonClicked');
+      window.console.log(1)
       tg.MainButton.hide();
+      window.console.log(2)
       this.addToShoppingCart();
+      window.console.log(3)
       window.location.href = "/products-page";
+      window.console.log(4)
     });
     tg.MainButton.show();
     const BackButton = tg.BackButton;

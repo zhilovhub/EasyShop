@@ -135,6 +135,12 @@ export default {
     bot_id() {
       return bot_id
     },
+
+    onProductsPageButtonClick() {
+      window.location.href = "/products-page/shopping-cart/";
+      tg.offEvent('mainButtonClicked', this)
+    },
+
     priceComma(price) {
       const parts = price.toString().split(/(?=(?:\d{3})+$)/);
       return parts.join(' ') + ' ₽';
@@ -170,7 +176,7 @@ export default {
       return name.length > 18 ? name.substring(0, 15) + '...' : name;
     },
     redirectToProductCard(itemId) {
-      window.Telegram.WebApp.offEvent('mainButtonClicked');
+      window.Telegram.WebApp.offEvent('mainButtonClicked', this.onProductsPageButtonClick);
       tg.MainButton.hide();
       router.push('products-page/' + itemId);
     },
@@ -230,9 +236,9 @@ export default {
   mounted() {
     this.itemsAddToCart();
     tg.MainButton.text = "В корзину";
-    tg.onEvent('mainButtonClicked', function(){
-      window.location.href = "/products-page/shopping-cart/";
-    });
+    tg.onEvent('mainButtonClicked', this.onProductsPageButtonClick);
+
+
     tg.onEvent('backButtonClicked', () => {
       this.fromPrice = null;
       this.toPrice = null;
