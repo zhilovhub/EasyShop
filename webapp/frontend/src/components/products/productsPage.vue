@@ -191,7 +191,6 @@ export default {
         BackButton.hide();
       }
     },
-
     toggleFilterComponent() {
       window.Telegram.WebApp.offEvent('mainButtonClicked');
       tg.MainButton.hide();

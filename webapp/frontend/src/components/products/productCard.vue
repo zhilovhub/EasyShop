@@ -106,21 +106,25 @@ export default {
       this.$store.state.items = this.$store.state.items.map(
         item => item.id === this.productId ? ({ ...item, count: item.count + 1 }) : item);
       this.$store.state.itemsAddToCartArray = this.$store.state.items;
-      this.$store.commit("addToSessionStorage");
       window.location.href = "/products-page";
+      Telegram.WebApp.BackButton.hide();
+      Telegram.WebApp.MainButton.hide();
+      Telegram.WebApp.offEvent('mainButtonClicked', this.addToShoppingCart);
+      Telegram.WebApp.offEvent('backButtonClicked', this);
     },
   },
   mounted() {
     let tg = window.Telegram.WebApp;
     tg.MainButton.show();
+    tg.BackButton.show();
     tg.MainButton.text = "Начать оформление";
     tg.onEvent('mainButtonClicked', this.addToShoppingCart);
-    const BackButton = tg.BackButton;
-    BackButton.show();
     tg.onEvent('backButtonClicked', function() {
       window.location.href = "/products-page"
-      tg.offEvent('mainButtonClicked');
+      tg.offEvent('mainButtonClicked', this);
+      tg.offEvent('backButtonClicked', this);
       tg.MainButton.hide();
+      tg.BackButton.hide();
     });
   }
 };
