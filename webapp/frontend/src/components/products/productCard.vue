@@ -112,19 +112,18 @@ export default {
   mounted() {
     let tg = window.Telegram.WebApp;
     tg.MainButton.text = "Начать оформление";
-    Telegram.WebApp.onEvent('mainButtonClicked', function(){
-      window.Telegram.WebApp.offEvent('mainButtonClicked');
+    tg.onEvent('mainButtonClicked', function(){
+      tg.offEvent('mainButtonClicked');
       tg.MainButton.hide();
       this.addToShoppingCart();
       window.location.href = "/products-page";
     });
     tg.MainButton.show();
-    let WebApp = window.Telegram.WebApp;
-    const BackButton = WebApp.BackButton;
+    const BackButton = tg.BackButton;
     BackButton.show();
-    WebApp.onEvent('backButtonClicked', function() {
+    tg.onEvent('backButtonClicked', function() {
       window.location.href = "/products-page"
-      window.Telegram.WebApp.offEvent('mainButtonClicked');
+      tg.offEvent('mainButtonClicked');
       tg.MainButton.hide();
     });
   }

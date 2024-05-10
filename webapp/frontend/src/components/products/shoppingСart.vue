@@ -10,22 +10,18 @@ export default {
     },
     mounted() {
       this.$store.commit("addToSessionStorage");
-      let WebApp = window.Telegram.WebApp;
-      const BackButton = WebApp.BackButton;
+      let tg = window.Telegram.WebApp;
+      const BackButton = tg.BackButton;
       const vm = this;
       BackButton.show();
-      BackButton.onClick(function() {
-        BackButton.hide();
-      });
-      WebApp.onEvent('backButtonClicked', function() {
+      tg.onEvent('backButtonClicked', function() {
           let tempItemsAddToCartArray = sessionStorage.getItem('itemsAddToCartArray')
           tempItemsAddToCartArray = JSON.parse(tempItemsAddToCartArray);
           sessionStorage.setItem('itemsAddToCartArray', JSON.stringify(tempItemsAddToCartArray));
           window.location.href = "/products-page?bot_id=" + vm.$store.state.bot_id;
       });
-      let tg = window.Telegram.WebApp;
       tg.MainButton.text = "Начать оформление";
-      Telegram.WebApp.onEvent('mainButtonClicked', function(){
+      tg.onEvent('mainButtonClicked', function(){
         window.location.href = "/products-page/order-details/";
       });
       tg.MainButton.show();

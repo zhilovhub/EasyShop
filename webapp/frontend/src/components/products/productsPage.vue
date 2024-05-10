@@ -230,10 +230,10 @@ export default {
   mounted() {
     this.itemsAddToCart();
     tg.MainButton.text = "В корзину";
-    window.Telegram.WebApp.onEvent('mainButtonClicked', function(){
+    tg.onEvent('mainButtonClicked', function(){
       window.location.href = "/products-page/shopping-cart/";
     });
-    window.Telegram.WebApp.onEvent('backButtonClicked', () => {
+    tg.onEvent('backButtonClicked', () => {
       this.fromPrice = null;
       this.toPrice = null;
       this.inputValue = ''

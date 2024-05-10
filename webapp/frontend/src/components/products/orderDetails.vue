@@ -1,5 +1,4 @@
 <script>
-let tg = window.Telegram.WebApp;
   export default {
     name: 'orderDetails',
     data() {
@@ -32,16 +31,16 @@ let tg = window.Telegram.WebApp;
       }
     },
     mounted() {
+      let tg = window.Telegram.WebApp;
       this.$store.commit("addToSessionStorage");
-      let WebApp = window.Telegram.WebApp;
-      const BackButton = WebApp.BackButton;
+      const BackButton = tg.BackButton;
       const vm = this;
       BackButton.show();
-      WebApp.onEvent('backButtonClicked', function() {
+      tg.onEvent('backButtonClicked', function() {
         window.location.href = "/products-page/shopping-cart?bot_id=" + vm.$store.state.bot_id;
       });
       tg.MainButton.text = "Отправить";
-      Telegram.WebApp.onEvent('mainButtonClicked', function(){
+      tg.onEvent('mainButtonClicked', function(){
         this.orderBtnClicked();
       });
       tg.MainButton.show();
