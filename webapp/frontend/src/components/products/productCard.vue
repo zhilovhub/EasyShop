@@ -1,6 +1,6 @@
 <template>
   <div>
-    <img :src="productObject.picture" alt="main-picture">
+    <img @click="this.addToShoppingCart" :src="productObject.picture" alt="main-picture">
     <div class="text">{{productObject.name}}</div>
     <div class="text">{{priceRub(productObject.price)}}</div>
     <div class="block size">
@@ -105,13 +105,21 @@ export default {
     addToShoppingCart() {
       this.$store.state.items = this.$store.state.items.map(
         item => item.id === this.productId ? ({ ...item, count: item.count + 1 }) : item);
-      this.$store.state.itemsAddToCartArray = this.$store.state.items;
-      window.location.href = "/products-page";
+      sessionStorage.setItem('itemsAddToCartArray', JSON.stringify(this.$store.state.items.filter(item => item.count > 0)));
+      this.$store.commit("addToSessionStorage");
+      Telegram.WebApp.offEvent('mainButtonClicked', this);
+      Telegram.WebApp.offEvent('backButtonClicked', this);
       Telegram.WebApp.BackButton.hide();
       Telegram.WebApp.MainButton.hide();
-      Telegram.WebApp.offEvent('mainButtonClicked', this.addToShoppingCart);
-      Telegram.WebApp.offEvent('backButtonClicked', this);
+      window.location.href = "/products-page";
     },
+    backButtonMethod() {
+      window.location.href = "/products-page"
+      Telegram.WebApp.offEvent('mainButtonClicked', this.addToShoppingCart);
+      Telegram.WebApp.offEvent('backButtonClicked', this.backButtonMethod);
+      Telegram.WebApp.MainButton.hide();
+      Telegram.WebApp.BackButton.hide();
+    }
   },
   mounted() {
     let tg = window.Telegram.WebApp;
@@ -119,13 +127,7 @@ export default {
     tg.BackButton.show();
     tg.MainButton.text = "Начать оформление";
     tg.onEvent('mainButtonClicked', this.addToShoppingCart);
-    tg.onEvent('backButtonClicked', function() {
-      window.location.href = "/products-page"
-      tg.offEvent('mainButtonClicked', this);
-      tg.offEvent('backButtonClicked', this);
-      tg.MainButton.hide();
-      tg.BackButton.hide();
-    });
+    tg.onEvent('backButtonClicked', this.backButtonMethod);
   }
 };
 </script>

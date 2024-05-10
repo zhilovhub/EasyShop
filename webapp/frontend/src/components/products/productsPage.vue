@@ -148,7 +148,6 @@ export default {
       if (item && typeof item.count === 'number') {
         item.count += 1;
         this.itemsAddToCart();
-        this.$store.commit("addToSessionStorage");
       } else {
         console.error('Ошибка: объект item или count не определены.');
       }
@@ -157,13 +156,13 @@ export default {
       if (item && typeof item.count === 'number') {
         item.count -= 1;
         this.itemsAddToCart();
-        this.$store.commit("addToSessionStorage");
       } else {
         console.error('Ошибка: объект item или count не определены.');
       }
     },
     itemsAddToCart() {
       this.$store.state.itemsAddToCartArray = this.$store.state.items.filter(item => item.count > 0);
+      this.$store.commit("addToSessionStorage");
       if (this.itemsAddToCartArray.length> 0) {
         tg.MainButton.show();
       } else {
@@ -234,6 +233,8 @@ export default {
   },
   mounted() {
     this.itemsAddToCart();
+    console.log(this.$store.state.items.filter(item => item.count > 0));
+    console.log(this.$store.state.items);
     tg.MainButton.text = "В корзину";
     tg.onEvent('mainButtonClicked', this.onProductsPageButtonClick);
     tg.onEvent('backButtonClicked', this.toggleInput);
