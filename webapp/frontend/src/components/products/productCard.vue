@@ -115,8 +115,8 @@ export default {
     },
     backButtonMethod() {
       window.location.href = "/products-page"
-      Telegram.WebApp.offEvent('mainButtonClicked', this.addToShoppingCart);
-      Telegram.WebApp.offEvent('backButtonClicked', this.backButtonMethod);
+      Telegram.WebApp.offEvent('mainButtonClicked', this);
+      Telegram.WebApp.offEvent('backButtonClicked', this);
       Telegram.WebApp.MainButton.hide();
       Telegram.WebApp.BackButton.hide();
     }

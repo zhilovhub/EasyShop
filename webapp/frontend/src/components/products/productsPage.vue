@@ -114,7 +114,6 @@ import { apiUrl, bot_id } from '@/store/store.js'
 import * as https from 'https'
 import router from '@/router/router.js'
 import FilterComponent from '/src/components/products/filterComponent.vue'
-const tg = window.Telegram.WebApp;
 export default {
   name: 'productsPage',
   components: { FilterComponent },
@@ -137,7 +136,7 @@ export default {
     },
     onProductsPageButtonClick() {
       window.location.href = "/products-page/shopping-cart/";
-      tg.offEvent('mainButtonClicked', this)
+      Telegram.WebApp.offEvent('mainButtonClicked', this);
     },
 
     priceComma(price) {
@@ -164,9 +163,9 @@ export default {
       this.$store.state.itemsAddToCartArray = this.$store.state.items.filter(item => item.count > 0);
       this.$store.commit("addToSessionStorage");
       if (this.itemsAddToCartArray.length> 0) {
-        tg.MainButton.show();
+        window.Telegram.WebApp.MainButton.show();
       } else {
-        tg.MainButton.hide();
+        window.Telegram.WebApp.MainButton.hide();
       }
     },
     shortenName(name) {
@@ -175,7 +174,7 @@ export default {
     },
     redirectToProductCard(itemId) {
       Telegram.WebApp.offEvent('mainButtonClicked', this.onProductsPageButtonClick);
-      tg.MainButton.hide();
+      window.Telegram.WebApp.MainButton.hide();
       router.push('products-page/' + itemId);
     },
     toggleInput() {
@@ -191,9 +190,10 @@ export default {
       }
     },
     toggleFilterComponent() {
-      window.Telegram.WebApp.offEvent('mainButtonClicked');
-      tg.MainButton.hide();
-      tg.offEvent('mainButtonClicked', this);
+      Telegram.WebApp.offEvent('mainButtonClicked', this);
+      Telegram.WebApp.offEvent('backButtonClicked', this);
+      window.Telegram.WebApp.MainButton.hide();
+      window.Telegram.WebApp.BackButton.hide();
       this.filterComponentIs = !this.filterComponentIs;
     },
     receivedData(data) {
@@ -236,9 +236,9 @@ export default {
     this.itemsAddToCart();
     console.log(this.$store.state.items.filter(item => item.count > 0));
     console.log(this.$store.state.items);
-    tg.MainButton.text = "В корзину";
-    tg.onEvent('mainButtonClicked', this.onProductsPageButtonClick);
-    tg.onEvent('backButtonClicked', this.toggleInput);
+    window.Telegram.WebApp.MainButton.text = "В корзину";
+    Telegram.WebApp.onEvent('mainButtonClicked', this.onProductsPageButtonClick);
+    Telegram.WebApp.onEvent('backButtonClicked', this.toggleInput);
   //   this.$store.dispatch('itemsInit').then(() => {
   //     this.isLoading = false;
   //     let tempCheckItems = sessionStorage.getItem('itemsAddToCartArray');
