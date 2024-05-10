@@ -118,7 +118,7 @@ export default {
       Telegram.WebApp.offEvent('backButtonClicked', this.backButtonMethod);
       Telegram.WebApp.MainButton.hide();
       Telegram.WebApp.BackButton.hide();
-      window.location.href = "/products-page"
+      window.location.href = "/products-page";
     }
   },
   mounted() {
