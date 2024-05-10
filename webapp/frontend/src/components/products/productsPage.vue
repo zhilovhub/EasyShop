@@ -230,7 +230,7 @@ export default {
   mounted() {
     this.itemsAddToCart();
     tg.MainButton.text = "В корзину";
-    Telegram.WebApp.onEvent('mainButtonClicked', function(){
+    window.Telegram.WebApp.onEvent('mainButtonClicked', function(){
       window.location.href = "/products-page/shopping-cart/";
     });
     window.Telegram.WebApp.onEvent('backButtonClicked', () => {
