@@ -47,6 +47,7 @@ export default {
   name: "filterComponent",
   methods: {
     closeFilterComponent() {
+      Telegram.WebApp.MainButton.hide();
       this.groupFilters();
       this.$emit("close");
     },
@@ -73,10 +74,7 @@ export default {
     let tg = window.Telegram.WebApp;
     tg.MainButton.show();
     tg.MainButton.text = "Применить";
-    tg.onEvent('mainButtonClicked', function(){
-      this.closeFilterComponent();
-      tg.MainButton.hide();
-    });
+    tg.onEvent('mainButtonClicked', this.closeFilterComponent);
   }
 };
 </script>

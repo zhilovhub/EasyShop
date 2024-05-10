@@ -107,21 +107,14 @@ export default {
         item => item.id === this.productId ? ({ ...item, count: item.count + 1 }) : item);
       this.$store.state.itemsAddToCartArray = this.$store.state.items;
       this.$store.commit("addToSessionStorage");
+      window.location.href = "/products-page";
     },
   },
   mounted() {
     let tg = window.Telegram.WebApp;
-    tg.MainButton.text = "Начать оформление";
-    tg.onEvent('mainButtonClicked', function(){
-      window.console.log(1)
-      tg.MainButton.hide();
-      window.console.log(2)
-      this.addToShoppingCart();
-      window.console.log(3)
-      window.location.href = "/products-page";
-      window.console.log(4)
-    });
     tg.MainButton.show();
+    tg.MainButton.text = "Начать оформление";
+    tg.onEvent('mainButtonClicked', this.addToShoppingCart);
     const BackButton = tg.BackButton;
     BackButton.show();
     tg.onEvent('backButtonClicked', function() {

@@ -135,7 +135,6 @@ export default {
     bot_id() {
       return bot_id
     },
-
     onProductsPageButtonClick() {
       window.location.href = "/products-page/shopping-cart/";
       tg.offEvent('mainButtonClicked', this)
@@ -176,12 +175,12 @@ export default {
       return name.length > 18 ? name.substring(0, 15) + '...' : name;
     },
     redirectToProductCard(itemId) {
-      window.Telegram.WebApp.offEvent('mainButtonClicked', this.onProductsPageButtonClick);
+      Telegram.WebApp.offEvent('mainButtonClicked', this.onProductsPageButtonClick);
       tg.MainButton.hide();
       router.push('products-page/' + itemId);
     },
     toggleInput() {
-      const BackButton = window.Telegram.WebApp.BackButton;
+      const BackButton = Telegram.WebApp.BackButton;
       this.fromPrice = null;
       this.toPrice = null;
       this.inputValue = ''
@@ -192,6 +191,7 @@ export default {
         BackButton.hide();
       }
     },
+
     toggleFilterComponent() {
       window.Telegram.WebApp.offEvent('mainButtonClicked');
       tg.MainButton.hide();
@@ -237,15 +237,7 @@ export default {
     this.itemsAddToCart();
     tg.MainButton.text = "В корзину";
     tg.onEvent('mainButtonClicked', this.onProductsPageButtonClick);
-
-
-    tg.onEvent('backButtonClicked', () => {
-      this.fromPrice = null;
-      this.toPrice = null;
-      this.inputValue = ''
-      this.inputIsActive = !this.inputIsActive;
-      tg.BackButton.hide();
-    });
+    tg.onEvent('backButtonClicked', this.toggleInput);
   //   this.$store.dispatch('itemsInit').then(() => {
   //     this.isLoading = false;
   //     let tempCheckItems = sessionStorage.getItem('itemsAddToCartArray');
