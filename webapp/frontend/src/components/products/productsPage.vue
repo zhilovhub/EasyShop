@@ -193,6 +193,7 @@ export default {
     toggleFilterComponent() {
       window.Telegram.WebApp.offEvent('mainButtonClicked');
       tg.MainButton.hide();
+      tg.offEvent('mainButtonClicked', this);
       this.filterComponentIs = !this.filterComponentIs;
     },
     receivedData(data) {
