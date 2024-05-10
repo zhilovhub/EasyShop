@@ -178,15 +178,14 @@ export default {
       router.push('products-page/' + itemId);
     },
     toggleInput() {
-      const BackButton = Telegram.WebApp.BackButton;
       this.fromPrice = null;
       this.toPrice = null;
       this.inputValue = ''
       this.inputIsActive = !this.inputIsActive;
       if (this.inputIsActive) {
-        BackButton.show();
+        Telegram.WebApp.BackButton.show();
       } else {
-        BackButton.hide();
+        Telegram.WebApp.BackButton.hide();
       }
     },
     toggleFilterComponent() {
@@ -234,8 +233,6 @@ export default {
   },
   mounted() {
     this.itemsAddToCart();
-    console.log(this.$store.state.items.filter(item => item.count > 0));
-    console.log(this.$store.state.items);
     window.Telegram.WebApp.MainButton.text = "В корзину";
     Telegram.WebApp.onEvent('mainButtonClicked', this.onProductsPageButtonClick);
     Telegram.WebApp.onEvent('backButtonClicked', this.toggleInput);
