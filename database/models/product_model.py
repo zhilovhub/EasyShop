@@ -121,7 +121,7 @@ class ProductDao(Dao):
                     and_(
                         Product.bot_id == bot_id, Product.price >= price_min)
                     , Product.price <= price_max)
-                ).order_by(Product.id)
+                )
 
         if filters:
             filter_spec = []
@@ -132,9 +132,9 @@ class ProductDao(Dao):
                     match product_filter.filter_name:
                         case "price":
                             if product_filter.reverse_order:
-                                sql_select.order_by(desc(Product.price))
+                                sql_select = sql_select.order_by(desc(Product.price))
                             else:
-                                sql_select.order_by(asc(Product.price))
+                                sql_select = sql_select.order_by(asc(Product.price))
                         case "rating":
                             pass
                         case "popular":
