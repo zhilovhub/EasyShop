@@ -17,10 +17,16 @@ product_db: ProductDao = db_engine.get_product_db()
 category_db: CategoryDao = db_engine.get_category_dao()
 
 
+class SearchWordMustNotBeEmpty(Exception):
+    """Raised when 'search' filter is provided but search word is empty string"""
+    pass
+
+
 class GetProductsRequest(BaseModel):
     bot_id: int = Field(frozen=True)
     price_min: int = 0
     price_max: int = 2147483647
+    search_word: str | None = None
     filters: list[ProductFilterWithoutBot] | None
 
 
@@ -49,18 +55,30 @@ async def get_all_products_api(payload: GetProductsRequest = Depends(GetProducts
                     filters.append(ProductFilter(bot_id=payload.bot_id, filter_name=product_filter.filter_name,
                                                  is_category_filter=product_filter.is_category_filter,
                                                  reverse_order=product_filter.reverse_order,
-                                                 category_id=cat_id))
+                                                 category_id=cat_id,
+                                                 search_word=None))
+                elif product_filter.filter_name == "search":
+                    if payload.search_word is None:
+                        raise SearchWordMustNotBeEmpty
+                    filters.append(ProductFilter(bot_id=payload.bot_id, filter_name=product_filter.filter_name,
+                                                 is_category_filter=product_filter.is_category_filter,
+                                                 reverse_order=product_filter.reverse_order,
+                                                 category_id=None,
+                                                 search_word=payload.search_word))
                 else:
                     filters.append(ProductFilter(bot_id=payload.bot_id, filter_name=product_filter.filter_name,
                                                  is_category_filter=product_filter.is_category_filter,
                                                  reverse_order=product_filter.reverse_order,
-                                                 category_id=None))
+                                                 category_id=None,
+                                                 search_word=None))
             products = await product_db.get_all_products(payload.bot_id,
                                                          price_min=payload.price_min,
                                                          price_max=payload.price_max,
                                                          filters=filters)
     except FilterNotFound as ex:
         raise HTTPException(status_code=400, detail=ex.message)
+    except SearchWordMustNotBeEmpty:
+        raise HTTPException(status_code=400, detail="'search' filter is provided, search_word must not be empty")
     # except CategoryFilterNotFound as ex:
     #     raise HTTPException(status_code=400, detail=ex.message)
     except Exception:
