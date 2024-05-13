@@ -21,7 +21,7 @@ class FilterNotFound(Exception):
 
     def __init__(self, filter_name: str, message: str="Provided filter name ('{FILTER_NAME}') not found"):
         self.filter_name = filter_name
-        self.message = message.replace("{{FILTER_NAME}}", filter_name.lower())
+        self.message = message.replace("{FILTER_NAME}", filter_name.lower())
         super().__init__(self.message)
 
 
@@ -34,7 +34,7 @@ class FilterNotFound(Exception):
 #         super().__init__(self.message)
 
 
-PRODUCT_FILTERS = ("", "")
+PRODUCT_FILTERS = ("rating", "popular", "price")
 
 
 class ProductFilterWithoutBot(BaseModel):
@@ -56,7 +56,7 @@ class ProductFilter(ProductFilterWithoutBot):
             #         break
             # else:
             #     raise CategoryFilterNotFound(self.filter_name)
-        elif not self.filter_name not in PRODUCT_FILTERS:
+        elif self.filter_name.lower() not in PRODUCT_FILTERS:
             raise FilterNotFound(self.filter_name)
         return self
 
