@@ -1,7 +1,7 @@
 from typing import Optional
 
 from sqlalchemy import BigInteger, Column, String, ForeignKey, Integer, JSON
-from sqlalchemy import select, insert, delete, update
+from sqlalchemy import select, insert, delete, update, and_
 from sqlalchemy.ext.asyncio import AsyncEngine
 from sqlalchemy.dialects.postgresql import insert as upsert
 
@@ -64,10 +64,14 @@ class ProductDao(Dao):
         super().__init__(engine, logger)
 
     @validate_call(validate_return=True)
-    async def get_all_products(self, bot_id: int) -> list[ProductSchema]:
+    async def get_all_products(self, bot_id: int, price_min: int = 0, price_max: int = 2147483647) -> list[ProductSchema]:
         async with self.engine.begin() as conn:
             raw_res = await conn.execute(
-                select(Product).where(Product.bot_id == bot_id).order_by(Product.id)
+                select(Product).where(and_(
+                    and_(
+                        Product.bot_id == bot_id, Product.price >= price_min)
+                    , Product.price <= price_max)
+                ).order_by(Product.id)
             )
         await self.engine.dispose()
 
