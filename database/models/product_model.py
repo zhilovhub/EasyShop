@@ -44,7 +44,8 @@ class FilterNotFound(Exception):
 
 PRODUCT_FILTERS = {"rating": "сортирует по рейтингу из отзывов",
                    "popular": "сортирует по частоте покупки",
-                   "price": "сортирует по цене"}
+                   "price": "сортирует по цене",
+                   "search": "сортирует товары по совпадению с поисковым запросом"}
 
 
 class ProductFilterWithoutBot(BaseModel):
@@ -56,6 +57,7 @@ class ProductFilterWithoutBot(BaseModel):
 class ProductFilter(ProductFilterWithoutBot):
     bot_id: int = Field(frozen=True)
     category_id: int | None
+    search_word: str | None
 
     @model_validator(mode='after')
     def validate_filter_name(self):
@@ -134,6 +136,8 @@ class ProductDao(Dao):
                                 sql_select = sql_select.order_by(desc(Product.price))
                             else:
                                 sql_select = sql_select.order_by(asc(Product.price))
+                        case "search":
+                            sql_select = sql_select.filter(Product.name.ilike('%' + product_filter.search_word.lower() + '%'))
                         case "rating":
                             pass
                         case "popular":
