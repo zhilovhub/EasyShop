@@ -41,7 +41,7 @@ async def get_all_products_api(payload: GetProductsRequest = Depends(GetProducts
             for product_filter in payload.filters:
                 if product_filter.is_category_filter:
                     cats = await category_db.get_all_categories(payload.bot_id)
-                    cat_id = None
+                    cat_id = -1
                     for cat in cats:
                         if cat.name.lower() == product_filter.filter_name.lower():
                             cat_id = cat.id
