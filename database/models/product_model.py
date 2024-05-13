@@ -124,10 +124,9 @@ class ProductDao(Dao):
                 )
 
         if filters:
-            filter_spec = []
             for product_filter in filters:
-                if product_filter.is_category_filter and product_filter.category_id is not None:
-                    filter_spec.append({'field': 'category', 'op': '==', 'value': 'name_1'})
+                if product_filter.is_category_filter:
+                    sql_select = sql_select.filter_by(category=product_filter.category_id)
                 else:
                     match product_filter.filter_name:
                         case "price":
@@ -139,8 +138,6 @@ class ProductDao(Dao):
                             pass
                         case "popular":
                             pass
-            if filter_spec:
-                sql_select = apply_filters(sql_select, filter_spec)
 
         async with self.engine.begin() as conn:
             raw_res = await conn.execute(sql_select)
