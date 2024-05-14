@@ -128,7 +128,7 @@ class ProductDao(Dao):
         if filters:
             for product_filter in filters:
                 if product_filter.is_category_filter:
-                    sql_select = sql_select.filter(Product.category.overlap([product_filter.category_id]))
+                    sql_select = sql_select.filter(Product.category.contains(product_filter.category_id))
                 else:
                     match product_filter.filter_name:
                         case "price":
