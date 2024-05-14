@@ -1,9 +1,10 @@
 from typing import Optional
 
-from sqlalchemy import BigInteger, Column, String, ForeignKey, Integer, JSON, ARRAY
+from sqlalchemy import BigInteger, Column, String, ForeignKey, Integer, JSON
 from sqlalchemy import select, insert, delete, update, and_, desc, asc
 from sqlalchemy.ext.asyncio import AsyncEngine
 from sqlalchemy.dialects.postgresql import insert as upsert
+from sqlalchemy.dialects.postgresql import ARRAY
 
 from sqlalchemy_filters import apply_filters
 
