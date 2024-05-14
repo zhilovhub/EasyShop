@@ -96,7 +96,7 @@ class ProductWithoutId(BaseModel):
     bot_id: int = Field(frozen=True)
 
     name: str = Field(max_length=55)
-    category: list[int]
+    category: list[int] | None
     description: str = Field(max_length=255)
     article: Optional[str | None]
     price: int
