@@ -1,6 +1,6 @@
 from typing import Optional
 
-from sqlalchemy import BigInteger, Column, String, ForeignKey, Integer, JSON
+from sqlalchemy import BigInteger, Column, String, ForeignKey, Integer, JSON, ARRAY
 from sqlalchemy import select, insert, delete, update, and_, desc, asc
 from sqlalchemy.ext.asyncio import AsyncEngine
 from sqlalchemy.dialects.postgresql import insert as upsert
@@ -81,7 +81,7 @@ class Product(Base):
     bot_id = Column(ForeignKey(Bot.bot_id, ondelete="CASCADE"), nullable=False)
 
     name = Column(String(55), unique=True, nullable=False)  # TODO add test for unique name
-    category = Column(ForeignKey(Category.id, ondelete="SET NULL"))
+    category = Column(ARRAY(BigInteger))
     description = Column(String(255), nullable=False)
     article = Column(String)
     price = Column(Integer, nullable=False)
@@ -96,7 +96,7 @@ class ProductWithoutId(BaseModel):
     bot_id: int = Field(frozen=True)
 
     name: str = Field(max_length=55)
-    category: int
+    category: list[int]
     description: str = Field(max_length=255)
     article: Optional[str | None]
     price: int
@@ -128,7 +128,7 @@ class ProductDao(Dao):
         if filters:
             for product_filter in filters:
                 if product_filter.is_category_filter:
-                    sql_select = sql_select.filter_by(category=product_filter.category_id)
+                    sql_select = sql_select.filter(Product.category.overlap([product_filter.category_id]))
                 else:
                     match product_filter.filter_name:
                         case "price":
