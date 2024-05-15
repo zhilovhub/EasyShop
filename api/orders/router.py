@@ -1,6 +1,7 @@
-from database.models.order_model import OrderNotFound
+from database.models.order_model import OrderNotFound, OrderSchema
+from pydantic import ValidationError
 from loader import db_engine, logger
-from fastapi import APIRouter
+from fastapi import APIRouter, HTTPException, Depends
 from datetime import datetime
 import random
 import string
@@ -27,19 +28,19 @@ async def generate_order_id_api() -> str:
     logger.info("generated order_id already exist, regenerating...")
     await generate_order_id_api()
 
-# @router.get("/get_all_orders/{token}")
-# async def get_all_orders_api(token: str) -> list[OrderSchema]:
-#     token = token.replace('_', ':', 1)
-#     try:
-#         orders = await db.get_all_orders(token)
-#     except ValidationError as ex:
-#         logger.warning("validation error", exc_info=True)
-#         raise HTTPException(status_code=400, detail=f"Incorrect input data.\n{str(ex)}")
-#     except Exception:
-#         logger.error("Error while execute get_all_orders db_method", exc_info=True)
-#         raise HTTPException(status_code=500, detail="Internal error.")
-#     return orders
-#
+
+@router.get("/get_all_orders/{bot_id}")
+async def get_all_orders_api(bot_id: int) -> list[OrderSchema]:
+    try:
+        orders = await db.get_all_orders(bot_id)
+    except ValidationError as ex:
+        logger.warning("validation error", exc_info=True)
+        raise HTTPException(status_code=400, detail=f"Incorrect input data.\n{str(ex)}")
+    except Exception:
+        logger.error("Error while execute get_all_orders db_method", exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal error.")
+    return orders
+
 #
 # @router.get("/get_order/{token}/{order_id}")
 # async def get_order_api(token: str, order_id: str) -> OrderSchema:
@@ -53,20 +54,20 @@ async def generate_order_id_api() -> str:
 #         logger.error("Error while execute get_order db_method", exc_info=True)
 #         raise HTTPException(status_code=500, detail="Internal error.")
 #     return order
-#
-#
-# @router.post("/add_order")
-# async def add_order_api(new_order: OrderWithoutId) -> OrderSchema:
-#     try:
-#         new_order.ordered_at = new_order.ordered_at.replace(tzinfo=None)
-#         order = await db.add_order(new_order)
-#     except ValidationError as ex:
-#         logger.warning("incorrect data in request", exc_info=True)
-#         raise HTTPException(status_code=400, detail=f"Incorrect input data.\n{str(ex)}")
-#     except Exception:
-#         logger.error("Error while execute add_order db_method", exc_info=True)
-#         raise HTTPException(status_code=500, detail="Internal error.")
-#     return order
+
+
+@router.post("/add_order")
+async def add_order_api(new_order: OrderSchema = Depends()) -> str:
+    try:
+        new_order.ordered_at = new_order.ordered_at.replace(tzinfo=None)
+        order = await db.add_order(new_order)
+    # except ValidationError as ex:
+    #     logger.warning("incorrect data in request", exc_info=True)
+    #     raise HTTPException(status_code=400, detail=f"Incorrect input data.\n{str(ex)}")
+    except Exception:
+        logger.error("Error while execute add_order db_method", exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal error.")
+    return "success"
 #
 #
 # @router.post("/update_order")
