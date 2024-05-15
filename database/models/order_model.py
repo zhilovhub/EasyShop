@@ -53,7 +53,7 @@ class Order(Base):
 
     id = Column(String(13), primary_key=True)
     bot_id = Column(ForeignKey(Bot.bot_id, ondelete="CASCADE"))
-    products = Column(JSON)
+    items = Column(JSON, default="{}")
     from_user = Column(BigInteger, nullable=False)  # TODO make it Foreign
     payment_method = Column(String, nullable=False)
     ordered_at = Column(DateTime, default=datetime.now())
@@ -62,14 +62,21 @@ class Order(Base):
     comment = Column(String)
 
 
+class OrderItem(BaseModel):
+    # product_id: int
+    amount: int
+    used_extra_option: bool = False
+    extra_options: dict = {}
+
+
 class OrderSchema(BaseModel):
     model_config = ConfigDict(from_attributes=True, populate_by_name=True)
 
     id: str = Field(max_length=12, frozen=True, alias="order_id")
     bot_id: int
-    products: dict[int, int]
+    items: dict[int, OrderItem] = Field(default={101: OrderItem(amount=5, used_extra_option=True, extra_options={"Размер": "42"})})
     from_user: int
-    payment_method: str
+    payment_method: str | None = None
     ordered_at: datetime
     address: str
     status: OrderStatusValues
@@ -90,7 +97,8 @@ class OrderSchema(BaseModel):
             case _:
                 return "❓ Неизвестен"
 
-    def convert_to_notification_text(self, products: list[tuple[ProductSchema, int]], username: str = '@username', is_admin: bool = False) -> str:
+    def convert_to_notification_text(self, products: list[tuple[ProductSchema, int]], username: str = '@username',
+                                     is_admin: bool = False) -> str:
         products_converted = []
         total_price = 0
         for ind, product_item in enumerate(products, start=1):
