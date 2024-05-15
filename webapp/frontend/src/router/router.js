@@ -48,6 +48,11 @@ const router = createRouter({
       path: '/landing-page',
       name: 'landing-page',
       component: () => import('@/components/landing/landingPage.vue')
+    },
+    {
+      path: '/admin-panel',
+      name: 'admin-panel',
+      component: () => import('@/components/admin-panel/adminPanel.vue')
     }
   ]
 });

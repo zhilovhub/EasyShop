@@ -223,7 +223,7 @@ textarea {
   //  -webkit-appearance: none;
   //  -moz-appearance: none;
   //  appearance: none;
-  //  background-image: url('../../assets/arrow-down.svg') !important;
+  //  background-image: url('../../assets/arrow-down.png') !important;
   //  background-position: center right 20px;
   //  background-repeat: no-repeat;
   //  background-size: auto 15%;
