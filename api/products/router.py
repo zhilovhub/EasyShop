@@ -1,9 +1,10 @@
 from database.models.category_model import CategorySchema, CategoryDao
-from database.models.product_model import ProductSchema, ProductNotFound, ProductWithoutId, ProductDao
+from database.models.product_model import (ProductSchema, ProductNotFound, ProductWithoutId, ProductDao,
+                                           ProductFilter, ProductFilterWithoutBot, FilterNotFound, PRODUCT_FILTERS)
 from loader import db_engine, logger
-from fastapi import HTTPException, APIRouter, File, UploadFile
-from typing import Annotated
-from pydantic import BaseModel
+from fastapi import HTTPException, APIRouter, File, UploadFile, Body, Depends
+from typing import Annotated, List
+from pydantic import BaseModel, Field, field_validator, InstanceOf, model_validator
 
 
 PATH = "/api/products"
@@ -16,10 +17,70 @@ product_db: ProductDao = db_engine.get_product_db()
 category_db: CategoryDao = db_engine.get_category_dao()
 
 
-@router.get("/get_all_products/{bot_id}")
-async def get_all_products_api(bot_id: int) -> list[ProductSchema]:
+class SearchWordMustNotBeEmpty(Exception):
+    """Raised when 'search' filter is provided but search word is empty string"""
+    pass
+
+
+class GetProductsRequest(BaseModel):
+    bot_id: int = Field(frozen=True)
+    price_min: int = 0
+    price_max: int = 2147483647
+    search_word: str | None = None
+    filters: list[ProductFilterWithoutBot] | None
+
+
+@router.get("/get_filters/")
+async def get_filters_api():
+    return PRODUCT_FILTERS
+
+
+@router.post("/get_all_products/")
+async def get_all_products_api(payload: GetProductsRequest = Depends(GetProductsRequest)) -> list[ProductSchema]:
     try:
-        products = await product_db.get_all_products(bot_id)
+        if not payload.filters:
+            products = await product_db.get_all_products(payload.bot_id,
+                                                         price_min=payload.price_min,
+                                                         price_max=payload.price_max)
+        else:
+            filters: list[ProductFilter] = []
+            for product_filter in payload.filters:
+                if product_filter.is_category_filter:
+                    cats = await category_db.get_all_categories(payload.bot_id)
+                    cat_id = -1
+                    for cat in cats:
+                        if cat.name.lower() == product_filter.filter_name.lower():
+                            cat_id = cat.id
+                            break
+                    filters.append(ProductFilter(bot_id=payload.bot_id, filter_name=product_filter.filter_name,
+                                                 is_category_filter=product_filter.is_category_filter,
+                                                 reverse_order=product_filter.reverse_order,
+                                                 category_id=cat_id,
+                                                 search_word=None))
+                elif product_filter.filter_name == "search":
+                    if payload.search_word is None:
+                        raise SearchWordMustNotBeEmpty
+                    filters.append(ProductFilter(bot_id=payload.bot_id, filter_name=product_filter.filter_name,
+                                                 is_category_filter=product_filter.is_category_filter,
+                                                 reverse_order=product_filter.reverse_order,
+                                                 category_id=None,
+                                                 search_word=payload.search_word))
+                else:
+                    filters.append(ProductFilter(bot_id=payload.bot_id, filter_name=product_filter.filter_name,
+                                                 is_category_filter=product_filter.is_category_filter,
+                                                 reverse_order=product_filter.reverse_order,
+                                                 category_id=None,
+                                                 search_word=None))
+            products = await product_db.get_all_products(payload.bot_id,
+                                                         price_min=payload.price_min,
+                                                         price_max=payload.price_max,
+                                                         filters=filters)
+    except FilterNotFound as ex:
+        raise HTTPException(status_code=400, detail=ex.message)
+    except SearchWordMustNotBeEmpty:
+        raise HTTPException(status_code=400, detail="'search' filter is provided, search_word must not be empty")
+    # except CategoryFilterNotFound as ex:
+    #     raise HTTPException(status_code=400, detail=ex.message)
     except Exception:
         logger.error("Error while execute get_all_products db_method", exc_info=True)
         raise HTTPException(status_code=500, detail="Internal error.")

@@ -1,11 +1,15 @@
 from typing import Optional
 
 from sqlalchemy import BigInteger, Column, String, ForeignKey, Integer, JSON
-from sqlalchemy import select, insert, delete, update
+from sqlalchemy import select, insert, delete, update, and_, desc, asc
 from sqlalchemy.ext.asyncio import AsyncEngine
 from sqlalchemy.dialects.postgresql import insert as upsert
+from sqlalchemy.dialects.postgresql import ARRAY
 
-from pydantic import BaseModel, Field, validate_call, ConfigDict
+from sqlalchemy_filters import apply_filters
+
+from pydantic import BaseModel, Field, validate_call, ConfigDict, model_validator
+from typing import Annotated, List
 
 from bot.exceptions import InvalidParameterFormat
 
@@ -21,6 +25,56 @@ class ProductNotFound(Exception):
     pass
 
 
+class FilterNotFound(Exception):
+    """Raised when filter name provided to ProductFilter class is not a valid filter name from filters list"""
+
+    def __init__(self, filter_name: str, message: str="Provided filter name ('{FILTER_NAME}') not found"):
+        self.filter_name = filter_name
+        self.message = message.replace("{FILTER_NAME}", filter_name.lower())
+        super().__init__(self.message)
+
+
+# class CategoryFilterNotFound(Exception):
+#     """Raised when category name provided to ProductFilter class is not exist in categories table"""
+#
+#     def __init__(self, category_name: str, message: str = "Provided category name ('{CAT_NAME}') for category filter not found"):
+#         self.category_name = category_name
+#         self.message = message.replace("{{CAT_NAME}}", category_name.lower())
+#         super().__init__(self.message)
+
+
+PRODUCT_FILTERS = {"rating": "сортирует по рейтингу из отзывов",
+                   "popular": "сортирует по частоте покупки",
+                   "price": "сортирует по цене",
+                   "search": "сортирует товары по совпадению с поисковым запросом"}
+
+
+class ProductFilterWithoutBot(BaseModel):
+    filter_name: Annotated[str, Field(validate_default=True)]
+    is_category_filter: bool = False
+    reverse_order: bool = False
+
+
+class ProductFilter(ProductFilterWithoutBot):
+    bot_id: int = Field(frozen=True)
+    category_id: int | None
+    search_word: str | None
+
+    @model_validator(mode='after')
+    def validate_filter_name(self):
+        if self.is_category_filter:
+            pass
+            # cats = await category_db.get_all_categories(self.bot_id)
+            # for cat in cats:
+            #     if cat.name.lower() == self.filter_name.lower():
+            #         break
+            # else:
+            #     raise CategoryFilterNotFound(self.filter_name)
+        elif self.filter_name.lower() not in PRODUCT_FILTERS:
+            raise FilterNotFound(self.filter_name)
+        return self
+
+
 class Product(Base):
     __tablename__ = "products"
 
@@ -28,7 +82,7 @@ class Product(Base):
     bot_id = Column(ForeignKey(Bot.bot_id, ondelete="CASCADE"), nullable=False)
 
     name = Column(String(55), unique=True, nullable=False)  # TODO add test for unique name
-    category = Column(ForeignKey(Category.id, ondelete="SET NULL"))
+    category = Column(ARRAY(BigInteger))
     description = Column(String(255), nullable=False)
     article = Column(String)
     price = Column(Integer, nullable=False)
@@ -43,7 +97,7 @@ class ProductWithoutId(BaseModel):
     bot_id: int = Field(frozen=True)
 
     name: str = Field(max_length=55)
-    category: int
+    category: list[int] | None
     description: str = Field(max_length=255)
     article: Optional[str | None]
     price: int
@@ -64,11 +118,34 @@ class ProductDao(Dao):
         super().__init__(engine, logger)
 
     @validate_call(validate_return=True)
-    async def get_all_products(self, bot_id: int) -> list[ProductSchema]:
+    async def get_all_products(self, bot_id: int, price_min: int = 0, price_max: int = 2147483647,
+                               filters: list[ProductFilter] | None = None) -> list[ProductSchema]:
+        sql_select = select(Product).where(and_(
+                    and_(
+                        Product.bot_id == bot_id, Product.price >= price_min)
+                    , Product.price <= price_max)
+                )
+
+        if filters:
+            for product_filter in filters:
+                if product_filter.is_category_filter:
+                    sql_select = sql_select.filter(Product.category.contains([product_filter.category_id]))
+                else:
+                    match product_filter.filter_name:
+                        case "price":
+                            if product_filter.reverse_order:
+                                sql_select = sql_select.order_by(desc(Product.price))
+                            else:
+                                sql_select = sql_select.order_by(asc(Product.price))
+                        case "search":
+                            sql_select = sql_select.filter(Product.name.ilike('%' + product_filter.search_word.lower() + '%'))
+                        case "rating":
+                            pass
+                        case "popular":
+                            pass
+
         async with self.engine.begin() as conn:
-            raw_res = await conn.execute(
-                select(Product).where(Product.bot_id == bot_id).order_by(Product.id)
-            )
+            raw_res = await conn.execute(sql_select)
         await self.engine.dispose()
 
         raw_res = raw_res.fetchall()

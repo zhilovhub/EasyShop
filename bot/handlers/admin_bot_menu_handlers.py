@@ -26,7 +26,7 @@ from bot.utils.custom_bot_api import start_custom_bot, stop_custom_bot
 from custom_bots.multibot import storage as custom_bot_storage
 
 from database.models.bot_model import BotSchemaWithoutId
-from database.models.order_model import OrderSchema, OrderNotFound
+from database.models.order_model import OrderSchema, OrderNotFound, OrderItem
 from database.models.product_model import ProductWithoutId
 
 
@@ -40,7 +40,13 @@ async def process_web_app_request(event: Message):
         data["from_user"] = user_id
         data["payment_method"] = "Картой Онлайн"
         data["status"] = "backlog"
-        data["count"] = 0
+
+        items: dict[int, OrderItem] = {}
+
+        for item_id, item in data['raw_items'].items():
+            item[item_id] = OrderItem(**item)
+
+        data['items'] = items
 
         order = OrderSchema(**data)
 
@@ -346,8 +352,8 @@ async def bot_menu_handler(message: Message, state: FSMContext):
 
 async def send_new_order_notify(order: OrderSchema, user_id: int):
     order_user_data = await bot.get_chat(order.from_user)
-    products = [(await product_db.get_product(product_id), product_count)
-                for product_id, product_count in order.products.items()]
+    products = [(await product_db.get_product(product_id), product_item.amount)
+                for product_id, product_item in order.items.items()]
 
     await bot.send_message(user_id, f"Так будет выглядеть у тебя уведомление о новом заказе 👇")
     await bot.send_message(

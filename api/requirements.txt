@@ -4,3 +4,4 @@ pydantic
 uvicorn
 starlette
 sqlalchemy
+sqlalchemy-filters
