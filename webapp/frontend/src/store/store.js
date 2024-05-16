@@ -123,8 +123,8 @@ export const Store = new Vuex.Store({
       let data = {
         'order_id': Store.state.generatedOrderId,
         'bot_id': Store.state.bot_id,
-        'products': Store.state.itemsAddToCartArray.reduce((acc, item) => {
-          acc[item.id] = item.count;
+        'raw_items': Store.state.itemsAddToCartArray.reduce((acc, item) => {
+          acc[item.id] = {"amount": item.count, "used_extra_options": item.used_extra_options, "extra_options": item.extra_options};
           return acc;
         },{}),
         'payment_method': Store.state.paymentMethod,

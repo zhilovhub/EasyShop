@@ -40,9 +40,7 @@
         window.location.href = "/products-page/shopping-cart?bot_id=" + vm.$store.state.bot_id;
       });
       tg.MainButton.text = "Отправить";
-      tg.onEvent('mainButtonClicked', function(){
-        this.orderBtnClicked();
-      });
+      tg.onEvent('mainButtonClicked', this.orderBtnClicked);
       tg.MainButton.show();
     },
     methods: {
