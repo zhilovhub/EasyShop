@@ -21,6 +21,7 @@
   --app-text-color: #111111;
   --app-button-bgcolor: #E7E7E7;
   --app-hr-border-color: #D9D9D9;
+  --app-button-delete-bg: #FF9494;
 }
 
 [data-theme='dark'] {
@@ -29,6 +30,7 @@
   --app-text-color: #FFFFFF;
   --app-button-bgcolor: #0C0C0C;
   --app-hr-border-color: #3E3E3E;
+  --app-button-delete-bg: #FF3838;
 }
 
 body {

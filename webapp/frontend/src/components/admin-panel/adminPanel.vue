@@ -1,8 +1,23 @@
 <template>
-  <div class="header">
-    <span>Управление товарами</span>
-    <div class="images">
-      <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+  <FilterComponent @close="filterComponentIsActive = false" v-if="filterComponentIsActive"/>
+  <div v-else>
+    <div v-if="this.inputIsActive" class="header">
+      <span>Поиск по товарам</span>
+      <svg @click="this.inputIsActive = false" width="13" height="13" viewBox="0 0 13 13" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <g clip-path="url(#clip0_1099_14080)">
+          <path d="M7.64881 6.50047L12.7619 1.3879C13.0793 1.0705 13.0793 0.555904 12.7619 0.238535C12.4445 -0.0788605 11.9299 -0.0788605 11.6126 0.238535L6.49998 5.35164L1.38741 0.238535C1.07001 -0.0788605 0.555416 -0.0788605 0.238046 0.238535C-0.0793234 0.55593 -0.0793488 1.07053 0.238046 1.3879L5.35115 6.50047L0.238046 11.6131C-0.0793488 11.9305 -0.0793488 12.4451 0.238046 12.7624C0.555442 13.0798 1.07004 13.0798 1.38741 12.7624L6.49998 7.6493L11.6126 12.7624C11.9299 13.0798 12.4445 13.0798 12.7619 12.7624C13.0793 12.445 13.0793 11.9304 12.7619 11.6131L7.64881 6.50047Z" fill="currentColor"/>
+        </g>
+        <defs>
+          <clipPath id="clip0_1099_14080">
+            <rect width="13" height="13" fill="white"/>
+          </clipPath>
+        </defs>
+      </svg>
+    </div>
+    <div v-else class="header">
+      <span>Управление товарами</span>
+      <div class="images">
+        <svg @click="filterComponentIsActive = !filterComponentIsActive" width="20" height="20" viewBox="0 0 20 20" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
         <g clip-path="url(#clip0_1019_10893)">
           <path d="M0.833333 3.95806H3.11333C3.2922 4.61617 3.68264 5.19714 4.22444 5.61134C4.76623 6.02553 5.42927 6.24994 6.11125 6.24994C6.79323 6.24994 7.45627 6.02553 7.99806 5.61134C8.53986 5.19714 8.9303 4.61617 9.10917 3.95806H19.1667C19.3877 3.95806 19.5996 3.87026 19.7559 3.71398C19.9122 3.5577 20 3.34574 20 3.12473C20 2.90371 19.9122 2.69175 19.7559 2.53547C19.5996 2.37919 19.3877 2.29139 19.1667 2.29139H9.10917C8.9303 1.63328 8.53986 1.05232 7.99806 0.638118C7.45627 0.223921 6.79323 -0.000488281 6.11125 -0.000488281C5.42927 -0.000488281 4.76623 0.223921 4.22444 0.638118C3.68264 1.05232 3.2922 1.63328 3.11333 2.29139H0.833333C0.61232 2.29139 0.400358 2.37919 0.244078 2.53547C0.0877974 2.69175 0 2.90371 0 3.12473C0 3.34574 0.0877974 3.5577 0.244078 3.71398C0.400358 3.87026 0.61232 3.95806 0.833333 3.95806ZM6.11083 1.66639C6.39926 1.66639 6.68122 1.75192 6.92104 1.91217C7.16086 2.07241 7.34778 2.30017 7.45816 2.56665C7.56854 2.83312 7.59742 3.12635 7.54115 3.40923C7.48488 3.69212 7.34598 3.95197 7.14203 4.15592C6.93808 4.35988 6.67823 4.49877 6.39534 4.55504C6.11245 4.61131 5.81923 4.58243 5.55275 4.47205C5.28628 4.36167 5.05852 4.17476 4.89827 3.93493C4.73803 3.69511 4.6525 3.41316 4.6525 3.12473C4.65294 2.73809 4.80673 2.36741 5.08012 2.09402C5.35352 1.82062 5.72419 1.66684 6.11083 1.66639Z" fill="currentColor"/>
           <path d="M19.1667 9.16672H16.8867C16.7081 8.50846 16.3178 7.92728 15.7761 7.51291C15.2343 7.09854 14.5712 6.87402 13.8892 6.87402C13.2071 6.87402 12.544 7.09854 12.0023 7.51291C11.4605 7.92728 11.0702 8.50846 10.8917 9.16672H0.833333C0.61232 9.16672 0.400358 9.25452 0.244078 9.4108C0.0877974 9.56708 0 9.77904 0 10.0001C0 10.2211 0.0877974 10.433 0.244078 10.5893C0.400358 10.7456 0.61232 10.8334 0.833333 10.8334H10.8917C11.0702 11.4916 11.4605 12.0728 12.0023 12.4872C12.544 12.9016 13.2071 13.1261 13.8892 13.1261C14.5712 13.1261 15.2343 12.9016 15.7761 12.4872C16.3178 12.0728 16.7081 11.4916 16.8867 10.8334H19.1667C19.3877 10.8334 19.5996 10.7456 19.7559 10.5893C19.9122 10.433 20 10.2211 20 10.0001C20 9.77904 19.9122 9.56708 19.7559 9.4108C19.5996 9.25452 19.3877 9.16672 19.1667 9.16672ZM13.8892 11.4584C13.6007 11.4584 13.3188 11.3729 13.079 11.2126C12.8391 11.0524 12.6522 10.8246 12.5418 10.5581C12.4315 10.2917 12.4026 9.99843 12.4589 9.71555C12.5151 9.43266 12.654 9.17281 12.858 8.96885C13.0619 8.7649 13.3218 8.62601 13.6047 8.56974C13.8875 8.51347 14.1808 8.54235 14.4472 8.65273C14.7137 8.76311 14.9415 8.95002 15.1017 9.18985C15.262 9.42967 15.3475 9.71162 15.3475 10.0001C15.3471 10.3867 15.1933 10.7574 14.9199 11.0308C14.6465 11.3042 14.2758 11.4579 13.8892 11.4584Z" fill="currentColor"/>
@@ -14,27 +29,31 @@
           </clipPath>
         </defs>
       </svg>
-      <svg @click="toggleInput()" width="20" height="20" viewBox="0 0 20 20" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
-        <g clip-path="url(#clip0_1019_10954)">
-          <path d="M19.9998 18.8217L14.7815 13.6034C16.137 11.9456 16.8035 9.83014 16.643 7.6947C16.4826 5.55925 15.5075 3.56717 13.9195 2.1305C12.3314 0.693821 10.252 -0.0775273 8.11119 -0.0240008C5.97039 0.0295257 3.93207 0.903832 2.41783 2.41807C0.903588 3.93231 0.0292815 5.97064 -0.024245 8.11143C-0.0777715 10.2522 0.693577 12.3317 2.13025 13.9197C3.56693 15.5077 5.55901 16.4828 7.69445 16.6433C9.82989 16.8037 11.9453 16.1372 13.6032 14.7817L18.8215 20.0001L19.9998 18.8217ZM8.33315 15.0001C7.01461 15.0001 5.72568 14.6091 4.62935 13.8765C3.53302 13.144 2.67854 12.1028 2.17395 10.8846C1.66937 9.66644 1.53735 8.326 1.79458 7.03279C2.05182 5.73959 2.68676 4.5517 3.61911 3.61935C4.55146 2.687 5.73934 2.05206 7.03255 1.79483C8.32576 1.53759 9.6662 1.66961 10.8844 2.1742C12.1025 2.67878 13.1437 3.53327 13.8763 4.62959C14.6088 5.72592 14.9998 7.01485 14.9998 8.3334C14.9978 10.1009 14.2948 11.7954 13.045 13.0452C11.7952 14.2951 10.1007 14.9981 8.33315 15.0001Z" fill="currentColor"/>
-        </g>
-        <defs>
-          <clipPath id="clip0_1019_10954">
-            <rect width="20" height="20" fill="currentColor"/>
-          </clipPath>
-        </defs>
-      </svg>
-      <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <svg @click="toggleInput" width="20" height="20" viewBox="0 0 20 20" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+          <g clip-path="url(#clip0_1019_10954)">
+            <path d="M19.9998 18.8217L14.7815 13.6034C16.137 11.9456 16.8035 9.83014 16.643 7.6947C16.4826 5.55925 15.5075 3.56717 13.9195 2.1305C12.3314 0.693821 10.252 -0.0775273 8.11119 -0.0240008C5.97039 0.0295257 3.93207 0.903832 2.41783 2.41807C0.903588 3.93231 0.0292815 5.97064 -0.024245 8.11143C-0.0777715 10.2522 0.693577 12.3317 2.13025 13.9197C3.56693 15.5077 5.55901 16.4828 7.69445 16.6433C9.82989 16.8037 11.9453 16.1372 13.6032 14.7817L18.8215 20.0001L19.9998 18.8217ZM8.33315 15.0001C7.01461 15.0001 5.72568 14.6091 4.62935 13.8765C3.53302 13.144 2.67854 12.1028 2.17395 10.8846C1.66937 9.66644 1.53735 8.326 1.79458 7.03279C2.05182 5.73959 2.68676 4.5517 3.61911 3.61935C4.55146 2.687 5.73934 2.05206 7.03255 1.79483C8.32576 1.53759 9.6662 1.66961 10.8844 2.1742C12.1025 2.67878 13.1437 3.53327 13.8763 4.62959C14.6088 5.72592 14.9998 7.01485 14.9998 8.3334C14.9978 10.1009 14.2948 11.7954 13.045 13.0452C11.7952 14.2951 10.1007 14.9981 8.33315 15.0001Z" fill="currentColor"/>
+          </g>
+          <defs>
+            <clipPath id="clip0_1019_10954">
+              <rect width="20" height="20" fill="currentColor"/>
+            </clipPath>
+          </defs>
+        </svg>
+        <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
         <path d="M10.936 9.15989L10.9365 1.25613C10.9365 0.76548 10.5387 0.367733 10.0481 0.367753C9.55744 0.367753 9.15969 0.7655 9.15971 1.25613L9.1601 9.15989L1.25636 9.15948C0.765714 9.15948 0.367967 9.55722 0.367987 10.0479C0.368006 10.5385 0.765734 10.9362 1.25636 10.9362L9.1601 10.9358L9.15971 18.8396C9.15971 19.3302 9.55746 19.728 10.0481 19.728C10.5387 19.7279 10.9365 19.3302 10.9365 18.8396L10.936 10.9358L18.8398 10.9362C19.3304 10.9362 19.7282 10.5385 19.7282 10.0479C19.7282 9.55722 19.3304 9.15947 18.8398 9.1595L10.936 9.15989Z" fill="currentColor"/>
       </svg>
+      </div>
     </div>
-  </div>
-  <div class="block-template">
-    <img src="@/assets/circle.png" alt="circle png">
+    <div class="input-block" v-if="inputIsActive">
+      <input autofocus @focusout="toggleInput" v-model="inputValue" placeholder="Введите название или ID">
+    </div>
+    <div v-else class="block-template">
+    <img @click="toggleMainCircle" v-if="!mainCircleIsActive" src="@/assets/circle.png" alt="circle png">
+    <img @click="toggleMainCircle" v-else src="@/assets/markedcircle.png" alt="marked circle png">
     <span>Название товара</span>
     <span class="span-id">ID</span>
     <span style="text-align: center">Кол-во на <br> складе</span>
-    <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <svg @click="toggleModelWindow" width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
       <g clip-path="url(#clip0_1090_10882)">
         <path d="M17.5003 3.33333H14.917C14.7236 2.39284 14.2118 1.54779 13.468 0.940598C12.7242 0.333408 11.7938 0.0012121 10.8337 0L9.16699 0C8.20682 0.0012121 7.27642 0.333408 6.53262 0.940598C5.78881 1.54779 5.27707 2.39284 5.08366 3.33333H2.50033C2.27931 3.33333 2.06735 3.42113 1.91107 3.57741C1.75479 3.73369 1.66699 3.94565 1.66699 4.16667C1.66699 4.38768 1.75479 4.59964 1.91107 4.75592C2.06735 4.9122 2.27931 5 2.50033 5H3.33366V15.8333C3.33498 16.938 3.77439 17.997 4.55551 18.7782C5.33662 19.5593 6.39566 19.9987 7.50033 20H12.5003C13.605 19.9987 14.664 19.5593 15.4451 18.7782C16.2263 17.997 16.6657 16.938 16.667 15.8333V5H17.5003C17.7213 5 17.9333 4.9122 18.0896 4.75592C18.2459 4.59964 18.3337 4.38768 18.3337 4.16667C18.3337 3.94565 18.2459 3.73369 18.0896 3.57741C17.9333 3.42113 17.7213 3.33333 17.5003 3.33333V3.33333ZM9.16699 1.66667H10.8337C11.3506 1.6673 11.8546 1.82781 12.2767 2.1262C12.6987 2.42459 13.0182 2.84624 13.1912 3.33333H6.80949C6.98248 2.84624 7.30191 2.42459 7.72398 2.1262C8.14605 1.82781 8.6501 1.6673 9.16699 1.66667V1.66667ZM15.0003 15.8333C15.0003 16.4964 14.7369 17.1323 14.2681 17.6011C13.7993 18.0699 13.1634 18.3333 12.5003 18.3333H7.50033C6.83728 18.3333 6.2014 18.0699 5.73256 17.6011C5.26372 17.1323 5.00033 16.4964 5.00033 15.8333V5H15.0003V15.8333Z" fill="currentColor"/>
         <path d="M8.33333 14.9997C8.55434 14.9997 8.76631 14.9119 8.92259 14.7556C9.07887 14.5993 9.16666 14.3873 9.16666 14.1663V9.16634C9.16666 8.94533 9.07887 8.73337 8.92259 8.57709C8.76631 8.42081 8.55434 8.33301 8.33333 8.33301C8.11232 8.33301 7.90036 8.42081 7.74408 8.57709C7.5878 8.73337 7.5 8.94533 7.5 9.16634V14.1663C7.5 14.3873 7.5878 14.5993 7.74408 14.7556C7.90036 14.9119 8.11232 14.9997 8.33333 14.9997Z" fill="currentColor"/>
@@ -47,7 +66,7 @@
       </defs>
     </svg>
   </div>
-  <ul class="items-styles">
+    <ul class="items-styles">
     <li style="list-style-type: none" v-for="item in items">
       <div @click="toggleFooter(item, $event)" class="item-block" :style="{ borderRadius: !item.isActive ? '15px' : '15px 15px 0 0'}">
         <img @click="toggleSelected(item)" @click.stop="toggleFooter(item)" v-if="item.isSelected" src="@/assets/markedcircle.png" alt="marked circle png">
@@ -77,27 +96,74 @@
       </div>
     </li>
   </ul>
+    <div v-if="deleteModelWindowIsActive" class="model-wrapper">
+      <div class="model-window">
+        <svg @click="deleteModelWindowIsActive = !deleteModelWindowIsActive" width="13" height="13" viewBox="0 0 13 13" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <g clip-path="url(#clip0_1099_14080)">
+            <path d="M7.64881 6.50047L12.7619 1.3879C13.0793 1.0705 13.0793 0.555904 12.7619 0.238535C12.4445 -0.0788605 11.9299 -0.0788605 11.6126 0.238535L6.49998 5.35164L1.38741 0.238535C1.07001 -0.0788605 0.555416 -0.0788605 0.238046 0.238535C-0.0793234 0.55593 -0.0793488 1.07053 0.238046 1.3879L5.35115 6.50047L0.238046 11.6131C-0.0793488 11.9305 -0.0793488 12.4451 0.238046 12.7624C0.555442 13.0798 1.07004 13.0798 1.38741 12.7624L6.49998 7.6493L11.6126 12.7624C11.9299 13.0798 12.4445 13.0798 12.7619 12.7624C13.0793 12.445 13.0793 11.9304 12.7619 11.6131L7.64881 6.50047Z" fill="currentColor"/>
+          </g>
+          <defs>
+            <clipPath id="clip0_1099_14080">
+              <rect width="13" height="13" fill="white"/>
+            </clipPath>
+          </defs>
+        </svg>
+        <div class="warning-span">Вы уверены, что хотите удалить товар/ы?</div>
+        <div class="block-items">
+          <div class="item-for-delete" v-for="item in itemsForDelete">
+            <div>Название: {{shortenNameForModelWindow(item.name)}} <br>
+              ID: {{item.price}}</div>
+            <hr>
+          </div>
+        </div>
+        <div class="button-block">
+          <button>Удалить</button>
+          <button @click="deleteModelWindowIsActive = !deleteModelWindowIsActive">Отмена</button>
+        </div>
+      </div>
+    </div>
+  </div>
 </template>
 
 <script>
+import FilterComponent from '@/components/products/filterComponent.vue'
+import { mapState } from 'vuex'
+
 export default {
+  data() {
+    return {
+      filterComponentIsActive: false,
+      mainCircleIsActive: false,
+      deleteModelWindowIsActive: false,
+      inputIsActive: false,
+      inputValue: ''
+    }
+  },
+  components: { FilterComponent },
   mounted() {
     this.$store.dispatch('itemsInit');
-    this.items = this.items.map(item => ({ ...item, isSelected: false }));
-    this.items = this.items.map(item => ({...item, isActive: false}));
+    Telegram.WebApp.onEvent('backButtonClicked', this.toggleInput);
   },
   computed: {
-    items() {
-      return this.$store.state.items;
-    },
+    ...mapState({
+      items: state => state.items,
+    }),
+    itemsForDelete() {
+      return this.$store.state.items.filter(item => item.isSelected === true);
+    }
   },
   methods: {
     shortenName(name) {
       if (!name) return '';
       return name.length > 18 ? name.substring(0, 12) + '...' : name;
     },
+    shortenNameForModelWindow(name) {
+      if (!name) return '';
+      return name.length > 25 ? name.substring(0, 22) + '...' : name;
+    },
     toggleSelected(item) {
       item.isSelected = !item.isSelected;
+      console.log(this.itemsForDelete);
     },
     toggleFooter(item, event) {
       try {
@@ -107,8 +173,29 @@ export default {
       } catch (error) {
         return error
       }
-
-    }
+    },
+    toggleMainCircle() {
+      this.mainCircleIsActive = !this.mainCircleIsActive;
+      if (this.mainCircleIsActive) {
+        this.$store.state.items = this.$store.state.items.map(item => ({...item, isSelected: true}));
+      } else {
+        this.$store.state.items = this.$store.state.items.map(item => ({...item, isSelected: false}));
+      }
+    },
+    toggleModelWindow() {
+      if (this.itemsForDelete.length > 0) {
+        this.deleteModelWindowIsActive = !this.deleteModelWindowIsActive
+      }
+    },
+    toggleInput() {
+      this.inputValue = ''
+      this.inputIsActive = !this.inputIsActive;
+      if (this.inputIsActive) {
+        Telegram.WebApp.BackButton.show();
+      } else {
+        Telegram.WebApp.BackButton.hide();
+      }
+    },
   }
 }
 </script>
@@ -233,5 +320,89 @@ hr {
   border: 1px solid var(--app-hr-border-color);
   width: 97.5%;
   margin: 0 auto;
+}
+
+.model-wrapper {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background-color: rgb(0, 0, 0, 30%);
+  .model-window {
+    background-color: var(--app-card-background-color);
+    position: relative;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -75%);
+    width: 90%;
+    padding: 20px 5%;
+    border-radius: 15px;
+    .warning-span {
+      width: 100%;
+      font-size: 20px;
+      line-height: 24px;
+      text-align: center;
+      font-weight: bolder;
+      margin: 10px 0;
+    }
+    svg {
+      position: absolute;
+      right: 5%;
+    }
+    .block-items {
+      .item-for-delete {
+        padding: 5px 0;
+        div {
+          line-height: 24px;
+          padding: 5px 0;
+        }
+      }
+    }
+    .block-items > :last-child {
+      hr:last-child {
+        opacity: 0;
+      }
+    }
+    .button-block {
+      display: flex;
+      justify-content: space-around;
+      width: 100%;
+      margin: 5px 0 0;
+      button {
+        width: 47.5%;
+        height: 37px;
+        border-radius: 15px;
+        font-weight: 600;
+      }
+      button:first-child {
+        background-color: var(--app-button-delete-bg);
+        border: none;
+      }
+      button:last-child {
+        background-color: var(--app-button-bgcolor);
+        border: none;
+        box-shadow: 0 1px 2px 0 rgb(0, 0, 0, 25%);
+      }
+    }
+  }
+}
+
+.input-block {
+  margin: 20px 5%;
+  input {
+    width: 100%;
+    padding: 10px 20px;
+    border-radius: 15px;
+    background-color: var(--app-card-background-color);
+    color: var(--app-text-color);
+
+    &:focus {
+      outline: 2px solid var(--app-text-color);
+      &::placeholder {
+        opacity: 0;
+      }
+    }
+  }
 }
 </style>

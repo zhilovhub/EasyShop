@@ -51,7 +51,6 @@ export default {
       Telegram.WebApp.BackButton.hide();
       Telegram.WebApp.offEvent('mainButtonClicked', this.closeFilterComponent);
       Telegram.WebApp.offEvent('backButtonClicked', this.closeFilterComponent);
-      window.location.href = "/products-page";
       this.groupFilters();
       this.$emit("close");
     },

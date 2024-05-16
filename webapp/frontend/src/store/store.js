@@ -82,7 +82,8 @@ export const Store = new Vuex.Store({
     },
     setItems(state, items) {
       state.items = items;
-
+      state.items = state.items.map(item => ({ ...item, isSelected: false }));
+      state.items = state.items.map(item => ({...item, isActive: false}));
     },
     // checkOrderId() {
     //   if (Store.state.generatedOrderId !== '') {
