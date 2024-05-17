@@ -394,9 +394,9 @@ hr {
     width: 100%;
     padding: 10px 20px;
     border-radius: 15px;
-    background-color: var(--app-card-background-color);
     color: var(--app-text-color);
-
+    background: var(--app-card-background-color) url("@/assets/search.svg") no-repeat center right 3vw;
+    border: none;
     &:focus {
       outline: 2px solid var(--app-text-color);
       &::placeholder {
