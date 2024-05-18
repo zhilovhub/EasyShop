@@ -1,4 +1,7 @@
 <script>
+  import { tg } from '@/main.js'
+  import router from "@/router/router.js";
+
   export default {
     name: 'orderDetails',
     data() {
@@ -31,13 +34,11 @@
       }
     },
     mounted() {
-      let tg = window.Telegram.WebApp;
       this.$store.commit("addToSessionStorage");
       const BackButton = tg.BackButton;
-      const vm = this;
       BackButton.show();
       tg.onEvent('backButtonClicked', function() {
-        window.location.href = "/products-page/shopping-cart?bot_id=" + vm.$store.state.bot_id;
+        router.router.back();
       });
       tg.MainButton.text = "Отправить";
       tg.onEvent('mainButtonClicked', this.orderBtnClicked);

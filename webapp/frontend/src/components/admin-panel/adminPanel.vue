@@ -128,6 +128,7 @@
 <script>
 import FilterComponent from '@/components/products/filterComponent.vue'
 import { mapState } from 'vuex'
+import { tg } from '@/main.js'
 
 export default {
   data() {
@@ -142,7 +143,7 @@ export default {
   components: { FilterComponent },
   mounted() {
     this.$store.dispatch('itemsInit');
-    Telegram.WebApp.onEvent('backButtonClicked', this.toggleInput);
+    tg.onEvent('backButtonClicked', this.toggleInput);
   },
   computed: {
     ...mapState({
@@ -191,9 +192,9 @@ export default {
       this.inputValue = ''
       this.inputIsActive = !this.inputIsActive;
       if (this.inputIsActive) {
-        Telegram.WebApp.BackButton.show();
+        tg.BackButton.show();
       } else {
-        Telegram.WebApp.BackButton.hide();
+        tg.BackButton.hide();
       }
     },
   }

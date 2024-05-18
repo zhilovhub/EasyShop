@@ -57,7 +57,7 @@
           class="item-block"
           style="position: relative;"
       >
-        <img @click="redirectToProductCard(item.id)" v-if="item.picture" :src="`${apiUrl()}/files/` + item.picture" alt="img">
+        <img @click="redirectToProductCard(item.id)" v-if="item.picture" :src="`${this.$store.state.api_url}/files/` + item.picture" alt="img">
         <div style="margin: 10px 0;">
           <span style="font-size: 20px; font-weight: 600">
           {{priceComma(item.price)}}
@@ -109,7 +109,7 @@
 
 <script>
 
-import { apiUrl, bot_id } from '@/store/store.js'
+import { tg } from '@/main.js'
 import * as https from 'https'
 import router from '@/router/router.js'
 import FilterComponent from '/src/components/products/filterComponent.vue'
@@ -127,15 +127,9 @@ export default {
     }
   },
   methods: {
-    apiUrl() {
-      return apiUrl
-    },
-    bot_id() {
-      return bot_id
-    },
     onProductsPageButtonClick() {
-      window.location.href = "/products-page/shopping-cart/";
-      Telegram.WebApp.offEvent('mainButtonClicked', this);
+      router.router.push({ name: router.SHOPPING_CART })
+      tg.offEvent('mainButtonClicked', this);
     },
 
     priceComma(price) {
@@ -162,9 +156,9 @@ export default {
       this.$store.state.itemsAddToCartArray = this.$store.state.items.filter(item => item.count > 0);
       this.$store.commit("addToSessionStorage");
       if (this.itemsAddToCartArray.length> 0) {
-        window.Telegram.WebApp.MainButton.show();
+        tg.MainButton.show();
       } else {
-        window.Telegram.WebApp.MainButton.hide();
+        tg.MainButton.hide();
       }
     },
     shortenName(name) {
@@ -172,9 +166,8 @@ export default {
       return name.length > 18 ? name.substring(0, 15) + '...' : name;
     },
     redirectToProductCard(itemId) {
-      Telegram.WebApp.offEvent('mainButtonClicked', this.onProductsPageButtonClick);
-      window.Telegram.WebApp.MainButton.hide();
-      router.push('products-page/' + itemId);
+      router.router.push({ name: router.PRODUCT_CARD, params: { id: itemId }});
+
     },
     toggleInput() {
       this.fromPrice = null;
@@ -182,17 +175,17 @@ export default {
       this.inputValue = ''
       this.inputIsActive = !this.inputIsActive;
       if (this.inputIsActive) {
-        Telegram.WebApp.BackButton.show();
+        tg.BackButton.show();
       } else {
-        Telegram.WebApp.BackButton.hide();
+        tg.BackButton.hide();
       }
     },
     toggleFilterComponent() {
       if (this.filterComponentIs === false) {
-        Telegram.WebApp.offEvent('mainButtonClicked', this.toggleFilterComponent);
-        Telegram.WebApp.offEvent('backButtonClicked', this.toggleInput);
-        window.Telegram.WebApp.MainButton.hide();
-        window.Telegram.WebApp.BackButton.hide();
+        tg.offEvent('mainButtonClicked', this.toggleFilterComponent);
+        tg.offEvent('backButtonClicked', this.toggleInput);
+        tg.MainButton.hide();
+        tg.BackButton.hide();
       }
       this.filterComponentIs = !this.filterComponentIs;
     },
@@ -234,9 +227,14 @@ export default {
   },
   mounted() {
     this.itemsAddToCart();
-    window.Telegram.WebApp.MainButton.text = "В корзину";
-    Telegram.WebApp.onEvent('mainButtonClicked', this.onProductsPageButtonClick);
-    Telegram.WebApp.onEvent('backButtonClicked', this.toggleInput);
+
+    tg.MainButton.text = "В корзину";
+    tg.MainButton.color = "#59C0F9";
+    tg.MainButton.textColor = "#0C0C0C";
+
+    tg.onEvent('mainButtonClicked', this.onProductsPageButtonClick);
+    tg.onEvent('backButtonClicked', this.toggleInput);
+
     this.$store.dispatch('itemsInit').then(() => {
       this.isLoading = false;
       let tempCheckItems = sessionStorage.getItem('itemsAddToCartArray');
@@ -268,6 +266,11 @@ export default {
     });
      this.$store.commit("fetchOrderId");
      this.$store.commit("checkOrderId");
+  },
+
+  unmounted() {
+    console.log("beforeUnmount called")
+    tg.offEvent('mainButtonClicked', this.onProductsPageButtonClick);
   }
 };
 </script>

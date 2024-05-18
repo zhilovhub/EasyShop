@@ -1,22 +1,11 @@
 import Vuex from 'vuex'
+import { tg } from '@/main.js'
 
-let tg = window.Telegram.WebApp;
-tg.expand();
-tg.MainButton.text = "В корзину";
-tg.MainButton.color = "#59C0F9";
-tg.MainButton.textColor = "#0C0C0C";
-const url = new URL(window.location.href);
-export const bot_id = url.searchParams.get('bot_id');
-export const apiUrl = `https://ezbots.ru:2024`;
-// export const apiUrl = `https://ezbots.ru:${import.meta.env.VITE_API_PORT}`
-if (tg.colorScheme === 'dark') {
-  document.body.setAttribute('data-theme', 'dark');
-} else {
-  document.body.setAttribute('data-theme', 'light');
-}
 export const Store = new Vuex.Store({
   state: {
-    bot_id: bot_id,
+    bot_id: undefined,
+    api_url: `https://ezbots.ru:2024`,
+    // api_url: `https://ezbots.ru:${import.meta.env.VITE_API_PORT}`,
     itemsAddToCartArray: [],
     items: [],
 // {
@@ -139,7 +128,7 @@ export const Store = new Vuex.Store({
   actions: {
     async itemsInit({ commit }) {
       try {
-        const response = await fetch(`${apiUrl}/api/products/get_all_products/?bot_id=${bot_id}&price_min=0&price_max=2147483647`, {
+        const response = await fetch(`${Store.state.api_url}/api/products/get_all_products/?bot_id=${Store.state.bot_id}&price_min=0&price_max=2147483647`, {
           method: 'Post',
           headers: {
             'Content-Type': 'application/json',

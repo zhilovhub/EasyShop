@@ -35,6 +35,7 @@
 </template>
 
 <script>
+import { tg } from '@/main.js'
 export default {
   data() {
     return {
@@ -47,10 +48,10 @@ export default {
   name: "filterComponent",
   methods: {
     closeFilterComponent() {
-      Telegram.WebApp.MainButton.hide();
-      Telegram.WebApp.BackButton.hide();
-      Telegram.WebApp.offEvent('mainButtonClicked', this.closeFilterComponent);
-      Telegram.WebApp.offEvent('backButtonClicked', this.closeFilterComponent);
+      tg.MainButton.hide();
+      tg.BackButton.hide();
+      tg.offEvent('mainButtonClicked', this.closeFilterComponent);
+      tg.offEvent('backButtonClicked', this.closeFilterComponent);
       this.groupFilters();
       this.$emit("close");
     },
@@ -74,12 +75,11 @@ export default {
     }
   },
   mounted() {
-    let tg = window.Telegram.WebApp;
     tg.MainButton.show();
     tg.BackButton.show();
     tg.MainButton.text = "Применить";
-    Telegram.WebApp.onEvent('mainButtonClicked', this.closeFilterComponent);
-    Telegram.WebApp.onEvent('backButtonClicked', this.closeFilterComponent);
+    tg.onEvent('mainButtonClicked', this.closeFilterComponent);
+    tg.onEvent('backButtonClicked', this.closeFilterComponent);
   }
 };
 </script>

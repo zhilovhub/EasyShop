@@ -1,5 +1,6 @@
 <script>
-import { bot_id, apiUrl } from '@/store/store.js'
+import { tg } from '@/main.js'
+import router from "@/router/router.js";
 
 export default {
     name: 'ShoppingCart',
@@ -10,19 +11,17 @@ export default {
     },
     mounted() {
       this.$store.commit("addToSessionStorage");
-      let tg = window.Telegram.WebApp;
       const BackButton = tg.BackButton;
-      const vm = this;
       BackButton.show();
       tg.onEvent('backButtonClicked', function() {
           let tempItemsAddToCartArray = sessionStorage.getItem('itemsAddToCartArray')
           tempItemsAddToCartArray = JSON.parse(tempItemsAddToCartArray);
           sessionStorage.setItem('itemsAddToCartArray', JSON.stringify(tempItemsAddToCartArray));
-          window.location.href = "/products-page?bot_id=" + vm.$store.state.bot_id;
+          router.router.back();
       });
       tg.MainButton.text = "Начать оформление";
       tg.onEvent('mainButtonClicked', function(){
-        window.location.href = "/products-page/order-details/";
+        router.router.push({ name: router.ORDER_DETAILS })
       });
       tg.MainButton.show();
     },
@@ -32,12 +31,6 @@ export default {
       },
     },
     methods: {
-      apiUrl() {
-        return apiUrl
-      },
-      bot_id() {
-        return bot_id
-      },
       priceRub(price, count) {
         let totalValue = price * count
         const parts = totalValue.toString().split(/(?=(?:\d{3})+$)/);
@@ -84,7 +77,7 @@ export default {
         let tempItemsAddToCartArray = sessionStorage.getItem('itemsAddToCartArray')
         tempItemsAddToCartArray = JSON.parse(tempItemsAddToCartArray);
         sessionStorage.setItem('itemsAddToCartArray', JSON.stringify(tempItemsAddToCartArray));
-        window.location.href = "/products-page";
+        router.router.replace({ name: router.PRODUCTS_PAGE, params: { bot_id: this.$store.state.bot_id }});
       }
     },
     beforeUnmount() {
