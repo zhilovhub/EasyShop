@@ -113,7 +113,7 @@ export default {
       tg.offEvent('backButtonClicked', this.backButtonMethod);
       tg.BackButton.hide();
       tg.MainButton.hide();
-      router.router.replace({ name: router.PRODUCTS_PAGE, params: { bot_id: this.$store.state.bot_id }});
+      router.router.replace({ name: router.PRODUCTS_PAGE, query: { bot_id: this.$store.state.bot_id }});
     },
     backButtonMethod() {
       tg.offEvent('mainButtonClicked', this.addToShoppingCart);

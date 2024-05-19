@@ -77,7 +77,7 @@ export default {
         let tempItemsAddToCartArray = sessionStorage.getItem('itemsAddToCartArray')
         tempItemsAddToCartArray = JSON.parse(tempItemsAddToCartArray);
         sessionStorage.setItem('itemsAddToCartArray', JSON.stringify(tempItemsAddToCartArray));
-        router.router.replace({ name: router.PRODUCTS_PAGE, params: { bot_id: this.$store.state.bot_id }});
+        router.router.replace({ name: router.PRODUCTS_PAGE, query: { bot_id: this.$store.state.bot_id }});
       }
     },
     beforeUnmount() {
