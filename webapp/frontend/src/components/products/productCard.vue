@@ -1,26 +1,32 @@
 <template>
   <div>
-  <img @click="this.addToShoppingCart" v-if="productObject.picture" :src="`${this.$store.state.api_url}/files/` + productObject.picture" alt="main-picture">
+  <img @click="this.addToShoppingCart" v-if="productObject.picture" :src="`${this.apiUrl()}/files/` + productObject.picture" alt="main-picture">
   <div class="text">{{productObject.name}}</div>
   <div class="text">{{priceRub(productObject.price)}}</div>
-  <div class="block size">
-    <div class="span-block">
-      <h1>Размер</h1>
-      <span class="src">Размерная сетка</span>
+  <div v-for="(option, type) in productObject.extra_options">
+      <div class="block extra-options">
+        <div class="span-block">
+          <h1>{{type}}</h1>
+<!--        <span class="src">Размерная сетка</span>-->
+        </div>
+        <swiper
+          :slidesPerView="4.5"
+          :spaceBetween="10"
+          class="swiper-container"
+        >
+          <swiper-slide
+            v-for="(value, key) in option"
+            :key="key"
+            :modules="modules"
+            class="option-block"
+            @click="chooseOption($event.target)"
+          >
+          {{ key }}
+        </swiper-slide>
+      </swiper>
     </div>
-    <swiper
-      :slidesPerView="4.5"
-      :spaceBetween="10"
-      class="swiper-container">
-      <swiper-slide
-        v-for="size in productObject.sizes"
-        :modules="modules"
-        class="size-block"
-        @click="chooseSize($event.target)"
-      >{{size}}</swiper-slide>
-    </swiper>
   </div>
-  <div @click="toggleDescription" class="block block-description" :style="{ height: descriptionVisible ? 'auto' : '70px' }">
+  <div @click="toggleDescription" class="block block-description" :style="{ height: descriptionVisible ? 'auto' : '68.27px' }">
     <div class="span-block">
       <h1>Описание</h1>
       <svg style="cursor: pointer" width="19" height="9" viewBox="0 0 19 9" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
@@ -60,8 +66,6 @@
 <script>
 import { Swiper, SwiperSlide } from '@SwiperVue';
 import { Navigation } from '@Swiper'
-import { tg } from '@/main.js'
-import router from "@/router/router.js";
 
 export default {
   components: { SwiperSlide, Swiper },
@@ -84,16 +88,20 @@ export default {
     }
   },
   methods: {
+    apiUrl() {
+      return this.$store.state.api_url;
+    },
     priceRub(price) {
       const parts = price.toString().split(/(?=(?:\d{3})+$)/);
       return parts.join(' ') + '₽';
     },
-    chooseSize(target) {
-      const allSizes = document.querySelectorAll('.size-block');
-      allSizes.forEach(size => {
+    chooseOption(target) {
+      const allOptions = document.querySelectorAll('.option-block');
+      allOptions.forEach(size => {
         size.classList.remove('chosen');
       });
       target.classList.add('chosen');
+      this.productObject.chosenOption = target.innerText;
     },
     toggleDescription() {
       this.descriptionVisible = !this.descriptionVisible;
@@ -105,28 +113,32 @@ export default {
       this.rankedVisible = !this.rankedVisible;
     },
     addToShoppingCart() {
+      if (this.productObject.extra_options.length > 0 && this.productObject.chosenOption) {
+        return
+      }
       this.$store.state.items = this.$store.state.items.map(
         item => item.id === this.productId ? ({ ...item, count: item.count + 1 }) : item);
       sessionStorage.setItem('itemsAddToCartArray', JSON.stringify(this.$store.state.items.filter(item => item.count > 0)));
       this.$store.commit("addToSessionStorage");
-      tg.offEvent('mainButtonClicked', this.addToShoppingCart);
-      tg.offEvent('backButtonClicked', this.backButtonMethod);
-      tg.BackButton.hide();
-      tg.MainButton.hide();
-      router.router.replace({ name: router.PRODUCTS_PAGE, query: { bot_id: this.$store.state.bot_id }});
+      Telegram.WebApp.offEvent('mainButtonClicked', this.addToShoppingCart);
+      Telegram.WebApp.offEvent('backButtonClicked', this.backButtonMethod);
+      Telegram.WebApp.BackButton.hide();
+      Telegram.WebApp.MainButton.hide();
+      window.location.href = "/products-page";
     },
     backButtonMethod() {
-      tg.offEvent('mainButtonClicked', this.addToShoppingCart);
-      tg.offEvent('backButtonClicked', this.backButtonMethod);
-      tg.MainButton.hide();
-      tg.BackButton.hide();
-      router.router.back();
+      Telegram.WebApp.offEvent('mainButtonClicked', this.addToShoppingCart);
+      Telegram.WebApp.offEvent('backButtonClicked', this.backButtonMethod);
+      Telegram.WebApp.MainButton.hide();
+      Telegram.WebApp.BackButton.hide();
+      window.location.href = "/products-page";
     }
   },
   mounted() {
+    let tg = window.Telegram.WebApp;
     tg.MainButton.show();
-    tg.MainButton.text = "Начать оформление";
     tg.BackButton.show();
+    tg.MainButton.text = "Начать оформление";
     tg.onEvent('mainButtonClicked', this.addToShoppingCart);
     tg.onEvent('backButtonClicked', this.backButtonMethod);
   }
@@ -153,9 +165,10 @@ img {
 }
 .text {
   font-size: 32px;
+  line-height: 26px;
   font-weight: bold;
   color: var(--app-text-color);
-  padding: 10px 5%;
+  padding: 10px 5% 5px;
 }
 
 .block {
@@ -180,7 +193,7 @@ img {
   }
 }
 
-.size {
+.extra-options {
   margin: 10px 0;
   padding: 0;
   .span-block {
@@ -193,14 +206,17 @@ img {
 
 .swiper-container {
   margin: 10px 0;
-  .size-block {
+  .option-block {
     background-color: var(--app-background-color);
     width: 75px;
     height: 65px;
+    padding: 0 5px;
     border-radius: 15px;
+    word-break: break-word;
     display: flex;
     align-items: center;
     justify-content: center;
+    text-align: center;
   }
 }
 

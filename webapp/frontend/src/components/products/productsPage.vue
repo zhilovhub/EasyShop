@@ -35,7 +35,7 @@
     <div v-if="isLoading" class="loading-message">
       Загрузка...
     </div>
-    <div v-if="items.length === 0"
+    <div v-else-if="items.length === 0"
          style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -75%); text-align: center; width: 350px"
     >
       <div style="font-size: 24px; font-weight: 600; word-wrap: break-word; margin-bottom: 20px">Товары в магазине отсутствуют</div>
@@ -70,7 +70,7 @@
         <button
             type="button"
             v-if="item.count === 0"
-            @click="incrementCount(item) "
+            @click="buyButton(item)"
             id="buy-button"
         >
           Купить
@@ -160,6 +160,9 @@ export default {
       } else {
         tg.MainButton.hide();
       }
+    },
+    buyButton(item) {
+      this.redirectToProductCard(item.id);
     },
     shortenName(name) {
       if (!name) return '';
@@ -379,7 +382,6 @@ export default {
   left: 50%;
   transform: translate(-50%, -50%);
   text-align: center;
-  color: #FFFFFF;
   font-size: 24px;
 }
 
