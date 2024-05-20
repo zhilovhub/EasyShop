@@ -60,7 +60,7 @@ async def process_web_app_request(event: Message):
                 used_options = True
                 option_title = list(product.extra_options.items())[0][0]
                 chosen_options[option_title] = item['chosen_option']
-            item[item_id] = OrderItem(amount=item['amount'], used_extra_option=used_options,
+            items[item_id] = OrderItem(amount=item['amount'], used_extra_option=used_options,
                                       extra_options=chosen_options)
 
         data['items'] = items
