@@ -375,6 +375,7 @@ async def send_new_order_notify(order: OrderSchema, user_id: int):
     order_user_data = await bot.get_chat(order.from_user)
     products = [(await product_db.get_product(product_id), product_item.amount)
                 for product_id, product_item in order.items.items()]
+    logger.info(products)
 
     await bot.send_message(user_id, f"Так будет выглядеть у тебя уведомление о новом заказе 👇")
     await bot.send_message(
