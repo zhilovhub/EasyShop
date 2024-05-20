@@ -22,6 +22,7 @@ from bot.exceptions import InstanceAlreadyExists
 from bot.states.states import States
 from bot.handlers.routers import admin_bot_menu_router
 from bot.utils.custom_bot_api import start_custom_bot, stop_custom_bot
+from sqlalchemy.exc import IntegrityError
 
 from custom_bots.multibot import storage as custom_bot_storage
 
@@ -260,7 +261,10 @@ async def bot_menu_photo_handler(message: Message, state: FSMContext):
                                    picture=filename,
                                    article=params[0],
                                    category=[0])
-    await product_db.add_product(new_product)
+    try:
+        await product_db.add_product(new_product)
+    except IntegrityError:
+        return await message.answer("Товар с таким названием уже есть в боте.")
     await message.answer("Товар добавлен. Можно добавить ещё")
 
 
