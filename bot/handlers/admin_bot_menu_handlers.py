@@ -34,6 +34,13 @@ from database.models.product_model import ProductWithoutId
 async def process_web_app_request(event: Message):
     user_id = event.from_user.id
     try:
+        # {'bot_id': '33',
+        # 'raw_items':
+        #   {'38': {'amount': 4, 'chosen_option': 'на диске'}},
+        # 'ordered_at': '2024-05-20T      15:02:42.353Z',
+        # 'town': 'sd\nsdsd\n\nsd\n\n',
+        # 'address': 'sd', 'comment': ''}
+
         data = json.loads(event.web_app_data.data)
         logger.info(f"receive web app data: {data}")
 
@@ -44,7 +51,15 @@ async def process_web_app_request(event: Message):
         items: dict[int, OrderItem] = {}
 
         for item_id, item in data['raw_items'].items():
-            item[item_id] = OrderItem(**item)
+            product = await product_db.get_product(item_id)
+            chosen_options = {}
+            used_options = False
+            if 'chosen_option' in item and item['chosen_option']:
+                used_options = True
+                option_title = list(product.extra_options.items())[0][0]
+                chosen_options[option_title] = item['chosen_option']
+            item[item_id] = OrderItem(amount=item['amount'], used_extra_option=used_options,
+                                      extra_options=chosen_options)
 
         data['items'] = items
 
