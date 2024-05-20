@@ -66,15 +66,17 @@
 <script>
 import { Swiper, SwiperSlide } from '@SwiperVue';
 import { Navigation } from '@Swiper'
+import { tg } from '@/main.js'
+import router from "@/router/router.js";
 
 export default {
   components: { SwiperSlide, Swiper },
   data() {
     return {
       productId: parseInt(this.$route.params.id),
-      descriptionVisible: false,
-      feedbackVisible: false,
-      rankedVisible: false,
+      descriptionVisible: true,
+      feedbackVisible: true,
+      rankedVisible: true,
     }
   },
   setup() {
@@ -114,33 +116,54 @@ export default {
     },
     addToShoppingCart() {
       if (this.productObject.extra_options.length > 0 && this.productObject.chosenOption) {
-        return
+        // return  TODO raise window that user need choose an option
       }
-      this.$store.state.items = this.$store.state.items.map(
-        item => item.id === this.productId ? ({ ...item, count: item.count + 1 }) : item);
-      sessionStorage.setItem('itemsAddToCartArray', JSON.stringify(this.$store.state.items.filter(item => item.count > 0)));
-      this.$store.commit("addToSessionStorage");
-      Telegram.WebApp.offEvent('mainButtonClicked', this.addToShoppingCart);
-      Telegram.WebApp.offEvent('backButtonClicked', this.backButtonMethod);
-      Telegram.WebApp.BackButton.hide();
-      Telegram.WebApp.MainButton.hide();
-      window.location.href = "/products-page";
+
+      let matchingItem = this.$store.state.items.find(item => item.id === this.productId);
+      matchingItem.countInCart += 1
+
+      let matchingItemInCartArrayIndex = this.$store.state.itemsAddToCartArray.findIndex(
+          item => item.id === matchingItem.id
+      )
+
+      if (matchingItemInCartArrayIndex !== -1) {
+        this.$store.state.itemsAddToCartArray[matchingItemInCartArrayIndex] = matchingItem
+      } else {
+        this.$store.state.itemsAddToCartArray.push(matchingItem)
+      }
+
+      router.router.replace({ name: router.PRODUCTS_PAGE, query: { bot_id: this.$store.state.bot_id }});
     },
     backButtonMethod() {
-      Telegram.WebApp.offEvent('mainButtonClicked', this.addToShoppingCart);
-      Telegram.WebApp.offEvent('backButtonClicked', this.backButtonMethod);
-      Telegram.WebApp.MainButton.hide();
-      Telegram.WebApp.BackButton.hide();
-      window.location.href = "/products-page";
+      router.router.back();
+    },
+
+    setFirstOptionChosen() {
+      let firstOption = document.querySelector('.option-block');
+      if (firstOption) {
+        firstOption.classList.add('chosen');
+      }
+      const firstKey = Object.keys(this.productObject.extra_options)[0];
+      const firstInnerKey = Object.keys(this.productObject.extra_options[firstKey])[0];
+      this.productObject.chosenOption = firstInnerKey
+      console.log(firstInnerKey);
     }
   },
   mounted() {
-    let tg = window.Telegram.WebApp;
-    tg.MainButton.show();
-    tg.BackButton.show();
-    tg.MainButton.text = "Начать оформление";
-    tg.onEvent('mainButtonClicked', this.addToShoppingCart);
+    tg.BackButton.show();  // показываем всегда самой первой строчкой
+
+    this.$nextTick(this.setFirstOptionChosen)
+
+    tg.MainButton.text = "Добавить";  // сначала назначаем цвета и текст кнопкам
+
+    tg.onEvent('mainButtonClicked', this.addToShoppingCart);  // затем навешиваем листенеры
     tg.onEvent('backButtonClicked', this.backButtonMethod);
+
+    tg.MainButton.show();  // и только после всех настроек кнопок показываем главную кнопку
+  },
+  unmounted() {
+    tg.offEvent('mainButtonClicked', this.addToShoppingCart);
+    tg.offEvent('backButtonClicked', this.backButtonMethod);
   }
 };
 </script>

@@ -9,61 +9,46 @@ export default {
         inputValue: ''
       }
     },
-    mounted() {
-      this.$store.commit("addToSessionStorage");
-      const BackButton = tg.BackButton;
-      BackButton.show();
-      tg.onEvent('backButtonClicked', function() {
-          let tempItemsAddToCartArray = sessionStorage.getItem('itemsAddToCartArray')
-          tempItemsAddToCartArray = JSON.parse(tempItemsAddToCartArray);
-          sessionStorage.setItem('itemsAddToCartArray', JSON.stringify(tempItemsAddToCartArray));
-          router.router.back();
-      });
-      tg.MainButton.text = "Начать оформление";
-      tg.onEvent('mainButtonClicked', function(){
-        router.router.push({ name: router.ORDER_DETAILS })
-      });
-      tg.MainButton.show();
-    },
     computed: {
       itemsAddToCartArray() {
         return this.$store.state.itemsAddToCartArray;
       },
     },
     methods: {
+      backButtonMethod() {
+        router.router.back();
+      },
+      mainButtonMethod() {
+        router.router.push({ name: router.ORDER_DETAILS });
+      },
       priceRub(price, count) {
         let totalValue = price * count
         const parts = totalValue.toString().split(/(?=(?:\d{3})+$)/);
         return parts.join(' ') + ' ₽';
       },
       incrementCount(item) {
-        if (item && typeof item.count === 'number') {
-          item.count += 1;
-          this.itemsAddToCart();
+        if (item && typeof item.countInCart === 'number') {
+          item.countInCart += 1;
           this.totalPriceCalc();
         } else {
           console.error('Ошибка: объект item или count не определены.');
         }
       },
       decrementCount(item) {
-        if (item && typeof item.count === 'number') {
-          if (item.count > 1)
+        if (item && typeof item.countInCart === 'number') {
+          if (item.countInCart > 1)
           {
-            item.count -= 1;
+            item.countInCart -= 1;
           } else {
-            item.count = 1
+            item.countInCart = 1
           }
           this.totalPriceCalc();
-          this.itemsAddToCart();
         } else {
           console.error('Ошибка: объект item или count не определены.');
         }
       },
-      itemsAddToCart() {
-        this.$store.commit("addToSessionStorage");
-      },
       totalPriceCalc() {
-        let price = this.itemsAddToCartArray.reduce((total, item) => total + item.price*item.count, 0);
+        let price = this.itemsAddToCartArray.reduce((total, item) => total + item.price*item.countInCart, 0);
         if (price <= 0) {
           return 'Закать: 0 ₽'
         }
@@ -74,13 +59,21 @@ export default {
         return name.length > 20 ? name.substring(0, 15) + '...' : name;
       },
       backToMainPage() {
-        let tempItemsAddToCartArray = sessionStorage.getItem('itemsAddToCartArray')
-        tempItemsAddToCartArray = JSON.parse(tempItemsAddToCartArray);
-        sessionStorage.setItem('itemsAddToCartArray', JSON.stringify(tempItemsAddToCartArray));
         router.router.replace({ name: router.PRODUCTS_PAGE, query: { bot_id: this.$store.state.bot_id }});
       }
     },
-    beforeUnmount() {
+    mounted() {
+      tg.BackButton.show();
+
+      tg.MainButton.text = "Начать оформление";
+
+      tg.onEvent('backButtonClicked', this.backButtonMethod);
+      tg.onEvent('mainButtonClicked', this.mainButtonMethod);
+    },
+    unmounted() {
+      tg.offEvent('backButtonClicked', this.backButtonMethod);
+      tg.offEvent('mainButtonClicked', this.mainButtonMethod);
+
       this.$store.state.comment = this.inputValue;
     }
 }
@@ -110,14 +103,14 @@ export default {
         <div style="display: flex; flex-direction: column; justify-content: space-between; padding: 0 2.5%">
           <div class="text-block">
             <span style="font-size: 15px; margin-bottom: 10px">{{ shortenName(item.name) }}</span>
-            <span style="font-weight: bold; font-size: 20px;">{{priceRub(item.price, item.count)}}</span>
+            <span style="font-weight: bold; font-size: 20px;">{{priceRub(item.price, item.countInCart)}}</span>
           </div>
           <div class="buttons">
             <div class="countDivBtn">
               <div
                 @click="decrementCount(item)"
               >-</div>
-              {{item.count}}
+              {{item.countInCart}}
               <div
                 @click="incrementCount(item)"
               >+</div>

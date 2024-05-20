@@ -61,16 +61,9 @@ export const Store = new Vuex.Store({
     serviceItems: []
   },
   mutations: {
-    addToSessionStorage(state) {
-      if (state.itemsAddToCartArray.length>0) {
-        sessionStorage.setItem('itemsAddToCartArray', JSON.stringify(state.itemsAddToCartArray));
-      } else {
-        let items = sessionStorage.getItem('itemsAddToCartArray');
-        state.itemsAddToCartArray = JSON.parse(items) || [];
-      }
-    },
     setItems(state, items) {
       state.items = items;
+      state.items = state.items.map(item => ({ ...item, countInCart: 0 }));
       state.items = state.items.map(item => ({ ...item, isSelected: false }));
       state.items = state.items.map(item => ({...item, isActive: false}));
     },
@@ -113,7 +106,7 @@ export const Store = new Vuex.Store({
         'order_id': Store.state.generatedOrderId,
         'bot_id': Store.state.bot_id,
         'raw_items': Store.state.itemsAddToCartArray.reduce((acc, item) => {
-          acc[item.id] = {"amount": item.count, "used_extra_options": item.used_extra_options, "extra_options": item.extra_options};
+          acc[item.id] = {"amount": item.countInCart, "used_extra_options": item.used_extra_options, "extra_options": item.extra_options};
           return acc;
         },{}),
         'payment_method': Store.state.paymentMethod,
@@ -140,6 +133,7 @@ export const Store = new Vuex.Store({
           throw new Error('Network response was not ok');
         }
         const data = await response.json();
+
         console.log(data);
         commit('setItems', data);
       } catch (error) {

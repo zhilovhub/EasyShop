@@ -17,7 +17,7 @@
         return this.$store.state.itemsAddToCartArray;
       },
       totalPrice() {
-        let price = this.itemsAddToCartArray.reduce((total, item) => total + item.price*item.count, 0);
+        let price = this.itemsAddToCartArray.reduce((total, item) => total + item.price*item.countInCart, 0);
         if (price <= 0) {
           return '0 ₽'
         }
@@ -25,24 +25,13 @@
         return parts.join(' ') + ' ₽';
       },
       totalCount() {
-        let count = this.itemsAddToCartArray.reduce((total, item) => total + item.count, 0);
+        let count = this.itemsAddToCartArray.reduce((total, item) => total + item.countInCart, 0);
         return count + ' товаров на сумму'
       },
       orderId () {
         this.$store.commit("checkOrderId");
         return this.$store.state.generatedOrderId
       }
-    },
-    mounted() {
-      this.$store.commit("addToSessionStorage");
-      const BackButton = tg.BackButton;
-      BackButton.show();
-      tg.onEvent('backButtonClicked', function() {
-        router.router.back();
-      });
-      tg.MainButton.text = "Отправить";
-      tg.onEvent('mainButtonClicked', this.orderBtnClicked);
-      tg.MainButton.show();
     },
     methods: {
       orderBtnClicked() {
@@ -74,9 +63,25 @@
         // this.$store.state.paymentMethod = selectedOption;
         this.$store.state.address = this.inputValue;
         this.$store.commit("postData");
-        sessionStorage.setItem('itemsAddToCartArray', JSON.stringify([]));
+      },
+      backButtonMethod() {
+        router.router.back();
       }
     },
+    mounted() {
+      tg.BackButton.show();
+
+      tg.MainButton.text = "Заказать";
+
+      tg.onEvent('backButtonClicked', this.backButtonMethod);
+      tg.onEvent('mainButtonClicked', this.orderBtnClicked);
+
+      tg.MainButton.show();
+    },
+    unmounted() {
+      tg.offEvent('backButtonClicked', this.backButtonMethod);
+      tg.offEvent('mainButtonClicked', this.orderBtnClicked);
+    }
   }
 </script>
 

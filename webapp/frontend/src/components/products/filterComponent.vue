@@ -48,10 +48,6 @@ export default {
   name: "filterComponent",
   methods: {
     closeFilterComponent() {
-      tg.MainButton.hide();
-      tg.BackButton.hide();
-      tg.offEvent('mainButtonClicked', this.closeFilterComponent);
-      tg.offEvent('backButtonClicked', this.closeFilterComponent);
       this.groupFilters();
       this.$emit("close");
     },
@@ -75,11 +71,18 @@ export default {
     }
   },
   mounted() {
-    tg.MainButton.show();
     tg.BackButton.show();
+
     tg.MainButton.text = "Применить";
+
     tg.onEvent('mainButtonClicked', this.closeFilterComponent);
     tg.onEvent('backButtonClicked', this.closeFilterComponent);
+
+    tg.MainButton.show();
+  },
+  unmounted() {
+    tg.offEvent('mainButtonClicked', this.closeFilterComponent);
+    tg.offEvent('backButtonClicked', this.closeFilterComponent);
   }
 };
 </script>

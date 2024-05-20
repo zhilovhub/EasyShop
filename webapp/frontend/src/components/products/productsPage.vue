@@ -2,7 +2,7 @@
   <FilterComponent @group="receivedData" @close="filterComponentIs = false" v-if="filterComponentIs"/>
   <div v-else>
   <div class="input-block" v-if="inputIsActive">
-    <input autofocus @focusout="toggleInput" v-model="inputValue" placeholder="Введите название продукта">
+    <input v-model="inputValue" placeholder="Введите название продукта">
   </div>
   <div v-else class="header">
     <span>Каталог</span>
@@ -69,7 +69,7 @@
         </div>
         <button
             type="button"
-            v-if="item.count === 0"
+            v-if="item.countInCart === 0"
             @click="buyButton(item)"
             id="buy-button"
         >
@@ -98,8 +98,8 @@
             </svg>
           </button>
         </div>
-        <div v-if="item.count > 0" class="circle">
-          {{item.count}}
+        <div v-if="item.countInCart > 0" class="circle">
+          {{item.countInCart}}
         </div>
       </li>
     </ul>
@@ -129,7 +129,6 @@ export default {
   methods: {
     onProductsPageButtonClick() {
       router.router.push({ name: router.SHOPPING_CART })
-      tg.offEvent('mainButtonClicked', this);
     },
 
     priceComma(price) {
@@ -137,25 +136,24 @@ export default {
       return parts.join(' ') + ' ₽';
     },
     incrementCount(item) {
-      if (item && typeof item.count === 'number') {
-        item.count += 1;
+      if (item && typeof item.countInCart === 'number') {
+        item.countInCart += 1;
         this.itemsAddToCart();
       } else {
         console.error('Ошибка: объект item или count не определены.');
       }
     },
     decrementCount(item) {
-      if (item && typeof item.count === 'number') {
-        item.count -= 1;
+      if (item && typeof item.countInCart === 'number') {
+        item.countInCart -= 1;
         this.itemsAddToCart();
       } else {
         console.error('Ошибка: объект item или count не определены.');
       }
     },
     itemsAddToCart() {
-      this.$store.state.itemsAddToCartArray = this.$store.state.items.filter(item => item.count > 0);
-      this.$store.commit("addToSessionStorage");
-      if (this.itemsAddToCartArray.length> 0) {
+      this.$store.state.itemsAddToCartArray = this.$store.state.items.filter(item => item.countInCart > 0);
+      if (this.$store.state.itemsAddToCartArray.length > 0) {
         tg.MainButton.show();
       } else {
         tg.MainButton.hide();
@@ -172,16 +170,21 @@ export default {
       router.router.push({ name: router.PRODUCT_CARD, params: { id: itemId }});
 
     },
+    closeSearching() {
+      tg.BackButton.hide();
+
+      this.inputIsActive = false;
+      tg.offEvent('backButtonClicked', this);
+    },
     toggleInput() {
       this.fromPrice = null;
       this.toPrice = null;
       this.inputValue = ''
-      this.inputIsActive = !this.inputIsActive;
-      if (this.inputIsActive) {
-        tg.BackButton.show();
-      } else {
-        tg.BackButton.hide();
-      }
+      this.inputIsActive = true;
+
+      tg.onEvent('backButtonClicked', this.closeSearching);
+
+      tg.BackButton.show();
     },
     toggleFilterComponent() {
       if (this.filterComponentIs === false) {
@@ -200,8 +203,8 @@ export default {
     //   $event.target.classList.add('animation-button');
     //   setTimeout(() => {
     //     $event.target.classList.remove('animation-button');
-    //     if (item && typeof item.count === 'number') {
-    //       item.count += 1;
+    //     if (item && typeof item.countInCart === 'number') {
+    //       item.countInCart += 1;
     //       this.itemsAddToCart();
     //     } else {
     //       console.error('Ошибка: объект item или count не определены.');
@@ -215,9 +218,6 @@ export default {
     items() {
       return this.$store.state.items;
     },
-    itemsAddToCartArray() {
-      return this.$store.state.itemsAddToCartArray;
-    },
     filteredItems() {
       if (!this.items) return [];
 
@@ -229,7 +229,7 @@ export default {
     },
   },
   mounted() {
-    this.itemsAddToCart();
+    tg.BackButton.hide();  // если что-то прячем, то делаем это сразу
 
     tg.MainButton.text = "В корзину";
     tg.MainButton.color = "#59C0F9";
@@ -238,37 +238,28 @@ export default {
     tg.onEvent('mainButtonClicked', this.onProductsPageButtonClick);
     tg.onEvent('backButtonClicked', this.toggleInput);
 
+    let itemsAddToCartArray = this.$store.state.itemsAddToCartArray;  // Проверяем, есть ли в корзине товары
+    if (itemsAddToCartArray.length > 0) {
+      tg.MainButton.show();
+    } else {
+      tg.MainButton.hide();
+    }
+
     this.$store.dispatch('itemsInit').then(() => {
-      this.isLoading = false;
-      let tempCheckItems = sessionStorage.getItem('itemsAddToCartArray');
-      tempCheckItems = JSON.parse(tempCheckItems);
-      if (tempCheckItems && tempCheckItems.length > 0 && tempCheckItems.length !== this.items.length) {
-        //Проверка совпадает ли длина из хранилища сессии с длиной из сервера, если не совпадает, то заменяется только совпадающий элемент(т.е его поле count).
+      if (itemsAddToCartArray && itemsAddToCartArray.length > 0) {
+        // Обновляем currentCount (количество в корзине) у полученных с бекенда всех товаров
         let resultArray = [];
         for (let i = 0; i < this.$store.state.items.length; i++) {
-          let matchingItem = tempCheckItems.find(item => item.id === this.$store.state.items[i].id);
+          let matchingItem = itemsAddToCartArray.find(item => item.id === this.$store.state.items[i].id);
           resultArray.push(matchingItem || this.$store.state.items[i]);
         }
         this.$store.state.items = resultArray;
         this.itemsAddToCart();
       }
-      else if(tempCheckItems && tempCheckItems.length > 0) {
-        //Если все элементы из локального хранилища совпадают с теми, что на сервере, то приоритет отдаётся тем, что в хранилище сессии.
-        let itemsMatch = true;
-        for (let i = 0; i < this.items.length; i++) {
-          if (this.items[i].id !== tempCheckItems[i].id) {
-            itemsMatch = false;
-            break;
-          }
-        }
-        if (itemsMatch) {
-          this.$store.state.items = tempCheckItems;
-          this.itemsAddToCart();
-        }
-      }
+      this.isLoading = false;
     });
-     this.$store.commit("fetchOrderId");
-     this.$store.commit("checkOrderId");
+     // this.$store.commit("fetchOrderId");
+     // this.$store.commit("checkOrderId");
   },
 
   unmounted() {
