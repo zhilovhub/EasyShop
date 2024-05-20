@@ -29,6 +29,8 @@ from database.models.bot_model import BotSchemaWithoutId
 from database.models.order_model import OrderSchema, OrderNotFound, OrderItem
 from database.models.product_model import ProductWithoutId
 
+import random
+
 
 @admin_bot_menu_router.message(F.web_app_data)
 async def process_web_app_request(event: Message):
@@ -62,6 +64,10 @@ async def process_web_app_request(event: Message):
                                       extra_options=chosen_options)
 
         data['items'] = items
+
+        date = datetime.now().strftime("%d%m%y")
+        random_string = ''.join(random.sample(string.digits + string.ascii_letters, 5))
+        data['order_id'] = date + random_string
 
         order = OrderSchema(**data)
 
