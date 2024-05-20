@@ -97,12 +97,12 @@ class OrderSchema(BaseModel):
             case _:
                 return "❓ Неизвестен"
 
-    def convert_to_notification_text(self, products: list[tuple[ProductSchema, int]], username: str = '@username',
+    def convert_to_notification_text(self, products: list[tuple[ProductSchema, int, dict]], username: str = '@username',
                                      is_admin: bool = False) -> str:
         products_converted = []
         total_price = 0
         for ind, product_item in enumerate(products, start=1):
-            products_converted.append(f"{ind}. {product_item[0].convert_to_notification_text(product_item[1])}")
+            products_converted.append(f"{ind}. {product_item[0].convert_to_notification_text(product_item[1], product_item[2])}")
             total_price += product_item[0].price * product_item[1]
 
         products_text = "\n".join(products_converted)

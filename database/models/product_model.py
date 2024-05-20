@@ -109,8 +109,12 @@ class ProductWithoutId(BaseModel):
 class ProductSchema(ProductWithoutId):
     id: int
 
-    def convert_to_notification_text(self, count: int) -> str:
-        return f"<b>{self.name} {self.price}₽ x {count}шт</b>"
+    def convert_to_notification_text(self, count: int, extra_options: dict) -> str:
+        if extra_options is not None:
+            options = "".join([f"{title} : {opt}" for title, opt in extra_options.items()])
+        else:
+            options = ""
+        return f"<b>{self.name} <i>{options}</i> {self.price}₽ x {count}шт</b>"
 
 
 class ProductDao(Dao):
