@@ -53,8 +53,6 @@ export const Store = new Vuex.Store({
           throw new Error('Network response was not ok');
         }
         const data = await response.json();
-
-        console.log(data);
         commit('setItems', data);
       } catch (error) {
         console.error('There was a problem with the fetch operation:', error);

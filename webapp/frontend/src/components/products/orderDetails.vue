@@ -30,30 +30,27 @@
         const townValue = document.getElementById('townValue');
         const addressValue = document.getElementById('addressValue');
         const commentValue = document.getElementById('commentValue')
-        // const paymentMethod = document.getElementById('payment-method')
-        // const selectedOption = paymentMethod.options[paymentMethod.selectedIndex].value
         if (townValue.value === '' && addressValue.value === '') {
           townValue.style.border = '1px solid #ff003c';
-          townValue.placeholder = 'Поле с адресом не может быть пустым';
+          townValue.placeholder = 'Поле не может быть пустым';
           townValue.classList.add('red-placeholder');
           addressValue.style.border = '1px solid #ff003c';
-          addressValue.placeholder = 'Поле с адресом не может быть пустым';
+          addressValue.placeholder = 'Поле не может быть пустым';
           addressValue.classList.add('red-placeholder');
           return
         }
         if (townValue.value === '') {
           townValue.style.border = '1px solid #ff003c';
-          townValue.placeholder = 'Поле с адресом не может быть пустым';
+          townValue.placeholder = 'Поле не может быть пустым';
           townValue.classList.add('red-placeholder');
           return
         }
         if (addressValue.value === '') {
           addressValue.style.border = '1px solid #ff003c';
-          addressValue.placeholder = 'Поле с адресом не может быть пустым';
+          addressValue.placeholder = 'Поле не может быть пустым';
           addressValue.classList.add('red-placeholder');
           return
         }
-        // this.$store.state.paymentMethod = selectedOption;
         this.$store.state.town = this.townValue;
         this.$store.state.address = this.addressValue;
         this.$store.state.comment = this.commentValue;
@@ -85,11 +82,11 @@
     <br>
     <div style="font-size: 20px; font-weight: bold; margin: 0 5%;">Заказ</div>
     <div class="title-div">
-    <img style="width: 150px; height: 150px; border-radius: 15px;" src="https://th.bing.com/th/id/OIP.3S7vYZFSXZvIL89KCcpNoAHaHa?rs=1&pid=ImgDetMain" alt="image">
+    <img style="width: 150px; height: 150px; border-radius: 15px;" :src="`${this.$store.state.api_url}/files/` + itemsAddToCartArray[0].picture" alt="image">
     <div class="title-text">
       <div style="display: flex; flex-direction: column">
-        <span style="font-size: 20px; font-weight: bold; line-height: 1.5rem">Модель кроссовок</span>
-        <span style="font-size: 16px;">Краткое описание</span>
+        <span style="font-size: 20px; font-weight: bold; line-height: 1.5rem">{{ itemsAddToCartArray[0].name }}</span>
+        <span style="font-size: 16px;">Краткое описание || {{itemsAddToCartArray[0].description}}</span>
       </div>
       <div style="font-size: 20px; font-weight: bold; margin: 15px 15px 15px 0">{{totalPrice}}</div>
     </div>
