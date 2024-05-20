@@ -86,7 +86,7 @@
     <div class="title-text">
       <div style="display: flex; flex-direction: column">
         <span style="font-size: 20px; font-weight: bold; line-height: 1.5rem">{{ itemsAddToCartArray[0].name }}</span>
-        <span style="font-size: 16px;">Краткое описание || {{itemsAddToCartArray[0].description}}</span>
+<!--        <span style="font-size: 16px;">Краткое описание || {{itemsAddToCartArray[0].description}}</span>-->
       </div>
       <div style="font-size: 20px; font-weight: bold; margin: 15px 15px 15px 0">{{totalPrice}}</div>
     </div>
