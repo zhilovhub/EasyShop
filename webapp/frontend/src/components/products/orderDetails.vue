@@ -24,19 +24,12 @@
         const parts = price.toString().split(/(?=(?:\d{3})+$)/);
         return parts.join(' ') + ' ₽';
       },
-      totalCount() {
-        let count = this.itemsAddToCartArray.reduce((total, item) => total + item.countInCart, 0);
-        return count + ' товаров на сумму'
-      },
-      orderId () {
-        this.$store.commit("checkOrderId");
-        return this.$store.state.generatedOrderId
-      }
     },
     methods: {
       orderBtnClicked() {
         const townValue = document.getElementById('townValue');
         const addressValue = document.getElementById('addressValue');
+        const commentValue = document.getElementById('commentValue')
         // const paymentMethod = document.getElementById('payment-method')
         // const selectedOption = paymentMethod.options[paymentMethod.selectedIndex].value
         if (townValue.value === '' && addressValue.value === '') {
@@ -61,7 +54,9 @@
           return
         }
         // this.$store.state.paymentMethod = selectedOption;
-        this.$store.state.address = this.inputValue;
+        this.$store.state.town = this.townValue;
+        this.$store.state.address = this.addressValue;
+        this.$store.state.comment = this.commentValue;
         this.$store.commit("postData");
       },
       backButtonMethod() {
@@ -92,7 +87,6 @@
     <div class="title-div">
     <img style="width: 150px; height: 150px; border-radius: 15px;" src="https://th.bing.com/th/id/OIP.3S7vYZFSXZvIL89KCcpNoAHaHa?rs=1&pid=ImgDetMain" alt="image">
     <div class="title-text">
-<!--      <span style="font-size: 24px; margin-bottom: 15px; line-height: 1.5rem">Заказ №{{orderId}}</span>-->
       <div style="display: flex; flex-direction: column">
         <span style="font-size: 20px; font-weight: bold; line-height: 1.5rem">Модель кроссовок</span>
         <span style="font-size: 16px;">Краткое описание</span>

@@ -99,11 +99,12 @@ export default {
     },
     chooseOption(target) {
       const allOptions = document.querySelectorAll('.option-block');
-      allOptions.forEach(size => {
-        size.classList.remove('chosen');
+      allOptions.forEach(option => {
+        option.classList.remove('chosen');
       });
       target.classList.add('chosen');
       this.productObject.chosenOption = target.innerText;
+      console.log(this.$store.state.items);
     },
     toggleDescription() {
       this.descriptionVisible = !this.descriptionVisible;
