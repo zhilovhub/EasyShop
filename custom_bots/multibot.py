@@ -313,8 +313,8 @@ async def handle_order_callback(query: CallbackQuery):
         case "order_cancel":
             order.status = OrderStatusValues.CANCELLED
             await order_db.update_order(order)
-            products = [(await product_db.get_product(int(product_id)), amount) for product_id, amount in
-                        order.products.items()]
+            products = [(await product_db.get_product(int(product_id)), product_item.amount, product_item.extra_options)
+                        for product_id, product_item in order.items.items()]
             await query.message.edit_text(order.convert_to_notification_text(products=products), reply_markup=None)
             msg_id_data = PREV_ORDER_MSGS.get_data()
             await main_bot.edit_message_text(
