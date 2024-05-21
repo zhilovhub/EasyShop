@@ -142,7 +142,10 @@ async def add_bot_handler(request):
     except TelegramUnauthorizedError:
         return web.Response(status=400, text="Unauthorized telegram token.")
     await new_bot.delete_webhook(drop_pending_updates=True)
-    await new_bot.set_webhook(OTHER_BOTS_URL.format(bot_token=bot.token))
+    await new_bot.set_webhook(
+        OTHER_BOTS_URL.format(bot_token=bot.token),
+        allowed_updates=["message", "my_chat_member", "callback_query"]
+    )
     return web.Response(text=f"Started bot with token ({bot.token}) and username (@{new_bot_data.username})")
 
 
