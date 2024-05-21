@@ -1,5 +1,8 @@
 import json
+import random
+import string
 import time
+from datetime import datetime
 
 from aiogram import F, Bot
 from aiogram.exceptions import TelegramAPIError
@@ -12,7 +15,7 @@ from custom_bots.handlers.routers import multi_bot_router
 from custom_bots.multibot import logger, order_db, product_db, bot_db, main_bot, PREV_ORDER_MSGS, custom_bot_user_db, CustomUserStates, QUESTION_MESSAGES, format_locales
 from database.models.bot_model import BotNotFound
 from database.models.custom_bot_user_model import CustomBotUserNotFound
-from database.models.order_model import OrderSchema, OrderStatusValues, OrderNotFound
+from database.models.order_model import OrderSchema, OrderStatusValues, OrderNotFound, OrderItem
 
 
 @multi_bot_router.message(F.web_app_data)
@@ -24,18 +27,32 @@ async def process_web_app_request(event: Message):
         data = json.loads(event.web_app_data.data)
         logger.info(f"receive web app data: {data}")
 
-        order_params = ('order_id', 'products', 'payment_method', 'ordered_at', 'address', 'comment', 'bot_id')
-        order_data = {k: v for k, v in data.items() if k in order_params}
+        data["from_user"] = user_id
+        data["payment_method"] = "Картой Онлайн"
+        data["status"] = "backlog"
 
-        order_data["from_user"] = user_id
-        order_data["payment_method"] = "Картой Онлайн"
-        order_data["status"] = "backlog"
-        order_data["count"] = 0
+        items: dict[int, OrderItem] = {}
 
-        order = OrderSchema(**order_data)
+        for item_id, item in data['raw_items'].items():
+            product = await product_db.get_product(item_id)
+            chosen_options = {}
+            used_options = False
+            if 'chosen_option' in item and item['chosen_option']:
+                used_options = True
+                option_title = list(product.extra_options.items())[0][0]
+                chosen_options[option_title] = item['chosen_option']
+            items[item_id] = OrderItem(amount=item['amount'], used_extra_option=used_options,
+                                       extra_options=chosen_options)
 
-        order.from_user = user_id
+        data['items'] = items
+
+        date = datetime.now().strftime("%d%m%y")
+        random_string = ''.join(random.sample(string.digits + string.ascii_letters, 5))
+        data['order_id'] = date + random_string
+
+        order = OrderSchema(**data)
         order.ordered_at = order.ordered_at.replace(tzinfo=None)
+
         await order_db.add_order(order)
 
         logger.info(f"order with id #{order.id} created")
@@ -43,8 +60,8 @@ async def process_web_app_request(event: Message):
         logger.error("error while creating order", exc_info=True)
         return await event.answer("Произошла ошибка при создании заказа, попробуйте еще раз.")
 
-    products = [(await product_db.get_product(int(product_id)), amount) for product_id, amount in
-                data['products'].items()]
+    products = [(await product_db.get_product(product_id), product_item.amount, product_item.extra_options)
+                for product_id, product_item in order.items.items()]
     username = "@" + order_user_data.username if order_user_data.username else order_user_data.full_name
     admin_id = (await bot_db.get_bot_by_token(event.bot.token)).created_by
     main_msg = await main_bot.send_message(
@@ -128,8 +145,8 @@ async def handle_order_callback(query: CallbackQuery):
         case "order_cancel":
             order.status = OrderStatusValues.CANCELLED
             await order_db.update_order(order)
-            products = [(await product_db.get_product(int(product_id)), amount) for product_id, amount in
-                        order.products.items()]
+            products = [(await product_db.get_product(int(product_id)), product_item.amount, product_item.extra_options)
+                        for product_id, product_item in order.items.items()]
             await query.message.edit_text(order.convert_to_notification_text(products=products), reply_markup=None)
             msg_id_data = PREV_ORDER_MSGS.get_data()
             await main_bot.edit_message_text(
