@@ -6,7 +6,7 @@ from bot.config import WEB_APP_URL, WEB_APP_PORT
 
 from aiogram.utils.keyboard import InlineKeyboardMarkup, InlineKeyboardButton, ReplyKeyboardMarkup, KeyboardButton
 
-from bot.utils import make_webapp_info, MessageTexts
+from bot.utils import make_webapp_info, MessageTexts, make_admin_panel_webapp_info
 
 from database.models.order_model import OrderStatusValues
 
@@ -111,12 +111,12 @@ def get_reply_bot_menu_keyboard(bot_id: int) -> ReplyKeyboardMarkup:
     )
 
 
-def get_inline_bot_goods_menu_keyboard() -> InlineKeyboardMarkup:
+def get_inline_bot_goods_menu_keyboard(bot_id: int) -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(
         inline_keyboard=[
             [
                 InlineKeyboardButton(text="🧮 Количество товаров", callback_data="bot_menu:goods_count"),
-                InlineKeyboardButton(text="📋 Список товаров", callback_data="bot_menu:goods_list")
+                InlineKeyboardButton(text="📋 Страница настройки товаров", web_app=make_admin_panel_webapp_info(bot_id))
             ],
             [
                 InlineKeyboardButton(text="🆕 Добавить товар", callback_data="bot_menu:add_new_good"),
