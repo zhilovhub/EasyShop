@@ -219,6 +219,7 @@ async def process_web_app_request(event: Message):
         data['order_id'] = date + random_string
 
         order = OrderSchema(**data)
+        order.ordered_at = order.ordered_at.replace(tzinfo=None)
 
         await order_db.add_order(order)
 
