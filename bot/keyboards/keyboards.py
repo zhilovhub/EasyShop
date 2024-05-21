@@ -116,7 +116,7 @@ def get_inline_bot_goods_menu_keyboard(bot_id: int) -> InlineKeyboardMarkup:
         inline_keyboard=[
             [
                 InlineKeyboardButton(text="🧮 Количество товаров", callback_data="bot_menu:goods_count"),
-                InlineKeyboardButton(text="📋 Страница настройки товаров", web_app=make_admin_panel_webapp_info(bot_id))
+                InlineKeyboardButton(text="📋 Список товаров", web_app=make_admin_panel_webapp_info(bot_id))
             ],
             [
                 InlineKeyboardButton(text="🆕 Добавить товар", callback_data="bot_menu:add_new_good"),
