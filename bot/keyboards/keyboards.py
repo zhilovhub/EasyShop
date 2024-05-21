@@ -218,15 +218,15 @@ async def get_inline_bot_channels_list_keyboard(bot_id: int) -> InlineKeyboardMa
 
 async def get_inline_bot_menu_keyboard(bot_id: int) -> InlineKeyboardMarkup:
 
-    channel_inline_button = InlineKeyboardButton(
-                    text="📢 Добавить в канал",
-                    callback_data="bot_menu:add_to_channel",
-                    url=f"https://t.me/{await get_bot_username(bot_id)}?startchannel"
-        ) if not await get_bot_channels(bot_id=bot_id) else \
-        InlineKeyboardButton(
-            text="📢 Каналы бота",
-            callback_data="bot_menu:channels"
-        )
+    # channel_inline_button = InlineKeyboardButton(
+    #                 text="📢 Добавить в канал",
+    #                 callback_data="bot_menu:add_to_channel",
+    #                 url=f"https://t.me/{await get_bot_username(bot_id)}?startchannel"
+    #     ) if not await get_bot_channels(bot_id=bot_id) else \
+    #     InlineKeyboardButton(
+    #         text="📢 Каналы бота",
+    #         callback_data="bot_menu:channels"
+    #     )
 
 
     return InlineKeyboardMarkup(
@@ -244,9 +244,9 @@ async def get_inline_bot_menu_keyboard(bot_id: int) -> InlineKeyboardMarkup:
                 InlineKeyboardButton(text="📊 Статистика", callback_data="bot_menu:statistic"),
                 InlineKeyboardButton(text="📦 Мои товары", callback_data="bot_menu:goods")
             ],
-            [
-                channel_inline_button
-            ],
+            # [
+            #     channel_inline_button
+            # ],
             [
                 InlineKeyboardButton(text="🗑 Удалить бота", callback_data="bot_menu:delete_bot")
             ]
