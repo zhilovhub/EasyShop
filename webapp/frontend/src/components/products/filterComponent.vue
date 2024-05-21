@@ -16,13 +16,16 @@
       </div>
     </div>
     <div class="block based-filter">
-      <div @click="chooseOption($event.target)" class="filterOnBased">По популярности</div>
-      <div @click="chooseOption($event.target)" class="filterOnBased">По популярности</div>
-      <div @click="chooseOption($event.target)" class="filterOnBased">По популярности</div>
+      <div
+        v-for="filter in filters"
+        :id="filter"
+        @click="chooseOption($event.target)"
+        class="filterOnBased"
+      >{{filter}}</div>
     </div>
     <hr style="border: 1px solid var(--app-hr-border-color); width: 90%; margin: 2.5% auto;">
     <div class="block">
-      <span>Бренд</span>
+      <span>Категории</span>
       <div class="brand-filter">
         <div class="brand" v-for="brand in brands" :id="brand" @click="toggleImage($event, brand)">
           <img v-if="brand.isActive" src="@/assets/markedcircle.png" alt="brand image">
@@ -42,20 +45,24 @@ export default {
       imageCircle: '',
       imageMarkedCircle: '',
       fromPrice: null,
-      toPrice: null
+      toPrice: null,
+      filters: []
     }
   },
   name: "filterComponent",
   methods: {
     closeFilterComponent() {
-      this.groupFilters();
+      if (this.fromPrice) {
+        this.$store.state.price_min = this.fromPrice;
+      }
+      if (this.toPrice) {
+        this.$store.state.price_max = this.toPrice;
+      }
+
       this.$emit("close");
     },
     toggleImage(event, brand) {
       brand.isActive = !brand.isActive;
-    },
-    groupFilters() {
-      this.$emit("group", {fromPrice: this.fromPrice, toPrice: this.toPrice})
     },
     chooseOption(target) {
       const allSizes = document.querySelectorAll('.filterOnBased');
@@ -68,9 +75,13 @@ export default {
   computed: {
     brands() {
       return this.$store.state.brands;
-    }
+    },
   },
   mounted() {
+    this.$store.dispatch('filtersInit').then(() => {
+      this.filters = this.$store.state.filters;
+    });
+
     tg.BackButton.show();
 
     tg.MainButton.text = "Применить";
@@ -148,12 +159,14 @@ export default {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(40vw, 1fr));
   grid-column: 1;
-  grid-gap: 15px;
-  div {
+  grid-gap: 10px;
+  .filterOnBased {
+    font-size: 14px;
+    text-align: center;
     display: flex;
     align-items: center;
     justify-content: center;
-    height: 30px;
+    height: 35px;
     border-radius: 30px;
     background-color: var(--app-hr-border-color);
   }

@@ -4,12 +4,15 @@ import { tg } from '@/main.js'
 export const Store = new Vuex.Store({
   state: {
     bot_id: undefined,
-    api_url: `https://ezbots.ru:${import.meta.env.VITE_API_PORT}`,
+    api_url: `https://ezbots.ru:2024`,
     itemsAddToCartArray: [],
     items: [],
+    filters: [],
     town: '',
     address: '',
     comment: '',
+    price_min: 0,
+    price_max: 2147483647,
   },
   services: {
     serviceItems: []
@@ -20,6 +23,9 @@ export const Store = new Vuex.Store({
       state.items = state.items.map(item => ({ ...item, countInCart: 0 }));
       state.items = state.items.map(item => ({ ...item, isSelected: false }));
       state.items = state.items.map(item => ({...item, isActive: false}));
+    },
+    setFilters(state, filters) {
+      state.filters = filters
     },
     postData() {
       let data = {
@@ -40,7 +46,7 @@ export const Store = new Vuex.Store({
   actions: {
     async itemsInit({ commit }) {
       try {
-        const response = await fetch(`${Store.state.api_url}/api/products/get_all_products/?bot_id=${Store.state.bot_id}&price_min=0&price_max=2147483647`, {
+        const response = await fetch(`${Store.state.api_url}/api/products/get_all_products/?bot_id=${Store.state.bot_id}&price_min=${Store.state.price_min}&price_max=${Store.state.price_max}`, {
           method: 'Post',
           headers: {
             'Content-Type': 'application/json',
@@ -57,6 +63,21 @@ export const Store = new Vuex.Store({
         console.error('There was a problem with the fetch operation:', error);
       }
     },
+    async filtersInit( {commit} ) {
+      try {
+        const response = await fetch(`${Store.state.api_url}/api/products/get_filters/`, {
+          method: 'Get',
+          headers: {
+            'Content-Type': 'application/json',
+            'Access-Control-Allow-Origin': '*'
+          },
+        });
+        const data = await response.json();
+        commit('setFilters', data);
+      } catch (error) {
+        console.error('There was a problem with the fetch operation:', error);
+      }
+    }
   },
   getters: {
   }
