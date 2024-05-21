@@ -319,7 +319,7 @@ async def bot_menu_callback_handler(query: CallbackQuery, state: FSMContext):
             )
             await query.answer()
         case "goods":
-            await query.message.edit_text("Меню склада:", reply_markup=get_inline_bot_goods_menu_keyboard())
+            await query.message.edit_text("Меню склада:", reply_markup=get_inline_bot_goods_menu_keyboard(state_data['bot_id']))
         case "goods_count":
             products = await product_db.get_all_products(state_data["bot_id"])
             await query.message.answer(f"Количество товаров: {len(products)}")
