@@ -112,7 +112,6 @@ class OrderSchema(BaseModel):
                f"{products_text}\n" \
                f"Итого: <b>{total_price}₽</b>\n\n" \
                f"Адрес: <b>{self.address}</b>\n" \
-               f"Способ оплаты: <b>{self.payment_method}</b>\n" \
                f"Комментарий: <b>{self.comment}</b>\n\n" \
                f"Статус: <b>{self.translate_order_status()}</b>" if not is_admin \
             else f"Новый заказ <b>#{self.id}</b>\n" \
@@ -122,7 +121,6 @@ class OrderSchema(BaseModel):
                  f"{products_text}\n" \
                  f"Итого: <b>{total_price}₽</b>\n\n" \
                  f"Адрес: <b>{self.address}</b>\n" \
-                 f"Способ оплаты: <b>{self.payment_method}</b>\n" \
                  f"Комментарий: <b>{self.comment}</b>\n\n" \
                  f"Статус: <b>{self.translate_order_status()}</b>"
 
