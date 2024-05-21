@@ -110,11 +110,12 @@ class ProductSchema(ProductWithoutId):
     id: int
 
     def convert_to_notification_text(self, count: int, extra_options: dict) -> str:
-        if extra_options is not None:
-            options = "\n" + "".join([f"{title} : {opt}" for title, opt in extra_options.items()]) + "\n"
-        else:
-            options = ""
-        return f"<b>{self.name} <i>{options}</i> {self.price}₽ x {count}шт</b>"
+        # if extra_options is not None:
+        #     options = "\n" + "".join([f"{title} : {opt}" for title, opt in extra_options.items()]) + "\n"
+        # else:
+        #     options = ""
+        # return f"<b>{self.name} <i>{options}</i> {self.price}₽ x {count}шт</b>"
+        return f"<b>{self.name} {self.price}₽ x {count}шт</b>"
 
 
 class ProductDao(Dao):
