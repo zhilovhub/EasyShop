@@ -43,10 +43,10 @@ class FilterNotFound(Exception):
 #         super().__init__(self.message)
 
 
-PRODUCT_FILTERS = {"rating": "сортирует по рейтингу из отзывов",
-                   "popular": "сортирует по частоте покупки",
-                   "price": "сортирует по цене",
-                   "search": "сортирует товары по совпадению с поисковым запросом"}
+PRODUCT_FILTERS = {"rating": "По рейтингу",
+                   "popular": "По популярности",
+                   "price": "По цене",
+                   "search": "По поиску"}
 
 
 class ProductFilterWithoutBot(BaseModel):
