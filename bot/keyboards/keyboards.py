@@ -88,7 +88,6 @@ class ReplyBotMenuButtons(Enum):
     SETTINGS = "⚙ Настройки бота"
     CONTACTS = "☎ Контакты"
     SHOP = "🛍 Мой магазин"
-    ADMIN_APP = "Страница админа"
 
 
 def get_reply_bot_menu_keyboard(bot_id: int) -> ReplyKeyboardMarkup:
@@ -100,9 +99,6 @@ def get_reply_bot_menu_keyboard(bot_id: int) -> ReplyKeyboardMarkup:
             ],
             [
                 KeyboardButton(text=ReplyBotMenuButtons.SHOP.value, web_app=make_webapp_info(bot_id=bot_id))
-            ],
-            [
-                KeyboardButton(text=ReplyBotMenuButtons.ADMIN_APP.value, web_app=WebAppInfo(url=f"{WEB_APP_URL}:822"))
             ]
         ],
         resize_keyboard=True
