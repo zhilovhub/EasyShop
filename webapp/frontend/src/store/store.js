@@ -4,8 +4,7 @@ import { tg } from '@/main.js'
 export const Store = new Vuex.Store({
   state: {
     bot_id: undefined,
-    api_url: `https://ezbots.ru:2024`,
-    // api_url: `https://ezbots.ru:${import.meta.env.VITE_API_PORT}`,
+    api_url: `https://ezbots.ru:${import.meta.env.VITE_API_PORT}`,
     itemsAddToCartArray: [],
     items: [],
     town: '',
