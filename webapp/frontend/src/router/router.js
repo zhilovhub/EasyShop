@@ -1,22 +1,31 @@
 import { createRouter, createWebHistory } from 'vue-router'
 
+const PRODUCTS_PAGE = 'products-page'
+const PRODUCT_CARD = 'product-card'
+const SHOPPING_CART = 'shopping-cart'
+const ORDER_DETAILS = 'order-details'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
     {
       path: '/products-page',
-      name: 'products-page',
+      name: PRODUCTS_PAGE,
       component: () => import('@/components/products/productsPage.vue')
     },
     {
+      path: '/products-page/:id',
+      name: PRODUCT_CARD,
+      component: () => import('@/components/products/productCard.vue')
+    },
+    {
       path: `/products-page/shopping-cart`,
-      name: 'shopping-cart',
+      name: SHOPPING_CART,
       component: () => import ('@/components/products/shoppingСart.vue')
     },
     {
       path: `/products-page/order-details`,
-      name: 'order-details',
+      name: ORDER_DETAILS,
       component: () => import('@/components/products/orderDetails.vue')
     },
     {
@@ -43,7 +52,12 @@ const router = createRouter({
       path: '/landing-page',
       name: 'landing-page',
       component: () => import('@/components/landing/landingPage.vue')
+    },
+    {
+      path: '/admin-panel',
+      name: 'admin-panel',
+      component: () => import('@/components/admin-panel/adminPanel.vue')
     }
   ]
 });
-export default router
+export default { router, PRODUCTS_PAGE, PRODUCT_CARD, SHOPPING_CART, ORDER_DETAILS }

@@ -7,11 +7,37 @@
   touch-action: manipulation;
 }
 
+:root {
+  --app-background-color: #E7E7E7;
+  --app-card-background-color: #FFFFFF;
+  --app-text-color: #111111;
+  --app-button-bgcolor: #E7E7E7;
+  --app-hr-border-color: #D9D9D9;
+}
+
+[data-theme='light'] {
+  --app-background-color: #E7E7E7;
+  --app-card-background-color: #FFFFFF;
+  --app-text-color: #111111;
+  --app-button-bgcolor: #E7E7E7;
+  --app-hr-border-color: #D9D9D9;
+  --app-button-delete-bg: #FF9494;
+}
+
+[data-theme='dark'] {
+  --app-background-color: #0C0C0C;
+  --app-card-background-color: #222222;
+  --app-text-color: #FFFFFF;
+  --app-button-bgcolor: #0C0C0C;
+  --app-hr-border-color: #3E3E3E;
+  --app-button-delete-bg: #FF3838;
+}
+
 body {
   margin: 0;
   padding: 0;
   min-height: 100vh;
-  background: #1E1E1E;
+  background: var(--app-background-color);
   line-height: 1.6;
   text-rendering: optimizeLegibility;
   scroll-behavior: smooth;
@@ -19,26 +45,4 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
-::-webkit-scrollbar {
-  width: 25px;
-}
 
-::-webkit-scrollbar-track {
-  background: #0A1526;
-}
-::-webkit-scrollbar-thumb {
-  scrollbar-width: thin;
-  scrollbar-color: green black;
-  background: linear-gradient(45deg, #EECFBA, #C5DDE8);
-  border-radius: 20px;
-  border: 3px solid #050c26;
-}
-::-webkit-scrollbar-thumb {
-  background: #d2d2d2;
-  border-radius: 8px;
-  border: 3px solid #0A1526;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: white;
-}

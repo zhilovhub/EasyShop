@@ -150,3 +150,5 @@ bots
 custom_bots/*.json
 
 resources/*.json
+
+webapp/.vscode

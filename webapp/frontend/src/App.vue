@@ -3,6 +3,7 @@
 </template>
 
 <script>
+
 document.body.style.zoom = "100%";
 
 const textarea = document.querySelectorAll('textarea');
@@ -27,4 +28,12 @@ function isKeyboardEvent(event) {
 </script>
 
 <style>
+button {
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  -khtml-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+}
 </style>

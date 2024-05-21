@@ -1,79 +1,54 @@
 <script>
-  import { bot_id, apiUrl } from '@/store/store.js'
+import { tg } from '@/main.js'
+import router from "@/router/router.js";
 
-  export default {
+export default {
     name: 'ShoppingCart',
     data() {
       return {
         inputValue: ''
       }
     },
-    mounted() {
-      this.$store.commit("addToSessionStorage");
-      let WebApp = window.Telegram.WebApp;
-      const BackButton = WebApp.BackButton;
-      const vm = this;
-      BackButton.show();
-      BackButton.onClick(function() {
-        BackButton.hide();
-      });
-      WebApp.onEvent('backButtonClicked', function() {
-          let tempItemsAddToCartArray = sessionStorage.getItem('itemsAddToCartArray')
-          tempItemsAddToCartArray = JSON.parse(tempItemsAddToCartArray);
-          sessionStorage.setItem('itemsAddToCartArray', JSON.stringify(tempItemsAddToCartArray));
-          window.location.href = "/products-page?bot_id=" + vm.$store.state.bot_id;
-      });
-    },
     computed: {
       itemsAddToCartArray() {
         return this.$store.state.itemsAddToCartArray;
       },
-      totalPrice() {
-        let price = this.itemsAddToCartArray.reduce((total, item) => total + item.price*item.count, 0);
-        if (price <= 0) {
-          return 'Заказать: 0 ₽'
-        }
-        return 'Заказать: ' + price + ' ₽'
-      }
     },
     methods: {
-      apiUrl() {
-        return apiUrl
+      backButtonMethod() {
+        router.router.back();
       },
-      bot_id() {
-        return bot_id
+      mainButtonMethod() {
+        router.router.push({ name: router.ORDER_DETAILS });
       },
-      priceRub(price) {
-        return price + ' ₽'
+      priceRub(price, count) {
+        let totalValue = price * count
+        const parts = totalValue.toString().split(/(?=(?:\d{3})+$)/);
+        return parts.join(' ') + ' ₽';
       },
       incrementCount(item) {
-        if (item && typeof item.count === 'number') {
-          item.count += 1;
-          this.itemsAddToCart();
+        if (item && typeof item.countInCart === 'number') {
+          item.countInCart += 1;
           this.totalPriceCalc();
         } else {
           console.error('Ошибка: объект item или count не определены.');
         }
       },
       decrementCount(item) {
-        if (item && typeof item.count === 'number') {
-          if (item.count > 1)
+        if (item && typeof item.countInCart === 'number') {
+          if (item.countInCart > 1)
           {
-            item.count -= 1;
+            item.countInCart -= 1;
           } else {
-            item.count = 1
+            item.countInCart = 1
           }
           this.totalPriceCalc();
-          this.itemsAddToCart();
         } else {
           console.error('Ошибка: объект item или count не определены.');
         }
       },
-      itemsAddToCart() {
-        this.$store.commit("addToSessionStorage");
-      },
       totalPriceCalc() {
-        let price = this.itemsAddToCartArray.reduce((total, item) => total + item.price*item.count, 0);
+        let price = this.itemsAddToCartArray.reduce((total, item) => total + item.price*item.countInCart, 0);
         if (price <= 0) {
           return 'Закать: 0 ₽'
         }
@@ -81,29 +56,39 @@
       },
       shortenName(name) {
         if (!name) return '';
-        return name.length > 15 ? name.substring(0, 12) + '...' : name;
+        return name.length > 20 ? name.substring(0, 15) + '...' : name;
+      },
+      backToMainPage() {
+        router.router.replace({ name: router.PRODUCTS_PAGE, query: { bot_id: this.$store.state.bot_id }});
       }
     },
-    beforeUnmount() {
+    mounted() {
+      tg.BackButton.show();
+
+      tg.MainButton.text = "Начать оформление";
+
+      tg.onEvent('backButtonClicked', this.backButtonMethod);
+      tg.onEvent('mainButtonClicked', this.mainButtonMethod);
+    },
+    unmounted() {
+      tg.offEvent('backButtonClicked', this.backButtonMethod);
+      tg.offEvent('mainButtonClicked', this.mainButtonMethod);
+
       this.$store.state.comment = this.inputValue;
     }
-  }
+}
 </script>
 
 <template>
   <div class="wrapper">
   <div class="container-items">
     <div class="title">
-      <span style="font-weight: 600; font-size: 24px">Ваш заказ</span>
-      <svg style="cursor: pointer" width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <g clip-path="url(#clip0_31_564)">
-          <path d="M0.484955 8.08803L10.347 14.005C10.857 14.311 11.428 14.464 12 14.464C12.571 14.464 13.143 14.311 13.653 14.005L23.514 8.08803C23.815 7.90703 23.999 7.58203 23.999 7.23103C23.999 6.88003 23.815 6.55403 23.514 6.37403L13.654 0.456027C12.633 -0.156973 11.367 -0.156973 10.347 0.456027L0.484955 6.37303C0.183955 6.55403 -4.46418e-05 6.87903 -4.46418e-05 7.23003C-4.46418e-05 7.58103 0.183955 7.90703 0.484955 8.08703V8.08803ZM11.376 2.17103C11.76 1.94103 12.239 1.94103 12.624 2.17103L21.056 7.23103L12.624 12.291C12.239 12.521 11.76 12.521 11.375 12.291L2.94396 7.23003L11.376 2.17103ZM24 20C24 20.553 23.552 21 23 21H21V23C21 23.553 20.552 24 20 24C19.448 24 19 23.553 19 23V21H17C16.448 21 16 20.553 16 20C16 19.447 16.448 19 17 19H19V17C19 16.447 19.448 16 20 16C20.552 16 21 16.447 21 17V19H23C23.552 19 24 19.447 24 20ZM12.857 23.286C12.669 23.598 12.338 23.771 11.999 23.771C11.824 23.771 11.646 23.725 11.485 23.628L0.484955 17.029C0.0109554 16.745 -0.142045 16.131 0.141955 15.657C0.424955 15.183 1.03896 15.029 1.51396 15.314L12.514 21.914C12.988 22.198 13.141 22.812 12.857 23.286ZM23.857 11.09C24.141 11.564 23.988 12.178 23.514 12.462L12.514 19.062C12.355 19.157 12.178 19.205 11.999 19.205C11.82 19.205 11.643 19.157 11.484 19.062L0.484955 12.462C0.0109554 12.178 -0.142045 11.564 0.141955 11.09C0.424955 10.615 1.03896 10.462 1.51396 10.747L11.999 17.038L22.484 10.747C22.958 10.463 23.573 10.616 23.857 11.09Z" fill="#71CBFF"/>
-        </g>
-        <defs>
-          <clipPath id="clip0_31_564">
-            <rect width="24" height="24" fill="white"/>
-          </clipPath>
-        </defs>
+      <span style="font-weight: bold; font-size: 20px">Ваш заказ</span>
+      <svg @click="backToMainPage" width="24" height="24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <g id="SVGRepo_bgCarrier" stroke-width="0"></g>
+        <g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g>
+        <g id="SVGRepo_iconCarrier"> <path d="M15 13L12 13M12 13L9 13M12 13L12 10M12 13L12 16" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"></path> <path d="M21.6359 12.9579L21.3572 14.8952C20.8697 18.2827 20.626 19.9764 19.451 20.9882C18.2759 22 16.5526 22 13.1061 22H10.8939C7.44737 22 5.72409 22 4.54903 20.9882C3.37396 19.9764 3.13025 18.2827 2.64284 14.8952L2.36407 12.9579C1.98463 10.3208 1.79491 9.00229 2.33537 7.87495C2.87583 6.7476 4.02619 6.06234 6.32691 4.69181L7.71175 3.86687C9.80104 2.62229 10.8457 2 12 2C13.1543 2 14.199 2.62229 16.2882 3.86687L17.6731 4.69181C19.9738 6.06234 21.1242 6.7476 21.6646 7.87495" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"></path>
+      </g>
       </svg>
     </div>
 
@@ -113,39 +98,51 @@
         :key="item.id"
         class="item-block"
       >
-        <img style="border-radius: 7px; width: 67px; height: 67px; object-fit: cover;" v-if="item.picture" :src="`${apiUrl()}/files/` + item.picture" alt="img">
-        <div v-else style="width: 67px; height: 67px; border-radius: 7px; background-color: #293C47;"></div>
-        <div class="text-block">
-          <span style="color: #71CBFF; font-size: 15px;">{{ shortenName(item.name) }}</span>
-          <span style="font-weight: 600; color: #FFFFFF; font-size: 15px;">{{priceRub(item.price)}}</span>
-        </div>
-        <div class="buttons">
-          <div class="countDivBtn">{{item.count}} шт.</div>
-          <div class="calcBtn">
-            <button
-              style="background-color: #FF7171; display: flex; align-items: center; justify-content: center; width: 45%;"
-              @click="decrementCount(item)"
-            >
-              <svg width="22" height="4" viewBox="0 0 22 4" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M20.625 3.875H1.375C0.615613 3.875 0 3.03553 0 2C0 0.964473 0.615613 0.125 1.375 0.125H20.625C21.3844 0.125 22 0.964473 22 2C22 3.03553 21.3844 3.875 20.625 3.875Z" fill="white"/>
-              </svg>
-            </button>
-            <button
-              style="background-color:#71CBFF; display: flex; align-items: center; justify-content: center; width: 45%;"
-              @click="incrementCount(item)"
-            >
-              <svg width="21" height="21" viewBox="0 0 21 21" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M19.6875 9.1875H11.8125V1.3125C11.8125 0.587631 11.2249 0 10.5 0C9.77513 0 9.1875 0.587631 9.1875 1.3125V9.1875H1.3125C0.587631 9.1875 0 9.77513 0 10.5C0 11.2249 0.587631 11.8125 1.3125 11.8125H9.1875V19.6875C9.1875 20.4124 9.77513 21 10.5 21C11.2249 21 11.8125 20.4124 11.8125 19.6875V11.8125H19.6875C20.4124 11.8125 21 11.2249 21 10.5C21 9.77513 20.4124 9.1875 19.6875 9.1875Z" fill="white"/>
-              </svg>
-            </button>
+        <img style="border-radius: 7px; width: 150px; height: 150px; object-fit: cover;" v-if="item.picture" :src="`${this.$store.state.api_url}/files/` + item.picture" alt="img">
+        <div v-else style="width: 150px; height: 150px; border-radius: 7px; background-color: #293C47;"></div>
+        <div style="display: flex; flex-direction: column; justify-content: space-between; padding: 0 2.5%">
+          <div class="text-block">
+            <span style="font-size: 15px; margin-bottom: 10px">{{ shortenName(item.name) }}</span>
+            <span style="font-weight: bold; font-size: 20px;">{{priceRub(item.price, item.countInCart)}}</span>
+          </div>
+          <div class="buttons">
+            <div class="countDivBtn">
+              <div
+                @click="decrementCount(item)"
+              >-</div>
+              {{item.countInCart}}
+              <div
+                @click="incrementCount(item)"
+              >+</div>
+            </div>
+<!--            <div class="calcBtn">-->
+<!--              <button-->
+<!--                style="background-color: #FF7171; display: flex; align-items: center; justify-content: center; width: 45%;"-->
+<!--                @click="decrementCount(item)"-->
+<!--              >-->
+<!--                <svg width="22" height="4" viewBox="0 0 22 4" fill="none" xmlns="http://www.w3.org/2000/svg">-->
+<!--                  <path d="M20.625 3.875H1.375C0.615613 3.875 0 3.03553 0 2C0 0.964473 0.615613 0.125 1.375 0.125H20.625C21.3844 0.125 22 0.964473 22 2C22 3.03553 21.3844 3.875 20.625 3.875Z" fill="white"/>-->
+<!--                </svg>-->
+<!--              </button>-->
+<!--              <button-->
+<!--                style="background-color:#71CBFF; display: flex; align-items: center; justify-content: center; width: 45%;"-->
+<!--                @click="incrementCount(item)"-->
+<!--              >-->
+<!--                <svg width="21" height="21" viewBox="0 0 21 21" fill="none" xmlns="http://www.w3.org/2000/svg">-->
+<!--                  <path d="M19.6875 9.1875H11.8125V1.3125C11.8125 0.587631 11.2249 0 10.5 0C9.77513 0 9.1875 0.587631 9.1875 1.3125V9.1875H1.3125C0.587631 9.1875 0 9.77513 0 10.5C0 11.2249 0.587631 11.8125 1.3125 11.8125H9.1875V19.6875C9.1875 20.4124 9.77513 21 10.5 21C11.2249 21 11.8125 20.4124 11.8125 19.6875V11.8125H19.6875C20.4124 11.8125 21 11.2249 21 10.5C21 9.77513 20.4124 9.1875 19.6875 9.1875Z" fill="white"/>-->
+<!--                </svg>-->
+<!--              </button>-->
+<!--            </div>-->
           </div>
         </div>
       </li>
     </ul>
   </div>
+    <hr style="border: 1px solid var(--app-hr-border-color); width: 90%; margin: 0 auto">
   </div>
-  <textarea v-model="inputValue" placeholder="Добавить комментарий..."/>
-  <RouterLink :to="`/products-page/order-details?bot_id=${bot_id()}`" ><button class="btnTotalPrice">{{this.totalPrice}}</button></RouterLink>
+
+<!--  <textarea v-model="inputValue" placeholder="Добавить комментарий..."/>-->
+
 </template>
 
 <style scoped lang="scss">
@@ -156,24 +153,23 @@
 *{
   box-sizing: border-box;
   font-family: 'Montserrat', sans-serif;
-  font-size: 15px;
+  font-size: 16px;
   line-height: 18.29px;
-  color: #FFFFFF;
+  color: var(--app-text-color);
 }
 
 .wrapper {
   width: 100%;
   height: 100%;
-  background-color: #1E1E1E;
+  background-color: var(--app-background-color);
 }
 
 .container-items{
-  background-color: #20282C;
   width: 100%;
   position: relative;
   left: 0;
   top: 0;
-  padding: 2%;
+  padding: 2.5% 5%;
 }
 
 .items-styles{
@@ -187,7 +183,6 @@
 
   .item-block{
     display: flex;
-    justify-content: space-between;
     width: 100%;
     list-style-type: none;
   }
@@ -199,45 +194,45 @@
 .text-block {
   display: flex;
   flex-direction: column;
-  justify-content: flex-end;
+  justify-content: flex-start;
   padding: 5px;
 }
 
 .title {
   display: flex;
   justify-content: space-between;
-  margin-bottom: 10px;
+  margin: 2.5% 0;
 }
 
 .countDivBtn {
-  border-radius: 7px;
-  background-color: #293C47;
-  width: 100px;
-  aspect-ratio: 4/1;
+  border-radius: 20px;
+  background-color: var(--app-card-background-color);
+  width: 126px;
+  height: 41px;
   display: flex;
-  justify-content: center;
+  justify-content: space-around;
   align-items: center;
   font-weight: 500;
-  font-size: 15px;
-}
-
-.btnTotalPrice {
-  width: 100%;
-  height: 52px;
-  color: #293C47;
-  background-color: #59FFAF;
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  cursor: pointer;
-  box-shadow: none;
-  border: none;
-  font-size: 24px;
-  font-weight: 600;
-  font-family: 'Montserrat', sans-serif;
-  z-index: 999;
-  &:hover{
-    background-color: #55A27D;
+  font-size: 20px;
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  -khtml-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+  div {
+    font-size: 36px;
+    background-color: var(--app-card-background-color);
+    cursor: pointer;
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    -khtml-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+    &:hover {
+      opacity: 0.7;
+    }
   }
 }
 

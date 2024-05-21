@@ -2,11 +2,12 @@ from aiogram import Bot
 from aiogram.types import Message, ReplyKeyboardRemove, CallbackQuery
 from aiogram.fsm.context import FSMContext
 
-from bot.main import bot_db, product_db
+from bot.main import bot_db, product_db, bot, cache_resources_file_id_store
 from bot.config import logger
 from bot.keyboards import *
 from bot.states.states import States
 from bot.handlers.routers import custom_bot_editing_router
+from bot.utils.send_instructions import send_instructions
 
 
 @custom_bot_editing_router.message(States.EDITING_START_MESSAGE)
@@ -100,7 +101,7 @@ async def delete_bot_handler(message: Message, state: FSMContext):
             "Бот удален",
             reply_markup=ReplyKeyboardRemove()
         )
-        await message.answer(MessageTexts.INSTRUCTION_MESSAGE.value)
+        await send_instructions(bot, None, message.from_user.id, cache_resources_file_id_store)
         await state.set_state(States.WAITING_FOR_TOKEN)
     elif message_text == "🔙 Назад":
         await message.answer(

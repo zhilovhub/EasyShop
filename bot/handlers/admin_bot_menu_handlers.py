@@ -22,25 +22,53 @@ from bot.exceptions import InstanceAlreadyExists
 from bot.states.states import States
 from bot.handlers.routers import admin_bot_menu_router
 from bot.utils.custom_bot_api import start_custom_bot, stop_custom_bot
+from sqlalchemy.exc import IntegrityError
 
 from custom_bots.multibot import storage as custom_bot_storage
 
 from database.models.bot_model import BotSchemaWithoutId
-from database.models.order_model import OrderSchema, OrderNotFound
+from database.models.order_model import OrderSchema, OrderNotFound, OrderItem
 from database.models.product_model import ProductWithoutId
+
+import random
 
 
 @admin_bot_menu_router.message(F.web_app_data)
 async def process_web_app_request(event: Message):
     user_id = event.from_user.id
     try:
+        # {'bot_id': '33',
+        # 'raw_items':
+        #   {'38': {'amount': 4, 'chosen_option': 'на диске'}},
+        # 'ordered_at': '2024-05-20T      15:02:42.353Z',
+        # 'town': 'sd\nsdsd\n\nsd\n\n',
+        # 'address': 'sd', 'comment': ''}
+
         data = json.loads(event.web_app_data.data)
         logger.info(f"receive web app data: {data}")
 
         data["from_user"] = user_id
         data["payment_method"] = "Картой Онлайн"
         data["status"] = "backlog"
-        data["count"] = 0
+
+        items: dict[int, OrderItem] = {}
+
+        for item_id, item in data['raw_items'].items():
+            product = await product_db.get_product(item_id)
+            chosen_options = {}
+            used_options = False
+            if 'chosen_option' in item and item['chosen_option']:
+                used_options = True
+                option_title = list(product.extra_options.items())[0][0]
+                chosen_options[option_title] = item['chosen_option']
+            items[item_id] = OrderItem(amount=item['amount'], used_extra_option=used_options,
+                                      extra_options=chosen_options)
+
+        data['items'] = items
+
+        date = datetime.now().strftime("%d%m%y")
+        random_string = ''.join(random.sample(string.digits + string.ascii_letters, 5))
+        data['order_id'] = date + random_string
 
         order = OrderSchema(**data)
 
@@ -127,8 +155,8 @@ async def handle_callback(query: CallbackQuery, state: FSMContext):
 
             await order_db.update_order(order)
 
-            products = [(await product_db.get_product(product_id), product_count)
-                        for product_id, product_count in order.products.items()]
+            products = [(await product_db.get_product(int(product_id)), product_item.amount, product_item.extra_options)
+                        for product_id, product_item in order.items.items()]
             await Bot(bot_token, parse_mode=ParseMode.HTML).edit_message_text(
                 order.convert_to_notification_text(products=products),
                 reply_markup=None if data[0] in ("order_finish", "order_cancel") else
@@ -230,8 +258,13 @@ async def bot_menu_photo_handler(message: Message, state: FSMContext):
                                    description="",
                                    price=price,
                                    count=0,
-                                   picture=filename)
-    await product_db.add_product(new_product)
+                                   picture=filename,
+                                   article=params[0],
+                                   category=[0])
+    try:
+        await product_db.add_product(new_product)
+    except IntegrityError:
+        return await message.answer("Товар с таким названием уже есть в боте.")
     await message.answer("Товар добавлен. Можно добавить ещё")
 
 
@@ -346,8 +379,8 @@ async def bot_menu_handler(message: Message, state: FSMContext):
 
 async def send_new_order_notify(order: OrderSchema, user_id: int):
     order_user_data = await bot.get_chat(order.from_user)
-    products = [(await product_db.get_product(product_id), product_count)
-                for product_id, product_count in order.products.items()]
+    products = [(await product_db.get_product(product_id), product_item.amount, product_item.extra_options)
+                for product_id, product_item in order.items.items()]
 
     await bot.send_message(user_id, f"Так будет выглядеть у тебя уведомление о новом заказе 👇")
     await bot.send_message(
