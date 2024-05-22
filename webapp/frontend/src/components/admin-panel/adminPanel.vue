@@ -1,5 +1,5 @@
 <template>
-  <FilterComponent @close="filterComponentIsActive = false" v-if="filterComponentIsActive"/>
+  <FilterComponent @close="closeFilterComponent" v-if="filterComponentIsActive"/>
   <div v-else>
     <div v-if="items.length === 0 && isLoading === false"
          style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -75%); text-align: center; width: 350px"
@@ -18,18 +18,8 @@
     </div>
     <div v-else class="wrapper">
       <div v-if="this.inputIsActive" class="header">
-      <span>Поиск по товарам</span>
-      <svg @click="this.inputIsActive = false" width="13" height="13" viewBox="0 0 13 13" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <g clip-path="url(#clip0_1099_14080)">
-          <path d="M7.64881 6.50047L12.7619 1.3879C13.0793 1.0705 13.0793 0.555904 12.7619 0.238535C12.4445 -0.0788605 11.9299 -0.0788605 11.6126 0.238535L6.49998 5.35164L1.38741 0.238535C1.07001 -0.0788605 0.555416 -0.0788605 0.238046 0.238535C-0.0793234 0.55593 -0.0793488 1.07053 0.238046 1.3879L5.35115 6.50047L0.238046 11.6131C-0.0793488 11.9305 -0.0793488 12.4451 0.238046 12.7624C0.555442 13.0798 1.07004 13.0798 1.38741 12.7624L6.49998 7.6493L11.6126 12.7624C11.9299 13.0798 12.4445 13.0798 12.7619 12.7624C13.0793 12.445 13.0793 11.9304 12.7619 11.6131L7.64881 6.50047Z" fill="currentColor"/>
-        </g>
-        <defs>
-          <clipPath id="clip0_1099_14080">
-            <rect width="13" height="13" fill="white"/>
-          </clipPath>
-        </defs>
-      </svg>
-    </div>
+        <span>Поиск по товарам</span>
+      </div>
       <div v-else class="header">
       <span>Управление товарами</span>
       <div class="images">
@@ -137,7 +127,7 @@
           </div>
         </div>
         <div class="button-block">
-          <button>Удалить</button>
+          <button @click="deleteProducts">Удалить</button>
           <button @click="closeModelWindow">Отмена</button>
         </div>
       </div>
@@ -209,9 +199,9 @@ export default {
     toggleMainCircle() {
       this.mainCircleIsActive = !this.mainCircleIsActive;
       if (this.mainCircleIsActive) {
-        this.$store.state.items = this.$store.state.items.map(item => ({...item, isSelected: true}));
+        this.$store.state.items = this.$store.state.items.map(item => ({ ...item, isSelected: true }));
       } else {
-        this.$store.state.items = this.$store.state.items.map(item => ({...item, isSelected: false}));
+        this.$store.state.items = this.$store.state.items.map(item => ({ ...item, isSelected: false }));
       }
     },
     toggleModelWindow() {
@@ -219,8 +209,6 @@ export default {
         this.deleteModelWindowIsActive = !this.deleteModelWindowIsActive
         if (this.deleteModelWindowIsActive) {
           document.body.style.overflow = 'hidden';
-        } else {
-
         }
       }
     },
@@ -241,7 +229,44 @@ export default {
     closeModelWindow() {
       this.deleteModelWindowIsActive = !this.deleteModelWindowIsActive;
       document.body.style.overflow = '';
-    }
+    },
+    unionItemsWithCartItems() {
+      let itemsAddToCartArray = this.$store.state.itemsAddToCartArray;
+
+      if (itemsAddToCartArray && itemsAddToCartArray.length > 0) {
+        // Обновляем currentCount (количество в корзине) у полученных с бекенда всех товаров
+        let resultArray = [];
+        for (let i = 0; i < this.$store.state.items.length; i++) {
+          let matchingItem = itemsAddToCartArray.find(item => item.id === this.$store.state.items[i].id);
+          resultArray.push(matchingItem || this.$store.state.items[i]);
+        }
+        this.$store.state.items = resultArray;
+      }
+    },
+    updateItems() {
+      this.$store.dispatch('itemsInit').then(() => {
+        this.isLoading = false;
+        this.unionItemsWithCartItems();
+
+        tg.MainButton.hide();
+        tg.onEvent('backButtonClicked', this.toggleInput);
+      });
+    },
+    deleteProducts() {
+      this.itemsForDelete.forEach(item => {
+        this.$store.dispatch('deleteProduct', item.id);
+      })
+      this.closeModelWindow();
+      this.updateItems();
+    },
+    closeFilterComponent() {
+      tg.BackButton.hide();
+
+      this.filterComponentIsActive = false;
+      this.isLoading = true;
+
+      this.updateItems();
+    },
   }
 }
 </script>

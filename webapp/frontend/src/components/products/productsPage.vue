@@ -207,8 +207,6 @@ export default {
       tg.offEvent('backButtonClicked', this);
     },
     toggleInput() {
-      this.fromPrice = null;
-      this.toPrice = null;
       this.inputValue = ''
       this.inputIsActive = true;
 
@@ -262,8 +260,6 @@ export default {
       this.itemsAddToCart();
       this.isLoading = false;
     });
-     // this.$store.commit("fetchOrderId");
-     // this.$store.commit("checkOrderId");
   },
 
   unmounted() {
