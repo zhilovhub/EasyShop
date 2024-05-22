@@ -119,6 +119,18 @@ async def edit_product_api(product: ProductSchema) -> bool:
     return True
 
 
+@router.delete("/del_product/{bot_id}/{product_id}")
+async def get_product_api(bot_id: int, product_id: int) -> str:
+    try:
+        await product_db.delete_product(product_id)
+    except ProductNotFound:
+        raise HTTPException(status_code=404, detail="Product not found.")
+    except Exception:
+        logger.error("Error while execute delete_product db_method", exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal error.")
+    return "product deleted"
+
+
 class CSVFileInputModel(BaseModel):
     """Models updatable field of a profile instance"""
     bot_id: int
