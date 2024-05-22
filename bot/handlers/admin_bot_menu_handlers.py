@@ -324,7 +324,7 @@ async def bot_menu_callback_handler(query: CallbackQuery, state: FSMContext):
         case "mailing_menu" | "mailing_create":
             if action == "mailing_create":
                 await mailing_db.add_mailing(MailingSchemaWithoutId.model_validate(
-                    {"bot_id": extra_id}
+                    {"bot_id": extra_id, "created_at": datetime.now().replace(tzinfo=None)}
                 ))
             custom_bot = await bot_db.get_bot(bot_id=extra_id)
             await query.message.edit_text(

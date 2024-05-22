@@ -212,24 +212,38 @@ async def get_inline_bot_channels_list_keyboard(bot_id: int) -> InlineKeyboardMa
     ])
 
 
-async def get_inline_bot_mailing_menu_keyboard(bot_id: int) -> InlineKeyboardMarkup:
-    callback_metadata = f":{bot_id}"
+async def get_inline_bot_mailing_menu_accept_deleting_keyboard(bot_id: int, mailing_id: int) -> InlineKeyboardMarkup:
+    callback_metadata = f":{bot_id}:{mailing_id}"
 
+    return InlineKeyboardMarkup(inline_keyboard=[
+        [
+            InlineKeyboardButton(
+                text="Удалить", callback_data="mailing_menu:accept_delete" + callback_metadata
+            ),
+            InlineKeyboardButton(
+                text="🔙 Назад", callback_data="bot_menu:mailing_menu" + callback_metadata
+            )
+        ]
+    ])
+
+
+async def get_inline_bot_mailing_menu_keyboard(bot_id: int) -> InlineKeyboardMarkup:
     mailing = await get_bot_mailing(bot_id=bot_id)
+    callback_metadata = f":{bot_id}:{mailing.mailing_id}"
 
     if mailing.has_button:
         inline_buttons = [
             [
                 InlineKeyboardButton(
-                    text="Ссылка кнопки", callback_data="mailing:button_url" + callback_metadata
+                    text="Ссылка кнопки", callback_data="mailing_menu:button_url" + callback_metadata
                 ),
                 InlineKeyboardButton(
-                    text="Текст на кнопке", callback_data="mailing:button_text" + callback_metadata
+                    text="Текст на кнопке", callback_data="mailing_menu:button_text" + callback_metadata
                 )
             ],
             [
                 InlineKeyboardButton(
-                    text="Удалить кнопку", callback_data="mailing:delete_button" + callback_metadata
+                    text="Удалить кнопку", callback_data="mailing_menu:delete_button" + callback_metadata
                 )
             ]
         ]
@@ -237,15 +251,7 @@ async def get_inline_bot_mailing_menu_keyboard(bot_id: int) -> InlineKeyboardMar
         inline_buttons = [
             [
                 InlineKeyboardButton(
-                    text="Ссылка кнопки", callback_data="mailing:button_url" + callback_metadata
-                ),
-                InlineKeyboardButton(
-                    text="Текст на кнопке", callback_data="mailing:button_text" + callback_metadata
-                )
-            ],
-            [
-                InlineKeyboardButton(
-                    text="Добавить кнопку", callback_data="mailing:add_button" + callback_metadata
+                    text="Добавить кнопку", callback_data="mailing_menu:add_button" + callback_metadata
                 ),
             ]
         ]
@@ -253,24 +259,24 @@ async def get_inline_bot_mailing_menu_keyboard(bot_id: int) -> InlineKeyboardMar
     return InlineKeyboardMarkup(inline_keyboard=[
         [
             InlineKeyboardButton(
-                text="Текст сообщения", callback_data="mailing:text" + callback_metadata
+                text="Текст сообщения", callback_data="mailing_menu:text" + callback_metadata
             ),
             InlineKeyboardButton(
-                text="Медиафайлы", callback_data="mailing:media" + callback_metadata
+                text="Медиафайлы", callback_data="mailing_menu:media" + callback_metadata
             )
         ],
         *inline_buttons,
         [
             InlineKeyboardButton(
-                text="Запустить", callback_data="mailing:start" + callback_metadata
+                text="Запустить", callback_data="mailing_menu:start" + callback_metadata
             ),
             InlineKeyboardButton(
-                text="Проверить", callback_data="mailing:demo" + callback_metadata
+                text="Проверить", callback_data="mailing_menu:demo" + callback_metadata
             ),
         ],
         [
             InlineKeyboardButton(
-                text="Удалить рассылку", callback_data="mailing:delete_mailing" + callback_metadata
+                text="Удалить рассылку", callback_data="mailing_menu:delete_mailing" + callback_metadata
             ),
         ],
         [

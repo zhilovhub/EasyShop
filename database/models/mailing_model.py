@@ -30,6 +30,8 @@ class Mailing(Base):
     button_text = Column(String)
     button_url = Column(String)
 
+    created_at = Column(DateTime, nullable=False)
+
 
 class MailingSchemaWithoutId(BaseModel):
     model_config = ConfigDict(from_attributes=True)
@@ -42,6 +44,8 @@ class MailingSchemaWithoutId(BaseModel):
     has_button: bool = False
     button_text: Optional[str | None] = None
     button_url: Optional[str | None] = None
+
+    created_at: datetime.datetime = datetime.datetime.now().replace(tzinfo=None)
 
 
 class MailingSchema(MailingSchemaWithoutId):
@@ -88,7 +92,7 @@ class MailingDao(Dao):  # TODO write tests
             mailing_id = (await conn.execute(insert(Mailing).values(new_mailing.model_dump()))).inserted_primary_key[0]
 
         self.logger.info(
-            f"successfully add mailing with mailing_id for mailing_id {new_mailing.mailing_id} for bot_id {new_mailing.bot_id} to db"
+            f"successfully add mailing with mailing_id for mailing_id {mailing_id} for bot_id {new_mailing.bot_id} to db"
         )
 
         return mailing_id
@@ -102,3 +106,19 @@ class MailingDao(Dao):  # TODO write tests
                 ).values(updated_mailing.model_dump())
             )
         self.logger.info(f"successfully update mailing with id {updated_mailing.mailing_id} at db.")
+
+    @validate_call
+    async def delete_mailing(self, mailing_id: int) -> None:
+        if type(mailing_id) != int:
+            raise InvalidParameterFormat("new_mailing must be type of int")
+
+        async with self.engine.begin() as conn:
+            await conn.execute(
+                delete(Mailing).where(
+                    Mailing.mailing_id == mailing_id
+                )
+            )
+
+        self.logger.info(
+            f"successfully deleted mailing with mailing_id {mailing_id} from db"
+        )
