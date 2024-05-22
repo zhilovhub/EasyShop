@@ -50,19 +50,6 @@ class CompetitionMediaFileDao(Dao):  # TODO write tests
         self.logger.info(f"get_all_competition_media_files method with competition_id: {competition_id} success")
         return res
 
-    @validate_call(validate_return=True)
-    async def get_competition_media_file(self, competition_id: int) -> CompetitionMediaFileSchema:
-        async with self.engine.begin() as conn:
-            raw_res = await conn.execute(select(CompetitionMediaFile).where(CompetitionMediaFile.competition_id == competition_id))
-        await self.engine.dispose()
-
-        raw_res = raw_res.fetchone()
-        if not raw_res:
-            raise CompetitionMediaFileNotFound
-
-        self.logger.info(f"get_competition_media_file method with competition_id: {competition_id} success.")
-        return CompetitionMediaFileSchema.model_validate(raw_res)
-
     @validate_call
     async def add_competition_media_file(self, new_competition_media_file: CompetitionMediaFileSchema) -> None:
         if type(new_competition_media_file) != CompetitionMediaFileSchema:

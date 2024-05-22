@@ -212,7 +212,27 @@ async def get_inline_bot_channels_list_keyboard(bot_id: int) -> InlineKeyboardMa
     ])
 
 
+async def get_inline_bot_mailings_menu_keyboard(bot_id: int) -> InlineKeyboardMarkup:
+    channels_buttons = [
+        InlineKeyboardButton(text='@' + channel[1], callback_data=f"bot_menu:channel:{channel[0].channel_id}") for channel in all_channels
+    ]
+    resized_channels_buttons = [channels_buttons[i:i + 4] for i in range(0, len(channels_buttons), 4)]
+
+    return InlineKeyboardMarkup(inline_keyboard=[
+        *resized_channels_buttons,
+        [
+            InlineKeyboardButton(text="🔙 Назад", callback_data="bot_menu:back_to_menu"),
+            InlineKeyboardButton(
+                text="📢 Добавить в канал",
+                callback_data="bot_menu:add_to_channel",
+                url=f"https://t.me/{await get_bot_username(bot_id)}?startchannel"
+            )
+        ],
+    ])
+
+
 async def get_inline_bot_menu_keyboard(bot_id: int) -> InlineKeyboardMarkup:
+    callback_metadata = f":{bot_id}"
 
     # channel_inline_button = InlineKeyboardButton(
     #                 text="📢 Добавить в канал",
@@ -228,23 +248,26 @@ async def get_inline_bot_menu_keyboard(bot_id: int) -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(
         inline_keyboard=[
             [
-                InlineKeyboardButton(text="👋 Приветственный текст", callback_data="bot_menu:start_text"),
-                InlineKeyboardButton(text="🗣 Текст объяснения", callback_data="bot_menu:explain_text")
+                InlineKeyboardButton(text="👋 Приветственный текст", callback_data="bot_menu:start_text" + callback_metadata),
+                InlineKeyboardButton(text="🗣 Текст объяснения", callback_data="bot_menu:explain_text" + callback_metadata)
             ],
             [
-                InlineKeyboardButton(text="⛔ Остановить бота", callback_data="bot_menu:stop_bot")
+                InlineKeyboardButton(text="⛔ Остановить бота", callback_data="bot_menu:stop_bot" + callback_metadata)
                 if await get_bot_status(bot_id) == "online" else InlineKeyboardButton(
-                    text="🚀 Запустить бота", callback_data="bot_menu:start_bot"),
+                    text="🚀 Запустить бота", callback_data="bot_menu:start_bot" + callback_metadata),
             ],
             [
-                InlineKeyboardButton(text="📊 Статистика", callback_data="bot_menu:statistic"),
-                InlineKeyboardButton(text="📦 Мои товары", callback_data="bot_menu:goods")
+                InlineKeyboardButton(text="📊 Статистика", callback_data="bot_menu:statistic" + callback_metadata),
+                InlineKeyboardButton(text="📦 Мои товары", callback_data="bot_menu:goods" + callback_metadata)
             ],
             # [
             #     channel_inline_button
             # ],
             [
-                InlineKeyboardButton(text="🗑 Удалить бота", callback_data="bot_menu:delete_bot")
+                InlineKeyboardButton(text="💌 Рассылки в ЛС", callback_data="bot_menu:mailings" + callback_metadata),
+            ],
+            [
+                InlineKeyboardButton(text="🗑 Удалить бота", callback_data="bot_menu:delete_bot" + callback_metadata)
             ]
         ],
     )

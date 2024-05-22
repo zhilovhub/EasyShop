@@ -272,9 +272,10 @@ async def bot_menu_photo_handler(message: Message, state: FSMContext):
 @admin_bot_menu_router.callback_query(lambda query: query.data.startswith("bot_menu"))
 async def bot_menu_callback_handler(query: CallbackQuery, state: FSMContext):
     state_data = await state.get_data()
-    query_data = query.data.split(":")[1]
+    action = query.data.split(":")[1]
+    extra_id = int(query.data.split(":")[2])
 
-    match query_data:
+    match action:
         case "start_text":
             await query.message.answer("Введите текст, который будет отображаться у пользователей Вашего бота "
                                        "при <b>первом обращении</b> и команде <b>/start</b>:",
@@ -319,6 +320,12 @@ async def bot_menu_callback_handler(query: CallbackQuery, state: FSMContext):
                 f"👨🏻‍🦱 Всего пользователей: {len(users)}"
             )
             await query.answer()
+        case "mailings":
+            custom_bot = await bot_db.get_bot(bot_id=extra_id)
+            await query.message.edit_text(
+                MessageTexts.BOT_MAILINGS_MENU_MESSAGE.value.format((await Bot(custom_bot.token).get_me()).username),
+                reply_markup=await get_inline_bot_mailings_menu_keyboard(bot_id=extra_id)
+            )
         case "goods":
             await query.message.edit_text("Меню склада:", reply_markup=get_inline_bot_goods_menu_keyboard(state_data['bot_id']))
         case "goods_count":
