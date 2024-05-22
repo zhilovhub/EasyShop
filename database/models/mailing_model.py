@@ -9,7 +9,6 @@ from sqlalchemy.ext.asyncio import AsyncEngine
 from bot.exceptions import InvalidParameterFormat
 from database.models import Base
 from database.models.bot_model import Bot
-from database.models.channel_model import Channel
 from database.models.dao import Dao
 
 
@@ -56,7 +55,7 @@ class MailingDao(Dao):  # TODO write tests
     @validate_call(validate_return=True)
     async def get_mailing(self, mailing_id: int) -> MailingSchema:
         async with self.engine.begin() as conn:
-            raw_res = await conn.execute(select(Mailing).where(Mailing.mailing_id == mailing_id, Mailing.is_sent == True))
+            raw_res = await conn.execute(select(Mailing).where(Mailing.mailing_id == mailing_id, Mailing.is_sent == False))
         await self.engine.dispose()
 
         raw_res = raw_res.fetchone()
@@ -64,6 +63,20 @@ class MailingDao(Dao):  # TODO write tests
             raise MailingNotFound
 
         self.logger.info(f"get_mailing method with mailing_id: {mailing_id} success.")
+        return MailingSchema.model_validate(raw_res)
+
+    @validate_call(validate_return=True)
+    async def get_mailing_by_bot_id(self, bot_id: int) -> MailingSchema:
+        async with self.engine.begin() as conn:
+            raw_res = await conn.execute(
+                select(Mailing).where(Mailing.bot_id == bot_id, Mailing.is_sent == False))
+        await self.engine.dispose()
+
+        raw_res = raw_res.fetchone()
+        if not raw_res:
+            raise MailingNotFound
+
+        self.logger.info(f"get_mailing method with bot_id: {bot_id} success.")
         return MailingSchema.model_validate(raw_res)
 
     @validate_call
@@ -75,7 +88,7 @@ class MailingDao(Dao):  # TODO write tests
             mailing_id = (await conn.execute(insert(Mailing).values(new_mailing.model_dump()))).inserted_primary_key[0]
 
         self.logger.info(
-            f"successfully add mailing with mailing_id for channel_id {new_mailing.channel_id} for bot_id {new_mailing.bot_id} to db"
+            f"successfully add mailing with mailing_id for mailing_id {new_mailing.mailing_id} for bot_id {new_mailing.bot_id} to db"
         )
 
         return mailing_id

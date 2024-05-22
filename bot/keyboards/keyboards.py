@@ -212,22 +212,70 @@ async def get_inline_bot_channels_list_keyboard(bot_id: int) -> InlineKeyboardMa
     ])
 
 
-async def get_inline_bot_mailings_menu_keyboard(bot_id: int) -> InlineKeyboardMarkup:
-    channels_buttons = [
-        InlineKeyboardButton(text='@' + channel[1], callback_data=f"bot_menu:channel:{channel[0].channel_id}") for channel in all_channels
-    ]
-    resized_channels_buttons = [channels_buttons[i:i + 4] for i in range(0, len(channels_buttons), 4)]
+async def get_inline_bot_mailing_menu_keyboard(bot_id: int) -> InlineKeyboardMarkup:
+    callback_metadata = f":{bot_id}"
+
+    mailing = await get_bot_mailing(bot_id=bot_id)
+
+    if mailing.has_button:
+        inline_buttons = [
+            [
+                InlineKeyboardButton(
+                    text="Ссылка кнопки", callback_data="mailing:button_url" + callback_metadata
+                ),
+                InlineKeyboardButton(
+                    text="Текст на кнопке", callback_data="mailing:button_text" + callback_metadata
+                )
+            ],
+            [
+                InlineKeyboardButton(
+                    text="Удалить кнопку", callback_data="mailing:delete_button" + callback_metadata
+                )
+            ]
+        ]
+    else:
+        inline_buttons = [
+            [
+                InlineKeyboardButton(
+                    text="Ссылка кнопки", callback_data="mailing:button_url" + callback_metadata
+                ),
+                InlineKeyboardButton(
+                    text="Текст на кнопке", callback_data="mailing:button_text" + callback_metadata
+                )
+            ],
+            [
+                InlineKeyboardButton(
+                    text="Добавить кнопку", callback_data="mailing:add_button" + callback_metadata
+                ),
+            ]
+        ]
 
     return InlineKeyboardMarkup(inline_keyboard=[
-        *resized_channels_buttons,
         [
-            InlineKeyboardButton(text="🔙 Назад", callback_data="bot_menu:back_to_menu"),
             InlineKeyboardButton(
-                text="📢 Добавить в канал",
-                callback_data="bot_menu:add_to_channel",
-                url=f"https://t.me/{await get_bot_username(bot_id)}?startchannel"
+                text="Текст сообщения", callback_data="mailing:text" + callback_metadata
+            ),
+            InlineKeyboardButton(
+                text="Медиафайлы", callback_data="mailing:media" + callback_metadata
             )
         ],
+        *inline_buttons,
+        [
+            InlineKeyboardButton(
+                text="Запустить", callback_data="mailing:start" + callback_metadata
+            ),
+            InlineKeyboardButton(
+                text="Проверить", callback_data="mailing:demo" + callback_metadata
+            ),
+        ],
+        [
+            InlineKeyboardButton(
+                text="Удалить рассылку", callback_data="mailing:delete_mailing" + callback_metadata
+            ),
+        ],
+        [
+            InlineKeyboardButton(text="🔙 Назад", callback_data="bot_menu:back_to_menu" + callback_metadata),
+        ]
     ])
 
 
@@ -244,6 +292,14 @@ async def get_inline_bot_menu_keyboard(bot_id: int) -> InlineKeyboardMarkup:
     #         callback_data="bot_menu:channels"
     #     )
 
+    mailing_inline_button = InlineKeyboardButton(
+                    text="💌 Создать рассылку в ЛС",
+                    callback_data="bot_menu:mailing_create" + callback_metadata,
+        ) if not await get_bot_mailing(bot_id=bot_id) else \
+        InlineKeyboardButton(
+            text="💌 Рассылка в ЛС",
+            callback_data="bot_menu:mailing_menu" + callback_metadata
+        )
 
     return InlineKeyboardMarkup(
         inline_keyboard=[
@@ -264,7 +320,7 @@ async def get_inline_bot_menu_keyboard(bot_id: int) -> InlineKeyboardMarkup:
             #     channel_inline_button
             # ],
             [
-                InlineKeyboardButton(text="💌 Рассылки в ЛС", callback_data="bot_menu:mailings" + callback_metadata),
+                mailing_inline_button,
             ],
             [
                 InlineKeyboardButton(text="🗑 Удалить бота", callback_data="bot_menu:delete_bot" + callback_metadata)

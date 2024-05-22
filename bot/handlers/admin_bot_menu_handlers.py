@@ -28,6 +28,7 @@ from logs.config import logger
 from custom_bots.multibot import storage as custom_bot_storage
 
 from database.models.bot_model import BotSchemaWithoutId
+from database.models.mailing_model import MailingSchemaWithoutId
 from database.models.order_model import OrderSchema, OrderNotFound, OrderItem
 from database.models.product_model import ProductWithoutId
 
@@ -320,11 +321,15 @@ async def bot_menu_callback_handler(query: CallbackQuery, state: FSMContext):
                 f"👨🏻‍🦱 Всего пользователей: {len(users)}"
             )
             await query.answer()
-        case "mailings":
+        case "mailing_menu" | "mailing_create":
+            if action == "mailing_create":
+                await mailing_db.add_mailing(MailingSchemaWithoutId.model_validate(
+                    {"bot_id": extra_id}
+                ))
             custom_bot = await bot_db.get_bot(bot_id=extra_id)
             await query.message.edit_text(
                 MessageTexts.BOT_MAILINGS_MENU_MESSAGE.value.format((await Bot(custom_bot.token).get_me()).username),
-                reply_markup=await get_inline_bot_mailings_menu_keyboard(bot_id=extra_id)
+                reply_markup=await get_inline_bot_mailing_menu_keyboard(bot_id=extra_id)
             )
         case "goods":
             await query.message.edit_text("Меню склада:", reply_markup=get_inline_bot_goods_menu_keyboard(state_data['bot_id']))

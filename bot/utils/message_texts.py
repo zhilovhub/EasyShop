@@ -70,7 +70,7 @@ class MessageTexts(Enum):
 
     BOT_REMOVED_FROM_CHANNEL_MESSAGE = "Ваш бот @{} был <b>удалён</b> из канала @{}"
 
-    BOT_MAILINGS_MENU_MESSAGE = "Управление рассылками для бота <b>@{}</b>"
+    BOT_MAILINGS_MENU_MESSAGE = "Управление текущей рассылки для бота <b>@{}</b>"
 
     CONTACTS = f"Генеральный директор:\n" \
                f"Тг: <b>@maxzim398</b>\n\n" \

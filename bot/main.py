@@ -9,6 +9,7 @@ from aiogram.client.bot import DefaultBotProperties
 from channels_administration.competition.competition import CompetitionModule
 from database.models.bot_model import BotDao
 from database.models.channel_model import ChannelDao
+from database.models.mailing_model import MailingDao
 from database.models.models import Database
 from database.models.user_model import UserDao
 from database.models.order_model import OrderDao
@@ -34,8 +35,9 @@ user_db: UserDao = db_engine.get_user_dao()
 order_db: OrderDao = db_engine.get_order_dao()
 pay_db: PaymentDao = db_engine.get_payment_dao()
 product_db: ProductDao = db_engine.get_product_db()
-custom_bot_user_db: CustomBotUserDao = db_engine.get_custom_bot_user_db()
 channel_db: ChannelDao = db_engine.get_channel_dao()
+mailing_db: MailingDao = db_engine.get_mailing_dao()
+custom_bot_user_db: CustomBotUserDao = db_engine.get_custom_bot_user_db()
 
 _scheduler = Scheduler(config.SCHEDULER_URL, 'postgres', config.TIMEZONE)
 subscription = Subscription(database=db_engine, scheduler=_scheduler)
