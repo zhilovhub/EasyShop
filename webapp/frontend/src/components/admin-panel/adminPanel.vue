@@ -93,7 +93,7 @@
           <img @click="toggleSelected(item)" @click.stop="toggleFooter(item)" v-else src="@/assets/circle.png" alt="circle png">
           <div class="item-name">{{shortenName(item.name)}}</div>
           <span class="span-id">{{item.id}}</span>
-          <span>52</span>
+          <span> {{item.count}} </span>
           <svg v-if="item.isActive" width="19" height="9" viewBox="0 0 19 9" fill="none" xmlns="http://www.w3.org/2000/svg">
             <path d="M-0.000309349 8.19291C-0.000910159 8.08872 0.0190579 7.98544 0.0584561 7.88898C0.0978524 7.79253 0.155903 7.7048 0.229276 7.63082L6.69719 1.16291C7.06489 0.794283 7.50169 0.501819 7.98259 0.302268C8.46349 0.102717 8.97903 -4.38158e-07 9.49969 -4.154e-07C10.0203 -3.92641e-07 10.5359 0.102717 11.0168 0.302268C11.4977 0.501819 11.9345 0.794283 12.3022 1.16291L18.7701 7.63083C18.8439 7.70464 18.9025 7.79227 18.9424 7.88871C18.9824 7.98516 19.0029 8.08852 19.0029 8.19291C19.0029 8.2973 18.9824 8.40066 18.9424 8.49711C18.9025 8.59355 18.8439 8.68118 18.7701 8.75499C18.6963 8.82881 18.6087 8.88736 18.5122 8.92731C18.4158 8.96725 18.3124 8.98781 18.208 8.98781C18.1036 8.98781 18.0003 8.96725 17.9038 8.92731C17.8074 8.88736 17.7198 8.82881 17.6459 8.75499L11.178 2.28708C10.7327 1.84232 10.1291 1.5925 9.49969 1.5925C8.87031 1.5925 8.26667 1.84232 7.82136 2.28708L1.35344 8.75499C1.27984 8.82919 1.19229 8.88809 1.09582 8.92828C0.999343 8.96847 0.895868 8.98917 0.791359 8.98917C0.686849 8.98917 0.583374 8.96847 0.486902 8.92828C0.39043 8.88809 0.302871 8.82919 0.229276 8.75499C0.155902 8.68102 0.0978523 8.59329 0.058456 8.49683C0.0190579 8.40038 -0.000910168 8.2971 -0.000309349 8.19291Z" fill="currentColor"/>
           </svg>
@@ -118,7 +118,7 @@
     </ul>
         <div v-if="deleteModelWindowIsActive" class="model-wrapper">
       <div class="model-window">
-        <svg @click="deleteModelWindowIsActive = !deleteModelWindowIsActive" width="13" height="13" viewBox="0 0 13 13" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <svg @click="closeModelWindow" width="13" height="13" viewBox="0 0 13 13" fill="none" xmlns="http://www.w3.org/2000/svg">
           <g clip-path="url(#clip0_1099_14080)">
             <path d="M7.64881 6.50047L12.7619 1.3879C13.0793 1.0705 13.0793 0.555904 12.7619 0.238535C12.4445 -0.0788605 11.9299 -0.0788605 11.6126 0.238535L6.49998 5.35164L1.38741 0.238535C1.07001 -0.0788605 0.555416 -0.0788605 0.238046 0.238535C-0.0793234 0.55593 -0.0793488 1.07053 0.238046 1.3879L5.35115 6.50047L0.238046 11.6131C-0.0793488 11.9305 -0.0793488 12.4451 0.238046 12.7624C0.555442 13.0798 1.07004 13.0798 1.38741 12.7624L6.49998 7.6493L11.6126 12.7624C11.9299 13.0798 12.4445 13.0798 12.7619 12.7624C13.0793 12.445 13.0793 11.9304 12.7619 11.6131L7.64881 6.50047Z" fill="currentColor"/>
           </g>
@@ -138,7 +138,7 @@
         </div>
         <div class="button-block">
           <button>Удалить</button>
-          <button @click="deleteModelWindowIsActive = !deleteModelWindowIsActive">Отмена</button>
+          <button @click="closeModelWindow">Отмена</button>
         </div>
       </div>
     </div>
@@ -217,6 +217,11 @@ export default {
     toggleModelWindow() {
       if (this.itemsForDelete.length > 0) {
         this.deleteModelWindowIsActive = !this.deleteModelWindowIsActive
+        if (this.deleteModelWindowIsActive) {
+          document.body.style.overflow = 'hidden';
+        } else {
+
+        }
       }
     },
     toggleInput() {
@@ -233,6 +238,10 @@ export default {
       this.inputIsActive = false;
       tg.offEvent('backButtonClicked', this);
     },
+    closeModelWindow() {
+      this.deleteModelWindowIsActive = !this.deleteModelWindowIsActive;
+      document.body.style.overflow = '';
+    }
   }
 }
 </script>
