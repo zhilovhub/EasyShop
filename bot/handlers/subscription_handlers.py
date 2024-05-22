@@ -126,7 +126,7 @@ async def waiting_payment_pay_handler(message: Message, state: FSMContext):
             )
             await message.answer(
                 MessageTexts.BOT_MENU_MESSAGE.value.format((await Bot(custom_bot.token).get_me()).username),
-                reply_markup=get_inline_bot_menu_keyboard(custom_bot.status)
+                reply_markup=await get_inline_bot_menu_keyboard(custom_bot.bot_id)
             )
         else:
             await state.set_state(States.WAITING_FOR_TOKEN)
@@ -189,7 +189,7 @@ async def waiting_payment_approve_handler(message: Message, state: FSMContext):
             )
             await message.answer(
                 MessageTexts.BOT_MENU_MESSAGE.value.format((await Bot(custom_bot.token).get_me()).username),
-                reply_markup=get_inline_bot_menu_keyboard(custom_bot.status)
+                reply_markup=await get_inline_bot_menu_keyboard(custom_bot.bot_id)
             )
         else:
             await state.set_state(States.WAITING_FOR_TOKEN)
@@ -250,7 +250,7 @@ async def approve_pay_callback(query: CallbackQuery):
         await bot.send_message(
             user_id,
             MessageTexts.BOT_MENU_MESSAGE.value.format(user_bot_data.username),
-            reply_markup=get_inline_bot_menu_keyboard(user_bots[0].status)
+            reply_markup=await get_inline_bot_menu_keyboard(user_bots[0].bot_id)
         )
         await user_state.set_state(States.BOT_MENU)
         await user_state.set_data({'bot_id': bot_id})

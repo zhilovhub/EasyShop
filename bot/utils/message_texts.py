@@ -53,6 +53,21 @@ class MessageTexts(Enum):
 
     BOT_MENU_MESSAGE = "Меню бота @{}:"
 
+    BOT_CHANNELS_LIST_MESSAGE = "Список <b>каналов</b>, принадлежащих боту @{}: "
+
+    BOT_CHANNEL_MENU_MESSAGE = "Администрирование <b>канала</b> @{} <b>ботом</b> @{}"
+
+    BOT_COMPETITIONS_LIST_MESSAGE = "Список <b>конкурсов</b>, принадлежащих боту @{}: "
+
+    BOT_COMPETITION_MENU_MESSAGE = "Настройки конкурса {}\n" \
+                                   "Канал: @{}\n" \
+                                   "Бот: @{}"
+
+    BOT_ADDED_TO_CHANNEL_MESSAGE = "Ваш бот @{} был <b>добавлен</b> в канал @{}\n\n" \
+                                "⚙ Для настройки взаимодействия с каналами нажмите на кнопку <b>Мои Каналы</b>"
+
+    BOT_REMOVED_FROM_CHANNEL_MESSAGE = "Ваш бот @{} был <b>удалён</b> из канала @{}"
+
     CONTACTS = f"Генеральный директор:\n" \
                f"Тг: <b>@maxzim398</b>\n\n" \
                f"Технический директор:\n" \

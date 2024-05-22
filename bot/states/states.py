@@ -21,3 +21,6 @@ class States(StatesGroup):
     EDITING_DEFAULT_MESSAGE = State()
     DELETE_BOT = State()
 
+    EDITING_COMPETITION_NAME = State()
+    EDITING_COMPETITION_DESCRIPTION = State()
+    EDITING_COMPETITION_MEDIA_FILES = State()

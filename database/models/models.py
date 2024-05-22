@@ -4,11 +4,15 @@ from sqlalchemy.ext.asyncio import create_async_engine
 
 from database.models import Base
 from database.models.bot_model import BotDao
+from database.models.competition_media_files_model import CompetitionMediaFileDao
 from database.models.user_model import UserDao
 from database.models.order_model import OrderDao
 from database.models.product_model import ProductDao
+from database.models.channel_model import ChannelDao
 from database.models.payment_model import PaymentDao
 from database.models.category_model import CategoryDao
+from database.models.randomizer_model import RandomizerDao
+from database.models.competition_model import CompetitionDao
 from database.models.custom_bot_user_model import CustomBotUserDao
 
 import logging.config
@@ -52,6 +56,10 @@ class Database:
         self.order_dao = OrderDao(self.engine, self.logger)
         self.payment_dao = PaymentDao(self.engine, self.logger)
         self.category_dao = CategoryDao(self.engine, self.logger)
+        self.competition_dao = CompetitionDao(self.engine, self.logger)
+        self.competition_media_file_dao = CompetitionMediaFileDao(self.engine, self.logger)
+        self.randomizer_dao = RandomizerDao(self.engine, self.logger)
+        self.channel_dao = ChannelDao(self.engine, self.logger)
 
         self.logger.debug("New root database class initialized.", stack_info=True, stacklevel=2)
 
@@ -80,3 +88,15 @@ class Database:
 
     def get_category_dao(self) -> CategoryDao:
         return self.category_dao
+
+    def get_competition_dao(self) -> CompetitionDao:
+        return self.competition_dao
+
+    def get_competition_media_file_dao(self) -> CompetitionMediaFileDao:
+        return self.competition_media_file_dao
+
+    def get_randomizer_dao(self) -> RandomizerDao:
+        return self.randomizer_dao
+
+    def get_channel_dao(self) -> ChannelDao:
+        return self.channel_dao

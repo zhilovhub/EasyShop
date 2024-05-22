@@ -1,8 +1,9 @@
 from typing import Callable, Dict, Any, Awaitable
 
 from aiogram import BaseMiddleware
-from aiogram.types import CallbackQuery, Message
+from aiogram.types import CallbackQuery, Message, ChatMemberUpdated
 
+from bot.main import bot
 from bot.config import logger
 
 from aiogram.exceptions import TelegramAPIError, TelegramRetryAfter
@@ -10,8 +11,8 @@ from aiogram.exceptions import TelegramAPIError, TelegramRetryAfter
 from bot.utils.admin_group import send_event, EventTypes
 
 
-async def notify_about_error(event: CallbackQuery | Message, error_message: str):
-    await event.answer(":( Произошла неизвестная ошибка.")
+async def notify_about_error(event: CallbackQuery | Message | ChatMemberUpdated, error_message: str):
+    await bot.send_message(event.from_user.id, ":( Произошла неизвестная ошибка")
     await send_event(event.from_user, EventTypes.UNKNOWN_ERROR, event.bot, err_msg=error_message)
 
 
@@ -22,7 +23,7 @@ class ErrorMiddleware(BaseMiddleware):
     async def __call__(
             self,
             handler: Callable[[CallbackQuery | Message, Dict[str, Any]], Awaitable[Any]],
-            event: CallbackQuery | Message,
+            event: CallbackQuery | Message | ChatMemberUpdated,
             data: Dict[str, Any]
     ) -> Any:
         try:

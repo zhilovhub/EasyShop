@@ -6,7 +6,9 @@ from aiogram.enums import ParseMode
 from aiogram.types import BotCommand
 from aiogram.client.bot import DefaultBotProperties
 
+from channels_administration.competition.competition import CompetitionModule
 from database.models.bot_model import BotDao
+from database.models.channel_model import ChannelDao
 from database.models.models import Database
 from database.models.user_model import UserDao
 from database.models.order_model import OrderDao
@@ -32,9 +34,12 @@ order_db: OrderDao = db_engine.get_order_dao()
 pay_db: PaymentDao = db_engine.get_payment_dao()
 product_db: ProductDao = db_engine.get_product_db()
 custom_bot_user_db: CustomBotUserDao = db_engine.get_custom_bot_user_db()
+channel_db: ChannelDao = db_engine.get_channel_dao()
 
 _scheduler = Scheduler(config.SCHEDULER_URL, 'postgres', config.TIMEZONE)
 subscription = Subscription(database=db_engine, scheduler=_scheduler)
+
+competition: CompetitionModule = CompetitionModule(db_engine)
 
 cache_resources_file_id_store = JsonStore(
     file_path=config.RESOURCES_PATH.format("cache.json"),
@@ -69,9 +74,10 @@ async def on_start():
 
 
 if __name__ == "__main__":
-    from bot.handlers import admin_bot_menu_router, custom_bot_editing_router, commands_router, subscribe_router
+    from bot.handlers import admin_bot_menu_router, channel_menu_router, custom_bot_editing_router, commands_router, subscribe_router
     dp.include_router(commands_router)  # should be first
     dp.include_router(admin_bot_menu_router)
+    dp.include_router(channel_menu_router)
     dp.include_router(subscribe_router)
     dp.include_router(custom_bot_editing_router)
 
