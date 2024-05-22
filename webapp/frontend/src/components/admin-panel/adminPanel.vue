@@ -65,7 +65,7 @@
       </div>
       <div v-else>
         <div class="input-block" v-if="inputIsActive">
-      <input autofocus @focusout="toggleInput" v-model="inputValue" placeholder="Введите название или ID">
+      <input v-model="inputValue" placeholder="Введите название или ID">
     </div>
           <div v-else class="block-template">
             <img @click="toggleMainCircle" v-if="!mainCircleIsActive" src="@/assets/circle.png" alt="circle png">

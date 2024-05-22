@@ -130,10 +130,18 @@ export default {
       router.router.push({ name: router.SHOPPING_CART })
     },
     closeFilterComponent() {
+      tg.BackButton.hide();
+
       this.filterComponentIs = false;
       this.isLoading = true;
+
       this.$store.dispatch('itemsInit').then(() => {
         this.isLoading = false;
+        this.unionItemsWithCartItems();
+        this.itemsAddToCart();
+
+        tg.onEvent('mainButtonClicked', this.onProductsPageButtonClick);
+        tg.onEvent('backButtonClicked', this.toggleInput);
       });
     },
     priceComma(price) {
@@ -156,7 +164,24 @@ export default {
         console.error('Ошибка: объект item или count не определены.');
       }
     },
+    unionItemsWithCartItems() {
+      let itemsAddToCartArray = this.$store.state.itemsAddToCartArray;
+
+      if (itemsAddToCartArray && itemsAddToCartArray.length > 0) {
+        // Обновляем currentCount (количество в корзине) у полученных с бекенда всех товаров
+        let resultArray = [];
+        for (let i = 0; i < this.$store.state.items.length; i++) {
+          let matchingItem = itemsAddToCartArray.find(item => item.id === this.$store.state.items[i].id);
+          resultArray.push(matchingItem || this.$store.state.items[i]);
+        }
+        this.$store.state.items = resultArray;
+      }
+    },
     itemsAddToCart() {
+      tg.MainButton.text = "В корзину";
+      tg.MainButton.color = "#59C0F9";
+      tg.MainButton.textColor = "#0C0C0C";
+
       this.$store.state.itemsAddToCartArray = this.$store.state.items.filter(item => item.countInCart > 0);
       if (this.$store.state.itemsAddToCartArray.length > 0) {
         tg.MainButton.show();
@@ -193,10 +218,9 @@ export default {
     },
     toggleFilterComponent() {
       if (this.filterComponentIs === false) {
-        tg.offEvent('mainButtonClicked', this.toggleFilterComponent);
+        tg.offEvent('mainButtonClicked', this.onProductsPageButtonClick);
         tg.offEvent('backButtonClicked', this.toggleInput);
-        tg.MainButton.hide();
-        tg.BackButton.hide();
+        tg.offEvent('backButtonClicked', this.closeSearching);
       }
       this.filterComponentIs = !this.filterComponentIs;
     },
@@ -230,31 +254,12 @@ export default {
   mounted() {
     tg.BackButton.hide();  // если что-то прячем, то делаем это сразу
 
-    tg.MainButton.text = "В корзину";
-    tg.MainButton.color = "#59C0F9";
-    tg.MainButton.textColor = "#0C0C0C";
-
     tg.onEvent('mainButtonClicked', this.onProductsPageButtonClick);
     tg.onEvent('backButtonClicked', this.toggleInput);
 
-    let itemsAddToCartArray = this.$store.state.itemsAddToCartArray;  // Проверяем, есть ли в корзине товары
-    if (itemsAddToCartArray.length > 0) {
-      tg.MainButton.show();
-    } else {
-      tg.MainButton.hide();
-    }
-
     this.$store.dispatch('itemsInit').then(() => {
-      if (itemsAddToCartArray && itemsAddToCartArray.length > 0) {
-        // Обновляем currentCount (количество в корзине) у полученных с бекенда всех товаров
-        let resultArray = [];
-        for (let i = 0; i < this.$store.state.items.length; i++) {
-          let matchingItem = itemsAddToCartArray.find(item => item.id === this.$store.state.items[i].id);
-          resultArray.push(matchingItem || this.$store.state.items[i]);
-        }
-        this.$store.state.items = resultArray;
-        this.itemsAddToCart();
-      }
+      this.unionItemsWithCartItems();
+      this.itemsAddToCart();
       this.isLoading = false;
     });
      // this.$store.commit("fetchOrderId");
