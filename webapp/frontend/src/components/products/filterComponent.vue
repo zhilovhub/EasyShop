@@ -43,19 +43,28 @@ export default {
       imageMarkedCircle: '',
       fromPrice: null,
       toPrice: null,
-      filters: []
+      filters: ['По убыванию', 'По возрастанию'],
+      chosenBasedFilter: ''
     }
   },
   name: "filterComponent",
   methods: {
-    closeFilterComponent() {
+    mainButtonClickedEvent() {
       if (this.fromPrice) {
         this.$store.state.price_min = this.fromPrice;
       }
       if (this.toPrice) {
         this.$store.state.price_max = this.toPrice;
       }
+      if (this.chosenBasedFilter === 'По убыванию') {
+        this.$store.dispatch('itemsInit', true);
+      } else if(this.chosenBasedFilter === 'По возрастанию') {
+        this.$store.dispatch('itemsInit', false);
+      }
 
+      this.$emit("close");
+    },
+    backButtonClickedEvent() {
       this.$emit("close");
     },
     toggleImage(event, brand) {
@@ -67,6 +76,8 @@ export default {
         size.classList.remove('chosen');
       });
       target.classList.add('chosen');
+      this.chosenBasedFilter = target.innerText;
+      console.log(this.chosenBasedFilter);
     }
   },
   computed: {
@@ -75,24 +86,20 @@ export default {
     },
   },
   mounted() {
-    this.$store.dispatch('filtersInit').then(() => {
-      this.filters = this.$store.state.filters;
-    });
-
     tg.BackButton.show();
 
     tg.MainButton.text = "Применить";
     tg.MainButton.color = "#59C0F9";
     tg.MainButton.textColor = "#0C0C0C";
 
-    tg.onEvent('mainButtonClicked', this.closeFilterComponent);
-    tg.onEvent('backButtonClicked', this.closeFilterComponent);
+    tg.onEvent('mainButtonClicked', this.mainButtonClickedEvent);
+    tg.onEvent('backButtonClicked', this.backButtonClickedEvent);
 
     tg.MainButton.show();
   },
   unmounted() {
-    tg.offEvent('mainButtonClicked', this.closeFilterComponent);
-    tg.offEvent('backButtonClicked', this.closeFilterComponent);
+    tg.offEvent('mainButtonClicked', this.mainButtonClickedEvent);
+    tg.offEvent('backButtonClicked', this.backButtonClickedEvent);
   }
 };
 </script>
