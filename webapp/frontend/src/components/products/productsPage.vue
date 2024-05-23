@@ -130,6 +130,12 @@ export default {
       router.router.push({ name: router.SHOPPING_CART })
     },
     closeFilterComponent() {
+      if (this.$store.state.itemsAddToCartArray.length > 0) {
+        tg.MainButton.show();
+      } else {
+        tg.MainButton.hide();
+      }
+
       tg.BackButton.hide();
 
       this.filterComponentIs = false;
@@ -251,6 +257,12 @@ export default {
   },
   mounted() {
     tg.BackButton.hide();  // если что-то прячем, то делаем это сразу
+
+    if (this.$store.state.itemsAddToCartArray.length > 0) {
+      tg.MainButton.show();
+    } else {
+      tg.MainButton.hide();
+    }
 
     tg.onEvent('mainButtonClicked', this.onProductsPageButtonClick);
     tg.onEvent('backButtonClicked', this.toggleInput);
