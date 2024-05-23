@@ -4,7 +4,7 @@ from loader import db_engine, logger
 from fastapi import HTTPException, APIRouter, File, UploadFile, Header
 from typing import Annotated
 from pydantic import BaseModel
-from ..products.router import check_admin_authorization
+from products.router import check_admin_authorization
 
 
 PATH = "/api/categories"

@@ -5,7 +5,7 @@ from fastapi import APIRouter, HTTPException, Depends, Header
 from datetime import datetime
 import random
 import string
-from ..products.router import check_admin_authorization
+from products.router import check_admin_authorization
 
 PATH = "/api/orders"
 router = APIRouter(
