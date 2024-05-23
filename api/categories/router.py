@@ -1,9 +1,10 @@
 from database.models.category_model import CategorySchema, CategoryDao, CategorySchemaWithoutId
 from database.models.product_model import ProductSchema, ProductNotFound, ProductWithoutId, ProductDao
 from loader import db_engine, logger
-from fastapi import HTTPException, APIRouter, File, UploadFile
+from fastapi import HTTPException, APIRouter, File, UploadFile, Header
 from typing import Annotated
 from pydantic import BaseModel
+from ..products.router import check_admin_authorization
 
 
 PATH = "/api/categories"
@@ -27,7 +28,8 @@ async def get_all_categories_api(bot_id: int) -> list[CategorySchema]:
 
 
 @router.post("/add_category")
-async def add_category_api(new_category: CategorySchemaWithoutId) -> int:
+async def add_category_api(new_category: CategorySchemaWithoutId, authorization_hash: str = Header()) -> int:
+    await check_admin_authorization(new_category.bot_id, authorization_hash)
     try:
         cat_id = await category_db.add_category(new_category)
     except Exception:
@@ -37,7 +39,8 @@ async def add_category_api(new_category: CategorySchemaWithoutId) -> int:
 
 
 @router.post("/edit_category")
-async def edit_category_api(category: CategorySchema) -> bool:
+async def edit_category_api(category: CategorySchema, authorization_hash: str = Header()) -> bool:
+    await check_admin_authorization(category.bot_id, authorization_hash)
     try:
         await category_db.update_category(category)
     except Exception:
