@@ -13,6 +13,7 @@ export const Store = new Vuex.Store({
     comment: '',
     price_min: 0,
     price_max: 2147483647,
+    reverse_order: null,
   },
   services: {
     serviceItems: []
@@ -44,22 +45,20 @@ export const Store = new Vuex.Store({
     }
   },
   actions: {
-    async itemsInit({ commit }, reverse_order) {
+    async itemsInit({ commit }) {
       try {
         let filters = {
           "filter_name": "price",
           "is_category_filter": false,
-          "reverse_order": reverse_order
+          "reverse_order": Store.state.reverse_order
         }
-        console.log(reverse_order);
-        console.log(filters);
         const response = await fetch(`${Store.state.api_url}/api/products/get_all_products/?bot_id=${Store.state.bot_id}&price_min=${Store.state.price_min}&price_max=${Store.state.price_max}`, {
           method: 'Post',
           headers: {
             'Content-Type': 'application/json',
             'Access-Control-Allow-Origin': '*'
           },
-          body: JSON.stringify(reverse_order ? [filters] : [])
+          body: JSON.stringify(Store.state.reverse_order === true || Store.state.reverse_order === false ? [filters] : [])
         });
         if (!response.ok) {
           throw new Error('Network response was not ok');

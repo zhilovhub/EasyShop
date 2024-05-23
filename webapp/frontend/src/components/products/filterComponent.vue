@@ -41,10 +41,10 @@ export default {
     return {
       imageCircle: '',
       imageMarkedCircle: '',
-      fromPrice: null,
-      toPrice: null,
+      fromPrice: this.$store.state.price_min !== 0 ? this.$store.state.price_min : null,
+      toPrice: this.$store.state.price_max !== 2147483647 ? this.$store.state.price_max : null,
       filters: ['По убыванию', 'По возрастанию'],
-      chosenBasedFilter: ''
+      chosenBasedFilter:  ''
     }
   },
   name: "filterComponent",
@@ -56,12 +56,7 @@ export default {
       if (this.toPrice) {
         this.$store.state.price_max = this.toPrice;
       }
-      if (this.chosenBasedFilter === 'По убыванию') {
-        this.$store.dispatch('itemsInit', true);
-      } else if(this.chosenBasedFilter === 'По возрастанию') {
-        this.$store.dispatch('itemsInit', false);
-      }
-
+      this.chosenBasedFilter === 'По убыванию' ? this.$store.state.reverse_order = true : this.$store.state.reverse_order = false;
       this.$emit("close");
     },
     backButtonClickedEvent() {
@@ -77,7 +72,6 @@ export default {
       });
       target.classList.add('chosen');
       this.chosenBasedFilter = target.innerText;
-      console.log(this.chosenBasedFilter);
     }
   },
   computed: {
@@ -96,6 +90,15 @@ export default {
     tg.onEvent('backButtonClicked', this.backButtonClickedEvent);
 
     tg.MainButton.show();
+
+    this.$store.state.reverse_order === true ? this.chosenBasedFilter = 'По убыванию' : this.chosenBasedFilter = 'По возрастанию';
+    if (this.chosenBasedFilter === 'По возрастанию') {
+      let permElement = document.getElementById('По возрастанию');
+      permElement.classList.add('chosen');
+    } else if (this.chosenBasedFilter === 'По убыванию') {
+      let permElement = document.getElementById('По убыванию');
+      permElement.classList.add('chosen');
+    }
   },
   unmounted() {
     tg.offEvent('mainButtonClicked', this.mainButtonClickedEvent);
