@@ -14,7 +14,7 @@ from aiogram.exceptions import TelegramUnauthorizedError
 from aiogram.utils.token import validate_token, TokenValidationError
 
 from aiogram.types import Message, FSInputFile, CallbackQuery, ReplyKeyboardRemove, MessageEntity, LinkPreviewOptions, \
-    InputMediaPhoto, InputMediaVideo, InputMediaAudio, InputMediaDocument
+    InputMediaPhoto, InputMediaVideo, InputMediaAudio, InputMediaDocument, InputFile
 from aiogram.fsm.context import FSMContext
 
 from bot.main import bot, user_db, bot_db, product_db, order_db, custom_bot_user_db, QUESTION_MESSAGES, competition, \
@@ -83,9 +83,13 @@ async def mailing_menu_callback_handler(query: CallbackQuery, state: FSMContext)
                     reply_markup=await get_inline_bot_mailing_menu_keyboard(bot_id)
                 )
         case "add_button":
+            media_files = await mailing_media_file_db.get_all_mailing_media_files(mailing_id)
+
             if mailing.has_button:
                 await query.answer("В рассылочном сообщении кнопка уже есть", show_alert=True)
                 await query.message.delete()
+            elif len(media_files) > 1:
+                await query.answer("Кнопку нельзя добавить, если в сообщение больше одного медиафайла", show_alert=True)
             else:
                 mailing.button_text = "Shop"
                 mailing.button_url = f"{WEB_APP_URL}:{WEB_APP_PORT}/products-page/?bot_id={bot_id}"
@@ -108,7 +112,8 @@ async def mailing_menu_callback_handler(query: CallbackQuery, state: FSMContext)
             await state.set_data({"bot_id": bot_id, "mailing_id": mailing_id})
         case "media":
             await query.message.answer("Отправьте одним сообщение медиафайлы для рассылочного сообщения\n\n"
-                                       "❗ Старые медиафайлы к этому рассылочному сообщению <b>перезапишутся</b>",
+                                       "❗ Старые медиафайлы к этому рассылочному сообщению <b>перезапишутся</b>\n\n"
+                                       "❗❗ Обратите внимание, что к сообщению нельзя будет прикрепить кнопку, если медиафайлов <b>больше одного</b>",
                                        reply_markup=get_back_keyboard("✅ Готово"))
             await query.answer()
             await state.set_state(States.EDITING_MAILING_MEDIA_FILES)
@@ -116,7 +121,30 @@ async def mailing_menu_callback_handler(query: CallbackQuery, state: FSMContext)
         case "start":
             pass
         case "demo":
-            pass
+            media_files = await mailing_media_file_db.get_all_mailing_media_files(mailing_id)
+
+            if len(media_files) > 1 and mailing.has_button:
+                await query.answer(
+                    "Telegram не позволяет прикрепить кнопку, если в сообщении минимум 2 медиафайла",
+                    show_alert=True
+                )
+            elif mailing.description or media_files:
+                await send_demonstration(
+                    mailing,
+                    query.message
+                )
+                await query.message.answer(
+                    text=MessageTexts.BOT_MAILINGS_MENU_MESSAGE.value.format(
+                        custom_bot_username
+                    ),
+                    reply_markup=await get_inline_bot_mailing_menu_keyboard(bot_id)
+                )
+
+            else:
+                await query.answer(
+                    text="В Вашем рассылочном сообщении нет ни текста, ни медиафайлов",
+                    show_alert=True
+                )
         case "delete_mailing":
             await query.message.edit_text(
                 text=MessageTexts.BOT_MAILINGS_MENU_ACCEPT_DELETING_MESSAGE.value.format(custom_bot_username),
@@ -167,11 +195,11 @@ async def editing_mailing_message_handler(message: Message, state: FSMContext):
                 "Предпросмотр конкурса 👇",
                 reply_markup=get_reply_bot_menu_keyboard(bot_id=state_data["bot_id"])
             )
-            # await send_demonstration(  # TODO сделать
-            #     competition_schema,
-            #     message,
-            #     is_demo=False
-            # )
+            await send_demonstration(
+                mailing,
+                message,
+                is_demo=False
+            )
             await message.answer(
                 MessageTexts.BOT_MAILINGS_MENU_MESSAGE.value.format(
                     custom_bot_username
@@ -219,11 +247,11 @@ async def editing_mailing_button_text_handler(message: Message, state: FSMContex
                 "Предпросмотр конкурса 👇",
                 reply_markup=get_reply_bot_menu_keyboard(bot_id=state_data["bot_id"])
             )
-            # await send_demonstration(  # TODO сделать
-            #     competition_schema,
-            #     message,
-            #     is_demo=False
-            # )
+            await send_demonstration(
+                mailing,
+                message,
+                is_demo=False
+            )
             await message.answer(
                 MessageTexts.BOT_MAILINGS_MENU_MESSAGE.value.format(
                     custom_bot_username
@@ -270,11 +298,11 @@ async def editing_mailing_button_url_handler(message: Message, state: FSMContext
                 "Предпросмотр конкурса 👇",
                 reply_markup=get_reply_bot_menu_keyboard(bot_id=state_data["bot_id"])
             )
-            # await send_demonstration(  # TODO сделать
-            #     competition_schema,
-            #     message,
-            #     is_demo=False
-            # )
+            await send_demonstration(
+                mailing,
+                message,
+                is_demo=False
+            )
             await message.answer(
                 MessageTexts.BOT_MAILINGS_MENU_MESSAGE.value.format(
                     custom_bot_username
@@ -354,4 +382,79 @@ async def editing_mailing_media_files_handler(message: Message, state: FSMContex
         )
 
     else:
-        await message.answer("Пришлите медиафайлы (фото, видео, аудио, документы), которые должны быть прикреплены к рассылочному сообщению")
+        await message.answer(
+            "Пришлите медиафайлы (фото, видео, аудио, документы), которые должны быть прикреплены к рассылочному сообщению",
+            reply_markup=get_back_keyboard("✅ Готово")
+        )
+
+
+async def send_demonstration(
+        mailing_schema: MailingSchema,
+        message: Message,
+        is_demo: bool = True
+) -> None:
+    mailing_id = mailing_schema.mailing_id
+    media_files = await mailing_media_file_db.get_all_mailing_media_files(mailing_id)
+
+    if mailing_schema.has_button:
+        button = InlineKeyboardMarkup(
+            inline_keyboard=[
+                [InlineKeyboardButton(text=mailing_schema.button_text, url=mailing_schema.button_url)]
+            ]
+        )
+    else:
+        button = None
+
+    if len(media_files) > 1:
+        media_group = []
+        for media_file in media_files:
+            if media_file.media_type == "photo":
+                media_group.append(InputMediaPhoto(media=media_file.file_name))
+            elif media_file.media_type == "video":
+                media_group.append(InputMediaVideo(media=media_file.file_name))
+            elif media_file.media_type == "audio":
+                media_group.append(InputMediaAudio(media=media_file.file_name))
+            elif media_file.media_type == "document":
+                media_group.append(InputMediaDocument(media=media_file.file_name))
+
+        if mailing_schema.description:
+            media_group[0].caption = mailing_schema.description
+
+        await bot.send_media_group(
+            chat_id=message.chat.id,
+            media=media_group
+        )
+        await message.delete()
+    elif len(media_files) == 1:
+        media_file = media_files[0]
+        if media_file.media_type == "photo":
+            method = bot.send_photo
+        elif media_file.media_type == "video":
+            method = bot.send_video
+        elif media_file.media_type == "audio":
+            method = bot.send_audio
+        elif media_file.media_type == "document":
+            method = bot.send_document
+        else:
+            raise Exception("Unexpected type")
+
+        await method(
+            message.chat.id,
+            media_file.file_name,
+            caption=mailing_schema.description,
+            reply_markup=button
+        )
+        await message.delete()
+    else:
+        if is_demo:
+            await message.edit_text(
+                text=mailing_schema.description,
+                link_preview_options=LinkPreviewOptions(is_disabled=True),
+                reply_markup=button,
+            )
+        else:
+            await message.answer(
+                text=mailing_schema.description,
+                link_preview_options=LinkPreviewOptions(is_disabled=True),
+                reply_markup=button
+            )
