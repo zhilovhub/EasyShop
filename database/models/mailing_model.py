@@ -27,7 +27,7 @@ class Mailing(Base):
     is_sent = Column(BOOLEAN, default=False)
 
     has_button = Column(BOOLEAN, default=False)
-    button_text = Column(String)
+    button_text = Column(String, default="Shop")
     button_url = Column(String)
 
     created_at = Column(DateTime, nullable=False)

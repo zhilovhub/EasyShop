@@ -51,7 +51,26 @@ async def mailing_menu_callback_handler(query: CallbackQuery, state: FSMContext)
         case "delete_button":
             pass
         case "add_button":
-            pass
+            mailing = await mailing_db.get_mailing(mailing_id)
+            if mailing.has_button:
+                await query.answer("В рассылочном сообщении кнопка уже есть", show_alert=True)
+                await query.message.delete()
+            else:
+                mailing.button_text = "Shop"
+                mailing.button_url = f"{WEB_APP_URL}:{WEB_APP_PORT}/products-page/?bot_id={bot_id}"
+                mailing.has_button = True
+                await mailing_db.update_mailing(mailing)
+
+
+                await query.message.delete()
+                await query.message.answer("Кнопка добавлена\n\n"
+                                           "Сейчас там стандартный текст 'Магазин' и ссылка на Ваш магазин.\n"
+                                           "Эти два параметры Вы можете изменить в настройках рассылки")
+                await query.message.answer(
+                    text=MessageTexts.BOT_MAILINGS_MENU_MESSAGE.value.format(custom_bot_username),
+                    reply_markup=await get_inline_bot_mailing_menu_keyboard(bot_id)
+                )
+
         case "text":
             pass
         case "media":
