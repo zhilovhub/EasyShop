@@ -40,16 +40,32 @@ async def mailing_menu_callback_handler(query: CallbackQuery, state: FSMContext)
     bot_id = int(query_data[2])
     mailing_id = int(query_data[3])
 
+    mailing = await mailing_db.get_mailing(mailing_id)
     custom_bot = await bot_db.get_bot(bot_id)
     custom_bot_username = (await Bot(custom_bot.token).get_me()).username
 
     match action:
         case "button_url":
-            pass
+            if not mailing.has_button:
+                await query.answer("В рассылочном сообщении кнопки уже нет", show_alert=True)
+                await query.message.delete()
+            else:
+                await query.message.answer("Введите ссылку, которая будет открываться по нажатию на кнопку",
+                                           reply_markup=get_back_keyboard())
+                await query.answer()
+                await state.set_state(States.EDITING_MAILING_BUTTON_URL)
+                await state.set_data({"bot_id": bot_id, "mailing_id": mailing_id})
         case "button_text":
-            pass
+            if not mailing.has_button:
+                await query.answer("В рассылочном сообщении кнопки уже нет", show_alert=True)
+                await query.message.delete()
+            else:
+                await query.message.answer("Введите текст, который будет отображаться на кнопке",
+                                           reply_markup=get_back_keyboard())
+                await query.answer()
+                await state.set_state(States.EDITING_MAILING_BUTTON_TEXT)
+                await state.set_data({"bot_id": bot_id, "mailing_id": mailing_id})
         case "delete_button":
-            mailing = await mailing_db.get_mailing(mailing_id)
             if not mailing.has_button:
                 await query.answer("В рассылочном сообщении кнопки уже нет", show_alert=True)
                 await query.message.delete()
@@ -65,7 +81,6 @@ async def mailing_menu_callback_handler(query: CallbackQuery, state: FSMContext)
                     reply_markup=await get_inline_bot_mailing_menu_keyboard(bot_id)
                 )
         case "add_button":
-            mailing = await mailing_db.get_mailing(mailing_id)
             if mailing.has_button:
                 await query.answer("В рассылочном сообщении кнопка уже есть", show_alert=True)
                 await query.message.delete()
@@ -162,3 +177,105 @@ async def editing_competition_description_handler(message: Message, state: FSMCo
     else:
         await message.answer("Описание должно содержать текст.\n"
                              "Если есть необходимость прикрепить медиафайлы, то для этого есть пункт в меню")
+
+
+@admin_bot_menu_router.message(States.EDITING_MAILING_BUTTON_TEXT)
+async def editing_mailing_button_text_handler(message: Message, state: FSMContext):
+    message_text = message.html_text
+
+    state_data = await state.get_data()
+
+    bot_id = state_data["bot_id"]
+    mailing_id = state_data["mailing_id"]
+
+    mailing = await mailing_db.get_mailing(mailing_id)
+    custom_bot_tg = Bot((await bot_db.get_bot(bot_id)).token)
+    custom_bot_username = (await custom_bot_tg.get_me()).username
+
+    if message_text:
+        if message_text == "🔙 Назад":
+            await message.answer(
+                "Возвращаемся в меню...",
+                reply_markup=get_reply_bot_menu_keyboard(bot_id=state_data["bot_id"])
+            )
+            await message.answer(
+                text=MessageTexts.BOT_MAILINGS_MENU_MESSAGE.value.format(
+                    custom_bot_username
+                ),
+                reply_markup=await get_inline_bot_mailing_menu_keyboard(bot_id)
+            )
+        else:
+            mailing.button_text = message.text
+            await mailing_db.update_mailing(mailing)
+
+            await message.answer(
+                "Предпросмотр конкурса 👇",
+                reply_markup=get_reply_bot_menu_keyboard(bot_id=state_data["bot_id"])
+            )
+            # await send_demonstration(  # TODO сделать
+            #     competition_schema,
+            #     message,
+            #     is_demo=False
+            # )
+            await message.answer(
+                MessageTexts.BOT_MAILINGS_MENU_MESSAGE.value.format(
+                    custom_bot_username
+                ),
+                reply_markup=await get_inline_bot_mailing_menu_keyboard(bot_id)
+            )
+
+        await state.set_state(States.BOT_MENU)
+        await state.set_data({"bot_id": bot_id})
+    else:
+        await message.answer("Название кнопки должно содержать текст")
+
+
+@admin_bot_menu_router.message(States.EDITING_MAILING_BUTTON_URL)
+async def editing_mailing_button_url_handler(message: Message, state: FSMContext):
+    message_text = message.html_text
+
+    state_data = await state.get_data()
+
+    bot_id = state_data["bot_id"]
+    mailing_id = state_data["mailing_id"]
+
+    mailing = await mailing_db.get_mailing(mailing_id)
+    custom_bot_tg = Bot((await bot_db.get_bot(bot_id)).token)
+    custom_bot_username = (await custom_bot_tg.get_me()).username
+
+    if message_text:
+        if message_text == "🔙 Назад":
+            await message.answer(
+                "Возвращаемся в меню...",
+                reply_markup=get_reply_bot_menu_keyboard(bot_id=state_data["bot_id"])
+            )
+            await message.answer(
+                text=MessageTexts.BOT_MAILINGS_MENU_MESSAGE.value.format(
+                    custom_bot_username
+                ),
+                reply_markup=await get_inline_bot_mailing_menu_keyboard(bot_id)
+            )
+        else:
+            mailing.button_url = message.text
+            await mailing_db.update_mailing(mailing)
+
+            await message.answer(
+                "Предпросмотр конкурса 👇",
+                reply_markup=get_reply_bot_menu_keyboard(bot_id=state_data["bot_id"])
+            )
+            # await send_demonstration(  # TODO сделать
+            #     competition_schema,
+            #     message,
+            #     is_demo=False
+            # )
+            await message.answer(
+                MessageTexts.BOT_MAILINGS_MENU_MESSAGE.value.format(
+                    custom_bot_username
+                ),
+                reply_markup=await get_inline_bot_mailing_menu_keyboard(bot_id)
+            )
+
+        await state.set_state(States.BOT_MENU)
+        await state.set_data({"bot_id": bot_id})
+    else:
+        await message.answer("Ссылка должно содержать только текст")
