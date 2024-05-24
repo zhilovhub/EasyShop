@@ -1,20 +1,13 @@
 <template>
-  <FilterComponent @close="filterComponentIsActive = false" v-if="filterComponentIsActive"/>
+  <FilterComponent @close="closeFilterComponent" v-if="filterComponentIsActive"/>
   <div v-else>
-    <div v-if="this.inputIsActive" class="header">
-      <span>Поиск по товарам</span>
-      <svg @click="this.inputIsActive = false" width="13" height="13" viewBox="0 0 13 13" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <g clip-path="url(#clip0_1099_14080)">
-          <path d="M7.64881 6.50047L12.7619 1.3879C13.0793 1.0705 13.0793 0.555904 12.7619 0.238535C12.4445 -0.0788605 11.9299 -0.0788605 11.6126 0.238535L6.49998 5.35164L1.38741 0.238535C1.07001 -0.0788605 0.555416 -0.0788605 0.238046 0.238535C-0.0793234 0.55593 -0.0793488 1.07053 0.238046 1.3879L5.35115 6.50047L0.238046 11.6131C-0.0793488 11.9305 -0.0793488 12.4451 0.238046 12.7624C0.555442 13.0798 1.07004 13.0798 1.38741 12.7624L6.49998 7.6493L11.6126 12.7624C11.9299 13.0798 12.4445 13.0798 12.7619 12.7624C13.0793 12.445 13.0793 11.9304 12.7619 11.6131L7.64881 6.50047Z" fill="currentColor"/>
-        </g>
-        <defs>
-          <clipPath id="clip0_1099_14080">
-            <rect width="13" height="13" fill="white"/>
-          </clipPath>
-        </defs>
-      </svg>
-    </div>
-    <div v-else class="header">
+    <div class="wrapper">
+      <Transition v-if="this.inputIsActive">
+        <div class="header">
+          <span>Поиск по товарам</span>
+        </div>
+      </Transition>
+      <div v-else class="header">
       <span>Управление товарами</span>
       <div class="images">
         <svg @click="filterComponentIsActive = !filterComponentIsActive" width="20" height="20" viewBox="0 0 20 20" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
@@ -44,82 +37,106 @@
       </svg>
       </div>
     </div>
-    <div class="input-block" v-if="inputIsActive">
-      <input autofocus @focusout="toggleInput" v-model="inputValue" placeholder="Введите название или ID">
+      <div v-if="isLoading" class="loading-message">
+        Загрузка...
+      </div>
+      <div v-else>
+        <div class="input-block" v-if="inputIsActive">
+      <input v-model="inputValue" placeholder="Введите название или ID">
     </div>
-    <div v-else class="block-template">
-    <img @click="toggleMainCircle" v-if="!mainCircleIsActive" src="@/assets/circle.png" alt="circle png">
-    <img @click="toggleMainCircle" v-else src="@/assets/markedcircle.png" alt="marked circle png">
-    <span>Название товара</span>
-    <span class="span-id">ID</span>
-    <span style="text-align: center">Кол-во на <br> складе</span>
-    <svg @click="toggleModelWindow" width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <g clip-path="url(#clip0_1090_10882)">
-        <path d="M17.5003 3.33333H14.917C14.7236 2.39284 14.2118 1.54779 13.468 0.940598C12.7242 0.333408 11.7938 0.0012121 10.8337 0L9.16699 0C8.20682 0.0012121 7.27642 0.333408 6.53262 0.940598C5.78881 1.54779 5.27707 2.39284 5.08366 3.33333H2.50033C2.27931 3.33333 2.06735 3.42113 1.91107 3.57741C1.75479 3.73369 1.66699 3.94565 1.66699 4.16667C1.66699 4.38768 1.75479 4.59964 1.91107 4.75592C2.06735 4.9122 2.27931 5 2.50033 5H3.33366V15.8333C3.33498 16.938 3.77439 17.997 4.55551 18.7782C5.33662 19.5593 6.39566 19.9987 7.50033 20H12.5003C13.605 19.9987 14.664 19.5593 15.4451 18.7782C16.2263 17.997 16.6657 16.938 16.667 15.8333V5H17.5003C17.7213 5 17.9333 4.9122 18.0896 4.75592C18.2459 4.59964 18.3337 4.38768 18.3337 4.16667C18.3337 3.94565 18.2459 3.73369 18.0896 3.57741C17.9333 3.42113 17.7213 3.33333 17.5003 3.33333V3.33333ZM9.16699 1.66667H10.8337C11.3506 1.6673 11.8546 1.82781 12.2767 2.1262C12.6987 2.42459 13.0182 2.84624 13.1912 3.33333H6.80949C6.98248 2.84624 7.30191 2.42459 7.72398 2.1262C8.14605 1.82781 8.6501 1.6673 9.16699 1.66667V1.66667ZM15.0003 15.8333C15.0003 16.4964 14.7369 17.1323 14.2681 17.6011C13.7993 18.0699 13.1634 18.3333 12.5003 18.3333H7.50033C6.83728 18.3333 6.2014 18.0699 5.73256 17.6011C5.26372 17.1323 5.00033 16.4964 5.00033 15.8333V5H15.0003V15.8333Z" fill="currentColor"/>
-        <path d="M8.33333 14.9997C8.55434 14.9997 8.76631 14.9119 8.92259 14.7556C9.07887 14.5993 9.16666 14.3873 9.16666 14.1663V9.16634C9.16666 8.94533 9.07887 8.73337 8.92259 8.57709C8.76631 8.42081 8.55434 8.33301 8.33333 8.33301C8.11232 8.33301 7.90036 8.42081 7.74408 8.57709C7.5878 8.73337 7.5 8.94533 7.5 9.16634V14.1663C7.5 14.3873 7.5878 14.5993 7.74408 14.7556C7.90036 14.9119 8.11232 14.9997 8.33333 14.9997Z" fill="currentColor"/>
-        <path d="M11.6663 14.9997C11.8874 14.9997 12.0993 14.9119 12.2556 14.7556C12.4119 14.5993 12.4997 14.3873 12.4997 14.1663V9.16634C12.4997 8.94533 12.4119 8.73337 12.2556 8.57709C12.0993 8.42081 11.8874 8.33301 11.6663 8.33301C11.4453 8.33301 11.2334 8.42081 11.0771 8.57709C10.9208 8.73337 10.833 8.94533 10.833 9.16634V14.1663C10.833 14.3873 10.9208 14.5993 11.0771 14.7556C11.2334 14.9119 11.4453 14.9997 11.6663 14.9997Z" fill="currentColor"/>
-      </g>
-      <defs>
-        <clipPath id="clip0_1090_10882">
-          <rect width="20" height="20" fill="currentColor"/>
-        </clipPath>
-      </defs>
-    </svg>
-  </div>
-    <ul class="items-styles">
-    <li style="list-style-type: none" v-for="item in items">
-      <div @click="toggleFooter(item, $event)" class="item-block" :style="{ borderRadius: !item.isActive ? '15px' : '15px 15px 0 0'}">
-        <img @click="toggleSelected(item)" @click.stop="toggleFooter(item)" v-if="item.isSelected" src="@/assets/markedcircle.png" alt="marked circle png">
-        <img @click="toggleSelected(item)" @click.stop="toggleFooter(item)" v-else src="@/assets/circle.png" alt="circle png">
-        <span class="item-name">{{shortenName(item.name)}}</span>
-        <span class="span-id">{{item.id}}</span>
-        <span>52</span>
-        <svg v-if="item.isActive" width="19" height="9" viewBox="0 0 19 9" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <path d="M-0.000309349 8.19291C-0.000910159 8.08872 0.0190579 7.98544 0.0584561 7.88898C0.0978524 7.79253 0.155903 7.7048 0.229276 7.63082L6.69719 1.16291C7.06489 0.794283 7.50169 0.501819 7.98259 0.302268C8.46349 0.102717 8.97903 -4.38158e-07 9.49969 -4.154e-07C10.0203 -3.92641e-07 10.5359 0.102717 11.0168 0.302268C11.4977 0.501819 11.9345 0.794283 12.3022 1.16291L18.7701 7.63083C18.8439 7.70464 18.9025 7.79227 18.9424 7.88871C18.9824 7.98516 19.0029 8.08852 19.0029 8.19291C19.0029 8.2973 18.9824 8.40066 18.9424 8.49711C18.9025 8.59355 18.8439 8.68118 18.7701 8.75499C18.6963 8.82881 18.6087 8.88736 18.5122 8.92731C18.4158 8.96725 18.3124 8.98781 18.208 8.98781C18.1036 8.98781 18.0003 8.96725 17.9038 8.92731C17.8074 8.88736 17.7198 8.82881 17.6459 8.75499L11.178 2.28708C10.7327 1.84232 10.1291 1.5925 9.49969 1.5925C8.87031 1.5925 8.26667 1.84232 7.82136 2.28708L1.35344 8.75499C1.27984 8.82919 1.19229 8.88809 1.09582 8.92828C0.999343 8.96847 0.895868 8.98917 0.791359 8.98917C0.686849 8.98917 0.583374 8.96847 0.486902 8.92828C0.39043 8.88809 0.302871 8.82919 0.229276 8.75499C0.155902 8.68102 0.0978523 8.59329 0.058456 8.49683C0.0190579 8.40038 -0.000910168 8.2971 -0.000309349 8.19291Z" fill="currentColor"/>
-        </svg>
-        <svg v-else width="19" height="9" viewBox="0 0 19 9" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <path d="M19.0032 0.796349C19.0038 0.900537 18.9839 1.00382 18.9445 1.10028C18.9051 1.19673 18.847 1.28446 18.7737 1.35843L12.3057 7.82635C11.938 8.19497 11.5012 8.48744 11.0203 8.68699C10.5394 8.88654 10.0239 8.98926 9.50324 8.98926C8.98258 8.98926 8.46704 8.88654 7.98614 8.68699C7.50524 8.48744 7.06843 8.19497 6.70074 7.82635L0.232823 1.35843C0.159009 1.28462 0.100456 1.19699 0.0605087 1.10055C0.0205609 1.0041 9.72324e-08 0.900737 9.76995e-08 0.796349C9.81665e-08 0.691959 0.0205609 0.588593 0.0605087 0.492151C0.100456 0.395709 0.159009 0.30808 0.232823 0.234265C0.306636 0.160452 0.394266 0.101898 0.490709 0.0619507C0.587151 0.0220032 0.690517 0.00144292 0.794906 0.00144292C0.899294 0.00144292 1.00266 0.0220032 1.0991 0.0619507C1.19555 0.101898 1.28318 0.160452 1.35699 0.234265L7.82491 6.70218C8.27022 7.14694 8.87386 7.39676 9.50324 7.39676C10.1326 7.39676 10.7363 7.14694 11.1816 6.70218L17.6495 0.234266C17.7231 0.160064 17.8106 0.101168 17.9071 0.0609753C18.0036 0.0207836 18.1071 9.17687e-05 18.2116 9.17699e-05C18.3161 9.17712e-05 18.4196 0.0207836 18.516 0.0609753C18.6125 0.101168 18.7001 0.160064 18.7737 0.234266C18.847 0.308239 18.9051 0.395968 18.9445 0.492422C18.9839 0.588877 19.0038 0.69216 19.0032 0.796349Z" fill="currentColor"/>
-        </svg>
-      </div>
-
-      <div class="block-footer" v-if="item.isActive">
-        <hr>
-        <div>
-          <span>Категория <br>товара</span>
-          <span>{{item.category[0]}}</span>
-        </div>
-        <hr>
-        <div>
-          <span>Цена</span>
-          <span>{{item.price}}₽</span>
-        </div>
-      </div>
-    </li>
-  </ul>
-    <div v-if="deleteModelWindowIsActive" class="model-wrapper">
-      <div class="model-window">
-        <svg @click="deleteModelWindowIsActive = !deleteModelWindowIsActive" width="13" height="13" viewBox="0 0 13 13" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <g clip-path="url(#clip0_1099_14080)">
-            <path d="M7.64881 6.50047L12.7619 1.3879C13.0793 1.0705 13.0793 0.555904 12.7619 0.238535C12.4445 -0.0788605 11.9299 -0.0788605 11.6126 0.238535L6.49998 5.35164L1.38741 0.238535C1.07001 -0.0788605 0.555416 -0.0788605 0.238046 0.238535C-0.0793234 0.55593 -0.0793488 1.07053 0.238046 1.3879L5.35115 6.50047L0.238046 11.6131C-0.0793488 11.9305 -0.0793488 12.4451 0.238046 12.7624C0.555442 13.0798 1.07004 13.0798 1.38741 12.7624L6.49998 7.6493L11.6126 12.7624C11.9299 13.0798 12.4445 13.0798 12.7619 12.7624C13.0793 12.445 13.0793 11.9304 12.7619 11.6131L7.64881 6.50047Z" fill="currentColor"/>
-          </g>
+          <div v-else class="block-template">
+            <img @click="toggleMainCircle" v-if="!mainCircleIsActive" src="@/assets/circle.png" alt="circle png">
+            <img @click="toggleMainCircle" v-else src="@/assets/markedcircle.png" alt="marked circle png">
+            <span>Название товара</span>
+            <span class="span-id">ID</span>
+          <span style="text-align: center">Кол-во на <br> складе</span>
+          <svg :class="this.itemsForDelete.length > 0 ? 'binIsActive' : 'bin'" @click="toggleModelWindow" width="20" height="20" viewBox="0 0 20 20" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <g clip-path="url(#clip0_1090_10882)">
+              <path d="M17.5003 3.33333H14.917C14.7236 2.39284 14.2118 1.54779 13.468 0.940598C12.7242 0.333408 11.7938 0.0012121 10.8337 0L9.16699 0C8.20682 0.0012121 7.27642 0.333408 6.53262 0.940598C5.78881 1.54779 5.27707 2.39284 5.08366 3.33333H2.50033C2.27931 3.33333 2.06735 3.42113 1.91107 3.57741C1.75479 3.73369 1.66699 3.94565 1.66699 4.16667C1.66699 4.38768 1.75479 4.59964 1.91107 4.75592C2.06735 4.9122 2.27931 5 2.50033 5H3.33366V15.8333C3.33498 16.938 3.77439 17.997 4.55551 18.7782C5.33662 19.5593 6.39566 19.9987 7.50033 20H12.5003C13.605 19.9987 14.664 19.5593 15.4451 18.7782C16.2263 17.997 16.6657 16.938 16.667 15.8333V5H17.5003C17.7213 5 17.9333 4.9122 18.0896 4.75592C18.2459 4.59964 18.3337 4.38768 18.3337 4.16667C18.3337 3.94565 18.2459 3.73369 18.0896 3.57741C17.9333 3.42113 17.7213 3.33333 17.5003 3.33333V3.33333ZM9.16699 1.66667H10.8337C11.3506 1.6673 11.8546 1.82781 12.2767 2.1262C12.6987 2.42459 13.0182 2.84624 13.1912 3.33333H6.80949C6.98248 2.84624 7.30191 2.42459 7.72398 2.1262C8.14605 1.82781 8.6501 1.6673 9.16699 1.66667V1.66667ZM15.0003 15.8333C15.0003 16.4964 14.7369 17.1323 14.2681 17.6011C13.7993 18.0699 13.1634 18.3333 12.5003 18.3333H7.50033C6.83728 18.3333 6.2014 18.0699 5.73256 17.6011C5.26372 17.1323 5.00033 16.4964 5.00033 15.8333V5H15.0003V15.8333Z" fill="currentColor"/>
+              <path d="M8.33333 14.9997C8.55434 14.9997 8.76631 14.9119 8.92259 14.7556C9.07887 14.5993 9.16666 14.3873 9.16666 14.1663V9.16634C9.16666 8.94533 9.07887 8.73337 8.92259 8.57709C8.76631 8.42081 8.55434 8.33301 8.33333 8.33301C8.11232 8.33301 7.90036 8.42081 7.74408 8.57709C7.5878 8.73337 7.5 8.94533 7.5 9.16634V14.1663C7.5 14.3873 7.5878 14.5993 7.74408 14.7556C7.90036 14.9119 8.11232 14.9997 8.33333 14.9997Z" fill="currentColor"/>
+              <path d="M11.6663 14.9997C11.8874 14.9997 12.0993 14.9119 12.2556 14.7556C12.4119 14.5993 12.4997 14.3873 12.4997 14.1663V9.16634C12.4997 8.94533 12.4119 8.73337 12.2556 8.57709C12.0993 8.42081 11.8874 8.33301 11.6663 8.33301C11.4453 8.33301 11.2334 8.42081 11.0771 8.57709C10.9208 8.73337 10.833 8.94533 10.833 9.16634V14.1663C10.833 14.3873 10.9208 14.5993 11.0771 14.7556C11.2334 14.9119 11.4453 14.9997 11.6663 14.9997Z" fill="currentColor"/>
+            </g>
           <defs>
-            <clipPath id="clip0_1099_14080">
-              <rect width="13" height="13" fill="white"/>
+            <clipPath id="clip0_1090_10882">
+              <rect width="20" height="20" fill="currentColor"/>
             </clipPath>
           </defs>
         </svg>
-        <div class="warning-span">Вы уверены, что хотите удалить товар/ы?</div>
-        <div class="block-items">
-          <div class="item-for-delete" v-for="item in itemsForDelete">
-            <div>Название: {{shortenNameForModelWindow(item.name)}} <br>
-              ID: {{item.price}}</div>
+      </div>
+        <div v-if="items.length === 0 && isLoading === false"
+             style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -75%); text-align: center; width: 350px"
+        >
+          <div style="font-size: 24px; font-weight: 600; word-wrap: break-word; margin-bottom: 20px">Товары в магазине отсутствуют</div>
+          <svg width="72" height="72" viewBox="0 0 72 72" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <g clip-path="url(#clip0_349_452)">
+              <path d="M36 72C28.8799 72 21.9197 69.8887 15.9995 65.9329C10.0793 61.9772 5.46511 56.3548 2.74035 49.7766C0.0155983 43.1985 -0.697322 35.9601 0.691746 28.9768C2.08081 21.9935 5.50948 15.5789 10.5442 10.5442C15.5789 5.50948 21.9935 2.08081 28.9768 0.691746C35.9601 -0.697322 43.1985 0.0155983 49.7766 2.74035C56.3548 5.46511 61.9772 10.0793 65.9329 15.9995C69.8887 21.9197 72 28.8799 72 36C71.9897 45.5446 68.1935 54.6954 61.4445 61.4445C54.6954 68.1935 45.5446 71.9897 36 72ZM36 6.00002C30.0666 6.00002 24.2664 7.75949 19.3329 11.0559C14.3994 14.3524 10.5543 19.0377 8.28363 24.5195C6.013 30.0013 5.4189 36.0333 6.57646 41.8527C7.73402 47.6722 10.5912 53.0177 14.7868 57.2132C18.9824 61.4088 24.3279 64.266 30.1473 65.4236C35.9667 66.5811 41.9987 65.987 47.4805 63.7164C52.9623 61.4458 57.6477 57.6006 60.9441 52.6671C64.2405 47.7337 66 41.9335 66 36C65.9913 28.0462 62.8278 20.4207 57.2036 14.7965C51.5794 9.17226 43.9538 6.00875 36 6.00002ZM53.238 53.001C53.5009 52.7071 53.7032 52.3642 53.8334 51.9919C53.9636 51.6197 54.0192 51.2255 53.9969 50.8318C53.9746 50.4381 53.8749 50.0526 53.7035 49.6975C53.5321 49.3423 53.2924 49.0244 52.998 48.762C48.2344 44.6924 42.2574 42.3147 36 42C29.7427 42.3147 23.7656 44.6924 19.002 48.762C18.4077 49.2911 18.0478 50.0347 18.0017 50.8291C17.9556 51.6235 18.2269 52.4037 18.756 52.998C19.2851 53.5924 20.0287 53.9522 20.8231 53.9983C21.6175 54.0445 22.3977 53.7731 22.992 53.244C26.6594 50.1562 31.2164 48.3191 36 48C40.7835 48.3195 45.3404 50.1566 49.008 53.244C49.6016 53.7717 50.3803 54.0425 51.1733 53.9969C51.9662 53.9514 52.7087 53.5932 53.238 53.001ZM18 30C18 33 20.685 33 24 33C27.315 33 30 33 30 30C30 28.4087 29.3679 26.8826 28.2427 25.7574C27.1174 24.6322 25.5913 24 24 24C22.4087 24 20.8826 24.6322 19.7574 25.7574C18.6322 26.8826 18 28.4087 18 30ZM42 30C42 33 44.685 33 48 33C51.315 33 54 33 54 30C54 28.4087 53.3679 26.8826 52.2427 25.7574C51.1174 24.6322 49.5913 24 48 24C46.4087 24 44.8826 24.6322 43.7574 25.7574C42.6322 26.8826 42 28.4087 42 30Z" fill="#71CBFF"/>
+            </g>
+            <defs>
+              <clipPath id="clip0_349_452">
+                <rect width="72" height="72" fill="white"/>
+              </clipPath>
+            </defs>
+          </svg>
+        </div>
+        <ul v-else class="items-styles">
+          <li style="list-style-type: none" v-for="item in filteredItems">
+            <div @click="toggleFooter(item, $event)" class="item-block" :style="{ borderRadius: !item.isActive ? '15px' : '15px 15px 0 0'}">
+              <img @click="toggleSelected(item)" @click.stop="toggleFooter(item)" v-if="item.isSelected" src="@/assets/markedcircle.png" alt="marked circle png">
+              <img @click="toggleSelected(item)" @click.stop="toggleFooter(item)" v-else src="@/assets/circle.png" alt="circle png">
+              <div class="item-name">{{shortenName(item.name)}}</div>
+              <span class="span-id">{{item.id}}</span>
+              <span> {{item.count}} </span>
+              <svg v-if="item.isActive" width="19" height="9" viewBox="0 0 19 9" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M-0.000309349 8.19291C-0.000910159 8.08872 0.0190579 7.98544 0.0584561 7.88898C0.0978524 7.79253 0.155903 7.7048 0.229276 7.63082L6.69719 1.16291C7.06489 0.794283 7.50169 0.501819 7.98259 0.302268C8.46349 0.102717 8.97903 -4.38158e-07 9.49969 -4.154e-07C10.0203 -3.92641e-07 10.5359 0.102717 11.0168 0.302268C11.4977 0.501819 11.9345 0.794283 12.3022 1.16291L18.7701 7.63083C18.8439 7.70464 18.9025 7.79227 18.9424 7.88871C18.9824 7.98516 19.0029 8.08852 19.0029 8.19291C19.0029 8.2973 18.9824 8.40066 18.9424 8.49711C18.9025 8.59355 18.8439 8.68118 18.7701 8.75499C18.6963 8.82881 18.6087 8.88736 18.5122 8.92731C18.4158 8.96725 18.3124 8.98781 18.208 8.98781C18.1036 8.98781 18.0003 8.96725 17.9038 8.92731C17.8074 8.88736 17.7198 8.82881 17.6459 8.75499L11.178 2.28708C10.7327 1.84232 10.1291 1.5925 9.49969 1.5925C8.87031 1.5925 8.26667 1.84232 7.82136 2.28708L1.35344 8.75499C1.27984 8.82919 1.19229 8.88809 1.09582 8.92828C0.999343 8.96847 0.895868 8.98917 0.791359 8.98917C0.686849 8.98917 0.583374 8.96847 0.486902 8.92828C0.39043 8.88809 0.302871 8.82919 0.229276 8.75499C0.155902 8.68102 0.0978523 8.59329 0.058456 8.49683C0.0190579 8.40038 -0.000910168 8.2971 -0.000309349 8.19291Z" fill="currentColor"/>
+              </svg>
+              <svg v-else width="19" height="9" viewBox="0 0 19 9" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M19.0032 0.796349C19.0038 0.900537 18.9839 1.00382 18.9445 1.10028C18.9051 1.19673 18.847 1.28446 18.7737 1.35843L12.3057 7.82635C11.938 8.19497 11.5012 8.48744 11.0203 8.68699C10.5394 8.88654 10.0239 8.98926 9.50324 8.98926C8.98258 8.98926 8.46704 8.88654 7.98614 8.68699C7.50524 8.48744 7.06843 8.19497 6.70074 7.82635L0.232823 1.35843C0.159009 1.28462 0.100456 1.19699 0.0605087 1.10055C0.0205609 1.0041 9.72324e-08 0.900737 9.76995e-08 0.796349C9.81665e-08 0.691959 0.0205609 0.588593 0.0605087 0.492151C0.100456 0.395709 0.159009 0.30808 0.232823 0.234265C0.306636 0.160452 0.394266 0.101898 0.490709 0.0619507C0.587151 0.0220032 0.690517 0.00144292 0.794906 0.00144292C0.899294 0.00144292 1.00266 0.0220032 1.0991 0.0619507C1.19555 0.101898 1.28318 0.160452 1.35699 0.234265L7.82491 6.70218C8.27022 7.14694 8.87386 7.39676 9.50324 7.39676C10.1326 7.39676 10.7363 7.14694 11.1816 6.70218L17.6495 0.234266C17.7231 0.160064 17.8106 0.101168 17.9071 0.0609753C18.0036 0.0207836 18.1071 9.17687e-05 18.2116 9.17699e-05C18.3161 9.17712e-05 18.4196 0.0207836 18.516 0.0609753C18.6125 0.101168 18.7001 0.160064 18.7737 0.234266C18.847 0.308239 18.9051 0.395968 18.9445 0.492422C18.9839 0.588877 19.0038 0.69216 19.0032 0.796349Z" fill="currentColor"/>
+              </svg>
+            </div>
+            <Transition>
+          <div class="block-footer" :class="{ 'active': item.isActive }" v-show="item.isActive">
             <hr>
+            <div>
+              <span>Категория <br>товара</span>
+              <span>{{item.category[0]}}</span>
+            </div>
+            <hr>
+            <div>
+              <span>Цена</span>
+            <span>{{item.price}}₽</span>
+            </div>
+          </div>
+            </Transition>
+        </li>
+      </ul>
+        <Transition>
+        <div v-show="deleteModelWindowIsActive" class="model-wrapper">
+          <div class="model-window">
+            <svg @click="closeModelWindow" width="13" height="13" viewBox="0 0 13 13" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <g clip-path="url(#clip0_1099_14080)">
+                <path d="M7.64881 6.50047L12.7619 1.3879C13.0793 1.0705 13.0793 0.555904 12.7619 0.238535C12.4445 -0.0788605 11.9299 -0.0788605 11.6126 0.238535L6.49998 5.35164L1.38741 0.238535C1.07001 -0.0788605 0.555416 -0.0788605 0.238046 0.238535C-0.0793234 0.55593 -0.0793488 1.07053 0.238046 1.3879L5.35115 6.50047L0.238046 11.6131C-0.0793488 11.9305 -0.0793488 12.4451 0.238046 12.7624C0.555442 13.0798 1.07004 13.0798 1.38741 12.7624L6.49998 7.6493L11.6126 12.7624C11.9299 13.0798 12.4445 13.0798 12.7619 12.7624C13.0793 12.445 13.0793 11.9304 12.7619 11.6131L7.64881 6.50047Z" fill="currentColor"/>
+              </g>
+              <defs>
+                <clipPath id="clip0_1099_14080">
+                  <rect width="13" height="13" fill="white"/>
+                </clipPath>
+              </defs>
+            </svg>
+            <div class="warning-span">Вы уверены, что хотите удалить товар/ы?</div>
+            <div class="block-items">
+              <div class="item-for-delete" v-for="item in itemsForDelete">
+                <div>Название: {{shortenNameForModelWindow(item.name)}} <br>
+                  ID: {{item.price}}</div>
+                <hr>
+              </div>
+            </div>
+            <div class="button-block">
+              <button @click="deleteProducts">Удалить</button>
+              <button @click="closeModelWindow">Отмена</button>
+            </div>
           </div>
         </div>
-        <div class="button-block">
-          <button>Удалить</button>
-          <button @click="deleteModelWindowIsActive = !deleteModelWindowIsActive">Отмена</button>
-        </div>
+        </Transition>
       </div>
     </div>
   </div>
@@ -133,6 +150,7 @@ import { tg } from '@/main.js'
 export default {
   data() {
     return {
+      isLoading: true,
       filterComponentIsActive: false,
       mainCircleIsActive: false,
       deleteModelWindowIsActive: false,
@@ -142,7 +160,9 @@ export default {
   },
   components: { FilterComponent },
   mounted() {
-    this.$store.dispatch('itemsInit');
+    this.$store.dispatch('itemsInit').then(() =>{
+      this.isLoading = false;
+    });
     tg.onEvent('backButtonClicked', this.toggleInput);
   },
   computed: {
@@ -151,7 +171,14 @@ export default {
     }),
     itemsForDelete() {
       return this.$store.state.items.filter(item => item.isSelected === true);
-    }
+    },
+    filteredItems() {
+      if (!this.items) return [];
+
+      return this.items.filter(el => {
+        return !this.inputValue || (el.name && el.name.toLowerCase().includes(this.inputValue.toLowerCase()));
+      });
+    },
   },
   methods: {
     shortenName(name) {
@@ -164,7 +191,6 @@ export default {
     },
     toggleSelected(item) {
       item.isSelected = !item.isSelected;
-      console.log(this.itemsForDelete);
     },
     toggleFooter(item, event) {
       try {
@@ -178,24 +204,79 @@ export default {
     toggleMainCircle() {
       this.mainCircleIsActive = !this.mainCircleIsActive;
       if (this.mainCircleIsActive) {
-        this.$store.state.items = this.$store.state.items.map(item => ({...item, isSelected: true}));
+        this.$store.state.items = this.$store.state.items.map(item => ({ ...item, isSelected: true }));
       } else {
-        this.$store.state.items = this.$store.state.items.map(item => ({...item, isSelected: false}));
+        this.$store.state.items = this.$store.state.items.map(item => ({ ...item, isSelected: false }));
       }
     },
     toggleModelWindow() {
       if (this.itemsForDelete.length > 0) {
         this.deleteModelWindowIsActive = !this.deleteModelWindowIsActive
+        if (this.deleteModelWindowIsActive) {
+          document.body.style.overflow = 'hidden';
+        }
       }
     },
     toggleInput() {
       this.inputValue = ''
-      this.inputIsActive = !this.inputIsActive;
-      if (this.inputIsActive) {
-        tg.BackButton.show();
-      } else {
-        tg.BackButton.hide();
+      this.inputIsActive = true;
+
+      tg.onEvent('backButtonClicked', this.closeSearching);
+
+      tg.BackButton.show();
+    },
+    closeSearching() {
+      tg.BackButton.hide();
+
+      this.inputIsActive = false;
+      tg.offEvent('backButtonClicked', this);
+    },
+    closeModelWindow() {
+      this.deleteModelWindowIsActive = !this.deleteModelWindowIsActive;
+      document.body.style.overflow = '';
+    },
+    unionItemsWithCartItems() {
+      let itemsAddToCartArray = this.$store.state.itemsAddToCartArray;
+
+      if (itemsAddToCartArray && itemsAddToCartArray.length > 0) {
+        // Обновляем currentCount (количество в корзине) у полученных с бекенда всех товаров
+        let resultArray = [];
+        for (let i = 0; i < this.$store.state.items.length; i++) {
+          let matchingItem = itemsAddToCartArray.find(item => item.id === this.$store.state.items[i].id);
+          resultArray.push(matchingItem || this.$store.state.items[i]);
+        }
+        this.$store.state.items = resultArray;
       }
+    },
+    updateItems() {
+      this.$store.dispatch('itemsInit').then(() => {
+        this.isLoading = false;
+        this.unionItemsWithCartItems();
+
+        tg.MainButton.hide();
+        tg.onEvent('backButtonClicked', this.toggleInput);
+      });
+    },
+    deleteProducts() {
+      const deletePromises = this.itemsForDelete.map(item => {
+        return this.$store.dispatch('deleteProduct', item.id);
+      });
+      this.closeModelWindow();
+      this.isLoading = true;
+      // Ждем выполнения всех промисов с помощью Promise.all
+      Promise.all(deletePromises).then(() => {
+        this.updateItems();
+      }).catch(error => {
+        console.error('Error deleting products:', error);
+      });
+    },
+    closeFilterComponent() {
+      tg.BackButton.hide();
+
+      this.filterComponentIsActive = false;
+      this.isLoading = true;
+
+      this.updateItems();
     },
   }
 }
@@ -207,6 +288,13 @@ export default {
   font-family: 'Montserrat', sans-serif;
   font-size: 15px;
   line-height: 18.29px;
+}
+
+span, div, button {
+  color: var(--app-text-color);
+}
+
+svg {
   color: var(--app-text-color);
 }
 
@@ -257,7 +345,6 @@ export default {
   padding: 5px 10px;
   border-left: 2px solid var(--app-hr-border-color);
   border-right: 2px solid var(--app-hr-border-color);
-
 }
 
 .items-styles{
@@ -265,7 +352,7 @@ export default {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(100%, 1fr));
   grid-column: 1;
-  grid-gap: 15px;
+  grid-gap: 10px;
   padding: 0;
   margin: 20px auto 50px;
   .item-block{
@@ -279,7 +366,7 @@ export default {
     font-size: 14px;
     .item-name {
       font-weight: bold;
-      max-width: 85px;
+      width: 80px;
       white-space: break-spaces;
       text-align: center;
     }
@@ -298,6 +385,7 @@ export default {
     height: 108px;
     border-radius: 0 0 15px 15px;
     background-color: var(--app-card-background-color);
+    transition: opacity 0.3s ease-in-out;
     div {
       display: flex;
       justify-content: start;
@@ -378,6 +466,7 @@ hr {
       }
       button:first-child {
         background-color: var(--app-button-delete-bg);
+        box-shadow: 0 1px 2px 0 rgb(0, 0, 0, 25%);
         border: none;
       }
       button:last-child {
@@ -405,5 +494,33 @@ hr {
       }
     }
   }
+}
+
+.binIsActive {
+  color: red;
+  fill: red;
+  transition: fill 0.3s ease;
+}
+
+.bin {
+  color: var(--app-text-color);
+  fill: var(--app-text-color);
+  opacity: 0.4;
+  transition: fill 0.3s ease;
+}
+
+.loading-message {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  text-align: center;
+  font-size: 24px;
+}
+
+filter-component {
+  position: absolute;
+  left: 0;
+  top: 0;
 }
 </style>

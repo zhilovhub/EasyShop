@@ -1,10 +1,11 @@
 from database.models.order_model import OrderNotFound, OrderSchema
 from pydantic import ValidationError
 from loader import db_engine, logger
-from fastapi import APIRouter, HTTPException, Depends
+from fastapi import APIRouter, HTTPException, Depends, Header
 from datetime import datetime
 import random
 import string
+from products.router import check_admin_authorization
 
 PATH = "/api/orders"
 router = APIRouter(
@@ -30,7 +31,8 @@ async def generate_order_id_api() -> str:
 
 
 @router.get("/get_all_orders/{bot_id}")
-async def get_all_orders_api(bot_id: int) -> list[OrderSchema]:
+async def get_all_orders_api(bot_id: int, authorization_hash: str = Header()) -> list[OrderSchema]:
+    await check_admin_authorization(bot_id, authorization_hash)
     try:
         orders = await db.get_all_orders(bot_id)
     except ValidationError as ex:
@@ -42,8 +44,9 @@ async def get_all_orders_api(bot_id: int) -> list[OrderSchema]:
     return orders
 
 #
-# @router.get("/get_order/{token}/{order_id}")
-# async def get_order_api(token: str, order_id: str) -> OrderSchema:
+# @router.get("/get_order/{bot_id}/{order_id}")
+# async def get_order_api(bot_id: int, order_id: str, authorization_hash: str = Header()) -> OrderSchema:
+#     await check_admin_authorization(bot_id, authorization_hash)
 #     try:
 #         order = await db.get_order(order_id)
 #     except OrderNotFound:
@@ -57,7 +60,8 @@ async def get_all_orders_api(bot_id: int) -> list[OrderSchema]:
 
 
 @router.post("/add_order")
-async def add_order_api(new_order: OrderSchema = Depends()) -> str:
+async def add_order_api(new_order: OrderSchema = Depends(), authorization_hash: str = Header()) -> str:
+    await check_admin_authorization(new_order.bot_id, authorization_hash)
     try:
         new_order.ordered_at = new_order.ordered_at.replace(tzinfo=None)
         order = await db.add_order(new_order)

@@ -1,11 +1,8 @@
 <template>
-  <div class="wrapper">
+  <div class="wrapper" :style="{ opacity: isMounted ? 1 : 0 }">
     <div class="block">
       <div class="span-block">
         <h1>Фильтры</h1>
-        <svg @click="closeFilterComponent" width="13" height="13" viewBox="0 0 13 13" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
-          <path d="M7.6493 6.50023L12.7624 1.38765C13.0798 1.07026 13.0798 0.55566 12.7624 0.238291C12.445 -0.0791046 11.9304 -0.0791046 11.6131 0.238291L6.50047 5.3514L1.3879 0.238291C1.0705 -0.0791046 0.555904 -0.0791046 0.238535 0.238291C-0.0788351 0.555686 -0.0788605 1.07028 0.238535 1.38765L5.35164 6.50023L0.238535 11.6128C-0.0788605 11.9302 -0.0788605 12.4448 0.238535 12.7622C0.55593 13.0796 1.07053 13.0796 1.3879 12.7622L6.50047 7.64905L11.613 12.7622C11.9304 13.0796 12.445 13.0796 12.7624 12.7622C13.0798 12.4448 13.0798 11.9302 12.7624 11.6128L7.6493 6.50023Z" fill="currentColor"/>
-        </svg>
       </div>
     </div>
     <div class="block">
@@ -16,13 +13,16 @@
       </div>
     </div>
     <div class="block based-filter">
-      <div @click="chooseOption($event.target)" class="filterOnBased">По популярности</div>
-      <div @click="chooseOption($event.target)" class="filterOnBased">По популярности</div>
-      <div @click="chooseOption($event.target)" class="filterOnBased">По популярности</div>
+      <div
+        v-for="filter in filters"
+        :id="filter"
+        @click="chooseOption($event.target)"
+        class="filterOnBased"
+      >{{filter}}</div>
     </div>
     <hr style="border: 1px solid var(--app-hr-border-color); width: 90%; margin: 2.5% auto;">
     <div class="block">
-      <span>Бренд</span>
+      <span>Категории</span>
       <div class="brand-filter">
         <div class="brand" v-for="brand in brands" :id="brand" @click="toggleImage($event, brand)">
           <img v-if="brand.isActive" src="@/assets/markedcircle.png" alt="brand image">
@@ -41,21 +41,37 @@ export default {
     return {
       imageCircle: '',
       imageMarkedCircle: '',
-      fromPrice: null,
-      toPrice: null
+      fromPrice: this.$store.state.price_min !== 0 ? this.$store.state.price_min : null,
+      toPrice: this.$store.state.price_max !== 2147483647 ? this.$store.state.price_max : null,
+      filters: ['По убыванию', 'По возрастанию'],
+      chosenBasedFilter:  '',
+      isMounted: false
     }
   },
   name: "filterComponent",
   methods: {
-    closeFilterComponent() {
-      this.groupFilters();
-      this.$emit("close");
+    mainButtonClickedEvent() {
+      if (this.fromPrice) {
+        this.$store.state.price_min = this.fromPrice;
+      }
+      if (this.toPrice) {
+        this.$store.state.price_max = this.toPrice;
+      }
+      this.chosenBasedFilter === 'По убыванию' ? this.$store.state.reverse_order = true : this.$store.state.reverse_order = false;
+      this.isMounted = false;
+      setTimeout(() => {
+        this.isMounted = false;
+        this.$emit("close");
+      }, 100);
+    },
+    backButtonClickedEvent() {
+      setTimeout(() => {
+        this.isMounted = false;
+        this.$emit("close");
+      }, 100);
     },
     toggleImage(event, brand) {
       brand.isActive = !brand.isActive;
-    },
-    groupFilters() {
-      this.$emit("group", {fromPrice: this.fromPrice, toPrice: this.toPrice})
     },
     chooseOption(target) {
       const allSizes = document.querySelectorAll('.filterOnBased');
@@ -63,26 +79,42 @@ export default {
         size.classList.remove('chosen');
       });
       target.classList.add('chosen');
+      this.chosenBasedFilter = target.innerText;
     }
   },
   computed: {
     brands() {
       return this.$store.state.brands;
-    }
+    },
   },
   mounted() {
     tg.BackButton.show();
 
     tg.MainButton.text = "Применить";
+    tg.MainButton.color = "#59C0F9";
+    tg.MainButton.textColor = "#0C0C0C";
 
-    tg.onEvent('mainButtonClicked', this.closeFilterComponent);
-    tg.onEvent('backButtonClicked', this.closeFilterComponent);
+    tg.onEvent('mainButtonClicked', this.mainButtonClickedEvent);
+    tg.onEvent('backButtonClicked', this.backButtonClickedEvent);
 
     tg.MainButton.show();
+
+    this.$store.state.reverse_order === true ? this.chosenBasedFilter = 'По убыванию' : this.chosenBasedFilter = 'По возрастанию';
+    if (this.chosenBasedFilter === 'По возрастанию') {
+      let permElement = document.getElementById('По возрастанию');
+      permElement.classList.add('chosen');
+    } else if (this.chosenBasedFilter === 'По убыванию') {
+      let permElement = document.getElementById('По убыванию');
+      permElement.classList.add('chosen');
+    }
+
+    setTimeout(() => {
+      this.isMounted = true;
+    }, 50);
   },
   unmounted() {
-    tg.offEvent('mainButtonClicked', this.closeFilterComponent);
-    tg.offEvent('backButtonClicked', this.closeFilterComponent);
+    tg.offEvent('mainButtonClicked', this.mainButtonClickedEvent);
+    tg.offEvent('backButtonClicked', this.backButtonClickedEvent);
   }
 };
 </script>
@@ -100,6 +132,7 @@ export default {
   width: 100vw;
   height: 100vh;
   background-color: var(--app-background-color);
+  transition: opacity 0.5s ease;;
   .block {
     padding: 20px 5%;
     .span-block {
@@ -148,12 +181,14 @@ export default {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(40vw, 1fr));
   grid-column: 1;
-  grid-gap: 15px;
-  div {
+  grid-gap: 10px;
+  .filterOnBased {
+    font-size: 14px;
+    text-align: center;
     display: flex;
     align-items: center;
     justify-content: center;
-    height: 30px;
+    height: 35px;
     border-radius: 30px;
     background-color: var(--app-hr-border-color);
   }

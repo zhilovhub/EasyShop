@@ -7,9 +7,13 @@ export const Store = new Vuex.Store({
     api_url: `https://ezbots.ru:${import.meta.env.VITE_API_PORT}`,
     itemsAddToCartArray: [],
     items: [],
+    filters: [],
     town: '',
     address: '',
     comment: '',
+    price_min: 0,
+    price_max: 2147483647,
+    reverse_order: null,
   },
   services: {
     serviceItems: []
@@ -20,6 +24,9 @@ export const Store = new Vuex.Store({
       state.items = state.items.map(item => ({ ...item, countInCart: 0 }));
       state.items = state.items.map(item => ({ ...item, isSelected: false }));
       state.items = state.items.map(item => ({...item, isActive: false}));
+    },
+    setFilters(state, filters) {
+      state.filters = filters
     },
     postData() {
       let data = {
@@ -40,13 +47,18 @@ export const Store = new Vuex.Store({
   actions: {
     async itemsInit({ commit }) {
       try {
-        const response = await fetch(`${Store.state.api_url}/api/products/get_all_products/?bot_id=${Store.state.bot_id}&price_min=0&price_max=2147483647`, {
+        let filters = {
+          "filter_name": "price",
+          "is_category_filter": false,
+          "reverse_order": Store.state.reverse_order
+        }
+        const response = await fetch(`${Store.state.api_url}/api/products/get_all_products/?bot_id=${Store.state.bot_id}&price_min=${Store.state.price_min}&price_max=${Store.state.price_max}`, {
           method: 'Post',
           headers: {
             'Content-Type': 'application/json',
             'Access-Control-Allow-Origin': '*'
           },
-          body: JSON.stringify([])
+          body: JSON.stringify(Store.state.reverse_order === true || Store.state.reverse_order === false ? [filters] : [])
         });
         if (!response.ok) {
           throw new Error('Network response was not ok');
@@ -57,6 +69,35 @@ export const Store = new Vuex.Store({
         console.error('There was a problem with the fetch operation:', error);
       }
     },
+    // async filtersInit( {commit} ) {
+    //   try {
+    //     const response = await fetch(`${Store.state.api_url}/api/products/get_filters/`, {
+    //       method: 'Get',
+    //       headers: {
+    //         'Content-Type': 'application/json',
+    //         'Access-Control-Allow-Origin': '*'
+    //       },
+    //     });
+    //     const data = await response.json();
+    //     commit('setFilters', data);
+    //   } catch (error) {
+    //     console.error('There was a problem with the fetch operation:', error);
+    //   }
+    // },
+    async deleteProduct({commit}, productId) {
+      try {
+        await fetch(`${Store.state.api_url}/api/products/del_product/${Store.state.bot_id}/${productId}`, {
+          method: 'DELETE',
+          headers: {
+            'Content-Type': 'application/json',
+            'Access-Control-Allow-Origin': '*',
+            'authorization-hash': 'DEBUG'
+          },
+        });
+      } catch (error) {
+        console.error('There was a problem with the fetch operation:', error);
+      }
+    }
   },
   getters: {
   }

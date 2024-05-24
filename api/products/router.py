@@ -1,10 +1,20 @@
 from database.models.category_model import CategorySchema, CategoryDao
 from database.models.product_model import (ProductSchema, ProductNotFound, ProductWithoutId, ProductDao,
                                            ProductFilter, ProductFilterWithoutBot, FilterNotFound, PRODUCT_FILTERS)
-from loader import db_engine, logger
-from fastapi import HTTPException, APIRouter, File, UploadFile, Body, Depends
+from loader import db_engine, logger, DEBUG
+from fastapi import HTTPException, APIRouter, File, UploadFile, Body, Depends, Header
 from typing import Annotated, List
 from pydantic import BaseModel, Field, field_validator, InstanceOf, model_validator
+from sqlalchemy.exc import IntegrityError
+
+
+async def check_admin_authorization(bot_id: int, header) -> bool:
+    return True  # TODO its temporary
+    if header:
+        if DEBUG and header == "DEBUG":
+            return True
+        # process hash logic
+    raise HTTPException(status_code=401, detail="Unauthorized for that API method")
 
 
 PATH = "/api/products"
@@ -100,9 +110,12 @@ async def get_product_api(bot_id: int, product_id: int) -> ProductSchema:
 
 
 @router.post("/add_product")
-async def add_product_api(new_product: ProductWithoutId) -> int:
+async def add_product_api(new_product: ProductWithoutId, authorization_hash: str = Header()) -> int:
+    await check_admin_authorization(new_product.bot_id, authorization_hash)
     try:
         product_id = await product_db.add_product(new_product)
+    except IntegrityError as ex:
+        raise HTTPException(status_code=409, detail=str(ex))
     except Exception:
         logger.error("Error while execute add_product db_method", exc_info=True)
         raise HTTPException(status_code=500, detail="Internal error.")
@@ -110,13 +123,27 @@ async def add_product_api(new_product: ProductWithoutId) -> int:
 
 
 @router.post("/edit_product")
-async def edit_product_api(product: ProductSchema) -> bool:
+async def edit_product_api(product: ProductSchema, authorization_hash: str = Header()) -> bool:
+    await check_admin_authorization(product.bot_id, authorization_hash)
     try:
         await product_db.update_product(product)
     except Exception:
         logger.error("Error while execute update_product db_method", exc_info=True)
         raise HTTPException(status_code=500, detail="Internal error.")
     return True
+
+
+@router.delete("/del_product/{bot_id}/{product_id}")
+async def get_product_api(bot_id: int, product_id: int, authorization_hash: str = Header()) -> str:
+    await check_admin_authorization(bot_id, authorization_hash)
+    try:
+        await product_db.delete_product(product_id)
+    except ProductNotFound:
+        raise HTTPException(status_code=404, detail="Product not found.")
+    except Exception:
+        logger.error("Error while execute delete_product db_method", exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal error.")
+    return "product deleted"
 
 
 class CSVFileInputModel(BaseModel):
@@ -126,7 +153,8 @@ class CSVFileInputModel(BaseModel):
 
 
 @router.post("/send_product_csv_file")
-async def send_product_csv_api(payload: CSVFileInputModel) -> bool:
+async def send_product_csv_api(payload: CSVFileInputModel, authorization_hash: str = Header()) -> bool:
+    await check_admin_authorization(payload.bot_id, authorization_hash)
     try:
         logger.info(f"get new csv file from api method bytes: {payload.file}")
     except Exception:
@@ -136,7 +164,8 @@ async def send_product_csv_api(payload: CSVFileInputModel) -> bool:
 
 
 @router.get("/get_products_csv_file/{bot_id}")
-async def get_product_csv_api(bot_id: int) -> Annotated[bytes, File()]:
+async def get_product_csv_api(bot_id: int, authorization_hash: str = Header()) -> Annotated[bytes, File()]:
+    await check_admin_authorization(bot_id, authorization_hash)
     try:
         # get csv logic
         pass
