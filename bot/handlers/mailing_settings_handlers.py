@@ -83,8 +83,12 @@ async def mailing_menu_callback_handler(query: CallbackQuery, state: FSMContext)
                     reply_markup=await get_inline_bot_mailing_menu_keyboard(bot_id)
                 )
 
-        case "text":
-            pass
+        case "message":
+            await query.message.answer("Введите текст, который будет отображаться в рассылочном сообщении",
+                                       reply_markup=get_back_keyboard())
+            await query.answer()
+            await state.set_state(States.EDITING_MAILING_MESSAGE)
+            await state.set_data({"bot_id": bot_id, "mailing_id": mailing_id})
         case "media":
             pass
         case "start":
@@ -108,69 +112,18 @@ async def mailing_menu_callback_handler(query: CallbackQuery, state: FSMContext)
             )
 
 
-@admin_bot_menu_router.message(States.EDITING_COMPETITION_NAME)
-async def editing_competition_name_handler(message: Message, state: FSMContext):
-    message_text = message.text
-
-    state_data = await state.get_data()
-
-    competition_id = state_data["competition_id"]
-    bot_id = state_data["bot_id"]
-    channel_id = state_data["channel_id"]
-
-    competition_schema = await competition.get_competition(competition_id)
-    custom_bot_tg = Bot((await bot_db.get_bot(bot_id)).token)
-    custom_bot_username = (await custom_bot_tg.get_me()).username
-    channel_username = (await custom_bot_tg.get_chat(channel_id)).username
-
-    if message_text:
-        if message_text == "🔙 Назад":
-            await message.answer(
-                "Возвращаемся в меню...",
-                reply_markup=get_reply_bot_menu_keyboard(bot_id=state_data["bot_id"])
-            )
-            await message.answer(
-                text=MessageTexts.BOT_COMPETITION_MENU_MESSAGE.value.format(
-                    competition_schema.name,
-                    channel_username,
-                    custom_bot_username
-                ),
-                reply_markup=await get_competition_menu_keyboard(competition_id)
-            )
-        else:
-            competition_schema.name = message_text
-            await competition.update_competition(competition_schema)
-
-            await message.answer(
-                MessageTexts.BOT_COMPETITION_MENU_MESSAGE.value.format(
-                    competition_schema.name,
-                    channel_username,
-                    custom_bot_username
-                ),
-                reply_markup=await get_competition_menu_keyboard(competition_id)
-            )
-
-        await state.set_state(States.BOT_MENU)
-        await state.set_data({"bot_id": bot_id})
-    else:
-        await message.answer("Короткое название отображается только у Вас для удобной ориентации по созданным конкурсам\n"
-                             "Оно должно являться <b>текстом</b>, максимальная длина которого <b>40 символов</b>")
-
-
-@admin_bot_menu_router.message(States.EDITING_COMPETITION_DESCRIPTION)
+@admin_bot_menu_router.message(States.EDITING_MAILING_MESSAGE)
 async def editing_competition_description_handler(message: Message, state: FSMContext):
     message_text = message.html_text
 
     state_data = await state.get_data()
 
-    competition_id = state_data["competition_id"]
     bot_id = state_data["bot_id"]
-    channel_id = state_data["channel_id"]
+    mailing_id = state_data["mailing_id"]
 
-    competition_schema = await competition.get_competition(competition_id)
+    mailing = await mailing_db.get_mailing(mailing_id)
     custom_bot_tg = Bot((await bot_db.get_bot(bot_id)).token)
     custom_bot_username = (await custom_bot_tg.get_me()).username
-    channel_username = (await custom_bot_tg.get_chat(channel_id)).username
 
     if message_text:
         if message_text == "🔙 Назад":
@@ -179,33 +132,29 @@ async def editing_competition_description_handler(message: Message, state: FSMCo
                 reply_markup=get_reply_bot_menu_keyboard(bot_id=state_data["bot_id"])
             )
             await message.answer(
-                text=MessageTexts.BOT_COMPETITION_MENU_MESSAGE.value.format(
-                    competition_schema.name,
-                    channel_username,
+                text=MessageTexts.BOT_MAILINGS_MENU_MESSAGE.value.format(
                     custom_bot_username
                 ),
-                reply_markup=await get_competition_menu_keyboard(competition_id)
+                reply_markup=await get_inline_bot_mailing_menu_keyboard(bot_id)
             )
         else:
-            competition_schema.description = message.html_text
-            await competition.update_competition(competition_schema)
+            mailing.description = message.html_text
+            await mailing_db.update_mailing(mailing)
 
             await message.answer(
                 "Предпросмотр конкурса 👇",
                 reply_markup=get_reply_bot_menu_keyboard(bot_id=state_data["bot_id"])
             )
-            await send_demonstration(
-                competition_schema,
-                message,
-                is_demo=False
-            )
+            # await send_demonstration(  # TODO сделать
+            #     competition_schema,
+            #     message,
+            #     is_demo=False
+            # )
             await message.answer(
-                MessageTexts.BOT_COMPETITION_MENU_MESSAGE.value.format(
-                    competition_schema.name,
-                    channel_username,
+                MessageTexts.BOT_MAILINGS_MENU_MESSAGE.value.format(
                     custom_bot_username
                 ),
-                reply_markup=await get_competition_menu_keyboard(competition_id)
+                reply_markup=await get_inline_bot_mailing_menu_keyboard(bot_id)
             )
 
         await state.set_state(States.BOT_MENU)
@@ -213,110 +162,3 @@ async def editing_competition_description_handler(message: Message, state: FSMCo
     else:
         await message.answer("Описание должно содержать текст.\n"
                              "Если есть необходимость прикрепить медиафайлы, то для этого есть пункт в меню")
-
-
-@admin_bot_menu_router.message(States.EDITING_COMPETITION_MEDIA_FILES)
-async def editing_competition_media_files_handler(message: Message, state: FSMContext):
-    state_data = await state.get_data()
-
-    competition_id = state_data["competition_id"]
-    bot_id = state_data["bot_id"]
-    channel_id = state_data["channel_id"]
-
-    if (message.photo or message.video or message.audio or message.document) and "first" not in state_data:
-        await competition.delete_competition_media_files(competition_id)
-        state_data["first"] = True
-
-    competition_schema = await competition.get_competition(competition_id)
-    custom_bot_tg = Bot((await bot_db.get_bot(bot_id)).token)
-    custom_bot_username = (await custom_bot_tg.get_me()).username
-    channel_username = (await custom_bot_tg.get_chat(channel_id)).username
-
-    if message.text == "✅ Готово":
-        await message.answer(
-            "Возвращаемся в меню...",
-            reply_markup=get_reply_bot_menu_keyboard(bot_id=state_data["bot_id"])
-        )
-        await message.answer(
-            text=MessageTexts.BOT_COMPETITION_MENU_MESSAGE.value.format(
-                competition_schema.name,
-                channel_username,
-                custom_bot_username
-            ),
-            reply_markup=await get_competition_menu_keyboard(competition_id)
-        )
-
-        await state.set_state(States.BOT_MENU)
-        await state.set_data({"bot_id": bot_id})
-    elif message.photo:
-        photo = message.photo[-1]
-        await competition.add_competition_media_file(competition_id, photo.file_id, "photo")
-
-        await message.answer(
-            f"Фото {photo.file_unique_id} добавлено"
-        )
-    elif message.video:
-        video = message.video
-        await competition.add_competition_media_file(competition_id, video.file_id, "video")
-
-        await message.answer(
-            f"Видео {video.file_name} добавлено"
-        )
-    elif message.audio:
-        audio = message.audio
-        await competition.add_competition_media_file(competition_id, audio.file_id, "audio")
-
-        await message.answer(
-            f"Аудио {audio.file_name} добавлено"
-        )
-    elif message.document:
-        document = message.document
-        await competition.add_competition_media_file(competition_id, document.file_id, "document")
-
-        await message.answer(
-            f"Документ {document.file_name} добавлен"
-        )
-
-    else:
-        await message.answer("Пришлите медиафайлы (фото, видео, аудио, документы), которые должны быть прикреплены к конкурсному сообщению")
-
-
-async def send_demonstration(
-        competition_schema: CompetitionSchema,
-        message: Message,
-        is_demo: bool = True
-) -> None:
-    competition_id = competition_schema.competition_id
-    media_files = await competition.get_competition_media_files(competition_id)
-
-    if media_files:
-        media_group = []
-        for media_file in media_files:
-            if media_file.media_type == "photo":
-                media_group.append(InputMediaPhoto(media=media_file.file_name))
-            elif media_file.media_type == "video":
-                media_group.append(InputMediaVideo(media=media_file.file_name))
-            elif media_file.media_type == "audio":
-                media_group.append(InputMediaAudio(media=media_file.file_name))
-            elif media_file.media_type == "document":
-                media_group.append(InputMediaDocument(media=media_file.file_name))
-
-        media_group[0].caption = competition_schema.description
-
-        await bot.send_media_group(
-            chat_id=message.chat.id,
-            media=media_group
-        )
-        await message.delete()
-    else:
-        if is_demo:
-            await message.edit_text(
-                text=competition_schema.description,
-                link_preview_options=LinkPreviewOptions(is_disabled=True),
-                reply_markup=None,
-            )
-        else:
-            await message.answer(
-                text=competition_schema.description,
-                link_preview_options=LinkPreviewOptions(is_disabled=True),
-            )

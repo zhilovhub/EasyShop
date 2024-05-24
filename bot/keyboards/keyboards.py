@@ -259,7 +259,7 @@ async def get_inline_bot_mailing_menu_keyboard(bot_id: int) -> InlineKeyboardMar
     return InlineKeyboardMarkup(inline_keyboard=[
         [
             InlineKeyboardButton(
-                text="Текст сообщения", callback_data="mailing_menu:text" + callback_metadata
+                text="Текст сообщения", callback_data="mailing_menu:message" + callback_metadata
             ),
             InlineKeyboardButton(
                 text="Медиафайлы", callback_data="mailing_menu:media" + callback_metadata
