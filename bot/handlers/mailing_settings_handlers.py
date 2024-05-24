@@ -49,7 +49,21 @@ async def mailing_menu_callback_handler(query: CallbackQuery, state: FSMContext)
         case "button_text":
             pass
         case "delete_button":
-            pass
+            mailing = await mailing_db.get_mailing(mailing_id)
+            if not mailing.has_button:
+                await query.answer("В рассылочном сообщении кнопки уже нет", show_alert=True)
+                await query.message.delete()
+            else:
+                mailing.button_text = None
+                mailing.button_url = None
+                mailing.has_button = False
+                await mailing_db.update_mailing(mailing)
+
+                await query.message.answer("Кнопка удалена\n\n")
+                await query.message.answer(
+                    text=MessageTexts.BOT_MAILINGS_MENU_MESSAGE.value.format(custom_bot_username),
+                    reply_markup=await get_inline_bot_mailing_menu_keyboard(bot_id)
+                )
         case "add_button":
             mailing = await mailing_db.get_mailing(mailing_id)
             if mailing.has_button:
@@ -61,8 +75,6 @@ async def mailing_menu_callback_handler(query: CallbackQuery, state: FSMContext)
                 mailing.has_button = True
                 await mailing_db.update_mailing(mailing)
 
-
-                await query.message.delete()
                 await query.message.answer("Кнопка добавлена\n\n"
                                            "Сейчас там стандартный текст 'Магазин' и ссылка на Ваш магазин.\n"
                                            "Эти два параметры Вы можете изменить в настройках рассылки")
