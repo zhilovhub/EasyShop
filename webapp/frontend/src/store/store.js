@@ -90,7 +90,8 @@ export const Store = new Vuex.Store({
           method: 'Delete',
           headers: {
             'Content-Type': 'application/json',
-            'Access-Control-Allow-Origin': '*'
+            'Access-Control-Allow-Origin': '*',
+            'authorization-hash': 'DEBUG'
           },
         });
       } catch (error) {
