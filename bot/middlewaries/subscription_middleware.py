@@ -31,8 +31,8 @@ class CheckSubscriptionMiddleware(BaseMiddleware):
             logger.info(f"user {user_id} not found in db, creating new instance...")
             await send_event(event.from_user, EventTypes.NEW_USER)
             await user_db.add_user(UserSchema(
-                user_id=user_id, registered_at=datetime.utcnow(), status=UserStatusValues.NEW, locale="default",
-                subscribed_until=None)
+                user_id=user_id, username=event.from_user.username, registered_at=datetime.utcnow(),
+                status=UserStatusValues.NEW, locale="default", subscribed_until=None)
             )
             await message.answer(MessageTexts.ABOUT_MESSAGE.value)
 

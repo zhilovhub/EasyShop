@@ -5,7 +5,7 @@ from fastapi import APIRouter, HTTPException, Depends, Header
 from datetime import datetime
 import random
 import string
-from products.router import check_admin_authorization
+from utils import check_admin_authorization
 
 from logs.config import api_logger, extra_params
 
@@ -39,8 +39,8 @@ async def generate_order_id_api() -> str:
 
 
 @router.get("/get_all_orders/{bot_id}")
-async def get_all_orders_api(bot_id: int, authorization_hash: str = Header()) -> list[OrderSchema]:
-    await check_admin_authorization(bot_id, authorization_hash)
+async def get_all_orders_api(bot_id: int, authorization_data: str = Header()) -> list[OrderSchema]:
+    await check_admin_authorization(bot_id, authorization_data)
     try:
         orders = await db.get_all_orders(bot_id)
     except ValidationError as ex:
@@ -68,8 +68,8 @@ async def get_all_orders_api(bot_id: int, authorization_hash: str = Header()) ->
 
 
 @router.post("/add_order")
-async def add_order_api(new_order: OrderSchema = Depends(), authorization_hash: str = Header()) -> str:
-    await check_admin_authorization(new_order.bot_id, authorization_hash)
+async def add_order_api(new_order: OrderSchema = Depends(), authorization_data: str = Header()) -> str:
+    await check_admin_authorization(new_order.bot_id, authorization_data)
     try:
         new_order.ordered_at = new_order.ordered_at.replace(tzinfo=None)
         await db.add_order(new_order)

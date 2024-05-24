@@ -82,7 +82,7 @@
     <br>
     <div style="font-size: 20px; font-weight: bold; margin: 0 5%;">Заказ</div>
     <div class="title-div">
-    <img style="width: 150px; height: 150px; border-radius: 15px;" :src="`${this.$store.state.api_url}/files/` + itemsAddToCartArray[0].picture" alt="image">
+    <img style="width: 150px; height: 150px; border-radius: 15px; object-fit: cover;" :src="`${this.$store.state.api_url}/files/` + itemsAddToCartArray[0].picture" alt="image">
     <div class="title-text">
       <div style="display: flex; flex-direction: column">
         <span style="font-size: 20px; font-weight: bold; line-height: 1.5rem">{{ itemsAddToCartArray[0].name }}</span>
@@ -271,5 +271,4 @@ textarea {
     padding-top: 10px;
   }
 }
-
 </style>

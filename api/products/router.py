@@ -1,23 +1,29 @@
+import io
+import random
+
 from database.models.category_model import CategorySchema, CategoryDao
-from database.models.product_model import (ProductSchema, ProductNotFound, ProductWithoutId, ProductDao,
-                                           ProductFilter, ProductFilterWithoutBot, FilterNotFound, PRODUCT_FILTERS)
-from loader import db_engine, DEBUG
-from fastapi import HTTPException, APIRouter, File, UploadFile, Body, Depends, Header
-from typing import Annotated, List
+from database.models.product_model import (
+    ProductSchema,
+    ProductNotFound,
+    ProductWithoutId,
+    ProductDao,
+    ProductFilter,
+    ProductFilterWithoutBot,
+    FilterNotFound,
+    PRODUCT_FILTERS)
+from loader import db_engine, logger, DEBUG, PROJECT_ROOT
+from fastapi import HTTPException, APIRouter, File, UploadFile, Body, Depends, Header, Request, Form
+from typing import Annotated, List, Optional
 from pydantic import BaseModel, Field, field_validator, InstanceOf, model_validator
 from sqlalchemy.exc import IntegrityError
+from utils import check_admin_authorization
+import random
+import string
+from dataclasses import dataclass
+import json
+from io import BytesIO
 
 from logs.config import api_logger
-
-
-async def check_admin_authorization(bot_id: int, header) -> bool:
-    return True  # TODO its temporary
-    if header:
-        if DEBUG and header == "DEBUG":
-            return True
-        # process hash logic
-    raise HTTPException(status_code=401, detail="Unauthorized for that API method")
-
 
 PATH = "/api/products"
 router = APIRouter(
@@ -48,7 +54,8 @@ async def get_filters_api():
 
 
 @router.post("/get_all_products/")
-async def get_all_products_api(payload: GetProductsRequest = Depends(GetProductsRequest)) -> list[ProductSchema]:
+async def get_all_products_api(payload: GetProductsRequest = Depends(
+        GetProductsRequest)) -> list[ProductSchema]:
     try:
         if not payload.filters:
             products = await product_db.get_all_products(payload.bot_id,
@@ -64,25 +71,34 @@ async def get_all_products_api(payload: GetProductsRequest = Depends(GetProducts
                         if cat.name.lower() == product_filter.filter_name.lower():
                             cat_id = cat.id
                             break
-                    filters.append(ProductFilter(bot_id=payload.bot_id, filter_name=product_filter.filter_name,
-                                                 is_category_filter=product_filter.is_category_filter,
-                                                 reverse_order=product_filter.reverse_order,
-                                                 category_id=cat_id,
-                                                 search_word=None))
+                    filters.append(
+                        ProductFilter(
+                            bot_id=payload.bot_id,
+                            filter_name=product_filter.filter_name,
+                            is_category_filter=product_filter.is_category_filter,
+                            reverse_order=product_filter.reverse_order,
+                            category_id=cat_id,
+                            search_word=None))
                 elif product_filter.filter_name == "search":
                     if payload.search_word is None:
                         raise SearchWordMustNotBeEmpty
-                    filters.append(ProductFilter(bot_id=payload.bot_id, filter_name=product_filter.filter_name,
-                                                 is_category_filter=product_filter.is_category_filter,
-                                                 reverse_order=product_filter.reverse_order,
-                                                 category_id=None,
-                                                 search_word=payload.search_word))
+                    filters.append(
+                        ProductFilter(
+                            bot_id=payload.bot_id,
+                            filter_name=product_filter.filter_name,
+                            is_category_filter=product_filter.is_category_filter,
+                            reverse_order=product_filter.reverse_order,
+                            category_id=None,
+                            search_word=payload.search_word))
                 else:
-                    filters.append(ProductFilter(bot_id=payload.bot_id, filter_name=product_filter.filter_name,
-                                                 is_category_filter=product_filter.is_category_filter,
-                                                 reverse_order=product_filter.reverse_order,
-                                                 category_id=None,
-                                                 search_word=None))
+                    filters.append(
+                        ProductFilter(
+                            bot_id=payload.bot_id,
+                            filter_name=product_filter.filter_name,
+                            is_category_filter=product_filter.is_category_filter,
+                            reverse_order=product_filter.reverse_order,
+                            category_id=None,
+                            search_word=None))
             products = await product_db.get_all_products(payload.bot_id,
                                                          price_min=payload.price_min,
                                                          price_max=payload.price_max,
@@ -90,7 +106,9 @@ async def get_all_products_api(payload: GetProductsRequest = Depends(GetProducts
     except FilterNotFound as ex:
         raise HTTPException(status_code=400, detail=ex.message)
     except SearchWordMustNotBeEmpty:
-        raise HTTPException(status_code=400, detail="'search' filter is provided, search_word must not be empty")
+        raise HTTPException(
+            status_code=400,
+            detail="'search' filter is provided, search_word must not be empty")
     # except CategoryFilterNotFound as ex:
     #     raise HTTPException(status_code=400, detail=ex.message)
     except Exception:
@@ -112,8 +130,11 @@ async def get_product_api(bot_id: int, product_id: int) -> ProductSchema:
 
 
 @router.post("/add_product")
-async def add_product_api(new_product: ProductWithoutId, authorization_hash: str = Header()) -> int:
-    await check_admin_authorization(new_product.bot_id, authorization_hash)
+async def add_product_api(
+        new_product: ProductWithoutId,
+        authorization_data: str = Header(),
+) -> int:
+    await check_admin_authorization(new_product.bot_id, authorization_data)
     try:
         product_id = await product_db.add_product(new_product)
     except IntegrityError as ex:
@@ -124,9 +145,43 @@ async def add_product_api(new_product: ProductWithoutId, authorization_hash: str
     return product_id
 
 
+@router.post("/add_product_photo")
+async def create_file(bot_id: int,
+                      product_id: int,
+                      files: list[UploadFile],
+                      authorization_data: str = Header()):
+    await check_admin_authorization(bot_id, authorization_data)
+    try:
+        product = await product_db.get_product(product_id)
+        for file in files:
+            random_string = ''.join(
+                random.sample(
+                    string.digits +
+                    string.ascii_letters,
+                    15))
+            files_path = f"{PROJECT_ROOT}Files/"
+            photo_path = f"{bot_id}_{random_string}.{file.filename.split('.')[-1]}"
+            logger.info(f"downloading new file in directory: {photo_path}")
+            with open(files_path + photo_path, "wb") as photo:
+                photo.write(await file.read())
+
+            if not product.picture:
+                product.picture = []
+            product.picture.append(photo_path)
+        await product_db.update_product(product)
+    except ProductNotFound:
+        return HTTPException(status_code=404,
+                             detail="Product with provided id not found")
+    except BaseException:
+        raise
+    return f"{len(files)} photo added to product"
+
+
 @router.post("/edit_product")
-async def edit_product_api(product: ProductSchema, authorization_hash: str = Header()) -> bool:
-    await check_admin_authorization(product.bot_id, authorization_hash)
+async def edit_product_api(
+        product: ProductSchema,
+        authorization_data: str = Header()) -> bool:
+    await check_admin_authorization(product.bot_id, authorization_data)
     try:
         await product_db.update_product(product)
     except Exception:
@@ -136,8 +191,11 @@ async def edit_product_api(product: ProductSchema, authorization_hash: str = Hea
 
 
 @router.delete("/del_product/{bot_id}/{product_id}")
-async def get_product_api(bot_id: int, product_id: int, authorization_hash: str = Header()) -> str:
-    await check_admin_authorization(bot_id, authorization_hash)
+async def delete_product_api(
+        bot_id: int,
+        product_id: int,
+        authorization_data: str = Header()) -> str:
+    await check_admin_authorization(bot_id, authorization_data)
     try:
         await product_db.delete_product(product_id)
     except ProductNotFound:
@@ -155,8 +213,10 @@ class CSVFileInputModel(BaseModel):
 
 
 @router.post("/send_product_csv_file")
-async def send_product_csv_api(payload: CSVFileInputModel, authorization_hash: str = Header()) -> bool:
-    await check_admin_authorization(payload.bot_id, authorization_hash)
+async def send_product_csv_api(
+        payload: CSVFileInputModel,
+        authorization_data: str = Header()) -> bool:
+    await check_admin_authorization(payload.bot_id, authorization_data)
     try:
         api_logger.info(f"get new csv file from api method bytes: {payload.file}")
     except Exception:
@@ -166,8 +226,9 @@ async def send_product_csv_api(payload: CSVFileInputModel, authorization_hash: s
 
 
 @router.get("/get_products_csv_file/{bot_id}")
-async def get_product_csv_api(bot_id: int, authorization_hash: str = Header()) -> Annotated[bytes, File()]:
-    await check_admin_authorization(bot_id, authorization_hash)
+async def get_product_csv_api(
+        bot_id: int, authorization_data: str = Header()) -> Annotated[bytes, File()]:
+    await check_admin_authorization(bot_id, authorization_data)
     try:
         # get csv logic
         pass
