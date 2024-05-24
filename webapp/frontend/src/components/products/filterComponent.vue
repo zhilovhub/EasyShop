@@ -1,5 +1,5 @@
 <template>
-  <div class="wrapper">
+  <div class="wrapper" :style="{ opacity: isMounted ? 1 : 0 }">
     <div class="block">
       <div class="span-block">
         <h1>Фильтры</h1>
@@ -44,7 +44,8 @@ export default {
       fromPrice: this.$store.state.price_min !== 0 ? this.$store.state.price_min : null,
       toPrice: this.$store.state.price_max !== 2147483647 ? this.$store.state.price_max : null,
       filters: ['По убыванию', 'По возрастанию'],
-      chosenBasedFilter:  ''
+      chosenBasedFilter:  '',
+      isMounted: false
     }
   },
   name: "filterComponent",
@@ -57,10 +58,17 @@ export default {
         this.$store.state.price_max = this.toPrice;
       }
       this.chosenBasedFilter === 'По убыванию' ? this.$store.state.reverse_order = true : this.$store.state.reverse_order = false;
-      this.$emit("close");
+      this.isMounted = false;
+      setTimeout(() => {
+        this.isMounted = false;
+        this.$emit("close");
+      }, 100);
     },
     backButtonClickedEvent() {
-      this.$emit("close");
+      setTimeout(() => {
+        this.isMounted = false;
+        this.$emit("close");
+      }, 100);
     },
     toggleImage(event, brand) {
       brand.isActive = !brand.isActive;
@@ -99,6 +107,10 @@ export default {
       let permElement = document.getElementById('По убыванию');
       permElement.classList.add('chosen');
     }
+
+    setTimeout(() => {
+      this.isMounted = true;
+    }, 50);
   },
   unmounted() {
     tg.offEvent('mainButtonClicked', this.mainButtonClickedEvent);
@@ -120,6 +132,7 @@ export default {
   width: 100vw;
   height: 100vh;
   background-color: var(--app-background-color);
+  transition: opacity 0.5s ease;;
   .block {
     padding: 20px 5%;
     .span-block {
