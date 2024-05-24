@@ -86,7 +86,7 @@ export const Store = new Vuex.Store({
     // },
     async deleteProduct({commit}, productId) {
       try {
-        const response = await fetch(`${Store.state.api_url}/api/products/del_product/${Store.state.bot_id}/${productId}`, {
+        await fetch(`${Store.state.api_url}/api/products/del_product/${Store.state.bot_id}/${productId}`, {
           method: 'Delete',
           headers: {
             'Content-Type': 'application/json',
