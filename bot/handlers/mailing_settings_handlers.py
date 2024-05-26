@@ -1,6 +1,8 @@
+import asyncio
 import json
 import os
 import string
+from io import BytesIO
 from random import sample
 from datetime import datetime
 from typing import Dict, Any
@@ -10,11 +12,11 @@ from aiohttp import ClientConnectorError
 
 from aiogram import Bot, F
 from aiogram.enums import ParseMode
-from aiogram.exceptions import TelegramUnauthorizedError
+from aiogram.exceptions import TelegramUnauthorizedError, TelegramBadRequest
 from aiogram.utils.token import validate_token, TokenValidationError
 
 from aiogram.types import Message, FSInputFile, CallbackQuery, ReplyKeyboardRemove, MessageEntity, LinkPreviewOptions, \
-    InputMediaPhoto, InputMediaVideo, InputMediaAudio, InputMediaDocument, InputFile
+    InputMediaPhoto, InputMediaVideo, InputMediaAudio, InputMediaDocument, InputFile, BufferedInputFile
 from aiogram.fsm.context import FSMContext
 
 from bot.main import bot, user_db, bot_db, product_db, order_db, custom_bot_user_db, QUESTION_MESSAGES, competition, \
@@ -32,6 +34,12 @@ from database.models.bot_model import BotSchemaWithoutId
 from database.models.mailing_media_files import MailingMediaFileSchema
 from database.models.order_model import OrderSchema, OrderNotFound
 from database.models.product_model import ProductWithoutId
+
+
+class MailingMessageType(Enum):
+    DEMO = "demo"  # Демо сообщение с главного бота
+    AFTER_REDACTING = "after_redacting"  # Демо сообщение с главного бота (но немного другой функионал для отправки)
+    RELEASE = "release"  # Главная рассылка (отправка с кастомного бота всем пользователям)
 
 
 @admin_bot_menu_router.callback_query(lambda query: query.data.startswith("mailing_menu"))
@@ -119,7 +127,21 @@ async def mailing_menu_callback_handler(query: CallbackQuery, state: FSMContext)
             await state.set_state(States.EDITING_MAILING_MEDIA_FILES)
             await state.set_data({"bot_id": bot_id, "mailing_id": mailing_id})
         case "start":
-            pass
+            all_custom_bot_users = await custom_bot_user_db.get_custom_bot_users(custom_bot.bot_id)
+            media_files = await mailing_media_file_db.get_all_mailing_media_files(mailing_id)
+
+            custom_bot_tg = Bot(custom_bot.token)
+            for ind, user in enumerate(all_custom_bot_users, start=1):
+                await send_mailing_message(
+                    bot_from_send=custom_bot_tg,
+                    to_user_id=user.user_id,
+                    mailing_schema=mailing,
+                    media_files=media_files,
+                    mailing_message_type=MailingMessageType.RELEASE,
+                    message=None,
+                )
+                logger.info(f"mailing with mailing_id {mailing_id} has sent to {ind}/{len(all_custom_bot_users)} with user_id {user.user_id}")
+                await asyncio.sleep(.05)  # 20 messages per second (limit is 30)
         case "demo":
             media_files = await mailing_media_file_db.get_all_mailing_media_files(mailing_id)
 
@@ -129,8 +151,13 @@ async def mailing_menu_callback_handler(query: CallbackQuery, state: FSMContext)
                     show_alert=True
                 )
             elif mailing.description or media_files:
-                await send_demonstration(
+                media_files = await mailing_media_file_db.get_all_mailing_media_files(mailing_id)
+                await send_mailing_message(
+                    bot,
+                    query.from_user.id,
                     mailing,
+                    media_files,
+                    MailingMessageType.AFTER_REDACTING,
                     query.message
                 )
                 await query.message.answer(
@@ -189,16 +216,21 @@ async def editing_mailing_message_handler(message: Message, state: FSMContext):
             )
         else:
             mailing.description = message.html_text
+            media_files = await mailing_media_file_db.get_all_mailing_media_files(mailing_id)
+
             await mailing_db.update_mailing(mailing)
 
             await message.answer(
                 "Предпросмотр конкурса 👇",
                 reply_markup=get_reply_bot_menu_keyboard(bot_id=state_data["bot_id"])
             )
-            await send_demonstration(
+            await send_mailing_message(
+                bot,
+                message.from_user.id,
                 mailing,
+                media_files,
+                MailingMessageType.AFTER_REDACTING,
                 message,
-                is_demo=False
             )
             await message.answer(
                 MessageTexts.BOT_MAILINGS_MENU_MESSAGE.value.format(
@@ -241,16 +273,20 @@ async def editing_mailing_button_text_handler(message: Message, state: FSMContex
             )
         else:
             mailing.button_text = message.text
+            media_files = await mailing_media_file_db.get_all_mailing_media_files(mailing_id)
             await mailing_db.update_mailing(mailing)
 
             await message.answer(
                 "Предпросмотр конкурса 👇",
                 reply_markup=get_reply_bot_menu_keyboard(bot_id=state_data["bot_id"])
             )
-            await send_demonstration(
+            await send_mailing_message(
+                bot,
+                message.from_user.id,
                 mailing,
-                message,
-                is_demo=False
+                media_files,
+                MailingMessageType.AFTER_REDACTING,
+                message
             )
             await message.answer(
                 MessageTexts.BOT_MAILINGS_MENU_MESSAGE.value.format(
@@ -292,16 +328,20 @@ async def editing_mailing_button_url_handler(message: Message, state: FSMContext
             )
         else:
             mailing.button_url = message.text
+            media_files = await mailing_media_file_db.get_all_mailing_media_files(mailing_id)
             await mailing_db.update_mailing(mailing)
 
             await message.answer(
                 "Предпросмотр конкурса 👇",
                 reply_markup=get_reply_bot_menu_keyboard(bot_id=state_data["bot_id"])
             )
-            await send_demonstration(
+            await send_mailing_message(
+                bot,
+                message.from_user.id,
                 mailing,
-                message,
-                is_demo=False
+                media_files,
+                MailingMessageType.AFTER_REDACTING,
+                message
             )
             await message.answer(
                 MessageTexts.BOT_MAILINGS_MENU_MESSAGE.value.format(
@@ -347,7 +387,7 @@ async def editing_mailing_media_files_handler(message: Message, state: FSMContex
     elif message.photo:
         photo = message.photo[-1]
         await mailing_media_file_db.add_mailing_media_file(MailingMediaFileSchema.model_validate(
-            {"mailing_id": mailing_id, "file_name": photo.file_id, "media_type": "photo"}
+            {"mailing_id": mailing_id, "file_id_main_bot": photo.file_id, "media_type": "photo"}
         ))
 
         await message.answer(
@@ -356,7 +396,7 @@ async def editing_mailing_media_files_handler(message: Message, state: FSMContex
     elif message.video:
         video = message.video
         await mailing_media_file_db.add_mailing_media_file(MailingMediaFileSchema.model_validate(
-            {"mailing_id": mailing_id, "file_name": video.file_id, "media_type": "video"}
+            {"mailing_id": mailing_id, "file_id_main_bot": video.file_id, "media_type": "video"}
         ))
 
         await message.answer(
@@ -365,7 +405,7 @@ async def editing_mailing_media_files_handler(message: Message, state: FSMContex
     elif message.audio:
         audio = message.audio
         await mailing_media_file_db.add_mailing_media_file(MailingMediaFileSchema.model_validate(
-            {"mailing_id": mailing_id, "file_name": audio.file_id, "media_type": "audio"}
+            {"mailing_id": mailing_id, "file_id_main_bot": audio.file_id, "media_type": "audio"}
         ))
 
         await message.answer(
@@ -374,7 +414,7 @@ async def editing_mailing_media_files_handler(message: Message, state: FSMContex
     elif message.document:
         document = message.document
         await mailing_media_file_db.add_mailing_media_file(MailingMediaFileSchema.model_validate(
-            {"mailing_id": mailing_id, "file_name": document.file_id, "media_type": "document"}
+            {"mailing_id": mailing_id, "file_id_main_bot": document.file_id, "media_type": "document"}
         ))
 
         await message.answer(
@@ -388,14 +428,14 @@ async def editing_mailing_media_files_handler(message: Message, state: FSMContex
         )
 
 
-async def send_demonstration(
+async def send_mailing_message(  # TODO that's not funny
+        bot_from_send: Bot,
+        to_user_id: int,
         mailing_schema: MailingSchema,
-        message: Message,
-        is_demo: bool = True
+        media_files: list[MailingMediaFileSchema],
+        mailing_message_type: MailingMessageType,
+        message: Message = None,
 ) -> None:
-    mailing_id = mailing_schema.mailing_id
-    media_files = await mailing_media_file_db.get_all_mailing_media_files(mailing_id)
-
     if mailing_schema.has_button:
         button = InlineKeyboardMarkup(
             inline_keyboard=[
@@ -407,53 +447,90 @@ async def send_demonstration(
 
     if len(media_files) > 1:
         media_group = []
+        is_first_message = False
         for media_file in media_files:
+            if mailing_message_type == MailingMessageType.RELEASE:
+                # мда, ну короче на серверах фотки хранятся только у главного бота, т.к через него админ создавал
+                # рассылки. В кастомных ботах нет того file_id, который есть в главном боте, поэтому, если у нас
+                # file_id_custom_bot == None, значит это первое сообщение из всей рассылки. Поэтому мы скачиваем файл
+                # с серверов главного бота и отправляем это в кастомном, чтобы получить file_id для кастомного и
+                # сохраняем в бд.
+                # При следующей отправки тут уже не будет None
+                if media_file.file_id_custom_bot == None:
+                    is_first_message = True
+                    file_bytes = bot.download_file(
+                        file_path=media_file.file_id_main_bot,
+                    )
+                    file_name = BufferedInputFile(
+                        file=file_bytes,
+                        filename=media_file.file_id_main_bot
+                    )
+                else:
+                    file_name = media_file.file_id_custom_bot
+            else:
+                file_name = media_file.file_id_main_bot
             if media_file.media_type == "photo":
-                media_group.append(InputMediaPhoto(media=media_file.file_name))
+                media_group.append(InputMediaPhoto(media=file_name))
             elif media_file.media_type == "video":
-                media_group.append(InputMediaVideo(media=media_file.file_name))
+                media_group.append(InputMediaVideo(media=file_name))
             elif media_file.media_type == "audio":
-                media_group.append(InputMediaAudio(media=media_file.file_name))
+                media_group.append(InputMediaAudio(media=file_name))
             elif media_file.media_type == "document":
-                media_group.append(InputMediaDocument(media=media_file.file_name))
+                media_group.append(InputMediaDocument(media=file_name))
 
         if mailing_schema.description:
             media_group[0].caption = mailing_schema.description
-
-        await bot.send_media_group(
-            chat_id=message.chat.id,
+        uploaded_media_files = await bot_from_send.send_media_group(
+            chat_id=to_user_id,
             media=media_group
         )
-        await message.delete()
+        if is_first_message:  # первое сообщение, отправленное в рассылке с кастомного бота. Сохраняем file_id в бд
+            for message in uploaded_media_files:
+                if message.photo:
+                    file_id = message.photo[-1].file_id
+                elif message.video:
+                    file_id = message.video.file_id
+                elif message.audio:
+                    file_id = message.audio.file_id
+                elif message.document:
+                    file_id = message.document.file_id
+                # TODO here I stopped. I wanted to loop through the media_group, take main file_id from there and use to
+                # TODO find out what to update db
+            print(uploaded_media_files)
+        if message:
+            await message.delete()
     elif len(media_files) == 1:
         media_file = media_files[0]
         if media_file.media_type == "photo":
-            method = bot.send_photo
+            method = bot_from_send.send_photo
         elif media_file.media_type == "video":
-            method = bot.send_video
+            method = bot_from_send.send_video
         elif media_file.media_type == "audio":
-            method = bot.send_audio
+            method = bot_from_send.send_audio
         elif media_file.media_type == "document":
-            method = bot.send_document
+            method = bot_from_send.send_document
         else:
             raise Exception("Unexpected type")
 
         await method(
-            message.chat.id,
-            media_file.file_name,
+            to_user_id,
+            media_file.file_name_custom_bot if mailing_message_type.RELEASE else media_file.file_name_main_bot,
             caption=mailing_schema.description,
             reply_markup=button
         )
-        await message.delete()
+
+        if message:
+            await message.delete()
     else:
-        if is_demo:
+        if mailing_message_type == MailingMessageType.DEMO:  # только при демо с главного бота срабатывает
             await message.edit_text(
                 text=mailing_schema.description,
                 link_preview_options=LinkPreviewOptions(is_disabled=True),
                 reply_markup=button,
             )
         else:
-            await message.answer(
+            await bot_from_send.send_message(
+                chat_id=to_user_id,
                 text=mailing_schema.description,
                 link_preview_options=LinkPreviewOptions(is_disabled=True),
                 reply_markup=button

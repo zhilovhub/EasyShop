@@ -18,7 +18,8 @@ class MailingMediaFile(Base):
     __tablename__ = "mailing_media_files"
 
     mailing_id = Column(BigInteger, ForeignKey(Mailing.mailing_id, ondelete="CASCADE"), primary_key=True)
-    file_name = Column(String, primary_key=True)
+    file_id_main_bot = Column(String, primary_key=True)
+    file_id_custom_bot = Column(String, default=None)
     media_type = Column(String, nullable=False)
 
 
@@ -26,7 +27,8 @@ class MailingMediaFileSchema(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
     mailing_id: int = Field(frozen=True)
-    file_name: str = Field(frozen=True)
+    file_id_main_bot: str = Field(frozen=True)
+    file_id_custom_bot: str | None = None
     media_type: str
 
 

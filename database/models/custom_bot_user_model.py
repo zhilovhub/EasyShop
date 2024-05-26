@@ -2,7 +2,7 @@ from sqlalchemy import BigInteger, Column, String, ForeignKey, insert, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncEngine
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ConfigDict
 
 from bot.exceptions import InvalidParameterFormat, InstanceAlreadyExists
 from database.models import Base
@@ -23,6 +23,8 @@ class CustomBotUser(Base):
 
 
 class CustomBotUserSchema(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     bot_id: int
     user_id: int
 
@@ -46,12 +48,16 @@ class CustomBotUserDao(Dao):
 
         return res
 
-    async def get_custom_bot_users(self, bot_id: int) -> list[int]:  # TODO write tests
+    async def get_custom_bot_users(self, bot_id: int) -> list[CustomBotUserSchema]:  # TODO write tests
         async with self.engine.begin() as conn:
             raw_res = await conn.execute(select(CustomBotUser).where(CustomBotUser.bot_id == bot_id))
         await self.engine.dispose()
 
-        users = raw_res.fetchall()
+        users = []
+        for raw in raw_res.fetchall():
+            users.append(
+                CustomBotUserSchema.model_validate(raw)
+            )
         self.logger.info(f"get_custom_bot_users method for bot_id {bot_id} success")
 
         return users
