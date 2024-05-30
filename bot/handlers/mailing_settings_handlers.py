@@ -445,7 +445,7 @@ async def send_mailing_message(  # TODO that's not funny
     else:
         button = None
 
-    if len(media_files) > 1:
+    if len(media_files) > 1:  # TODO dosn't work with single media
         media_group = []
         is_first_message = False
         for media_file in media_files:
@@ -480,23 +480,29 @@ async def send_mailing_message(  # TODO that's not funny
 
         if mailing_schema.description:
             media_group[0].caption = mailing_schema.description
+        print(media_group)
+        # TODO when it release it bug
         uploaded_media_files = await bot_from_send.send_media_group(
             chat_id=to_user_id,
             media=media_group
         )
         if is_first_message:  # первое сообщение, отправленное в рассылке с кастомного бота. Сохраняем file_id в бд
-            for message in uploaded_media_files:
-                if message.photo:
-                    file_id = message.photo[-1].file_id
-                elif message.video:
-                    file_id = message.video.file_id
-                elif message.audio:
-                    file_id = message.audio.file_id
-                elif message.document:
-                    file_id = message.document.file_id
-                # TODO here I stopped. I wanted to loop through the media_group, take main file_id from there and use to
-                # TODO find out what to update db
-            print(uploaded_media_files)
+            for ind in range(len(uploaded_media_files)):
+                new_message = uploaded_media_files[ind]
+                old_message = media_files[ind]
+                if new_message.photo:
+                    file_id = new_message.photo[-1].file_id
+                elif new_message.video:
+                    file_id = new_message.video.file_id
+                elif new_message.audio:
+                    file_id = new_message.audio.file_id
+                elif new_message.document:
+                    file_id = new_message.document.file_id
+                else:
+                    raise Exception("unsupported type")
+
+                old_message.file_id_custom_bot = file_id
+                await mailing_media_file_db.update_media_file(old_message)
         if message:
             await message.delete()
     elif len(media_files) == 1:
@@ -514,7 +520,7 @@ async def send_mailing_message(  # TODO that's not funny
 
         await method(
             to_user_id,
-            media_file.file_name_custom_bot if mailing_message_type.RELEASE else media_file.file_name_main_bot,
+            media_file.file_id_custom_bot if mailing_message_type == MailingMessageType.RELEASE else media_file.file_id_main_bot,
             caption=mailing_schema.description,
             reply_markup=button
         )

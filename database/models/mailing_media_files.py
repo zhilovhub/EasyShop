@@ -1,6 +1,6 @@
 from pydantic import BaseModel, Field, validate_call, ConfigDict
 from sqlalchemy import BigInteger, Column, ForeignKey, select, insert, delete, BOOLEAN, ForeignKeyConstraint, String, \
-    DateTime
+    DateTime, update
 from sqlalchemy.ext.asyncio import AsyncEngine
 
 from bot.exceptions import InvalidParameterFormat
@@ -65,6 +65,19 @@ class MailingMediaFileDao(Dao):  # TODO write tests
         self.logger.info(
             f"successfully add mailing_media_files with mailing_id {new_mailing_media_file.mailing_id}"
         )
+
+    @validate_call
+    async def update_media_file(self, new_mailing_media_file: MailingMediaFileSchema) -> None:
+        if type(new_mailing_media_file) != MailingMediaFileSchema:
+            raise InvalidParameterFormat("new_mailing_media_file must be type of MailingMediaFileSchema")
+
+        async with self.engine.begin() as conn:
+            await conn.execute(
+                update(MailingMediaFile).where(
+                    MailingMediaFile.mailing_id == new_mailing_media_file.mailing_id
+                ).values(new_mailing_media_file.model_dump())
+            )
+        self.logger.info(f"successfully update mailing_media_file with id {new_mailing_media_file.mailing_id} at db")
 
     @validate_call
     async def delete_mailing_media_files(self, mailing_id: int):
