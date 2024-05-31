@@ -20,6 +20,7 @@ class MailingMediaFile(Base):
     mailing_id = Column(BigInteger, ForeignKey(Mailing.mailing_id, ondelete="CASCADE"), primary_key=True)
     file_id_main_bot = Column(String, primary_key=True)
     file_id_custom_bot = Column(String, default=None)
+    file_path = Column(String)
     media_type = Column(String, nullable=False)
 
 
@@ -29,6 +30,7 @@ class MailingMediaFileSchema(BaseModel):
     mailing_id: int = Field(frozen=True)
     file_id_main_bot: str = Field(frozen=True)
     file_id_custom_bot: str | None = None
+    file_path: str
     media_type: str
 
 
@@ -74,7 +76,7 @@ class MailingMediaFileDao(Dao):  # TODO write tests
         async with self.engine.begin() as conn:
             await conn.execute(
                 update(MailingMediaFile).where(
-                    MailingMediaFile.mailing_id == new_mailing_media_file.mailing_id
+                    MailingMediaFile.file_id_main_bot == new_mailing_media_file.file_id_main_bot
                 ).values(new_mailing_media_file.model_dump())
             )
         self.logger.info(f"successfully update mailing_media_file with id {new_mailing_media_file.mailing_id} at db")

@@ -130,7 +130,7 @@ async def mailing_menu_callback_handler(query: CallbackQuery, state: FSMContext)
             all_custom_bot_users = await custom_bot_user_db.get_custom_bot_users(custom_bot.bot_id)
             media_files = await mailing_media_file_db.get_all_mailing_media_files(mailing_id)
 
-            custom_bot_tg = Bot(custom_bot.token)
+            custom_bot_tg = Bot(custom_bot.token, parse_mode=ParseMode.HTML)
             for ind, user in enumerate(all_custom_bot_users, start=1):
                 await send_mailing_message(
                     bot_from_send=custom_bot_tg,
@@ -384,48 +384,43 @@ async def editing_mailing_media_files_handler(message: Message, state: FSMContex
 
         await state.set_state(States.BOT_MENU)
         await state.set_data({"bot_id": bot_id})
+
+        return
     elif message.photo:
         photo = message.photo[-1]
-        await mailing_media_file_db.add_mailing_media_file(MailingMediaFileSchema.model_validate(
-            {"mailing_id": mailing_id, "file_id_main_bot": photo.file_id, "media_type": "photo"}
-        ))
-
-        await message.answer(
-            f"Фото {photo.file_unique_id} добавлено"
-        )
+        file_id = photo.file_id
+        file_path = (await bot.get_file(photo.file_id)).file_path
+        media_type = "photo"
+        answer_text = f"Фото {photo.file_unique_id} добавлено"
     elif message.video:
         video = message.video
-        await mailing_media_file_db.add_mailing_media_file(MailingMediaFileSchema.model_validate(
-            {"mailing_id": mailing_id, "file_id_main_bot": video.file_id, "media_type": "video"}
-        ))
-
-        await message.answer(
-            f"Видео {video.file_name} добавлено"
-        )
+        file_id = video.file_id
+        file_path = (await bot.get_file(video.file_id)).file_path
+        media_type = "video"
+        answer_text = f"Видео {video.file_name} добавлено"
     elif message.audio:
         audio = message.audio
-        await mailing_media_file_db.add_mailing_media_file(MailingMediaFileSchema.model_validate(
-            {"mailing_id": mailing_id, "file_id_main_bot": audio.file_id, "media_type": "audio"}
-        ))
-
-        await message.answer(
-            f"Аудио {audio.file_name} добавлено"
-        )
+        file_id = audio.file_id
+        file_path = (await bot.get_file(audio.file_id)).file_path
+        media_type = "audio"
+        answer_text = f"Аудио {audio.file_name} добавлено"
     elif message.document:
         document = message.document
-        await mailing_media_file_db.add_mailing_media_file(MailingMediaFileSchema.model_validate(
-            {"mailing_id": mailing_id, "file_id_main_bot": document.file_id, "media_type": "document"}
-        ))
-
-        await message.answer(
-            f"Документ {document.file_name} добавлен"
-        )
-
+        file_id = document.file_id
+        file_path = (await bot.get_file(document.file_id)).file_path
+        media_type = "document"
+        answer_text = f"Документ {document.file_name} добавлен"
     else:
-        await message.answer(
+        return await message.answer(
             "Пришлите медиафайлы (фото, видео, аудио, документы), которые должны быть прикреплены к рассылочному сообщению",
             reply_markup=get_back_keyboard("✅ Готово")
         )
+
+    await mailing_media_file_db.add_mailing_media_file(MailingMediaFileSchema.model_validate(
+        {"mailing_id": mailing_id, "file_id_main_bot": file_id, "file_path": file_path, "media_type": media_type}
+    ))
+
+    await message.answer(answer_text)
 
 
 async def send_mailing_message(  # TODO that's not funny
@@ -458,12 +453,13 @@ async def send_mailing_message(  # TODO that's not funny
                 # При следующей отправки тут уже не будет None
                 if media_file.file_id_custom_bot == None:
                     is_first_message = True
-                    file_bytes = bot.download_file(
-                        file_path=media_file.file_id_main_bot,
+                    file_path = media_file.file_path
+                    file_bytes = await bot.download_file(
+                        file_path=file_path,
                     )
                     file_name = BufferedInputFile(
-                        file=file_bytes,
-                        filename=media_file.file_id_main_bot
+                        file=file_bytes.read(),
+                        filename=file_path
                     )
                 else:
                     file_name = media_file.file_id_custom_bot
@@ -480,8 +476,7 @@ async def send_mailing_message(  # TODO that's not funny
 
         if mailing_schema.description:
             media_group[0].caption = mailing_schema.description
-        print(media_group)
-        # TODO when it release it bug
+
         uploaded_media_files = await bot_from_send.send_media_group(
             chat_id=to_user_id,
             media=media_group
