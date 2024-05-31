@@ -440,9 +440,9 @@ async def send_mailing_message(  # TODO that's not funny
     else:
         button = None
 
-    if len(media_files) > 1:  # TODO dosn't work with single media
-        media_group = []
+    if len(media_files) >= 1:
         is_first_message = False
+        media_group = []
         for media_file in media_files:
             if mailing_message_type == MailingMessageType.RELEASE:
                 # мда, ну короче на серверах фотки хранятся только у главного бота, т.к через него админ создавал
@@ -466,21 +466,49 @@ async def send_mailing_message(  # TODO that's not funny
             else:
                 file_name = media_file.file_id_main_bot
             if media_file.media_type == "photo":
-                media_group.append(InputMediaPhoto(media=file_name))
+                media_group.append(InputMediaPhoto(media=file_name) if len(media_files) > 1 else file_name)
             elif media_file.media_type == "video":
-                media_group.append(InputMediaVideo(media=file_name))
+                media_group.append(InputMediaVideo(media=file_name) if len(media_files) > 1 else file_name)
             elif media_file.media_type == "audio":
-                media_group.append(InputMediaAudio(media=file_name))
+                media_group.append(InputMediaAudio(media=file_name) if len(media_files) > 1 else file_name)
             elif media_file.media_type == "document":
-                media_group.append(InputMediaDocument(media=file_name))
+                media_group.append(InputMediaDocument(media=file_name) if len(media_files) > 1 else file_name)
 
-        if mailing_schema.description:
-            media_group[0].caption = mailing_schema.description
+        uploaded_media_files = []
+        if len(media_files) > 1:
+            if mailing_schema.description:
+                media_group[0].caption = mailing_schema.description
 
-        uploaded_media_files = await bot_from_send.send_media_group(
-            chat_id=to_user_id,
-            media=media_group
-        )
+            uploaded_media_files.extend(await bot_from_send.send_media_group(
+                chat_id=to_user_id,
+                media=media_group
+            ))
+            if message:
+                await message.delete()
+        elif len(media_files) == 1:
+            media_file = media_files[0]
+
+            if media_file.media_type == "photo":
+                method = bot_from_send.send_photo
+            elif media_file.media_type == "video":
+                method = bot_from_send.send_video
+            elif media_file.media_type == "audio":
+                method = bot_from_send.send_audio
+            elif media_file.media_type == "document":
+                method = bot_from_send.send_document
+            else:
+                raise Exception("Unexpected type")
+
+            uploaded_media_files.append(await method(
+                to_user_id,
+                media_group[0],
+                caption=mailing_schema.description,
+                reply_markup=button
+            ))
+
+            if message:
+                await message.delete()
+
         if is_first_message:  # первое сообщение, отправленное в рассылке с кастомного бота. Сохраняем file_id в бд
             for ind in range(len(uploaded_media_files)):
                 new_message = uploaded_media_files[ind]
@@ -498,71 +526,6 @@ async def send_mailing_message(  # TODO that's not funny
 
                 old_message.file_id_custom_bot = file_id
                 await mailing_media_file_db.update_media_file(old_message)
-        if message:
-            await message.delete()
-    elif len(media_files) == 1:
-        media_file = media_files[0]
-        is_first_message = False
-
-        if media_file.media_type == "photo":
-            method = bot_from_send.send_photo
-        elif media_file.media_type == "video":
-            method = bot_from_send.send_video
-        elif media_file.media_type == "audio":
-            method = bot_from_send.send_audio
-        elif media_file.media_type == "document":
-            method = bot_from_send.send_document
-        else:
-            raise Exception("Unexpected type")
-
-        if mailing_message_type == MailingMessageType.RELEASE:
-            # мда, ну короче на серверах фотки хранятся только у главного бота, т.к через него админ создавал
-            # рассылки. В кастомных ботах нет того file_id, который есть в главном боте, поэтому, если у нас
-            # file_id_custom_bot == None, значит это первое сообщение из всей рассылки. Поэтому мы скачиваем файл
-            # с серверов главного бота и отправляем это в кастомном, чтобы получить file_id для кастомного и
-            # сохраняем в бд.
-            # При следующей отправки тут уже не будет None
-            if media_file.file_id_custom_bot == None:
-                is_first_message = True
-                file_path = media_file.file_path
-                file_bytes = await bot.download_file(
-                    file_path=file_path,
-                )
-                file_name = BufferedInputFile(
-                    file=file_bytes.read(),
-                    filename=file_path
-                )
-            else:
-                file_name = media_file.file_id_custom_bot
-        else:
-            file_name = media_file.file_id_main_bot
-
-        new_message = await method(
-            to_user_id,
-            file_name,
-            caption=mailing_schema.description,
-            reply_markup=button
-        )
-
-        if message:
-            await message.delete()
-
-        if is_first_message:  # первое сообщение, отправленное в рассылке с кастомного бота. Сохраняем file_id в бд
-            old_message = media_files[0]
-            if new_message.photo:
-                file_id = new_message.photo[-1].file_id
-            elif new_message.video:
-                file_id = new_message.video.file_id
-            elif new_message.audio:
-                file_id = new_message.audio.file_id
-            elif new_message.document:
-                file_id = new_message.document.file_id
-            else:
-                raise Exception("unsupported type")
-
-            old_message.file_id_custom_bot = file_id
-            await mailing_media_file_db.update_media_file(old_message)
-
     else:
         if mailing_message_type == MailingMessageType.DEMO:  # только при демо с главного бота срабатывает
             await message.edit_text(
