@@ -21,7 +21,7 @@ class Mailing(Base):
     __tablename__ = "mailings"
 
     mailing_id = Column(BigInteger, autoincrement=True, primary_key=True)
-    bot_id = Column(ForeignKey(Bot.bot_id), nullable=False)
+    bot_id = Column(ForeignKey(Bot.bot_id, ondelete="CASCADE"), nullable=False)
 
     description = Column(String)
     is_sent = Column(BOOLEAN, default=False)
