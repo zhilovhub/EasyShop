@@ -10,6 +10,7 @@ from bot.exceptions import InvalidParameterFormat
 from database.models import Base
 from database.models.bot_model import Bot
 from database.models.dao import Dao
+from enum import Enum
 
 
 class MailingNotFound(Exception):
@@ -32,6 +33,10 @@ class Mailing(Base):
 
     created_at = Column(DateTime, nullable=False)
 
+    # Extra settings
+    enable_notification_sound = Column(BOOLEAN, default=True)
+    enable_link_preview = Column(BOOLEAN, default=False)
+
 
 class MailingSchemaWithoutId(BaseModel):
     model_config = ConfigDict(from_attributes=True)
@@ -46,6 +51,9 @@ class MailingSchemaWithoutId(BaseModel):
     button_url: Optional[str | None] = None
 
     created_at: datetime.datetime = datetime.datetime.now().replace(tzinfo=None)
+
+    enable_notification_sound: bool = True
+    enable_link_preview: bool = True
 
 
 class MailingSchema(MailingSchemaWithoutId):
@@ -66,7 +74,8 @@ class MailingDao(Dao):  # TODO write tests
         if not raw_res:
             raise MailingNotFound
 
-        self.logger.info(f"get_mailing method with mailing_id: {mailing_id} success.")
+        self.logger.info(
+            f"get_mailing method with mailing_id: {mailing_id} success.")
         return MailingSchema.model_validate(raw_res)
 
     @validate_call(validate_return=True)
@@ -86,7 +95,8 @@ class MailingDao(Dao):  # TODO write tests
     @validate_call
     async def add_mailing(self, new_mailing: MailingSchemaWithoutId) -> int:
         if type(new_mailing) != MailingSchemaWithoutId:
-            raise InvalidParameterFormat("new_mailing must be type of MailingSchema")
+            raise InvalidParameterFormat(
+                "new_mailing must be type of MailingSchema")
 
         async with self.engine.begin() as conn:
             mailing_id = (await conn.execute(insert(Mailing).values(new_mailing.model_dump()))).inserted_primary_key[0]
@@ -105,7 +115,8 @@ class MailingDao(Dao):  # TODO write tests
                     Mailing.mailing_id == updated_mailing.mailing_id
                 ).values(updated_mailing.model_dump())
             )
-        self.logger.info(f"successfully update mailing with id {updated_mailing.mailing_id} at db.")
+        self.logger.info(
+            f"successfully update mailing with id {updated_mailing.mailing_id} at db.")
 
     @validate_call
     async def delete_mailing(self, mailing_id: int) -> None:
