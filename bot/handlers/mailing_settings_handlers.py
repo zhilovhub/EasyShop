@@ -132,24 +132,36 @@ async def mailing_menu_callback_handler(query: CallbackQuery, state: FSMContext)
             await state.set_state(States.EDITING_MAILING_MEDIA_FILES)
             await state.set_data({"bot_id": bot_id, "mailing_id": mailing_id})
         case "start":
-            all_custom_bot_users = await custom_bot_user_db.get_custom_bot_users(custom_bot.bot_id)
-            media_files = await mailing_media_file_db.get_all_mailing_media_files(mailing_id)
 
-            custom_bot_tg = Bot(custom_bot.token, default=DefaultBotProperties(
-                parse_mode=ParseMode.HTML))
-            for ind, user in enumerate(all_custom_bot_users, start=1):
-                await send_mailing_message(
-                    bot_from_send=custom_bot_tg,
-                    to_user_id=user.user_id,
-                    mailing_schema=mailing,
-                    media_files=media_files,
-                    mailing_message_type=MailingMessageType.RELEASE,
-                    message=None,
+            media_files = await mailing_media_file_db.get_all_mailing_media_files(mailing_id)
+            if len(media_files) > 1 and mailing.has_button:
+                await query.answer(
+                    "Telegram не позволяет прикрепить кнопку, если в сообщении минимум 2 медиафайла",
+                    show_alert=True
                 )
-                logger.info(
-                    f"mailing with mailing_id {mailing_id} has sent to {ind}/{len(all_custom_bot_users)} with user_id {user.user_id}")
-                # 20 messages per second (limit is 30)
-                await asyncio.sleep(.05)
+            elif mailing.description or media_files:
+
+                all_custom_bot_users = await custom_bot_user_db.get_custom_bot_users(custom_bot.bot_id)
+                custom_bot_tg = Bot(custom_bot.token, default=DefaultBotProperties(
+                    parse_mode=ParseMode.HTML))
+                for ind, user in enumerate(all_custom_bot_users, start=1):
+                    await send_mailing_message(
+                        bot_from_send=custom_bot_tg,
+                        to_user_id=user.user_id,
+                        mailing_schema=mailing,
+                        media_files=media_files,
+                        mailing_message_type=MailingMessageType.RELEASE,
+                        message=None,
+                    )
+                    logger.info(
+                        f"mailing with mailing_id {mailing_id} has sent to {ind}/{len(all_custom_bot_users)} with user_id {user.user_id}")
+                    # 20 messages per second (limit is 30)
+                    await asyncio.sleep(.05)
+            else:
+                await query.answer(
+                    text="В Вашем рассылочном сообщении нет ни текста, ни медиафайлов",
+                    show_alert=True
+                )
         case "demo":
             media_files = await mailing_media_file_db.get_all_mailing_media_files(mailing_id)
 
