@@ -240,7 +240,7 @@ async def mailing_menu_callback_handler(query: CallbackQuery, state: FSMContext)
                     bot_id,
                     mailing_id,
                     mailing.enable_notification_sound,
-                    mailing.enable_notification_sound
+                    mailing.enable_link_preview
                 )
             )
         case "toggle_link_preview":
@@ -580,7 +580,10 @@ async def send_mailing_message(  # TODO that's not funny
 
             uploaded_media_files.extend(await bot_from_send.send_media_group(
                 chat_id=to_user_id,
-                media=media_group
+                media=media_group,
+                disable_notification=not (mailing_schema.enable_link_preview),
+                link_preview_options=LinkPreviewOptions(is_disabled=not (
+                    mailing_schema.enable_link_preview))
             ))
             if message:
                 await message.delete()
@@ -602,7 +605,11 @@ async def send_mailing_message(  # TODO that's not funny
                 to_user_id,
                 media_group[0],
                 caption=mailing_schema.description,
-                reply_markup=button
+                reply_markup=button,
+                disable_notification=not (
+                    mailing_schema.enable_notification_sound),
+                link_preview_options=LinkPreviewOptions(is_disabled=not (
+                    mailing_schema.enable_link_preview))
             ))
 
             if message:
@@ -629,13 +636,17 @@ async def send_mailing_message(  # TODO that's not funny
         if mailing_message_type == MailingMessageType.DEMO:  # только при демо с главного бота срабатывает
             await message.edit_text(
                 text=mailing_schema.description,
-                link_preview_options=LinkPreviewOptions(is_disabled=True),
+                link_preview_options=LinkPreviewOptions(is_disabled=not (
+                    mailing_schema.enable_link_preview)),
                 reply_markup=button,
             )
         else:
             await bot_from_send.send_message(
                 chat_id=to_user_id,
                 text=mailing_schema.description,
-                link_preview_options=LinkPreviewOptions(is_disabled=True),
-                reply_markup=button
+                reply_markup=button,
+                disable_notification=not (
+                    mailing_schema.enable_notification_sound),
+                link_preview_options=LinkPreviewOptions(is_disabled=not (
+                    mailing_schema.enable_link_preview))
             )
