@@ -249,10 +249,10 @@ async def mailing_menu_callback_handler(query: CallbackQuery, state: FSMContext)
                     logger.info(
                         f"mailing with mailing_id {mailing_id} has sent to {ind}/{len(all_custom_bot_users)} with user_id {user.user_id}")
                     # 20 messages per second (limit is 30)
-                    # await asyncio.sleep(.05)
+                    await asyncio.sleep(.05)
                     mailing.sent_mailing_amount += 1
                     await mailing_db.update_mailing(mailing)
-                    await asyncio.sleep(10)
+                    # await asyncio.sleep(10) # For test only
             else:
                 await query.answer(
                     text="В Вашем рассылочном сообщении нет ни текста, ни медиафайлов",
