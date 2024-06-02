@@ -1,11 +1,9 @@
 import asyncio
 from datetime import datetime
-
 from aiogram import Bot, Dispatcher
 from aiogram.enums import ParseMode
 from aiogram.types import BotCommand
 from aiogram.client.bot import DefaultBotProperties
-
 from channels_administration.competition.competition import CompetitionModule
 from database.models.bot_model import BotDao
 from database.models.channel_model import ChannelDao
@@ -17,10 +15,8 @@ from database.models.order_model import OrderDao
 from database.models.payment_model import PaymentDao
 from database.models.product_model import ProductDao
 from database.models.custom_bot_user_model import CustomBotUserDao
-
 from subscription.subscription import Subscription
 from subscription.scheduler import Scheduler
-
 from bot import config
 from bot.utils import AlchemyStorageAsync, JsonStore
 
@@ -61,7 +57,8 @@ async def on_start():
 
     commands = [
         BotCommand(command="start", description="Стартовая инструкция"),
-        BotCommand(command="check_subscription", description="Проверить подписку"),
+        BotCommand(command="check_subscription",
+                   description="Проверить подписку"),
     ]
 
     if config.BOT_DEBUG_MODE:

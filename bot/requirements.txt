@@ -10,3 +10,5 @@ openpyxl
 psycopg2-binary
 APScheduler
 python-logging-loki
+
+sqlalchemy_filters

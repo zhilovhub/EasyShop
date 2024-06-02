@@ -34,12 +34,15 @@ from database.models.bot_model import BotSchemaWithoutId
 from database.models.mailing_media_files import MailingMediaFileSchema
 from database.models.order_model import OrderSchema, OrderNotFound
 from database.models.product_model import ProductWithoutId
+from aiogram.client.bot import DefaultBotProperties
 
 
 class MailingMessageType(Enum):
     DEMO = "demo"  # Демо сообщение с главного бота
-    AFTER_REDACTING = "after_redacting"  # Демо сообщение с главного бота (но немного другой функионал для отправки)
-    RELEASE = "release"  # Главная рассылка (отправка с кастомного бота всем пользователям)
+    # Демо сообщение с главного бота (но немного другой функионал для отправки)
+    AFTER_REDACTING = "after_redacting"
+    # Главная рассылка (отправка с кастомного бота всем пользователям)
+    RELEASE = "release"
 
 
 @admin_bot_menu_router.callback_query(lambda query: query.data.startswith("mailing_menu"))
@@ -87,7 +90,8 @@ async def mailing_menu_callback_handler(query: CallbackQuery, state: FSMContext)
 
                 await query.message.answer("Кнопка удалена\n\n")
                 await query.message.answer(
-                    text=MessageTexts.BOT_MAILINGS_MENU_MESSAGE.value.format(custom_bot_username),
+                    text=MessageTexts.BOT_MAILINGS_MENU_MESSAGE.value.format(
+                        custom_bot_username),
                     reply_markup=await get_inline_bot_mailing_menu_keyboard(bot_id)
                 )
         case "add_button":
@@ -108,7 +112,8 @@ async def mailing_menu_callback_handler(query: CallbackQuery, state: FSMContext)
                                            "Сейчас там стандартный текст 'Магазин' и ссылка на Ваш магазин.\n"
                                            "Эти два параметры Вы можете изменить в настройках рассылки")
                 await query.message.answer(
-                    text=MessageTexts.BOT_MAILINGS_MENU_MESSAGE.value.format(custom_bot_username),
+                    text=MessageTexts.BOT_MAILINGS_MENU_MESSAGE.value.format(
+                        custom_bot_username),
                     reply_markup=await get_inline_bot_mailing_menu_keyboard(bot_id)
                 )
 
@@ -130,7 +135,8 @@ async def mailing_menu_callback_handler(query: CallbackQuery, state: FSMContext)
             all_custom_bot_users = await custom_bot_user_db.get_custom_bot_users(custom_bot.bot_id)
             media_files = await mailing_media_file_db.get_all_mailing_media_files(mailing_id)
 
-            custom_bot_tg = Bot(custom_bot.token, parse_mode=ParseMode.HTML)
+            custom_bot_tg = Bot(custom_bot.token, default=DefaultBotProperties(
+                parse_mode=ParseMode.HTML))
             for ind, user in enumerate(all_custom_bot_users, start=1):
                 await send_mailing_message(
                     bot_from_send=custom_bot_tg,
@@ -140,8 +146,10 @@ async def mailing_menu_callback_handler(query: CallbackQuery, state: FSMContext)
                     mailing_message_type=MailingMessageType.RELEASE,
                     message=None,
                 )
-                logger.info(f"mailing with mailing_id {mailing_id} has sent to {ind}/{len(all_custom_bot_users)} with user_id {user.user_id}")
-                await asyncio.sleep(.05)  # 20 messages per second (limit is 30)
+                logger.info(
+                    f"mailing with mailing_id {mailing_id} has sent to {ind}/{len(all_custom_bot_users)} with user_id {user.user_id}")
+                # 20 messages per second (limit is 30)
+                await asyncio.sleep(.05)
         case "demo":
             media_files = await mailing_media_file_db.get_all_mailing_media_files(mailing_id)
 
@@ -174,7 +182,8 @@ async def mailing_menu_callback_handler(query: CallbackQuery, state: FSMContext)
                 )
         case "delete_mailing":
             await query.message.edit_text(
-                text=MessageTexts.BOT_MAILINGS_MENU_ACCEPT_DELETING_MESSAGE.value.format(custom_bot_username),
+                text=MessageTexts.BOT_MAILINGS_MENU_ACCEPT_DELETING_MESSAGE.value.format(
+                    custom_bot_username),
                 reply_markup=await get_inline_bot_mailing_menu_accept_deleting_keyboard(bot_id, mailing_id)
             )
         case "accept_delete":
@@ -184,8 +193,16 @@ async def mailing_menu_callback_handler(query: CallbackQuery, state: FSMContext)
                 reply_markup=get_reply_bot_menu_keyboard(bot_id)
             )
             await query.message.edit_text(
-                text=MessageTexts.BOT_MENU_MESSAGE.value.format(custom_bot_username),
+                text=MessageTexts.BOT_MENU_MESSAGE.value.format(
+                    custom_bot_username),
                 reply_markup=await get_inline_bot_menu_keyboard(bot_id)
+            )
+        case "extra_settings":
+            await query.message.edit_reply_markup(
+                # text=MessageTexts.BOT_MAILINGS_MENU_MESSAGE.value.format(
+                #     custom_bot_username
+                # ),
+                reply_markup=await get_inline_bot_mailing_menu_extra_settings_keyboard(bot_id, mailing_id)
             )
 
 
@@ -206,7 +223,8 @@ async def editing_mailing_message_handler(message: Message, state: FSMContext):
         if message_text == "🔙 Назад":
             await message.answer(
                 "Возвращаемся в меню...",
-                reply_markup=get_reply_bot_menu_keyboard(bot_id=state_data["bot_id"])
+                reply_markup=get_reply_bot_menu_keyboard(
+                    bot_id=state_data["bot_id"])
             )
             await message.answer(
                 text=MessageTexts.BOT_MAILINGS_MENU_MESSAGE.value.format(
@@ -222,7 +240,8 @@ async def editing_mailing_message_handler(message: Message, state: FSMContext):
 
             await message.answer(
                 "Предпросмотр конкурса 👇",
-                reply_markup=get_reply_bot_menu_keyboard(bot_id=state_data["bot_id"])
+                reply_markup=get_reply_bot_menu_keyboard(
+                    bot_id=state_data["bot_id"])
             )
             await send_mailing_message(
                 bot,
@@ -263,7 +282,8 @@ async def editing_mailing_button_text_handler(message: Message, state: FSMContex
         if message_text == "🔙 Назад":
             await message.answer(
                 "Возвращаемся в меню...",
-                reply_markup=get_reply_bot_menu_keyboard(bot_id=state_data["bot_id"])
+                reply_markup=get_reply_bot_menu_keyboard(
+                    bot_id=state_data["bot_id"])
             )
             await message.answer(
                 text=MessageTexts.BOT_MAILINGS_MENU_MESSAGE.value.format(
@@ -278,7 +298,8 @@ async def editing_mailing_button_text_handler(message: Message, state: FSMContex
 
             await message.answer(
                 "Предпросмотр конкурса 👇",
-                reply_markup=get_reply_bot_menu_keyboard(bot_id=state_data["bot_id"])
+                reply_markup=get_reply_bot_menu_keyboard(
+                    bot_id=state_data["bot_id"])
             )
             await send_mailing_message(
                 bot,
@@ -318,7 +339,8 @@ async def editing_mailing_button_url_handler(message: Message, state: FSMContext
         if message_text == "🔙 Назад":
             await message.answer(
                 "Возвращаемся в меню...",
-                reply_markup=get_reply_bot_menu_keyboard(bot_id=state_data["bot_id"])
+                reply_markup=get_reply_bot_menu_keyboard(
+                    bot_id=state_data["bot_id"])
             )
             await message.answer(
                 text=MessageTexts.BOT_MAILINGS_MENU_MESSAGE.value.format(
@@ -333,7 +355,8 @@ async def editing_mailing_button_url_handler(message: Message, state: FSMContext
 
             await message.answer(
                 "Предпросмотр конкурса 👇",
-                reply_markup=get_reply_bot_menu_keyboard(bot_id=state_data["bot_id"])
+                reply_markup=get_reply_bot_menu_keyboard(
+                    bot_id=state_data["bot_id"])
             )
             await send_mailing_message(
                 bot,
@@ -373,7 +396,8 @@ async def editing_mailing_media_files_handler(message: Message, state: FSMContex
     if message.text == "✅ Готово":
         await message.answer(
             "Возвращаемся в меню...",
-            reply_markup=get_reply_bot_menu_keyboard(bot_id=state_data["bot_id"])
+            reply_markup=get_reply_bot_menu_keyboard(
+                bot_id=state_data["bot_id"])
         )
         await message.answer(
             text=MessageTexts.BOT_MAILINGS_MENU_MESSAGE.value.format(
@@ -417,7 +441,8 @@ async def editing_mailing_media_files_handler(message: Message, state: FSMContex
         )
 
     await mailing_media_file_db.add_mailing_media_file(MailingMediaFileSchema.model_validate(
-        {"mailing_id": mailing_id, "file_id_main_bot": file_id, "file_path": file_path, "media_type": media_type}
+        {"mailing_id": mailing_id, "file_id_main_bot": file_id,
+            "file_path": file_path, "media_type": media_type}
     ))
 
     await message.answer(answer_text)
@@ -434,7 +459,8 @@ async def send_mailing_message(  # TODO that's not funny
     if mailing_schema.has_button:
         button = InlineKeyboardMarkup(
             inline_keyboard=[
-                [InlineKeyboardButton(text=mailing_schema.button_text, url=mailing_schema.button_url)]
+                [InlineKeyboardButton(
+                    text=mailing_schema.button_text, url=mailing_schema.button_url)]
             ]
         )
     else:
@@ -466,13 +492,17 @@ async def send_mailing_message(  # TODO that's not funny
             else:
                 file_name = media_file.file_id_main_bot
             if media_file.media_type == "photo":
-                media_group.append(InputMediaPhoto(media=file_name) if len(media_files) > 1 else file_name)
+                media_group.append(InputMediaPhoto(media=file_name) if len(
+                    media_files) > 1 else file_name)
             elif media_file.media_type == "video":
-                media_group.append(InputMediaVideo(media=file_name) if len(media_files) > 1 else file_name)
+                media_group.append(InputMediaVideo(media=file_name) if len(
+                    media_files) > 1 else file_name)
             elif media_file.media_type == "audio":
-                media_group.append(InputMediaAudio(media=file_name) if len(media_files) > 1 else file_name)
+                media_group.append(InputMediaAudio(media=file_name) if len(
+                    media_files) > 1 else file_name)
             elif media_file.media_type == "document":
-                media_group.append(InputMediaDocument(media=file_name) if len(media_files) > 1 else file_name)
+                media_group.append(InputMediaDocument(
+                    media=file_name) if len(media_files) > 1 else file_name)
 
         uploaded_media_files = []
         if len(media_files) > 1:
