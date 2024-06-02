@@ -56,7 +56,25 @@ async def mailing_menu_callback_handler(query: CallbackQuery, state: FSMContext)
     mailing = await mailing_db.get_mailing(mailing_id)
     custom_bot = await bot_db.get_bot(bot_id)
     custom_bot_username = (await Bot(custom_bot.token).get_me()).username
+    if mailing.is_running == True:
+        match action:
+            case "check_mailing_stats":
+                await query.answer(
+                    text=f"Отправлено {mailing.sent_mailing_amount} сообщений",
+                    show_alert=True
+                )
+            case "stop_mailing":
 
+                await query.message.answer(f"Рассылка остановалена\nСообщений разослано - {mailing.sent_mailing_amount}")
+                mailing.is_running = False
+                mailing.sent_mailing_amount = 0
+                await mailing_db.update_mailing(mailing)
+                await query.message.answer(
+                    MessageTexts.BOT_MAILINGS_MENU_MESSAGE.value.format((await Bot(custom_bot.token).get_me()).username),
+                    reply_markup=await get_inline_bot_mailing_menu_keyboard(bot_id)
+                )
+                await query.message.delete()
+        return
     match action:
         case "button_url":
             if not mailing.has_button:
@@ -169,7 +187,7 @@ async def mailing_menu_callback_handler(query: CallbackQuery, state: FSMContext)
                 )
         case "delete_mailing":
             await query.message.edit_text(
-                text=MessageTexts.BOT_MAILINGS_MENU_ACCEPT_DELETING_MESSAGE.value.format(
+                text=MessageTexts.BOT_MAILING_MENU_WHILE_RUNNING.value.format(
                     custom_bot_username),
                 reply_markup=await get_inline_bot_mailing_menu_accept_deleting_keyboard(bot_id, mailing_id)
             )
@@ -180,7 +198,7 @@ async def mailing_menu_callback_handler(query: CallbackQuery, state: FSMContext)
                 show_alert=True
             )
             new_message = await query.message.answer(
-                text=MessageTexts.BOT_MENU_MESSAGE.value.format(
+                text=MessageTexts.BOT_MAILING_MENU_WHILE_RUNNING.value.format(
                     custom_bot_username),
                 reply_markup=await get_inline_bot_menu_keyboard(
                     bot_id)
@@ -189,6 +207,8 @@ async def mailing_menu_callback_handler(query: CallbackQuery, state: FSMContext)
             # await new_message.edit_reply_markup(reply_markup=await get_inline_bot_menu_keyboard(
             #     bot_id))
         case "accept_start":
+            mailing.is_running = True
+            await mailing_db.update_mailing(mailing)
             media_files = await mailing_media_file_db.get_all_mailing_media_files(mailing_id)
             if len(media_files) > 1 and mailing.has_button:
                 await query.answer(
@@ -196,10 +216,8 @@ async def mailing_menu_callback_handler(query: CallbackQuery, state: FSMContext)
                     show_alert=True
                 )
             elif mailing.description or media_files:
-                await query.answer(
-                    text="Рассылка началась",
-                    show_alert=True
-                )
+                await query.message.answer(
+                    text="Рассылка началась")
 
                 new_message = await query.message.answer(
                     text=MessageTexts.BOT_MENU_MESSAGE.value.format(
@@ -214,6 +232,12 @@ async def mailing_menu_callback_handler(query: CallbackQuery, state: FSMContext)
                 custom_bot_tg = Bot(custom_bot.token, default=DefaultBotProperties(
                     parse_mode=ParseMode.HTML))
                 for ind, user in enumerate(all_custom_bot_users, start=1):
+                    mailing = await mailing_db.get_mailing(mailing_id)
+                    if mailing.is_running == False:
+                        mailing.is_running = False
+                        mailing.sent_mailing_amount = 0
+                        await mailing_db.update_mailing(mailing)
+                        return
                     await send_mailing_message(
                         bot_from_send=custom_bot_tg,
                         to_user_id=user.user_id,
@@ -225,12 +249,21 @@ async def mailing_menu_callback_handler(query: CallbackQuery, state: FSMContext)
                     logger.info(
                         f"mailing with mailing_id {mailing_id} has sent to {ind}/{len(all_custom_bot_users)} with user_id {user.user_id}")
                     # 20 messages per second (limit is 30)
-                    await asyncio.sleep(.05)
+                    # await asyncio.sleep(.05)
+                    mailing.sent_mailing_amount += 1
+                    await mailing_db.update_mailing(mailing)
+                    await asyncio.sleep(10)
             else:
                 await query.answer(
                     text="В Вашем рассылочном сообщении нет ни текста, ни медиафайлов",
                     show_alert=True
                 )
+
+            await query.message.answer(f"Рассылка завершена\nСообщений отправлено - {mailing.sent_mailing_amount}")
+            mailing.is_running = False
+            mailing.sent_mailing_amount = 0
+            await mailing_db.update_mailing(mailing)
+
         case "extra_settings":
             await query.message.edit_reply_markup(
                 # text=MessageTexts.BOT_MAILINGS_MENU_MESSAGE.value.format(
@@ -639,6 +672,16 @@ async def send_mailing_message(  # TODO that's not funny
                 link_preview_options=LinkPreviewOptions(is_disabled=not (
                     mailing_schema.enable_link_preview)),
                 reply_markup=button,
+            )
+        elif mailing_message_type == MailingMessageType.AFTER_REDACTING:
+            await bot_from_send.send_message(
+                chat_id=to_user_id,
+                text=mailing_schema.description,
+                reply_markup=button,
+                disable_notification=not (
+                    mailing_schema.enable_notification_sound),
+                link_preview_options=LinkPreviewOptions(is_disabled=not (
+                    mailing_schema.enable_link_preview))
             )
         else:
             await bot_from_send.send_message(

@@ -37,6 +37,10 @@ class Mailing(Base):
     enable_notification_sound = Column(BOOLEAN, default=True)
     enable_link_preview = Column(BOOLEAN, default=False)
 
+    # Mailing Stats
+    is_running = Column(BOOLEAN, default=False)
+    sent_mailing_amount = Column(BigInteger, default=0)
+
 
 class MailingSchemaWithoutId(BaseModel):
     model_config = ConfigDict(from_attributes=True)
@@ -53,7 +57,10 @@ class MailingSchemaWithoutId(BaseModel):
     created_at: datetime.datetime = datetime.datetime.now().replace(tzinfo=None)
 
     enable_notification_sound: bool = True
-    enable_link_preview: bool = True
+    enable_link_preview: bool = False
+
+    is_running: bool = False
+    sent_mailing_amount: int = 0
 
 
 class MailingSchema(MailingSchemaWithoutId):

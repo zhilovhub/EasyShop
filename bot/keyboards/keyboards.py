@@ -318,7 +318,15 @@ async def get_inline_bot_mailing_start_confirm_keybaord(bot_id: int, mailing_id:
 async def get_inline_bot_mailing_menu_keyboard(bot_id: int) -> InlineKeyboardMarkup:
     mailing = await get_bot_mailing(bot_id=bot_id)
     callback_metadata = f":{bot_id}:{mailing.mailing_id}"
-
+    if mailing.is_running == True:
+        return InlineKeyboardMarkup(
+            inline_keyboard=[
+                [InlineKeyboardButton(
+                    text="Статистика", callback_data="mailing_menu:check_mailing_stats" + callback_metadata)],
+                [InlineKeyboardButton(
+                    text="Отменить", callback_data="mailing_menu:stop_mailing" + callback_metadata)]
+            ]
+        )
     if mailing.has_button:
         inline_buttons = [
             [

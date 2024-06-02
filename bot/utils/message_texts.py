@@ -79,6 +79,8 @@ class MessageTexts(Enum):
     BOT_MAILINGS_MENU_ACCEPT_DELETING_MESSAGE = "Управление текущей рассылки для бота <b>@{}</b>\n\n" \
                                                 "<b>Подтверждение удаления рассылки</b>"
 
+    BOT_MAILING_MENU_WHILE_RUNNING = "Сейчас идет рассылка для бота <b>@{}</b>\n\n"
+
     CONTACTS = f"Генеральный директор:\n" \
                f"Тг: <b>@maxzim398</b>\n\n" \
                f"Технический директор:\n" \
