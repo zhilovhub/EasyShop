@@ -93,6 +93,13 @@ def get_back_keyboard(back_text: str = MessageTexts.BACK_BUTTON_TEXT.value) -> R
     ], resize_keyboard=True)
 
 
+def get_confirm_media_upload_keyboard() -> ReplyKeyboardMarkup:
+
+    return ReplyKeyboardMarkup(keyboard=[
+        [KeyboardButton(text="✅ Готово"), KeyboardButton(text="Очистить")],
+    ], resize_keyboard=True)
+
+
 class ReplyBotMenuButtons(Enum):
     SETTINGS = "⚙ Настройки бота"
     CONTACTS = "☎ Контакты"

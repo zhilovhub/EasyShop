@@ -127,7 +127,7 @@ async def mailing_menu_callback_handler(query: CallbackQuery, state: FSMContext)
             await query.message.answer("Отправьте одним сообщение медиафайлы для рассылочного сообщения\n\n"
                                        "❗ Старые медиафайлы к этому рассылочному сообщению <b>перезапишутся</b>\n\n"
                                        "❗❗ Обратите внимание, что к сообщению нельзя будет прикрепить кнопку, если медиафайлов <b>больше одного</b>",
-                                       reply_markup=get_back_keyboard("✅ Готово"))
+                                       reply_markup=get_confirm_media_upload_keyboard())
             await query.answer()
             await state.set_state(States.EDITING_MAILING_MEDIA_FILES)
             await state.set_data({"bot_id": bot_id, "mailing_id": mailing_id})
@@ -410,6 +410,14 @@ async def editing_mailing_media_files_handler(message: Message, state: FSMContex
         await state.set_data({"bot_id": bot_id})
 
         return
+    elif message.text == "Очистить":
+        await message.answer("Очищаем все файлы...")
+        await mailing_media_file_db.delete_mailing_media_files(mailing_id=mailing_id)
+        await message.answer("Отправьте одним сообщение медиафайлы для рассылочного сообщения\n\n"
+                             "❗ Старые медиафайлы к этому рассылочному сообщению <b>перезапишутся</b>\n\n"
+                             "❗❗ Обратите внимание, что к сообщению нельзя будет прикрепить кнопку, если медиафайлов <b>больше одного</b>",
+                             reply_markup=get_confirm_media_upload_keyboard())
+        return
     elif message.photo:
         photo = message.photo[-1]
         file_id = photo.file_id
@@ -437,7 +445,7 @@ async def editing_mailing_media_files_handler(message: Message, state: FSMContex
     else:
         return await message.answer(
             "Пришлите медиафайлы (фото, видео, аудио, документы), которые должны быть прикреплены к рассылочному сообщению",
-            reply_markup=get_back_keyboard("✅ Готово")
+            reply_markup=get_confirm_media_upload_keyboard()
         )
 
     await mailing_media_file_db.add_mailing_media_file(MailingMediaFileSchema.model_validate(
