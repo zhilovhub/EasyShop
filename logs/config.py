@@ -1,5 +1,7 @@
 import logging
 import logging.config
+import logging_loki
+
 from dotenv import load_dotenv
 import os
 
@@ -22,11 +24,18 @@ class ErrorWarningFilter(logging.Filter):
         return False
 
 
+handler = logging_loki.LokiHandler(
+    url="https://http://92.118.114.106:3100/loki/api/v1/push",
+    tags={"application": "my-app"},
+    # auth=("username", "password"),
+    version="1",
+)
+
 load_dotenv()
 
 LOGS_PATH = os.getenv("PROJECT_ROOT") + "logs/"
 # LOG_TO_GRAFANA = bool(int(os.getenv("LOG_TO_GRAFANA")))
-LOG_TO_GRAFANA = 0
+LOG_TO_GRAFANA = 1
 
 FORMATTER_NAME = "formatter"
 
@@ -64,6 +73,15 @@ logger_configuration = {
             "formatter": FORMATTER_NAME,
             "filename": LOGS_PATH + "err.log",
             "filters": ["error_warning_filter"]
+        },
+        "loki_handler": {
+            "class": "logging_loki.LokiHandler",
+            "level": "DEBUG",
+            "formatter": FORMATTER_NAME,
+            "url": "http://92.118.114.106:3100/loki/api/v1/push",
+            "tags": {"application": "my-app"},
+            "filters": ["loki_filter"],
+            "version": "1"
         }
     },
     "loggers": {
@@ -98,6 +116,6 @@ def main():
 
 
 logging.config.dictConfig(logger_configuration)
-logger = logging.getLogger("local_logger" if LOG_TO_GRAFANA else "web_local_logger")
+logger = logging.getLogger("local_logger" if not LOG_TO_GRAFANA else "web_local_logger")
 
 main()
