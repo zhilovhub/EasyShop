@@ -1,11 +1,13 @@
 from database.models.category_model import CategorySchema, CategoryDao
 from database.models.product_model import (ProductSchema, ProductNotFound, ProductWithoutId, ProductDao,
                                            ProductFilter, ProductFilterWithoutBot, FilterNotFound, PRODUCT_FILTERS)
-from loader import db_engine, logger, DEBUG
+from loader import db_engine, DEBUG
 from fastapi import HTTPException, APIRouter, File, UploadFile, Body, Depends, Header
 from typing import Annotated, List
 from pydantic import BaseModel, Field, field_validator, InstanceOf, model_validator
 from sqlalchemy.exc import IntegrityError
+
+from logs.config import logger
 
 
 async def check_admin_authorization(bot_id: int, header) -> bool:

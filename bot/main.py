@@ -20,8 +20,9 @@ from subscription.subscription import Subscription
 from subscription.scheduler import Scheduler
 
 from bot import config
-from bot.config import logger
 from bot.utils import AlchemyStorageAsync, JsonStore
+
+from logs.config import logger
 
 bot = Bot(config.TELEGRAM_TOKEN, default=DefaultBotProperties(parse_mode=ParseMode.HTML))
 storage = AlchemyStorageAsync(config.SQLALCHEMY_URL, config.STORAGE_TABLE_NAME)

@@ -1,5 +1,4 @@
 import os
-import logging.config
 from dotenv import load_dotenv
 
 # Загрузка .env файла
@@ -36,46 +35,3 @@ DEBUG = bool(int(os.getenv("DEBUG")))
 TIMEZONE = os.getenv("TIMEZONE")
 
 BOT_DEBUG_MODE = bool(int(os.getenv("BOT_DEBUG_MODE")))
-LOGS_PATH = os.getenv("PROJECT_ROOT") + "logs/"
-
-# Logging
-LOGGING_SETUP = {
-    'version': 1,
-    'disable_existing_loggers': False,
-    'formatters': {
-        'log_formatter': {
-            'format': '[{asctime}][{levelname}] ::: {filename}({lineno}) -> {message}',
-            'style': '{',
-        },
-    },
-    'handlers': {
-        'all_file': {
-            'level': 'DEBUG' if DEBUG else 'INFO',
-            'class': 'logging.FileHandler',
-            'filename': LOGS_PATH + "all.log",  # путь до файла логирования
-            'formatter': 'log_formatter',
-        },
-        'error_file': {
-            'level': 'WARNING',
-            'class': 'logging.FileHandler',
-            'filename': LOGS_PATH + "err.log",  # путь до файла логирования ошибок
-            'formatter': 'log_formatter',
-        },
-        'console': {
-            'level': 'DEBUG' if DEBUG else 'INFO',
-            'class': 'logging.StreamHandler',
-            'formatter': 'log_formatter',
-        },
-    },
-    'loggers': {
-        'logger': {
-            'handlers': ['all_file', 'error_file', 'console'],
-            'level': 'DEBUG',
-            'propagate': False,
-        },
-    }
-}
-logging.config.dictConfig(LOGGING_SETUP)
-logging.basicConfig(format=u'[%(asctime)s][%(levelname)s] ::: %(filename)s(%(lineno)d) -> %(message)s',
-                    level="INFO", filename=LOGS_PATH + "all.log")
-logger = logging.getLogger('logger')

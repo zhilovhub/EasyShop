@@ -6,6 +6,8 @@ from bot import config
 from bot.utils import JsonStore, MessageTexts
 from bot.keyboards.keyboards import get_reply_bot_menu_keyboard
 
+from logs.config import logger
+
 
 async def send_instructions(bot: Bot, custom_bot_id: int | None, chat_id: int, cache_resources_file_id_store: JsonStore) -> None:
     file_ids = cache_resources_file_id_store.get_data()
@@ -17,7 +19,7 @@ async def send_instructions(bot: Bot, custom_bot_id: int | None, chat_id: int, c
             reply_markup=get_reply_bot_menu_keyboard(bot_id=custom_bot_id) if custom_bot_id else ReplyKeyboardRemove()
         )
     except (TelegramBadRequest, KeyError) as e:
-        config.logger.info(f"error while sending instructions.... cache is empty, sending raw files {e}")
+        logger.info(f"error while sending instructions.... cache is empty, sending raw files {e}")
         video_message = await bot.send_video(
             chat_id=chat_id,
             video=FSInputFile(config.RESOURCES_PATH.format("botfather.mp4")),

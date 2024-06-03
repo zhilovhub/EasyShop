@@ -9,7 +9,8 @@ from sqlalchemy import select, insert, delete, update
 from sqlalchemy.ext.asyncio import create_async_engine
 
 from bot import config
-from bot.config import logger
+
+from logs.config import logger
 
 
 class AlchemyStorageAsync(BaseStorage, ABC):

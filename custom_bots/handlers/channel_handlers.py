@@ -5,8 +5,10 @@ from aiogram.types import ChatMemberUpdated, ChatMemberLeft, ChatMemberAdministr
 from bot.keyboards import get_inline_bot_menu_keyboard
 from bot.utils import MessageTexts
 from custom_bots.handlers.routers import multi_bot_channel_router
-from custom_bots.multibot import bot_db, logger, channel_db, main_bot
+from custom_bots.multibot import bot_db, channel_db, main_bot
 from database.models.channel_model import ChannelSchema
+
+from logs.config import logger
 
 
 # @multi_bot_channel_router.my_chat_member()

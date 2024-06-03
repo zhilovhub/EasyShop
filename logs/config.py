@@ -24,8 +24,9 @@ class ErrorWarningFilter(logging.Filter):
 
 load_dotenv()
 
-DEBUG = bool(int(os.getenv("DEBUG")))
 LOGS_PATH = os.getenv("PROJECT_ROOT") + "logs/"
+# LOG_TO_GRAFANA = bool(int(os.getenv("LOG_TO_GRAFANA")))
+LOG_TO_GRAFANA = 0
 
 FORMATTER_NAME = "formatter"
 
@@ -66,13 +67,22 @@ logger_configuration = {
         }
     },
     "loggers": {
-        "debug_logger": {
+        "local_logger": {
             "level": "DEBUG",
-            "handlers": ["console_handler", "file_handler", "file_error_warning_handler"]
+            "handlers": [
+                "console_handler",
+                "file_handler",
+                "file_error_warning_handler"
+            ]
         },
-        "release_logger": {
+        "web_local_logger": {
             "level": "DEBUG",
-            "handlers": ["console_handler", "file_handler", "file_error_warning_handler"]
+            "handlers": [
+                "console_handler",
+                "file_handler",
+                "file_error_warning_handler",
+                "loki_handler"
+            ]
         }
     }
 }
@@ -88,7 +98,6 @@ def main():
 
 
 logging.config.dictConfig(logger_configuration)
-logger = logging.getLogger("debug_logger" if DEBUG else "release_logger")
-
+logger = logging.getLogger("local_logger" if LOG_TO_GRAFANA else "web_local_logger")
 
 main()

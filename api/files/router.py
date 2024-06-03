@@ -1,8 +1,10 @@
 import os
 
-from loader import db_engine, logger
+from loader import db_engine
 from fastapi import HTTPException, APIRouter
 from fastapi.responses import FileResponse
+
+from logs.config import logger
 
 from dotenv import load_dotenv
 

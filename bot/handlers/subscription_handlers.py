@@ -20,15 +20,17 @@ from database.models.user_model import UserSchema, UserStatusValues
 from bot.utils.send_instructions import send_instructions
 from bot.utils.custom_bot_api import stop_custom_bot
 
+from logs.config import logger
+
 
 @subscribe_router.callback_query(lambda q: q.data == "start_trial")
 async def start_trial_callback(query: CallbackQuery, state: FSMContext):
     admin_message = await send_event(query.from_user, EventTypes.STARTED_TRIAL)
     await query.message.edit_text(MessageTexts.FREE_TRIAL_MESSAGE.value, reply_markup=None)
     user_id = query.from_user.id
-    # config.logger.info(f"starting trial subscription for user with id ({user_id} until date {subscribe_until}")
+    # logger.info(f"starting trial subscription for user with id ({user_id} until date {subscribe_until}")
     # TODO move logger into to subscription module
-    config.logger.info(
+    logger.info(
         f"starting trial subscription for user with id ({user_id} until date ТУТ нужно выполнить TODO"
     )
 
@@ -38,7 +40,7 @@ async def start_trial_callback(query: CallbackQuery, state: FSMContext):
         # TODO выставлять счет на оплату если триал уже был но пользователь все равно как то сюда попал
         return await query.answer("Вы уже оформляли пробную подписку", show_alert=True)
 
-    config.logger.info(f"adding scheduled subscription notifies for user {user_id}")
+    logger.info(f"adding scheduled subscription notifies for user {user_id}")
     await subscription.add_notifications(
         user_id,
         on_expiring_notification=send_subscription_expire_notify,
@@ -160,7 +162,7 @@ async def waiting_payment_pay_handler(message: Message, state: FSMContext):
                                        ]
                                    ]))
         except:
-            config.logger.warning("error while notify admin", exc_info=True)
+            logger.warning("error while notify admin", exc_info=True)
 
     await message.reply(
         "Ваши данные отправлены на модерацию, ожидайте изменения статуса оплаты",
@@ -223,7 +225,7 @@ async def approve_pay_callback(query: CallbackQuery):
     user = await user_db.get_user(user_id)
     await subscription.create_payment(user_id)
 
-    config.logger.info(f"adding scheduled subscription notifies for user {user.id}")
+    logger.info(f"adding scheduled subscription notifies for user {user.id}")
     await subscription.add_notifications(
         user_id,
         on_expiring_notification=send_subscription_expire_notify,

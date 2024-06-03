@@ -1,11 +1,12 @@
 from database.models.category_model import CategorySchema, CategoryDao, CategorySchemaWithoutId
 from database.models.product_model import ProductSchema, ProductNotFound, ProductWithoutId, ProductDao
-from loader import db_engine, logger
+from loader import db_engine
 from fastapi import HTTPException, APIRouter, File, UploadFile, Header
 from typing import Annotated
 from pydantic import BaseModel
 from products.router import check_admin_authorization
 
+from logs.config import logger
 
 PATH = "/api/categories"
 router = APIRouter(

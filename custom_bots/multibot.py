@@ -22,12 +22,13 @@ from aiohttp import web
 from dotenv import load_dotenv
 
 from bot import config
-from bot.config import logger
 from bot.utils import JsonStore
 from bot.utils.storage import AlchemyStorageAsync
 from database.models.bot_model import BotNotFound
 from database.models.channel_model import ChannelDao
 from database.models.models import Database
+
+from logs.config import logger
 
 app = web.Application()
 
