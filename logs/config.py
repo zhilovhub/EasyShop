@@ -34,6 +34,22 @@ class ErrorWarningFilter(logging.Filter):
         return False
 
 
+class ErrorWarningFilter(logging.Filter):
+
+    def filter(self, record: LogRecord) -> bool:
+        if record.levelno >= 30:
+            return True
+
+        return False
+
+
+load_dotenv()
+
+DEBUG = bool(int(os.getenv("DEBUG")))
+LOGS_PATH = os.getenv("PROJECT_ROOT") + "logs/"
+
+FORMATTER_NAME = "formatter"
+
 logger_configuration = {
     "version": 1,
     "formatters": {
