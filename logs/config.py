@@ -46,7 +46,6 @@ class ErrorWarningFilter(logging.Filter):
 load_dotenv()
 
 DEBUG = bool(int(os.getenv("DEBUG")))
-LOGS_PATH = os.getenv("PROJECT_ROOT") + "logs/"
 
 FORMATTER_NAME = "formatter"
 
