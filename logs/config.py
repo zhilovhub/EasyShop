@@ -34,8 +34,8 @@ handler = logging_loki.LokiHandler(
 load_dotenv()
 
 LOGS_PATH = os.getenv("PROJECT_ROOT") + "logs/"
-# LOG_TO_GRAFANA = bool(int(os.getenv("LOG_TO_GRAFANA")))
-LOG_TO_GRAFANA = 1
+GRAFANA_URL = os.getenv("GRAFANA_URL")
+LOG_TO_GRAFANA = bool(int(os.getenv("LOG_TO_GRAFANA")))
 
 FORMATTER_NAME = "formatter"
 
@@ -78,7 +78,7 @@ logger_configuration = {
             "class": "logging_loki.LokiHandler",
             "level": "DEBUG",
             "formatter": FORMATTER_NAME,
-            "url": "http://92.118.114.106:3100/loki/api/v1/push",
+            "url": GRAFANA_URL + "loki/api/v1/push",
             "tags": {"application": "my-app"},
             "filters": ["loki_filter"],
             "version": "1"
@@ -105,17 +105,5 @@ logger_configuration = {
     }
 }
 
-
-def main():
-    logger.info("hi", extra={"uh": 12})
-    logger.info("hi1")
-    logger.warning("hi2")
-    logger.warning("hi2")
-    logger.info("hi3")
-    logger.error("hi4")
-
-
 logging.config.dictConfig(logger_configuration)
 logger = logging.getLogger("local_logger" if not LOG_TO_GRAFANA else "web_local_logger")
-
-main()
