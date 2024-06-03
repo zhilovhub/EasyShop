@@ -17,7 +17,7 @@ logger_configuration = {
     "version": 1,
     "formatters": {
         "formatter": {
-            "format": "{levelname} {asctime} {filename} {funcName} {msg}",
+            "format": "{levelname} {asctime} {filename} {funcName}() {msg}",
             "style": "{"
         }
     },
@@ -31,22 +31,24 @@ logger_configuration = {
             "class": "logging.StreamHandler",
             "level": "DEBUG",
             "formatter": "formatter",
-            "filters": ["loki_filter"]
         }
     },
     "loggers": {
         "debug_logger": {
             "level": "DEBUG",
-            "filters": [],
             "handlers": ["console_handler"]
         },
         "release_logger": {
             "level": "DEBUG",
-            "filters": [],
             "handlers": ["console_handler"]
         }
     }
 }
+
+
+def main():
+    logger.info("hi", extra={"uh": 12})
+
 
 load_dotenv()
 DEBUG = bool(int(os.getenv("DEBUG")))
@@ -54,4 +56,5 @@ DEBUG = bool(int(os.getenv("DEBUG")))
 logging.config.dictConfig(logger_configuration)
 logger = logging.getLogger("debug_logger" if DEBUG else "release_logger")
 
-logger.info("hi", extra={"uh": 12})
+
+main()
