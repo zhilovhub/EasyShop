@@ -8,12 +8,13 @@ from aiogram.types import Message, CallbackQuery, LinkPreviewOptions, \
 from aiogram.fsm.context import FSMContext
 
 from bot.main import bot, custom_bot_user_db, mailing_media_file_db, _scheduler
-from bot.config import logger
 from bot.keyboards import *
 from bot.states.states import States
 from bot.handlers.routers import admin_bot_menu_router
 
 from database.models.mailing_media_files import MailingMediaFileSchema
+
+from logs.config import logger
 
 
 class MailingMessageType(Enum):
