@@ -1,5 +1,5 @@
 import asyncio
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from aiogram.enums import ParseMode
 from aiogram.client.bot import DefaultBotProperties
@@ -71,8 +71,12 @@ async def mailing_menu_callback_handler(query: CallbackQuery, state: FSMContext)
     action = query_data[1]
     bot_id = int(query_data[2])
     mailing_id = int(query_data[3])
-
-    mailing = await mailing_db.get_mailing(mailing_id)
+    try:
+        mailing = await mailing_db.get_mailing(mailing_id)
+    except MailingNotFound:
+        await query.answer("Рассылка уже удалена", show_alert=True)
+        await query.message.delete()
+        return
     custom_bot = await bot_db.get_bot(bot_id)
     custom_bot_username = (await Bot(custom_bot.token).get_me()).username
     if mailing.is_running == True:
@@ -89,8 +93,10 @@ async def mailing_menu_callback_handler(query: CallbackQuery, state: FSMContext)
 
                 mailing.is_running = False
                 mailing.sent_mailing_amount = 0
-
-                await _scheduler.del_job_by_id(mailing.job_id)
+                try:
+                    await _scheduler.del_job_by_id(mailing.job_id)
+                except:
+                    logger.warning(f"Job ID {mailing.job_id} not found")
                 mailing.job_id = None
 
                 await mailing_db.delete_mailing(mailing.mailing_id)
@@ -258,7 +264,16 @@ async def mailing_menu_callback_handler(query: CallbackQuery, state: FSMContext)
                     "Telegram не позволяет прикрепить кнопку, если в сообщении минимум 2 медиафайла",
                     show_alert=True
                 )
+
             elif mailing.description or media_files:
+                if mailing.is_delayed:
+                    # Небольшой запас по времени
+                    if datetime.now() > (mailing.send_date + timedelta(minutes=2)):
+                        await query.answer(
+                            text="Указанное время отправки уже прошло",
+                            show_alert=True
+                        )
+                        return
                 mailing.is_running = True
                 await mailing_db.update_mailing(mailing)
 
@@ -369,7 +384,9 @@ async def editing_mailing_delay_date_handler(message: Message, state: FSMContext
                 datetime_obj = datetime.strptime(
                     message_text, "%d.%m.%Y %H:%M")
                 datetime_obj.replace(tzinfo=None)
-
+                if datetime.now() > datetime_obj:
+                    await message.reply("Введенное время уже прошло, попробуйте ввести другое")
+                    return
                 mailing.is_delayed = True
                 mailing.send_date = datetime_obj
 

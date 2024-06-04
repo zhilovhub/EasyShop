@@ -12,3 +12,4 @@ APScheduler
 python-logging-loki
 
 sqlalchemy_filters
+python-logging-loki

@@ -22,7 +22,8 @@ from bot.utils import AlchemyStorageAsync, JsonStore
 
 from logs.config import logger, db_logger
 
-bot = Bot(config.TELEGRAM_TOKEN, default=DefaultBotProperties(parse_mode=ParseMode.HTML))
+bot = Bot(config.TELEGRAM_TOKEN, default=DefaultBotProperties(
+    parse_mode=ParseMode.HTML))
 storage = AlchemyStorageAsync(config.SQLALCHEMY_URL, config.STORAGE_TABLE_NAME)
 dp = Dispatcher(storage=storage)
 db_engine: Database = Database(config.SQLALCHEMY_URL, db_logger)
@@ -82,7 +83,6 @@ if __name__ == "__main__":
     dp.include_router(channel_menu_router)
     dp.include_router(subscribe_router)
     dp.include_router(custom_bot_editing_router)
-
 
     for log_file in ('all.log', 'err.log'):
         with open(config.LOGS_PATH + log_file, 'a') as log:
