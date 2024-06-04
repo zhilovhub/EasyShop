@@ -1,12 +1,7 @@
-import logging
-
 from json import dump, load
 from json.decoder import JSONDecodeError
 
-logging.basicConfig(format=u'[%(asctime)s][%(levelname)s] ::: %(filename)s(%(lineno)d) -> %(message)s',
-                    level="INFO", filename='logs/all.log')
-logger = logging.getLogger('logger')
-
+from logs.config import logger
 
 class JsonStore:
 

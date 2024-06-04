@@ -12,10 +12,12 @@ from aiogram.types import Message, CallbackQuery
 
 from bot.keyboards import keyboards
 from custom_bots.handlers.routers import multi_bot_router
-from custom_bots.multibot import logger, order_db, product_db, bot_db, main_bot, PREV_ORDER_MSGS, custom_bot_user_db, CustomUserStates, QUESTION_MESSAGES, format_locales
+from custom_bots.multibot import order_db, product_db, bot_db, main_bot, PREV_ORDER_MSGS, custom_bot_user_db, CustomUserStates, QUESTION_MESSAGES, format_locales
 from database.models.bot_model import BotNotFound
 from database.models.custom_bot_user_model import CustomBotUserNotFound
 from database.models.order_model import OrderSchema, OrderStatusValues, OrderNotFound, OrderItem
+
+from logs.config import custom_bot_logger
 
 
 @multi_bot_router.message(F.web_app_data)
@@ -25,7 +27,7 @@ async def process_web_app_request(event: Message):
 
     try:
         data = json.loads(event.web_app_data.data)
-        logger.info(f"receive web app data: {data}")
+        custom_bot_logger.info(f"receive web app data: {data}")
 
         data["from_user"] = user_id
         data["payment_method"] = "Картой Онлайн"
@@ -55,9 +57,9 @@ async def process_web_app_request(event: Message):
 
         await order_db.add_order(order)
 
-        logger.info(f"order with id #{order.id} created")
+        custom_bot_logger.info(f"order with id #{order.id} created")
     except Exception:
-        logger.error("error while creating order", exc_info=True)
+        custom_bot_logger.error("error while creating order", exc_info=True)
         return await event.answer("Произошла ошибка при создании заказа, попробуйте еще раз.")
 
     products = [(await product_db.get_product(product_id), product_item.amount, product_item.extra_options)
@@ -98,7 +100,7 @@ async def start_cmd(message: Message, state: FSMContext):
         try:
             await custom_bot_user_db.get_custom_bot_user(bot.bot_id, message.from_user.id)
         except CustomBotUserNotFound:
-            logger.info(
+            custom_bot_logger.info(
                 f"custom_user {message.from_user.id} of bot_id {bot.bot_id} not found in db, creating new instance..."
             )
             await custom_bot_user_db.add_custom_bot_user(bot.bot_id, message.from_user.id)
@@ -243,7 +245,7 @@ async def approve_ask_question_callback(query: CallbackQuery, state: FSMContext)
                                          "проверьте писали ли Вы хоть раз своему боту и не заблокировали ли вы его"
                                          f"\n\n* ссылка на Вашего бота @{(await query.bot.get_me()).username}")
 
-        logger.info("cant send order question to admin", exc_info=True)
+        custom_bot_logger.info("cant send order question to admin", exc_info=True)
         await state.set_state(CustomUserStates.MAIN_MENU)
         return await query.answer(":( Не удалось отправить Ваш вопрос", show_alert=True)
 

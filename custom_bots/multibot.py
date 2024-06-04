@@ -1,5 +1,4 @@
 import asyncio
-import logging
 import ssl
 import sys
 from datetime import datetime
@@ -22,12 +21,14 @@ from aiohttp import web
 from dotenv import load_dotenv
 
 from bot import config
-from bot.config import logger
+from bot.config import LOGS_PATH
 from bot.utils import JsonStore
 from bot.utils.storage import AlchemyStorageAsync
 from database.models.bot_model import BotNotFound
 from database.models.channel_model import ChannelDao
 from database.models.models import Database
+
+from logs.config import custom_bot_logger, db_logger
 
 app = web.Application()
 
@@ -59,7 +60,7 @@ WEB_APP_URL = f"{getenv('WEB_APP_URL')}:{getenv('WEB_APP_PORT')}/products-page/?
 LOCAL_API_SERVER_HOST = getenv("WEBHOOK_LOCAL_API_URL")
 LOCAL_API_SERVER_PORT = int(getenv("WEBHOOK_LOCAL_API_PORT"))
 
-db_engine: Database = Database(sqlalchemy_url=getenv("SQLALCHEMY_URL"))
+db_engine: Database = Database(sqlalchemy_url=getenv("SQLALCHEMY_URL"), logger=db_logger)
 bot_db = db_engine.get_bot_dao()
 product_db = db_engine.get_product_db()
 order_db = db_engine.get_order_dao()
@@ -175,7 +176,6 @@ async def get_option(param: str, token: str):
 
 async def main():
     from custom_bots.handlers import multi_bot_router, multi_bot_channel_router
-    logging.basicConfig(level=logging.INFO, stream=sys.stdout)
 
     multibot_dispatcher = Dispatcher(storage=storage)
 
@@ -196,10 +196,10 @@ async def main():
     asyncio.set_event_loop(loop)
 
     ssl_context = ssl.create_default_context(ssl.Purpose.CLIENT_AUTH)
-    ssl_context.load_cert_chain(getenv('SSL_CERT_PATH'), getenv('SSL_KEY_PATH'))
+    # ssl_context.load_cert_chain(getenv('SSL_CERT_PATH'), getenv('SSL_KEY_PATH'))
 
-    logger.info(f"setting up local api server on {LOCAL_API_SERVER_HOST}:{LOCAL_API_SERVER_PORT}")
-    logger.info(f"setting up webhook server on {WEBHOOK_SERVER_HOST}:{WEBHOOK_SERVER_PORT}")
+    custom_bot_logger.info(f"setting up local api server on {LOCAL_API_SERVER_HOST}:{LOCAL_API_SERVER_PORT}")
+    custom_bot_logger.info(f"setting up webhook server on {WEBHOOK_SERVER_HOST}:{WEBHOOK_SERVER_PORT}")
 
     await storage.connect()
 
@@ -211,7 +211,7 @@ async def main():
 
 if __name__ == "__main__":
     for log_file in ('all.log', 'err.log'):
-        with open(f'logs/{log_file}', 'a') as log:
+        with open(LOGS_PATH + log_file, 'a') as log:
             log.write(f'=============================\n'
                       f'New multibot app session\n'
                       f'[{datetime.now()}]\n'

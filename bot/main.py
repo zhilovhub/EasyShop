@@ -20,13 +20,14 @@ from subscription.subscription import Subscription
 from subscription.scheduler import Scheduler
 
 from bot import config
-from bot.config import logger
 from bot.utils import AlchemyStorageAsync, JsonStore
+
+from logs.config import logger, db_logger
 
 bot = Bot(config.TELEGRAM_TOKEN, default=DefaultBotProperties(parse_mode=ParseMode.HTML))
 storage = AlchemyStorageAsync(config.SQLALCHEMY_URL, config.STORAGE_TABLE_NAME)
 dp = Dispatcher(storage=storage)
-db_engine: Database = Database(config.SQLALCHEMY_URL)
+db_engine: Database = Database(config.SQLALCHEMY_URL, db_logger)
 
 bot_db: BotDao = db_engine.get_bot_dao()
 user_db: UserDao = db_engine.get_user_dao()
@@ -81,10 +82,11 @@ if __name__ == "__main__":
     dp.include_router(subscribe_router)
     dp.include_router(custom_bot_editing_router)
 
+
     for log_file in ('all.log', 'err.log'):
         with open(config.LOGS_PATH + log_file, 'a') as log:
             log.write(f'=============================\n'
-                      f'New app session\n'
+                      f'New bot-app session\n'
                       f'[{datetime.now()}]\n'
                       f'=============================\n')
     asyncio.run(on_start())

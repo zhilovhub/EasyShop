@@ -1,11 +1,12 @@
 from database.models.category_model import CategorySchema, CategoryDao, CategorySchemaWithoutId
 from database.models.product_model import ProductSchema, ProductNotFound, ProductWithoutId, ProductDao
-from loader import db_engine, logger
+from loader import db_engine
 from fastapi import HTTPException, APIRouter, File, UploadFile, Header
 from typing import Annotated
 from pydantic import BaseModel
 from products.router import check_admin_authorization
 
+from logs.config import api_logger
 
 PATH = "/api/categories"
 router = APIRouter(
@@ -22,7 +23,7 @@ async def get_all_categories_api(bot_id: int) -> list[CategorySchema]:
     try:
         categories = await category_db.get_all_categories(bot_id)
     except Exception:
-        logger.error("Error while execute get_all_categories db_method", exc_info=True)
+        api_logger.error("Error while execute get_all_categories db_method", exc_info=True)
         raise HTTPException(status_code=500, detail="Internal error.")
     return categories
 
@@ -33,7 +34,7 @@ async def add_category_api(new_category: CategorySchemaWithoutId, authorization_
     try:
         cat_id = await category_db.add_category(new_category)
     except Exception:
-        logger.error("Error while execute add_category db_method", exc_info=True)
+        api_logger.error("Error while execute add_category db_method", exc_info=True)
         raise HTTPException(status_code=500, detail="Internal error.")
     return cat_id
 
@@ -44,6 +45,6 @@ async def edit_category_api(category: CategorySchema, authorization_hash: str = 
     try:
         await category_db.update_category(category)
     except Exception:
-        logger.error("Error while execute update_category db_method", exc_info=True)
+        api_logger.error("Error while execute update_category db_method", exc_info=True)
         raise HTTPException(status_code=500, detail="Internal error.")
     return True

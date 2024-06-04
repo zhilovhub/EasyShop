@@ -16,13 +16,14 @@ from aiogram.types import Message, FSInputFile, CallbackQuery
 from aiogram.fsm.context import FSMContext
 
 from bot.main import bot, user_db, bot_db, product_db, order_db, custom_bot_user_db, QUESTION_MESSAGES
-from bot.config import logger
 from bot.keyboards import *
 from bot.exceptions import InstanceAlreadyExists
 from bot.states.states import States
 from bot.handlers.routers import admin_bot_menu_router
 from bot.utils.custom_bot_api import start_custom_bot, stop_custom_bot
 from sqlalchemy.exc import IntegrityError
+
+from logs.config import logger
 
 from custom_bots.multibot import storage as custom_bot_storage
 

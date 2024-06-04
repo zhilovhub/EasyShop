@@ -1,11 +1,13 @@
 from database.models.order_model import OrderNotFound, OrderSchema
 from pydantic import ValidationError
-from loader import db_engine, logger
+from loader import db_engine
 from fastapi import APIRouter, HTTPException, Depends, Header
 from datetime import datetime
 import random
 import string
 from products.router import check_admin_authorization
+
+from logs.config import api_logger
 
 PATH = "/api/orders"
 router = APIRouter(
@@ -26,7 +28,7 @@ async def generate_order_id_api() -> str:
         await db.get_order(order_id)
     except OrderNotFound:
         return random_string
-    logger.info("generated order_id already exist, regenerating...")
+    api_logger.info("generated order_id already exist, regenerating...")
     await generate_order_id_api()
 
 
@@ -36,10 +38,10 @@ async def get_all_orders_api(bot_id: int, authorization_hash: str = Header()) ->
     try:
         orders = await db.get_all_orders(bot_id)
     except ValidationError as ex:
-        logger.warning("validation error", exc_info=True)
+        api_logger.warning("validation error", exc_info=True)
         raise HTTPException(status_code=400, detail=f"Incorrect input data.\n{str(ex)}")
     except Exception:
-        logger.error("Error while execute get_all_orders db_method", exc_info=True)
+        api_logger.error("Error while execute get_all_orders db_method", exc_info=True)
         raise HTTPException(status_code=500, detail="Internal error.")
     return orders
 
@@ -69,7 +71,7 @@ async def add_order_api(new_order: OrderSchema = Depends(), authorization_hash: 
     #     logger.warning("incorrect data in request", exc_info=True)
     #     raise HTTPException(status_code=400, detail=f"Incorrect input data.\n{str(ex)}")
     except Exception:
-        logger.error("Error while execute add_order db_method", exc_info=True)
+        api_logger.error("Error while execute add_order db_method", exc_info=True)
         raise HTTPException(status_code=500, detail="Internal error.")
     return "success"
 #

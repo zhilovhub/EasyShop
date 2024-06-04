@@ -1,11 +1,13 @@
 from database.models.category_model import CategorySchema, CategoryDao
 from database.models.product_model import (ProductSchema, ProductNotFound, ProductWithoutId, ProductDao,
                                            ProductFilter, ProductFilterWithoutBot, FilterNotFound, PRODUCT_FILTERS)
-from loader import db_engine, logger, DEBUG
+from loader import db_engine, DEBUG
 from fastapi import HTTPException, APIRouter, File, UploadFile, Body, Depends, Header
 from typing import Annotated, List
 from pydantic import BaseModel, Field, field_validator, InstanceOf, model_validator
 from sqlalchemy.exc import IntegrityError
+
+from logs.config import api_logger
 
 
 async def check_admin_authorization(bot_id: int, header) -> bool:
@@ -92,7 +94,7 @@ async def get_all_products_api(payload: GetProductsRequest = Depends(GetProducts
     # except CategoryFilterNotFound as ex:
     #     raise HTTPException(status_code=400, detail=ex.message)
     except Exception:
-        logger.error("Error while execute get_all_products db_method", exc_info=True)
+        api_logger.error("Error while execute get_all_products db_method", exc_info=True)
         raise HTTPException(status_code=500, detail="Internal error.")
     return products
 
@@ -104,7 +106,7 @@ async def get_product_api(bot_id: int, product_id: int) -> ProductSchema:
     except ProductNotFound:
         raise HTTPException(status_code=404, detail="Product not found.")
     except Exception:
-        logger.error("Error while execute get_product db_method", exc_info=True)
+        api_logger.error("Error while execute get_product db_method", exc_info=True)
         raise HTTPException(status_code=500, detail="Internal error.")
     return product
 
@@ -117,7 +119,7 @@ async def add_product_api(new_product: ProductWithoutId, authorization_hash: str
     except IntegrityError as ex:
         raise HTTPException(status_code=409, detail=str(ex))
     except Exception:
-        logger.error("Error while execute add_product db_method", exc_info=True)
+        api_logger.error("Error while execute add_product db_method", exc_info=True)
         raise HTTPException(status_code=500, detail="Internal error.")
     return product_id
 
@@ -128,7 +130,7 @@ async def edit_product_api(product: ProductSchema, authorization_hash: str = Hea
     try:
         await product_db.update_product(product)
     except Exception:
-        logger.error("Error while execute update_product db_method", exc_info=True)
+        api_logger.error("Error while execute update_product db_method", exc_info=True)
         raise HTTPException(status_code=500, detail="Internal error.")
     return True
 
@@ -141,7 +143,7 @@ async def get_product_api(bot_id: int, product_id: int, authorization_hash: str 
     except ProductNotFound:
         raise HTTPException(status_code=404, detail="Product not found.")
     except Exception:
-        logger.error("Error while execute delete_product db_method", exc_info=True)
+        api_logger.error("Error while execute delete_product db_method", exc_info=True)
         raise HTTPException(status_code=500, detail="Internal error.")
     return "product deleted"
 
@@ -156,9 +158,9 @@ class CSVFileInputModel(BaseModel):
 async def send_product_csv_api(payload: CSVFileInputModel, authorization_hash: str = Header()) -> bool:
     await check_admin_authorization(payload.bot_id, authorization_hash)
     try:
-        logger.info(f"get new csv file from api method bytes: {payload.file}")
+        api_logger.info(f"get new csv file from api method bytes: {payload.file}")
     except Exception:
-        logger.error("Error while execute send_product_csv api method", exc_info=True)
+        api_logger.error("Error while execute send_product_csv api method", exc_info=True)
         raise HTTPException(status_code=500, detail="Internal error.")
     return True
 
@@ -170,6 +172,6 @@ async def get_product_csv_api(bot_id: int, authorization_hash: str = Header()) -
         # get csv logic
         pass
     except Exception:
-        logger.error("Error while execute get_product_csv api method", exc_info=True)
+        api_logger.error("Error while execute get_product_csv api method", exc_info=True)
         raise HTTPException(status_code=500, detail="Internal error.")
     return bytes(200)

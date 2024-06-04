@@ -3,11 +3,12 @@ from aiogram.types import Message, ReplyKeyboardRemove, CallbackQuery
 from aiogram.fsm.context import FSMContext
 
 from bot.main import bot_db, product_db, bot, cache_resources_file_id_store
-from bot.config import logger
 from bot.keyboards import *
 from bot.states.states import States
 from bot.handlers.routers import custom_bot_editing_router
 from bot.utils.send_instructions import send_instructions
+
+from logs.config import logger
 
 
 @custom_bot_editing_router.message(States.EDITING_START_MESSAGE)
