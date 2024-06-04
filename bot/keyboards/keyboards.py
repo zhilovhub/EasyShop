@@ -318,6 +318,12 @@ async def get_inline_bot_mailing_start_confirm_keybaord(bot_id: int, mailing_id:
 async def get_inline_bot_mailing_menu_keyboard(bot_id: int) -> InlineKeyboardMarkup:
     mailing = await get_bot_mailing(bot_id=bot_id)
     callback_metadata = f":{bot_id}:{mailing.mailing_id}"
+    if mailing.is_delayed:
+        delay_btn = InlineKeyboardButton(
+            text="Убрать откладывание", callback_data="mailing_menu:cancel_delay" + callback_metadata)
+    else:
+        delay_btn = InlineKeyboardButton(
+            text="Отложить", callback_data="mailing_menu:delay" + callback_metadata)
     if mailing.is_running == True:
         return InlineKeyboardMarkup(
             inline_keyboard=[
@@ -371,8 +377,7 @@ async def get_inline_bot_mailing_menu_keyboard(bot_id: int) -> InlineKeyboardMar
             ),
         ],
         [
-            InlineKeyboardButton(
-                text="Отложить", callback_data="mailing_menu:delay" + callback_metadata),
+            delay_btn,
             InlineKeyboardButton(
                 text="Доп настройки", callback_data="mailing_menu:extra_settings" + callback_metadata
             ),

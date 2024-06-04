@@ -29,3 +29,4 @@ class States(StatesGroup):
     EDITING_MAILING_BUTTON_TEXT = State()
     EDITING_MAILING_BUTTON_URL = State()
     EDITING_MAILING_MEDIA_FILES = State()
+    EDITING_DELAY_DATE = State()

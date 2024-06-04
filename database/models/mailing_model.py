@@ -41,6 +41,11 @@ class Mailing(Base):
     is_running = Column(BOOLEAN, default=False)
     sent_mailing_amount = Column(BigInteger, default=0)
 
+    # Delay
+    is_delayed = Column(BOOLEAN, default=False)
+    send_date = Column(DateTime, nullable=True)
+    job_id = Column(String, nullable=True)
+
 
 class MailingSchemaWithoutId(BaseModel):
     model_config = ConfigDict(from_attributes=True)
@@ -61,6 +66,10 @@ class MailingSchemaWithoutId(BaseModel):
 
     is_running: bool = False
     sent_mailing_amount: int = 0
+
+    is_delayed: bool = False
+    send_date: Optional[datetime.datetime | None] = None
+    job_id: Optional[str | None] = None
 
 
 class MailingSchema(MailingSchemaWithoutId):

@@ -20,7 +20,7 @@ from aiogram.types import Message, FSInputFile, CallbackQuery, ReplyKeyboardRemo
 from aiogram.fsm.context import FSMContext
 
 from bot.main import bot, user_db, bot_db, product_db, order_db, custom_bot_user_db, QUESTION_MESSAGES, competition, \
-    mailing_media_file_db
+    mailing_media_file_db, _scheduler
 from bot.config import logger
 from bot.keyboards import *
 from bot.exceptions import InstanceAlreadyExists
@@ -43,6 +43,39 @@ class MailingMessageType(Enum):
     AFTER_REDACTING = "after_redacting"
     # Главная рассылка (отправка с кастомного бота всем пользователям)
     RELEASE = "release"
+
+
+async def send_mailing_messages(custom_bot, mailing, media_files, chat_id):
+    mailing_id = mailing.mailing_id
+    all_custom_bot_users = await custom_bot_user_db.get_custom_bot_users(custom_bot.bot_id)
+    custom_bot_tg = Bot(custom_bot.token, default=DefaultBotProperties(
+        parse_mode=ParseMode.HTML))
+    for ind, user in enumerate(all_custom_bot_users, start=1):
+        mailing = await mailing_db.get_mailing(mailing_id)
+        if mailing.is_running == False:
+            mailing.is_running = False
+            mailing.sent_mailing_amount = 0
+            await mailing_db.update_mailing(mailing)
+            return
+        await send_mailing_message(
+            bot_from_send=custom_bot_tg,
+            to_user_id=user.user_id,
+            mailing_schema=mailing,
+            media_files=media_files,
+            mailing_message_type=MailingMessageType.RELEASE,
+            message=None,
+        )
+        logger.info(
+            f"mailing with mailing_id {mailing_id} has sent to {ind}/{len(all_custom_bot_users)} with user_id {user.user_id}")
+        # 20 messages per second (limit is 30)
+        await asyncio.sleep(.05)
+        mailing.sent_mailing_amount += 1
+        await mailing_db.update_mailing(mailing)
+    await bot.send_message(chat_id, f"Рассылка завершена\nСообщений отправлено - {mailing.sent_mailing_amount}")
+    mailing.is_running = False
+    mailing.sent_mailing_amount = 0
+    await mailing_db.update_mailing(mailing)
+    # await asyncio.sleep(10) # For test only
 
 
 @admin_bot_menu_router.callback_query(lambda query: query.data.startswith("mailing_menu"))
@@ -68,6 +101,8 @@ async def mailing_menu_callback_handler(query: CallbackQuery, state: FSMContext)
                 await query.message.answer(f"Рассылка остановалена\nСообщений разослано - {mailing.sent_mailing_amount}")
                 mailing.is_running = False
                 mailing.sent_mailing_amount = 0
+                _scheduler.del_job_by_id(mailing.job_id)
+                mailing.job_id = None
                 await mailing_db.update_mailing(mailing)
                 await query.message.answer(
                     MessageTexts.BOT_MAILINGS_MENU_MESSAGE.value.format((await Bot(custom_bot.token).get_me()).username),
@@ -216,8 +251,8 @@ async def mailing_menu_callback_handler(query: CallbackQuery, state: FSMContext)
                     show_alert=True
                 )
             elif mailing.description or media_files:
-                await query.message.answer(
-                    text="Рассылка началась")
+                text = f"Рассылка начнется в {mailing.send_date}" if mailing.is_delayed else "Рассылка началась"
+                await query.message.answer(text)
 
                 new_message = await query.message.answer(
                     text=MessageTexts.BOT_MENU_MESSAGE.value.format(
@@ -228,41 +263,23 @@ async def mailing_menu_callback_handler(query: CallbackQuery, state: FSMContext)
                 await query.message.delete()
                 # await new_message.answer_(reply_markup=await get_inline_bot_menu_keyboard(
                 #     bot_id))
-                all_custom_bot_users = await custom_bot_user_db.get_custom_bot_users(custom_bot.bot_id)
-                custom_bot_tg = Bot(custom_bot.token, default=DefaultBotProperties(
-                    parse_mode=ParseMode.HTML))
-                for ind, user in enumerate(all_custom_bot_users, start=1):
-                    mailing = await mailing_db.get_mailing(mailing_id)
-                    if mailing.is_running == False:
-                        mailing.is_running = False
-                        mailing.sent_mailing_amount = 0
-                        await mailing_db.update_mailing(mailing)
-                        return
-                    await send_mailing_message(
-                        bot_from_send=custom_bot_tg,
-                        to_user_id=user.user_id,
-                        mailing_schema=mailing,
-                        media_files=media_files,
-                        mailing_message_type=MailingMessageType.RELEASE,
-                        message=None,
+                if not (mailing.is_delayed):
+                    await send_mailing_messages(
+                        custom_bot,
+                        mailing,
+                        media_files,
+                        query.from_user.id
                     )
-                    logger.info(
-                        f"mailing with mailing_id {mailing_id} has sent to {ind}/{len(all_custom_bot_users)} with user_id {user.user_id}")
-                    # 20 messages per second (limit is 30)
-                    await asyncio.sleep(.05)
-                    mailing.sent_mailing_amount += 1
+                else:
+                    job_id = await _scheduler.add_scheduled_job(
+                        func=send_mailing_messages, run_date=mailing.send_date, args=[custom_bot, mailing, media_files, query.from_user.id])
+                    mailing.job_id = job_id
                     await mailing_db.update_mailing(mailing)
-                    # await asyncio.sleep(10) # For test only
             else:
                 await query.answer(
                     text="В Вашем рассылочном сообщении нет ни текста, ни медиафайлов",
                     show_alert=True
                 )
-
-            await query.message.answer(f"Рассылка завершена\nСообщений отправлено - {mailing.sent_mailing_amount}")
-            mailing.is_running = False
-            mailing.sent_mailing_amount = 0
-            await mailing_db.update_mailing(mailing)
 
         case "extra_settings":
             await query.message.edit_reply_markup(
@@ -298,6 +315,67 @@ async def mailing_menu_callback_handler(query: CallbackQuery, state: FSMContext)
                     mailing.enable_link_preview
                 )
             )
+        case "delay":
+            await query.message.answer(f"Введите дату рассылки\n\n{MessageTexts.DATE_RULES.value}",
+                                       reply_markup=get_back_keyboard())
+            await query.answer()
+            await state.set_state(States.EDITING_DELAY_DATE)
+            await state.set_data({"bot_id": bot_id, "mailing_id": mailing_id})
+
+        case "cancel_delay":
+            mailing.is_delayed = False
+            mailing.send_date = None
+            await mailing_db.update_mailing(mailing)
+            await query.message.edit_reply_markup(reply_markup=await get_inline_bot_mailing_menu_keyboard(bot_id))
+
+
+@admin_bot_menu_router.message(States.EDITING_DELAY_DATE)
+async def editing_mailing_delay_date_handler(message: Message, state: FSMContext):
+
+    message_text = message.html_text
+
+    state_data = await state.get_data()
+
+    bot_id = state_data["bot_id"]
+    mailing_id = state_data["mailing_id"]
+
+    mailing = await mailing_db.get_mailing(mailing_id)
+    custom_bot_tg = Bot((await bot_db.get_bot(bot_id)).token)
+    custom_bot_username = (await custom_bot_tg.get_me()).username
+
+    if message_text:
+        if message_text == "🔙 Назад":
+            await message.answer(
+                "Возвращаемся в меню...",
+                reply_markup=get_reply_bot_menu_keyboard(
+                    bot_id=state_data["bot_id"])
+            )
+            await message.answer(
+                text=MessageTexts.BOT_MAILINGS_MENU_MESSAGE.value.format(
+                    custom_bot_username
+                ),
+                reply_markup=await get_inline_bot_mailing_menu_keyboard(bot_id)
+            )
+        else:
+            try:
+                datetime_obj = datetime.strptime(
+                    message_text, "%d.%m.%Y %H:%M")
+                datetime_obj.replace(tzinfo=None)
+                await message.reply(f"Запланировано на: {datetime_obj.strftime('%Y-%m-%d %H:%M')}")
+                mailing.is_delayed = True
+                mailing.send_date = datetime_obj
+                await mailing_db.update_mailing(mailing)
+                await message.answer(
+                    MessageTexts.BOT_MAILINGS_MENU_MESSAGE.value.format(
+                        custom_bot_username
+                    ),
+                    reply_markup=await get_inline_bot_mailing_menu_keyboard(bot_id)
+                )
+
+                await state.set_state(States.BOT_MENU)
+                await state.set_data({"bot_id": bot_id})
+            except ValueError:
+                await message.reply("Некорректный формат. Пожалуйста, введите время и дату в правильном формате.")
 
 
 @admin_bot_menu_router.message(States.EDITING_MAILING_MESSAGE)
