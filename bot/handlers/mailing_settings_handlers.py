@@ -102,8 +102,10 @@ async def mailing_menu_callback_handler(query: CallbackQuery, state: FSMContext)
                     reply_markup=await get_inline_bot_menu_keyboard(bot_id)
                 )
                 await query.message.delete()
+            case _:
+                await query.answer("Рассылка уже запущена", show_alert=True)
+                return await query.message.delete()
 
-        return
     match action:
         case "button_url":
             if not mailing.has_button:
@@ -373,7 +375,8 @@ async def editing_mailing_delay_date_handler(message: Message, state: FSMContext
 
                 await mailing_db.update_mailing(mailing)
 
-                await message.reply(f"Запланировано на: {datetime_obj.strftime('%Y-%m-%d %H:%M')}")
+                await message.reply(f"Запланировано на: {datetime_obj.strftime('%Y-%m-%d %H:%M')}\n\n"
+                                    f"Для запуска отложенной рассылки нажмите <b>Запустить</b>")
                 await message.answer(
                     MessageTexts.BOT_MAILINGS_MENU_MESSAGE.value.format(
                         custom_bot_username
