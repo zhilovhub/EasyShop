@@ -8,7 +8,7 @@ from custom_bots.handlers.routers import multi_bot_channel_router
 from custom_bots.multibot import bot_db, channel_db, main_bot
 from database.models.channel_model import ChannelSchema
 
-from logs.config import logger
+from logs.config import custom_bot_logger
 
 
 # @multi_bot_channel_router.my_chat_member()

@@ -9,6 +9,7 @@ from products.router import router as product_router
 from files.router import router as files_router
 
 from logs.config import logger_configuration
+from loader import LOGS_PATH
 
 tags_metadata = [
     {
@@ -63,9 +64,9 @@ if __name__ == "__main__":
         pass
 
     for log_file in ('all.log', 'err.log'):
-        with open(f'logs/{log_file}', 'a') as log:
+        with open(LOGS_PATH + log_file, 'a') as log:
             log.write(f'=============================\n'
-                      f'New app session\n'
+                      f'New api session\n'
                       f'[{datetime.datetime.now()}]\n'
                       f'=============================\n')
 

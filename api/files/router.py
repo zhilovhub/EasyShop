@@ -4,7 +4,7 @@ from loader import db_engine
 from fastapi import HTTPException, APIRouter
 from fastapi.responses import FileResponse
 
-from logs.config import logger
+from logs.config import api_logger
 
 from dotenv import load_dotenv
 
@@ -26,6 +26,6 @@ async def get_file(file_name: str) -> FileResponse:
     except FileNotFoundError:
         raise HTTPException(status_code=404, detail="provided file name not found")
     except Exception:
-        logger.error("Error while processing getting file", exc_info=True)
+        api_logger.error("Error while processing getting file", exc_info=True)
         raise HTTPException(status_code=500, detail="Internal error.")
     return FileResponse(path=FILES_ROOT + file_name, status_code=200)
