@@ -18,10 +18,24 @@ GRAFANA_FORMATTER_NAME = "formatter_grafana"
 LOCAL_FORMATTER_NAME = "formatter_local"
 
 
+def extra_params(**kwargs):
+    return {
+        "tags": kwargs
+    }
+
+
 class LokiFilter(logging.Filter):
 
     def filter(self, record: LogRecord) -> bool:
         print(record.__dict__)
+        if hasattr(record, "tags"):
+            if hasattr(record, "user_id"):
+                record.tags["user_id"] = record.user_id
+            if hasattr(record, "bot_id"):
+                record.tags["bot_id"] = record.bot_id
+            if hasattr(record, "bot_token"):
+                record.msg.replace(record.bot_token[5:-1], "*" * len(record.bot_token[5:-1]))  # hide the token from gr
+
         return LOG_TO_GRAFANA
 
 
@@ -38,11 +52,11 @@ logger_configuration = {
     "version": 1,
     "formatters": {
         LOCAL_FORMATTER_NAME: {
-            "format": "{levelname} {asctime} {filename} {funcName}() {msg}",
+            "format": "{levelname} {asctime} {filename} {funcName}()/{lineno} {msg}",
             "style": "{"
         },
         GRAFANA_FORMATTER_NAME: {
-            "format": "{filename} {funcName}() {msg}",
+            "format": "{filename} {funcName}()/{lineno} {msg}",
             "style": "{"
         }
     },
