@@ -144,7 +144,7 @@ class BotDao(Dao):
 
         self.logger.debug(
             f"bot_id={bot_id}: added to database",
-            extra=extra_params(bot_id=bot_id)
+            extra=extra_params(user_id=bot.created_by, bot_id=bot_id)
         )
 
         return bot_id
@@ -160,7 +160,7 @@ class BotDao(Dao):
 
         self.logger.debug(
             f"bot_id={updated_bot.bot_id}: updated in database",
-            extra=extra_params(bot_id=updated_bot.bot_id)
+            extra=extra_params(user_id=updated_bot.created_by, bot_id=updated_bot.bot_id)
         )
 
     async def del_bot(self, bot_id: int) -> None:

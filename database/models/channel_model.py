@@ -6,6 +6,7 @@ from bot.exceptions import InvalidParameterFormat
 from database.models import Base
 from database.models.bot_model import Bot
 from database.models.dao import Dao
+from logs.config import extra_params
 
 
 class ChannelNotFound(Exception):
@@ -49,7 +50,11 @@ class ChannelDao(Dao):  # TODO write tests
         for channel in raw_res:
             res.append(ChannelSchema.model_validate(channel))
 
-        self.logger.info(f"get_all_channels method with bot_id: {bot_id} success")
+        self.logger.debug(
+            f"bot_id={bot_id}: has {len(res)} channels",
+            extra=extra_params(bot_id=bot_id)
+        )
+
         return res
 
     @validate_call(validate_return=True)
@@ -62,7 +67,11 @@ class ChannelDao(Dao):  # TODO write tests
         if not raw_res:
             raise ChannelNotFound
 
-        self.logger.info(f"get_channel method with channel_id: {channel_id} success.")
+        self.logger.debug(
+            f"channel_id={channel_id}: is found",
+            extra=extra_params(channel_id=channel_id)
+        )
+
         return ChannelSchema.model_validate(raw_res)
 
     @validate_call
@@ -73,8 +82,9 @@ class ChannelDao(Dao):  # TODO write tests
         async with self.engine.begin() as conn:
             await conn.execute(insert(Channel).values(new_channel.model_dump()))
 
-        self.logger.info(
-            f"successfully add channel with channel_id {new_channel.channel_id} for bot_id {new_channel.bot_id} to db"
+        self.logger.debug(
+            f"channel_id={new_channel.channel_id}: is added to database",
+            extra=extra_params(bot_id=new_channel.bot_id, channel_id=new_channel.channel_id)
         )
 
     @validate_call
@@ -89,6 +99,7 @@ class ChannelDao(Dao):  # TODO write tests
                 )
             )
 
-        self.logger.info(
-            f"successfully deleted channel with channel_id {new_channel.channel_id} for bot_id {new_channel.bot_id} from db"
+        self.logger.debug(
+            f"channel_id={new_channel.channel_id}: is added to database",
+            extra=extra_params(bot_id=new_channel.bot_id, channel_id=new_channel.channel_id)
         )

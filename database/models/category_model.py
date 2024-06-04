@@ -90,7 +90,7 @@ class CategoryDao(Dao):  # TODO write tests
 
         self.logger.debug(
             f"category_id={cat_id}: is added to database",
-            extra=extra_params(category_id=cat_id)
+            extra=extra_params(bot_id=new_category.bot_id, category_id=cat_id)
         )
 
         return cat_id
@@ -110,7 +110,7 @@ class CategoryDao(Dao):  # TODO write tests
 
         self.logger.debug(
             f"category_id={updated_category.id}: is updated in database",
-            extra=extra_params(category_id=updated_category.id)
+            extra=extra_params(bot_id=updated_category.bot_id, category_id=updated_category.id)
         )
 
     @validate_call
