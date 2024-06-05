@@ -1,30 +1,29 @@
 import asyncio
 from datetime import datetime
-
 from aiogram import Bot, Dispatcher
 from aiogram.enums import ParseMode
 from aiogram.types import BotCommand
 from aiogram.client.bot import DefaultBotProperties
-
 from channels_administration.competition.competition import CompetitionModule
 from database.models.bot_model import BotDao
 from database.models.channel_model import ChannelDao
+from database.models.mailing_media_files import MailingMediaFileDao
+from database.models.mailing_model import MailingDao
 from database.models.models import Database
 from database.models.user_model import UserDao
 from database.models.order_model import OrderDao
 from database.models.payment_model import PaymentDao
 from database.models.product_model import ProductDao
 from database.models.custom_bot_user_model import CustomBotUserDao
-
 from subscription.subscription import Subscription
 from subscription.scheduler import Scheduler
-
 from bot import config
 from bot.utils import AlchemyStorageAsync, JsonStore
 
 from logs.config import logger, db_logger
 
-bot = Bot(config.TELEGRAM_TOKEN, default=DefaultBotProperties(parse_mode=ParseMode.HTML))
+bot = Bot(config.TELEGRAM_TOKEN, default=DefaultBotProperties(
+    parse_mode=ParseMode.HTML))
 storage = AlchemyStorageAsync(config.SQLALCHEMY_URL, config.STORAGE_TABLE_NAME)
 dp = Dispatcher(storage=storage)
 db_engine: Database = Database(config.SQLALCHEMY_URL, db_logger)
@@ -34,8 +33,10 @@ user_db: UserDao = db_engine.get_user_dao()
 order_db: OrderDao = db_engine.get_order_dao()
 pay_db: PaymentDao = db_engine.get_payment_dao()
 product_db: ProductDao = db_engine.get_product_db()
-custom_bot_user_db: CustomBotUserDao = db_engine.get_custom_bot_user_db()
 channel_db: ChannelDao = db_engine.get_channel_dao()
+mailing_db: MailingDao = db_engine.get_mailing_dao()
+custom_bot_user_db: CustomBotUserDao = db_engine.get_custom_bot_user_db()
+mailing_media_file_db: MailingMediaFileDao = db_engine.get_mailing_media_file_dao()
 
 _scheduler = Scheduler(config.SCHEDULER_URL, 'postgres', config.TIMEZONE)
 subscription = Subscription(database=db_engine, scheduler=_scheduler)
@@ -57,7 +58,8 @@ async def on_start():
 
     commands = [
         BotCommand(command="start", description="Стартовая инструкция"),
-        BotCommand(command="check_subscription", description="Проверить подписку"),
+        BotCommand(command="check_subscription",
+                   description="Проверить подписку"),
     ]
 
     if config.BOT_DEBUG_MODE:
@@ -81,7 +83,6 @@ if __name__ == "__main__":
     dp.include_router(channel_menu_router)
     dp.include_router(subscribe_router)
     dp.include_router(custom_bot_editing_router)
-
 
     for log_file in ('all.log', 'err.log'):
         with open(config.LOGS_PATH + log_file, 'a') as log:

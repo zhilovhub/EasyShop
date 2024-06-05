@@ -2,18 +2,20 @@ import os
 
 from sqlalchemy.ext.asyncio import create_async_engine
 
-from database.models import Base
 from database.models.bot_model import BotDao
-from database.models.competition_media_files_model import CompetitionMediaFileDao
 from database.models.user_model import UserDao
 from database.models.order_model import OrderDao
 from database.models.product_model import ProductDao
+from database.models.mailing_model import MailingDao
 from database.models.channel_model import ChannelDao
 from database.models.payment_model import PaymentDao
 from database.models.category_model import CategoryDao
 from database.models.randomizer_model import RandomizerDao
 from database.models.competition_model import CompetitionDao
+from database.models.mailing_media_files import MailingMediaFileDao
 from database.models.custom_bot_user_model import CustomBotUserDao
+from database.models import Base
+from database.models.competition_media_files_model import CompetitionMediaFileDao
 
 from dotenv import load_dotenv
 
@@ -45,7 +47,11 @@ class Database:
         self.payment_dao = PaymentDao(self.engine, self.logger)
         self.category_dao = CategoryDao(self.engine, self.logger)
         self.competition_dao = CompetitionDao(self.engine, self.logger)
-        self.competition_media_file_dao = CompetitionMediaFileDao(self.engine, self.logger)
+        self.competition_media_file_dao = CompetitionMediaFileDao(
+            self.engine, self.logger)
+        self.mailing_dao = MailingDao(self.engine, self.logger)
+        self.mailing_media_file_dao = MailingMediaFileDao(
+            self.engine, self.logger)
         self.randomizer_dao = RandomizerDao(self.engine, self.logger)
         self.channel_dao = ChannelDao(self.engine, self.logger)
 
@@ -82,6 +88,12 @@ class Database:
 
     def get_competition_media_file_dao(self) -> CompetitionMediaFileDao:
         return self.competition_media_file_dao
+
+    def get_mailing_dao(self) -> MailingDao:
+        return self.mailing_dao
+
+    def get_mailing_media_file_dao(self) -> MailingMediaFileDao:
+        return self.mailing_media_file_dao
 
     def get_randomizer_dao(self) -> RandomizerDao:
         return self.randomizer_dao
