@@ -55,7 +55,8 @@ async def process_web_app_request(event: Message):
         data['items'] = items
 
         date = datetime.now().strftime("%d%m%y")
-        random_string = ''.join(random.sample(string.digits + string.ascii_letters, 5))
+        random_string = ''.join(random.sample(
+            string.digits + string.ascii_letters, 5))
         data['order_id'] = date + random_string
 
         order = OrderSchema(**data)
@@ -137,10 +138,12 @@ async def start_cmd(message: Message, state: FSMContext):
         return await message.answer("Бот не инициализирован")
 
     await state.set_state(CustomUserStates.MAIN_MENU)
+    await message.answer("Custom update works!")
 
     return await message.answer(
         format_locales(start_msg, message.from_user, message.chat),
-        reply_markup=keyboards.get_custom_bot_menu_keyboard(web_app_button, bot.bot_id)
+        reply_markup=keyboards.get_custom_bot_menu_keyboard(
+            web_app_button, bot.bot_id)
     )
 
 
@@ -167,7 +170,8 @@ async def default_cmd(message: Message):
 
     await message.answer(
         format_locales(default_msg, message.from_user, message.chat),
-        reply_markup=keyboards.get_custom_bot_menu_keyboard(web_app_button, bot.bot_id)
+        reply_markup=keyboards.get_custom_bot_menu_keyboard(
+            web_app_button, bot.bot_id)
     )
 
 

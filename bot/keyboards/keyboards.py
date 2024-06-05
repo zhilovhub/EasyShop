@@ -399,15 +399,15 @@ async def get_inline_bot_mailing_menu_keyboard(bot_id: int) -> InlineKeyboardMar
 async def get_inline_bot_menu_keyboard(bot_id: int) -> InlineKeyboardMarkup:
     callback_metadata = f":{bot_id}"
 
-    # channel_inline_button = InlineKeyboardButton(
-    #                 text="📢 Добавить в канал",
-    #                 callback_data="bot_menu:add_to_channel" + callback_metadata,
-    #                 url=f"https://t.me/{await get_bot_username(bot_id)}?startchannel"
-    #     ) if not await get_bot_channels(bot_id=bot_id) else \
-    #     InlineKeyboardButton(
-    #         text="📢 Каналы бота",
-    #         callback_data="bot_menu:channels" + callback_metadata
-    #     )
+    channel_inline_button = InlineKeyboardButton(
+                    text="📢 Добавить в канал",
+                    callback_data="bot_menu:add_to_channel",
+                    url=f"https://t.me/{await get_bot_username(bot_id)}?startchannel"
+        ) if not await get_bot_channels(bot_id=bot_id) else \
+        InlineKeyboardButton(
+            text="📢 Каналы бота",
+            callback_data="bot_menu:channels" + callback_metadata
+        )
 
     mailing_inline_button = InlineKeyboardButton(
         text="💌 Создать рассылку в ЛС",
@@ -438,9 +438,9 @@ async def get_inline_bot_menu_keyboard(bot_id: int) -> InlineKeyboardMarkup:
                 InlineKeyboardButton(
                     text="📦 Мои товары", callback_data="bot_menu:goods" + callback_metadata)
             ],
-            # [
-            #     channel_inline_button
-            # ],
+            [
+                channel_inline_button
+            ],
             [
                 mailing_inline_button,
             ],

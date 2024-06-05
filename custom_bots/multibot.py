@@ -1,5 +1,6 @@
 import asyncio
 import ssl
+from datetime import datetime
 from os import getenv
 from typing import Any, Dict, Union
 
@@ -50,7 +51,8 @@ session = AiohttpSession()
 bot_settings = {"parse_mode": ParseMode.HTML}
 
 MAIN_TELEGRAM_TOKEN = getenv("TELEGRAM_TOKEN")
-main_bot = Bot(MAIN_TELEGRAM_TOKEN, default=DefaultBotProperties(**bot_settings), session=session)
+main_bot = Bot(MAIN_TELEGRAM_TOKEN, default=DefaultBotProperties(
+    **bot_settings), session=session)
 
 OTHER_BOTS_URL = f"{BASE_URL}{OTHER_BOTS_PATH}"
 
@@ -59,7 +61,8 @@ WEB_APP_URL = f"{getenv('WEB_APP_URL')}:{getenv('WEB_APP_PORT')}/products-page/?
 LOCAL_API_SERVER_HOST = getenv("WEBHOOK_LOCAL_API_URL")
 LOCAL_API_SERVER_PORT = int(getenv("WEBHOOK_LOCAL_API_PORT"))
 
-db_engine: Database = Database(sqlalchemy_url=getenv("SQLALCHEMY_URL"), logger=db_logger)
+db_engine: Database = Database(
+    sqlalchemy_url=getenv("SQLALCHEMY_URL"), logger=db_logger)
 bot_db = db_engine.get_bot_dao()
 product_db = db_engine.get_product_db()
 order_db = db_engine.get_order_dao()
@@ -203,7 +206,8 @@ async def main():
     asyncio.set_event_loop(loop)
 
     ssl_context = ssl.create_default_context(ssl.Purpose.CLIENT_AUTH)
-    ssl_context.load_cert_chain(getenv('SSL_CERT_PATH'), getenv('SSL_KEY_PATH'))
+    ssl_context.load_cert_chain(
+        getenv('SSL_CERT_PATH'), getenv('SSL_KEY_PATH'))
 
     custom_bot_logger.debug("[2/3] SSL certificates are downloaded")
 
