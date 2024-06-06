@@ -67,12 +67,14 @@ class ChannelDao(Dao):  # TODO write tests
         if not raw_res:
             raise ChannelNotFound
 
+        res = ChannelSchema.model_validate(raw_res)
+
         self.logger.debug(
-            f"channel_id={channel_id}: is found",
-            extra=extra_params(channel_id=channel_id)
+            f"bot_id={res.bot_id}: channel {channel_id} is found",
+            extra=extra_params(bot_id=res.bot_id, channel_id=channel_id)
         )
 
-        return ChannelSchema.model_validate(raw_res)
+        return res
 
     @validate_call
     async def add_channel(self, new_channel: ChannelSchema) -> None:
@@ -83,7 +85,7 @@ class ChannelDao(Dao):  # TODO write tests
             await conn.execute(insert(Channel).values(new_channel.model_dump()))
 
         self.logger.debug(
-            f"channel_id={new_channel.channel_id}: is added to database",
+            f"bot_id={new_channel.bot_id}: channel {new_channel.channel_id} is added",
             extra=extra_params(bot_id=new_channel.bot_id, channel_id=new_channel.channel_id)
         )
 
@@ -100,6 +102,6 @@ class ChannelDao(Dao):  # TODO write tests
             )
 
         self.logger.debug(
-            f"channel_id={new_channel.channel_id}: is added to database",
+            f"bot_id={new_channel.bot_id}: channel {new_channel.channel_id} is deleted",
             extra=extra_params(bot_id=new_channel.bot_id, channel_id=new_channel.channel_id)
         )

@@ -63,9 +63,9 @@ class CompetitionMediaFileDao(Dao):  # TODO write tests
             await conn.execute(
                 insert(CompetitionMediaFile).values(new_competition_media_file.model_dump())
             )
-
         self.logger.debug(
-            f"competition_media_file={new_competition_media_file.file_name}: is added to database",
+            f"competition_id={new_competition_media_file.competition_id}: "
+            f"media_file {new_competition_media_file.file_name} is added",
             extra=extra_params(competition_id=new_competition_media_file.competition_id)
         )
 

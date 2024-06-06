@@ -96,7 +96,7 @@ class CompetitionDao(Dao):  # TODO write tests
             res.append(CompetitionSchema.model_validate(competition))
 
         self.logger.debug(
-            f"channel_id={channel_id}: has {res} channels",
+            f"bot_id={bot_id}: has {len(res)} channels",
             extra=extra_params(channel_id=channel_id, bot_id=bot_id)
         )
 
@@ -112,12 +112,14 @@ class CompetitionDao(Dao):  # TODO write tests
         if not raw_res:
             raise CompetitionNotFound
 
+        res = CompetitionSchema.model_validate(raw_res)
+
         self.logger.debug(
-            f"competition_id={competition_id}: is found",
-            extra=extra_params(competition_id=competition_id)
+            f"bot_id={res.bot_id}: competition {competition_id} is found",
+            extra=extra_params(bot_id=res.bot_id, channel_id=res.channel_id, competition_id=competition_id)
         )
 
-        return CompetitionSchema.model_validate(raw_res)
+        return res
 
     @validate_call
     async def add_competition(self, new_competition: CompetitionSchemaWithoutId) -> int:
@@ -128,7 +130,7 @@ class CompetitionDao(Dao):  # TODO write tests
             competition_id = (await conn.execute(insert(Competition).values(new_competition.model_dump()))).inserted_primary_key[0]
 
         self.logger.debug(
-            f"channel_id={new_competition.channel_id}: {competition_id} is added",
+            f"bot_id={new_competition.bot_id}: competition {competition_id} is added",
             extra=extra_params(competition_id=competition_id, channel_id=new_competition.channel_id, bot_id=new_competition.bot_id)
         )
 
@@ -144,7 +146,7 @@ class CompetitionDao(Dao):  # TODO write tests
             )
 
         self.logger.debug(
-            f"channel_id={updated_competition.channel_id}: {updated_competition.competition_id} is updated",
+            f"bot_id={updated_competition.bot_id}: competition {updated_competition.competition_id} is updated",
             extra=extra_params(competition_id=updated_competition.competition_id, channel_id=updated_competition.channel_id,
                                bot_id=updated_competition.bot_id)
         )

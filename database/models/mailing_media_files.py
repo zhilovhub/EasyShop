@@ -70,7 +70,7 @@ class MailingMediaFileDao(Dao):  # TODO write tests
             )
 
         self.logger.debug(
-            f"mailing_id={new_mailing_media_file.mailing_id}: {new_mailing_media_file.file_id_main_bot} is added",
+            f"mailing_id={new_mailing_media_file.mailing_id}: media file {new_mailing_media_file.file_id_main_bot} is added",
             extra=extra_params(mailing_id=new_mailing_media_file.mailing_id)
         )
 
@@ -87,7 +87,7 @@ class MailingMediaFileDao(Dao):  # TODO write tests
             )
 
         self.logger.debug(
-            f"mailing_id={new_mailing_media_file.mailing_id}: {new_mailing_media_file.file_id_main_bot} is updated",
+            f"mailing_id={new_mailing_media_file.mailing_id}: media file {new_mailing_media_file.file_id_main_bot} is updated",
             extra=extra_params(mailing_id=new_mailing_media_file.mailing_id)
         )
 
@@ -101,6 +101,6 @@ class MailingMediaFileDao(Dao):  # TODO write tests
             )
 
         self.logger.debug(
-            f"mailing_id={mailing_id}: is deleted",
+            f"mailing_id={mailing_id}: all media files are deleted",
             extra=extra_params(mailing_id=mailing_id)
         )

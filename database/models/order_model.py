@@ -195,6 +195,6 @@ class OrderDao(Dao):
             await conn.execute(delete(Order).where(Order.id == order_id))
 
         self.logger.debug(
-            f"order_id={order_id}: is deleted",
+            f"order_id={order_id}: order {order_id} is deleted",
             extra=extra_params(order_id=order_id)
         )

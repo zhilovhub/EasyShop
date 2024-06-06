@@ -82,7 +82,7 @@ class BotDao(Dao):
             raise BotNotFound(f"bot_id={bot_id}: not found in database.")
 
         self.logger.debug(
-            f"bot_id={bot_id}: is found",
+            f"bot_id={bot_id}: bot {bot_id} is found",
             extra=extra_params(bot_id=bot_id)
         )
 
@@ -101,12 +101,14 @@ class BotDao(Dao):
         if res is None:
             raise BotNotFound(f"bot with created_by={created_by} not found in database")
 
+        res = BotSchema.model_validate(res)
+
         self.logger.debug(
-            f"bot with created_by={created_by}: is found",
-            extra=extra_params(user_id=created_by)
+            f"bot_id={res.bot_id}: bot with created_by={created_by} is found",
+            extra=extra_params(bot_id=res.bot_id, user_id=created_by)
         )
 
-        return BotSchema.model_validate(res)
+        return res
 
     async def get_bot_by_token(self, bot_token: str) -> BotSchema:
         try:
@@ -123,12 +125,14 @@ class BotDao(Dao):
         if res is None:
             raise BotNotFound(f"bot with bot_token = {bot_token} not found in database")
 
+        res = BotSchema.model_validate(res)
+
         self.logger.debug(
-            f"bot with bot_token={bot_token}: is found",
-            extra=extra_params(bot_token=bot_token)
+            f"bot_id={res.bot_id}: bot with bot_token={bot_token} is found",
+            extra=extra_params(bot_id=res.bot_id, bot_token=bot_token)
         )
 
-        return BotSchema.model_validate(res)
+        return res
 
     async def add_bot(self, bot: BotSchemaWithoutId) -> int:
         if type(bot) != BotSchemaWithoutId:
@@ -143,7 +147,7 @@ class BotDao(Dao):
         await self.engine.dispose()
 
         self.logger.debug(
-            f"bot_id={bot_id}: added to database",
+            f"bot_id={bot_id}: bot {bot_id} is added to",
             extra=extra_params(user_id=bot.created_by, bot_id=bot_id)
         )
 
@@ -159,7 +163,7 @@ class BotDao(Dao):
         await self.engine.dispose()
 
         self.logger.debug(
-            f"bot_id={updated_bot.bot_id}: updated in database",
+            f"bot_id={updated_bot.bot_id}: bot {updated_bot.bot_id} is updated",
             extra=extra_params(user_id=updated_bot.created_by, bot_id=updated_bot.bot_id)
         )
 
@@ -173,6 +177,6 @@ class BotDao(Dao):
         await self.engine.dispose()
 
         self.logger.debug(
-            f"bot_id={bot_id}: deleted from database",
+            f"bot_id={bot_id}: bot {bot_id} is deleted",
             extra=extra_params(bot_id=bot_id)
         )

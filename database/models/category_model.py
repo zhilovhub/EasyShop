@@ -69,7 +69,7 @@ class CategoryDao(Dao):  # TODO write tests
 
         if res is not None:
             self.logger.debug(
-                f"category_id={category_id}: is found",
+                f"category_id={category_id}: category {category_id} is found",
                 extra=extra_params(category_id=category_id)
             )
 
@@ -89,7 +89,7 @@ class CategoryDao(Dao):  # TODO write tests
             cat_id = (await conn.execute(insert(Category).values(new_category.model_dump()))).inserted_primary_key[0]
 
         self.logger.debug(
-            f"category_id={cat_id}: is added to database",
+            f"category_id={cat_id}: category {cat_id} is added to database",
             extra=extra_params(bot_id=new_category.bot_id, category_id=cat_id)
         )
 
@@ -109,7 +109,7 @@ class CategoryDao(Dao):  # TODO write tests
             )
 
         self.logger.debug(
-            f"category_id={updated_category.id}: is updated in database",
+            f"category_id={updated_category.id}: category {updated_category.id} is updated",
             extra=extra_params(bot_id=updated_category.bot_id, category_id=updated_category.id)
         )
 
@@ -117,9 +117,8 @@ class CategoryDao(Dao):  # TODO write tests
     async def delete_category(self, category_id: int):
         async with self.engine.begin() as conn:
             await conn.execute(delete(Category).where(Category.id == category_id))
-        self.logger.info(f"deleted category with id {category_id}")
 
         self.logger.debug(
-            f"category_id={category_id}: is deleted from database",
+            f"category_id={category_id}: category {category_id} is deleted",
             extra=extra_params(category_id=category_id)
         )

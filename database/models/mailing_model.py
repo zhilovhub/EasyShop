@@ -147,7 +147,7 @@ class MailingDao(Dao):  # TODO write tests
             )
 
         self.logger.debug(
-            f"bot_id={updated_mailing.bot_id}: {updated_mailing.mailing_id} is updated",
+            f"bot_id={updated_mailing.bot_id}: mailing {updated_mailing.mailing_id} is updated",
             extra=extra_params(mailing_id=updated_mailing.mailing_id, bot_id=updated_mailing.bot_id)
         )
 
@@ -164,6 +164,6 @@ class MailingDao(Dao):  # TODO write tests
             )
 
         self.logger.debug(
-            f"mailing_id={mailing_id}: is deleted",
+            f"mailing_id={mailing_id}: mailing {mailing_id} is deleted",
             extra=extra_params(mailing_id=mailing_id)
         )
