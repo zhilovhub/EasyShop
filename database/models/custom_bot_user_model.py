@@ -8,6 +8,7 @@ from bot.exceptions import InvalidParameterFormat, InstanceAlreadyExists
 from database.models import Base
 from database.models.bot_model import Bot
 from database.models.dao import Dao
+from logs.config import extra_params
 
 
 class CustomBotUserNotFound(Exception):
@@ -44,7 +45,10 @@ class CustomBotUserDao(Dao):
         if res is None:
             raise CustomBotUserNotFound(f"user with user_id = {user_id} of bot_id = {bot_id} not found in database")
 
-        self.logger.info(f"get_custom_bot_user method for bot_id {bot_id} and user_id {user_id} success")
+        self.logger.debug(
+            f"bot_id={bot_id}: user {user_id} is found",
+            extra=extra_params(user_id=user_id, bot_id=bot_id)
+        )
 
         return res
 
@@ -58,7 +62,11 @@ class CustomBotUserDao(Dao):
             users.append(
                 CustomBotUserSchema.model_validate(raw)
             )
-        self.logger.info(f"get_custom_bot_users method for bot_id {bot_id} success")
+
+        self.logger.debug(
+            f"bot_id={bot_id}: has {len(users)} users",
+            extra=extra_params(bot_id=bot_id)
+        )
 
         return users
 
@@ -74,4 +82,7 @@ class CustomBotUserDao(Dao):
                                             f"bot_id = {bot_id} does not exist")
         await self.engine.dispose()
 
-        self.logger.info(f"successfully add custom_user with bot_id {bot_id} and user_id {user_id} to db")
+        self.logger.debug(
+            f"bot_id={bot_id}: user {user_id} is added",
+            extra=extra_params(user_id=user_id, bot_id=bot_id)
+        )
