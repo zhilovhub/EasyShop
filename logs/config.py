@@ -39,6 +39,8 @@ class LokiFilter(logging.Filter):
                 record.tags["channel_id"] = record.channel_id
             if hasattr(record, "competition_id"):
                 record.tags["competition_id"] = record.competition_id
+            if hasattr(record, "mailing_id"):
+                record.tags["mailing_id"] = record.mailing_id
             if hasattr(record, "bot_token"):
                 record.msg.replace(record.bot_token[5:-1], "*" * len(record.bot_token[5:-1]))  # hide the token from gr
 
