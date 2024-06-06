@@ -12,6 +12,7 @@ from database.models.dao import Dao
 from bot.exceptions.exceptions import *
 
 from database.models.user_model import User
+from logs.config import extra_params
 
 
 class PaymentNotFound(Exception):
@@ -81,10 +82,13 @@ class PaymentDao(Dao):
         
         raw_res = raw_res.fetchall()
         res = []
-        for user in raw_res:
-            res.append(PaymentSchema.model_validate(user))
+        for payment in raw_res:
+            res.append(PaymentSchema.model_validate(payment))
 
-        self.logger.info(f"get_all_payments method success.")
+        self.logger.debug(
+            f"payments: there are {len(res)} payments",
+        )
+
         return res
     
     async def get_payment(self, payment_id: int) -> PaymentSchema:
@@ -99,8 +103,14 @@ class PaymentDao(Dao):
         if res is None:
             raise PaymentNotFound(f"id {payment_id} not found in database.")
 
-        self.logger.info(f"get_payment method with user_id: {payment_id} success.")
-        return PaymentSchema.model_validate(res)
+        res = PaymentSchema.model_validate(res)
+
+        self.logger.debug(
+            f"payment_id={payment_id}: payment {payment_id} is found",
+            extra=extra_params(payment_id=payment_id, user_id=res.from_user)
+        )
+
+        return res
 
     async def add_payment(self, payment: PaymentSchemaWithoutId) -> None:
         if not isinstance(payment, PaymentSchemaWithoutId):
@@ -114,7 +124,10 @@ class PaymentDao(Dao):
             payment_id = (await conn.execute(insert(Payment).values(**payment.model_dump(by_alias=True)))).inserted_primary_key[0]
         await self.engine.dispose()
 
-        self.logger.info(f"successfully add payment with id {payment_id} to db.")
+        self.logger.debug(
+            f"user_id={payment.from_user}: payment {payment_id} is added",
+            extra=extra_params(payment_id=payment_id, user_id=payment.from_user)
+        )
 
     async def update_payment(self, updated_payment: PaymentSchema) -> None:
         if not isinstance(updated_payment, PaymentSchema):
@@ -127,4 +140,7 @@ class PaymentDao(Dao):
                                values(**updated_payment.model_dump(by_alias=True)))
         await self.engine.dispose()
 
-        self.logger.info(f"successfully update payment with id {updated_payment.id} in db.")
+        self.logger.debug(
+            f"user_id={updated_payment.from_user}: payment {updated_payment.id} is updated",
+            extra=extra_params(payment_id=updated_payment.id, user_id=updated_payment.from_user)
+        )
