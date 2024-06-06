@@ -123,21 +123,23 @@ def get_reply_bot_menu_keyboard(bot_id: int) -> ReplyKeyboardMarkup:
 
 
 def get_inline_bot_goods_menu_keyboard(bot_id: int) -> InlineKeyboardMarkup:
+    callback_data = f":{bot_id}"
+
     return InlineKeyboardMarkup(
         inline_keyboard=[
             [
                 InlineKeyboardButton(
-                    text="🧮 Количество товаров", callback_data="bot_menu:goods_count"),
+                    text="🧮 Количество товаров", callback_data="bot_menu:goods_count" + callback_data),
                 InlineKeyboardButton(
                     text="📋 Список товаров", web_app=make_admin_panel_webapp_info(bot_id))
             ],
             [
                 InlineKeyboardButton(
-                    text="🆕 Добавить товар", callback_data="bot_menu:add_new_good"),
+                    text="🆕 Добавить товар", callback_data="bot_menu:add_new_good" + callback_data),
             ],
             [
                 InlineKeyboardButton(
-                    text="🔙 Назад", callback_data="bot_menu:back_to_menu"),
+                    text="🔙 Назад", callback_data="bot_menu:back_to_menu" + callback_data),
             ],
         ],
     )
@@ -228,10 +230,12 @@ async def get_inline_channel_menu_keyboard(bot_id: int, channel_id: int) -> Inli
 
 
 async def get_inline_bot_channels_list_keyboard(bot_id: int) -> InlineKeyboardMarkup:
+    callback_metadata = f":{bot_id}"
+
     all_channels = await get_bot_channels(bot_id=bot_id)
 
     channels_buttons = [
-        InlineKeyboardButton(text='@' + channel[1], callback_data=f"bot_menu:channel:{channel[0].channel_id}") for channel in all_channels
+        InlineKeyboardButton(text='@' + channel[1], callback_data=f"bot_menu:channel{callback_metadata}:{channel[0].channel_id}") for channel in all_channels
     ]
     resized_channels_buttons = [channels_buttons[i:i + 4]
                                 for i in range(0, len(channels_buttons), 4)]
@@ -240,10 +244,10 @@ async def get_inline_bot_channels_list_keyboard(bot_id: int) -> InlineKeyboardMa
         *resized_channels_buttons,
         [
             InlineKeyboardButton(
-                text="🔙 Назад", callback_data="bot_menu:back_to_menu"),
+                text="🔙 Назад", callback_data="bot_menu:back_to_menu" + callback_metadata),
             InlineKeyboardButton(
                 text="📢 Добавить в канал",
-                callback_data="bot_menu:add_to_channel",
+                callback_data="bot_menu:add_to_channel" + callback_metadata,
                 url=f"https://t.me/{await get_bot_username(bot_id)}?startchannel"
             )
         ],
@@ -397,12 +401,12 @@ async def get_inline_bot_menu_keyboard(bot_id: int) -> InlineKeyboardMarkup:
 
     # channel_inline_button = InlineKeyboardButton(
     #                 text="📢 Добавить в канал",
-    #                 callback_data="bot_menu:add_to_channel",
+    #                 callback_data="bot_menu:add_to_channel" + callback_metadata,
     #                 url=f"https://t.me/{await get_bot_username(bot_id)}?startchannel"
     #     ) if not await get_bot_channels(bot_id=bot_id) else \
     #     InlineKeyboardButton(
     #         text="📢 Каналы бота",
-    #         callback_data="bot_menu:channels"
+    #         callback_data="bot_menu:channels" + callback_metadata
     #     )
 
     mailing_inline_button = InlineKeyboardButton(

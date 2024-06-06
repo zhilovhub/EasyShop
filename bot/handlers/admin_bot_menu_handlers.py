@@ -291,19 +291,19 @@ async def bot_menu_callback_handler(query: CallbackQuery, state: FSMContext):
             await state.set_state(States.EDITING_DEFAULT_MESSAGE)
             await state.set_data(state_data)
         case "start_bot":
-            await start_custom_bot(state_data['bot_id'])
+            await start_custom_bot(extra_id)
             await query.message.edit_text(
                 query.message.text,
                 parse_mode=ParseMode.HTML,
-                reply_markup=await get_inline_bot_menu_keyboard(state_data['bot_id'])
+                reply_markup=await get_inline_bot_menu_keyboard(extra_id)
             )
             await query.answer("Ваш бот запущен ✅", show_alert=True)
         case "stop_bot":
-            await stop_custom_bot(state_data['bot_id'])
+            await stop_custom_bot(extra_id)
             await query.message.edit_text(
                 query.message.text,
                 parse_mode=ParseMode.HTML,
-                reply_markup=await get_inline_bot_menu_keyboard(state_data['bot_id'])
+                reply_markup=await get_inline_bot_menu_keyboard(extra_id)
             )
             await query.answer("Ваш бот приостановлен ❌", show_alert=True)
         case "delete_bot":
@@ -315,7 +315,7 @@ async def bot_menu_callback_handler(query: CallbackQuery, state: FSMContext):
             await state.set_state(States.DELETE_BOT)
             await state.set_data(state_data)
         case "statistic":
-            users = await custom_bot_user_db.get_custom_bot_users(bot_id=state_data["bot_id"])
+            users = await custom_bot_user_db.get_custom_bot_users(bot_id=extra_id)
             await query.message.answer(
                 f"Статистика:\n\n"
                 f"👨🏻‍🦱 Всего пользователей: {len(users)}"
@@ -332,31 +332,31 @@ async def bot_menu_callback_handler(query: CallbackQuery, state: FSMContext):
                 reply_markup=await get_inline_bot_mailing_menu_keyboard(bot_id=extra_id)
             )
         case "goods":
-            await query.message.edit_text("Меню склада:", reply_markup=get_inline_bot_goods_menu_keyboard(state_data['bot_id']))
+            await query.message.edit_text("Меню склада:", reply_markup=get_inline_bot_goods_menu_keyboard(extra_id))
         case "goods_count":
-            products = await product_db.get_all_products(state_data["bot_id"])
+            products = await product_db.get_all_products(extra_id)
             await query.message.answer(f"Количество товаров: {len(products)}")
             await query.answer()
-        case "goods_list":
-            products = await product_db.get_all_products(state_data["bot_id"])
-            if not products:
-                await query.message.answer("Список товаров Вашего магазина пуст")
-            else:
-                await query.message.answer(
-                    "Список товаров Вашего магазина 👇\nЧтобы удалить товар, нажмите на тег рядом с ним")
-                for product in products:
-                    await query.message.answer_photo(
-                        photo=FSInputFile(os.getenv('FILES_PATH') + product.picture),
-                        caption=f"<b>{product.name}</b>\n\n"
-                                f"Цена: <b>{float(product.price)}₽</b>",
-                        reply_markup=get_inline_delete_button(product.id))
-            await query.answer()
+        # case "goods_list":
+        #     products = await product_db.get_all_products(state_data["bot_id"])
+        #     if not products:
+        #         await query.message.answer("Список товаров Вашего магазина пуст")
+        #     else:
+        #         await query.message.answer(
+        #             "Список товаров Вашего магазина 👇\nЧтобы удалить товар, нажмите на тег рядом с ним")
+        #         for product in products:
+        #             await query.message.answer_photo(
+        #                 photo=FSInputFile(os.getenv('FILES_PATH') + product.picture),
+        #                 caption=f"<b>{product.name}</b>\n\n"
+        #                         f"Цена: <b>{float(product.price)}₽</b>",
+        #                 reply_markup=get_inline_delete_button(product.id))
+        #     await query.answer()
         case "add_new_good":
             await query.message.answer("Чтобы добавить товар, прикрепите его картинку и отправьте сообщение в виде:"
                                        "\n\nНазвание\nЦена в рублях")
             await query.answer()
         case "back_to_menu":
-            custom_bot = await bot_db.get_bot(state_data['bot_id'])
+            custom_bot = await bot_db.get_bot(extra_id)
             await query.message.edit_text(
                 MessageTexts.BOT_MENU_MESSAGE.value.format((await Bot(custom_bot.token).get_me()).username),
                 reply_markup=await get_inline_bot_menu_keyboard(custom_bot.bot_id)
