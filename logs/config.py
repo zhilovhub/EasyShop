@@ -65,11 +65,11 @@ logger_configuration = {
     "version": 1,
     "formatters": {
         LOCAL_FORMATTER_NAME: {
-            "format": "{levelname} {asctime} {filename} {funcName}()/{lineno} {msg}",
+            "format": "{levelname} {asctime} {filename} {funcName}() {msg}",
             "style": "{"
         },
         GRAFANA_FORMATTER_NAME: {
-            "format": "{filename} {funcName}()/{lineno} {msg}",
+            "format": "{filename} {funcName}() {msg}",
             "style": "{"
         }
     },
