@@ -27,7 +27,6 @@ def extra_params(**kwargs):
 class LokiFilter(logging.Filter):
 
     def filter(self, record: LogRecord) -> bool:
-        print(record.__dict__)
         if hasattr(record, "tags"):
             if hasattr(record, "user_id"):
                 record.tags["user_id"] = record.user_id
