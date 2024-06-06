@@ -12,6 +12,7 @@ from database.models import Base
 from database.models.dao import Dao
 from database.models.product_model import ProductSchema
 from database.models.bot_model import Bot
+from logs.config import extra_params
 
 
 class OrderStatusValues(Enum):
@@ -140,7 +141,11 @@ class OrderDao(Dao):
         for order in raw_res:
             res.append(OrderSchema.model_validate(order))
 
-        self.logger.info(f"get_all_orders method with bot_id: {bot_id} success")
+        self.logger.debug(
+            f"bot_id={bot_id}: has {len(res)} orders",
+            extra=extra_params(bot_id=bot_id)
+        )
+
         return res
 
     @validate_call
@@ -154,24 +159,42 @@ class OrderDao(Dao):
             raise OrderNotFound
 
         res = OrderSchema.model_validate(raw_res)
+
+        self.logger.debug(
+            f"bot_id={res.bot_id}: {order_id} is found",
+            extra=extra_params(order_id=order_id, bot_id=res.bot_id)
+        )
+
         return res
 
     @validate_call
     async def add_order(self, new_order: OrderSchema):
         async with self.engine.begin() as conn:
             await conn.execute(insert(Order).values(new_order.model_dump()))
-        self.logger.info(f"successfully add order with id {new_order.id} to db.")
+
+        self.logger.debug(
+            f"bot_id={new_order.bot_id}: order {new_order.id} is added",
+            extra=extra_params(order_id=new_order.id, bot_id=new_order.bot_id)
+        )
 
     @validate_call
     async def update_order(self, updated_order: OrderSchema):
         await self.get_order(updated_order.id)
         async with self.engine.begin() as conn:
             await conn.execute(update(Order).where(Order.id == updated_order.id).values(updated_order.model_dump()))
-        self.logger.info(f"successfully update order with id {updated_order.id} at db.")
+
+        self.logger.debug(
+            f"bot_id={updated_order.bot_id}: order {updated_order.id} is updated",
+            extra=extra_params(order_id=updated_order.id, bot_id=updated_order.bot_id)
+        )
 
     @validate_call
     async def delete_order(self, order_id: str):
         await self.get_order(order_id)
         async with self.engine.begin() as conn:
             await conn.execute(delete(Order).where(Order.id == order_id))
-        self.logger.info(f"deleted order with id {order_id}")
+
+        self.logger.debug(
+            f"order_id={order_id}: is deleted",
+            extra=extra_params(order_id=order_id)
+        )

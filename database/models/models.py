@@ -55,12 +55,13 @@ class Database:
         self.randomizer_dao = RandomizerDao(self.engine, self.logger)
         self.channel_dao = ChannelDao(self.engine, self.logger)
 
-        self.logger.debug("New root database class initialized.")
+        self.logger.debug("Database class is initialized")
 
     async def connect(self) -> None:
         async with self.engine.begin() as conn:
             await conn.run_sync(Base.metadata.create_all)
-        self.logger.debug("Table metadata created.")
+
+        self.logger.debug("Metadata is used to create Tables")
 
     def get_user_dao(self) -> UserDao:
         return self.user_dao

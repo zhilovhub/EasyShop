@@ -41,6 +41,8 @@ class LokiFilter(logging.Filter):
                 record.tags["competition_id"] = record.competition_id
             if hasattr(record, "mailing_id"):
                 record.tags["mailing_id"] = record.mailing_id
+            if hasattr(record, "order_id"):
+                record.tags["order_id"] = record.order_id
             if hasattr(record, "bot_token"):
                 record.msg.replace(record.bot_token[5:-1], "*" * len(record.bot_token[5:-1]))  # hide the token from gr
 

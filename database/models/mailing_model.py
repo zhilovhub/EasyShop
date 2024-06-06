@@ -93,8 +93,9 @@ class MailingDao(Dao):  # TODO write tests
             raise MailingNotFound
 
         res = MailingSchema.model_validate(raw_res)
+
         self.logger.debug(
-            f"bot_id={res.bot_id}: {res.mailing_id} is found",
+            f"bot_id={res.bot_id}: mailing {res.mailing_id} is found",
             extra=extra_params(mailing_id=mailing_id, bot_id=res.bot_id)
         )
 
@@ -114,7 +115,7 @@ class MailingDao(Dao):  # TODO write tests
         res = MailingSchema.model_validate(raw_res)
 
         self.logger.debug(
-            f"bot_id={res.bot_id}: {res.mailing_id} is found",
+            f"bot_id={res.bot_id}: mailing {res.mailing_id} is found",
             extra=extra_params(mailing_id=res.mailing_id, bot_id=bot_id)
         )
 
@@ -129,12 +130,8 @@ class MailingDao(Dao):  # TODO write tests
         async with self.engine.begin() as conn:
             mailing_id = (await conn.execute(insert(Mailing).values(new_mailing.model_dump()))).inserted_primary_key[0]
 
-        self.logger.info(
-            f"successfully add mailing with mailing_id for mailing_id {mailing_id} for bot_id {new_mailing.bot_id} to db"
-        )
-
         self.logger.debug(
-            f"bot_id={new_mailing.bot_id}: {mailing_id} is added",
+            f"bot_id={new_mailing.bot_id}: mailing_id {mailing_id} is added",
             extra=extra_params(mailing_id=mailing_id, bot_id=new_mailing.bot_id)
         )
 
