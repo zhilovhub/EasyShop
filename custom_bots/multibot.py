@@ -196,7 +196,7 @@ async def main():
     asyncio.set_event_loop(loop)
 
     ssl_context = ssl.create_default_context(ssl.Purpose.CLIENT_AUTH)
-    # ssl_context.load_cert_chain(getenv('SSL_CERT_PATH'), getenv('SSL_KEY_PATH'))
+    ssl_context.load_cert_chain(getenv('SSL_CERT_PATH'), getenv('SSL_KEY_PATH'))
 
     custom_bot_logger.info(f"setting up local api server on {LOCAL_API_SERVER_HOST}:{LOCAL_API_SERVER_PORT}")
     custom_bot_logger.info(f"setting up webhook server on {WEBHOOK_SERVER_HOST}:{WEBHOOK_SERVER_PORT}")
