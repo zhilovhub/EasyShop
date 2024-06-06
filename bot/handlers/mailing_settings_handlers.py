@@ -1,4 +1,5 @@
 import asyncio
+import re
 from datetime import datetime, timedelta
 
 from aiogram.enums import ParseMode
@@ -548,6 +549,10 @@ async def editing_mailing_button_url_handler(message: Message, state: FSMContext
                 reply_markup=await get_inline_bot_mailing_menu_keyboard(bot_id)
             )
         else:
+            pattern = r"(?i)\b((?:https?://|www\d{0,3}[.]|[a-z0-9.\-]+[.][a-z]{2,4}/)(?:[^\s()<>]+|\(([^\s()<>]+|(\([^\s()<>]+\)))*\))+(?:\(([^\s()<>]+|(\([^\s()<>]+\)))*\)|[^\s`!()\[\]{};:'\".,<>?«»“”‘’]))"
+            if not re.fullmatch(pattern, message.text):
+                return await message.answer("Невалидная ссылка. Введите, пожалуйста, ссылку в стандартном формате, начинающимся с <b>http</b> или <b>https</b>")
+
             mailing.button_url = message.text
             media_files = await mailing_media_file_db.get_all_mailing_media_files(mailing_id)
             await mailing_db.update_mailing(mailing)
