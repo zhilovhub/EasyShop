@@ -11,6 +11,7 @@ from database.models import Base
 from database.models.bot_model import Bot
 from database.models.channel_model import Channel
 from database.models.dao import Dao
+from logs.config import extra_params
 
 
 class CompetitionNotFound(Exception):
@@ -94,7 +95,11 @@ class CompetitionDao(Dao):  # TODO write tests
         for competition in raw_res:
             res.append(CompetitionSchema.model_validate(competition))
 
-        self.logger.info(f"get_all_competitions method with channel_id: {channel_id} bot_id: {bot_id} success")
+        self.logger.debug(
+            f"channel_id={channel_id}: has {res} channels",
+            extra=extra_params(channel_id=channel_id, bot_id=bot_id)
+        )
+
         return res
 
     @validate_call(validate_return=True)
@@ -107,7 +112,11 @@ class CompetitionDao(Dao):  # TODO write tests
         if not raw_res:
             raise CompetitionNotFound
 
-        self.logger.info(f"get_competition method with competition_id: {competition_id} success.")
+        self.logger.debug(
+            f"competition_id={competition_id}: is found",
+            extra=extra_params(competition_id=competition_id)
+        )
+
         return CompetitionSchema.model_validate(raw_res)
 
     @validate_call
@@ -118,8 +127,9 @@ class CompetitionDao(Dao):  # TODO write tests
         async with self.engine.begin() as conn:
             competition_id = (await conn.execute(insert(Competition).values(new_competition.model_dump()))).inserted_primary_key[0]
 
-        self.logger.info(
-            f"successfully add competition with competition_id for channel_id {new_competition.channel_id} for bot_id {new_competition.bot_id} to db"
+        self.logger.debug(
+            f"channel_id={new_competition.channel_id}: {competition_id} is added",
+            extra=extra_params(competition_id=competition_id, channel_id=new_competition.channel_id, bot_id=new_competition.bot_id)
         )
 
         return competition_id
@@ -132,4 +142,9 @@ class CompetitionDao(Dao):  # TODO write tests
                     Competition.competition_id == updated_competition.competition_id
                 ).values(updated_competition.model_dump())
             )
-        self.logger.info(f"successfully update competition with id {updated_competition.competition_id} at db.")
+
+        self.logger.debug(
+            f"channel_id={updated_competition.channel_id}: {updated_competition.competition_id} is updated",
+            extra=extra_params(competition_id=updated_competition.competition_id, channel_id=updated_competition.channel_id,
+                               bot_id=updated_competition.bot_id)
+        )
