@@ -306,7 +306,7 @@ async def mailing_menu_callback_handler(query: CallbackQuery, state: FSMContext)
                 )
 
         case "extra_settings":
-            await query.message.edit_reply_markup(
+            await query.message.edit_text(
                 text=query.message.text + "\n\n🔎 Что такое <a href=\"https://www.google.com/url?sa=i&url=https%3A%2F%2Ftlgrm.ru%2Fblog%2Flink-preview.html&psig=AOvVaw27FhHb7fFrLDNGUX-uzG7y&ust=1717771529744000&source=images&cd=vfe&opi=89978449&ved=0CBIQjRxqFwoTCJj5puKbx4YDFQAAAAAdAAAAABAE\">предпросмотр ссылок</a>",
                 reply_markup=await get_inline_bot_mailing_menu_extra_settings_keyboard(
                     bot_id,
@@ -776,6 +776,8 @@ async def send_mailing_message(  # TODO that's not funny
                 old_message.file_id_custom_bot = file_id
                 await mailing_media_file_db.update_media_file(old_message)
     else:
+        if mailing_schema.description is None:
+            return
         if mailing_message_type == MailingMessageType.DEMO:  # только при демо с главного бота срабатывает
             await message.edit_text(
                 text=mailing_schema.description,
