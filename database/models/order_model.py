@@ -161,7 +161,7 @@ class OrderDao(Dao):
         res = OrderSchema.model_validate(raw_res)
 
         self.logger.debug(
-            f"bot_id={res.bot_id}: {order_id} is found",
+            f"bot_id={res.bot_id}: order {order_id} is found",
             extra=extra_params(order_id=order_id, bot_id=res.bot_id)
         )
 

@@ -43,6 +43,8 @@ class LokiFilter(logging.Filter):
                 record.tags["mailing_id"] = record.mailing_id
             if hasattr(record, "order_id"):
                 record.tags["order_id"] = record.order_id
+            if hasattr(record, "product_id"):
+                record.tags["product_id"] = record.product_id
             if hasattr(record, "payment_id"):
                 record.tags["payment_id"] = record.payment_id
             if hasattr(record, "bot_token"):
