@@ -12,6 +12,8 @@ from database.models.bot_model import Bot
 from database.models.dao import Dao
 from enum import Enum
 
+from logs.config import extra_params
+
 
 class MailingNotFound(Exception):
     """Raised when provided Mailing not found in database"""
@@ -90,9 +92,13 @@ class MailingDao(Dao):  # TODO write tests
         if not raw_res:
             raise MailingNotFound
 
-        self.logger.info(
-            f"get_mailing method with mailing_id: {mailing_id} success.")
-        return MailingSchema.model_validate(raw_res)
+        res = MailingSchema.model_validate(raw_res)
+        self.logger.debug(
+            f"bot_id={res.bot_id}: {res.mailing_id} is found",
+            extra=extra_params(mailing_id=mailing_id, bot_id=res.bot_id)
+        )
+
+        return res
 
     @validate_call(validate_return=True)
     async def get_mailing_by_bot_id(self, bot_id: int) -> MailingSchema:
@@ -105,8 +111,14 @@ class MailingDao(Dao):  # TODO write tests
         if not raw_res:
             raise MailingNotFound
 
-        self.logger.info(f"get_mailing method with bot_id: {bot_id} success.")
-        return MailingSchema.model_validate(raw_res)
+        res = MailingSchema.model_validate(raw_res)
+
+        self.logger.debug(
+            f"bot_id={res.bot_id}: {res.mailing_id} is found",
+            extra=extra_params(mailing_id=res.mailing_id, bot_id=bot_id)
+        )
+
+        return res
 
     @validate_call
     async def add_mailing(self, new_mailing: MailingSchemaWithoutId) -> int:
@@ -121,6 +133,11 @@ class MailingDao(Dao):  # TODO write tests
             f"successfully add mailing with mailing_id for mailing_id {mailing_id} for bot_id {new_mailing.bot_id} to db"
         )
 
+        self.logger.debug(
+            f"bot_id={new_mailing.bot_id}: {mailing_id} is added",
+            extra=extra_params(mailing_id=mailing_id, bot_id=new_mailing.bot_id)
+        )
+
         return mailing_id
 
     @validate_call
@@ -131,8 +148,11 @@ class MailingDao(Dao):  # TODO write tests
                     Mailing.mailing_id == updated_mailing.mailing_id
                 ).values(updated_mailing.model_dump())
             )
-        self.logger.info(
-            f"successfully update mailing with id {updated_mailing.mailing_id} at db.")
+
+        self.logger.debug(
+            f"bot_id={updated_mailing.bot_id}: {updated_mailing.mailing_id} is updated",
+            extra=extra_params(mailing_id=updated_mailing.mailing_id, bot_id=updated_mailing.bot_id)
+        )
 
     @validate_call
     async def delete_mailing(self, mailing_id: int) -> None:
@@ -146,6 +166,7 @@ class MailingDao(Dao):  # TODO write tests
                 )
             )
 
-        self.logger.info(
-            f"successfully deleted mailing with mailing_id {mailing_id} from db"
+        self.logger.debug(
+            f"mailing_id={mailing_id}: is deleted",
+            extra=extra_params(mailing_id=mailing_id)
         )
