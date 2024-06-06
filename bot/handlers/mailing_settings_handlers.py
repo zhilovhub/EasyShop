@@ -307,9 +307,7 @@ async def mailing_menu_callback_handler(query: CallbackQuery, state: FSMContext)
 
         case "extra_settings":
             await query.message.edit_reply_markup(
-                # text=MessageTexts.BOT_MAILINGS_MENU_MESSAGE.value.format(
-                #     custom_bot_username
-                # ),
+                text=query.message.text + "\n\n🔎 Что такое <a href=\"https://www.google.com/url?sa=i&url=https%3A%2F%2Ftlgrm.ru%2Fblog%2Flink-preview.html&psig=AOvVaw27FhHb7fFrLDNGUX-uzG7y&ust=1717771529744000&source=images&cd=vfe&opi=89978449&ved=0CBIQjRxqFwoTCJj5puKbx4YDFQAAAAAdAAAAABAE\">предпросмотр ссылок</a>",
                 reply_markup=await get_inline_bot_mailing_menu_extra_settings_keyboard(
                     bot_id,
                     mailing_id,
@@ -666,14 +664,23 @@ async def send_mailing_message(  # TODO that's not funny
         message: Message = None,
 ) -> None:
     if mailing_schema.has_button:
-        button = InlineKeyboardMarkup(
+        if mailing_schema.button_url == f"{WEB_APP_URL}:{WEB_APP_PORT}/products-page/?bot_id={mailing_schema.bot_id}":
+            button = InlineKeyboardButton(
+                text=mailing_schema.button_text,
+                web_app=make_webapp_info(bot_id=mailing_schema.bot_id)
+            )
+        else:
+            button = InlineKeyboardButton(
+                text=mailing_schema.button_text,
+                url=mailing_schema.button_url
+            )
+        keyboard = InlineKeyboardMarkup(
             inline_keyboard=[
-                [InlineKeyboardButton(
-                    text=mailing_schema.button_text, url=mailing_schema.button_url)]
+                [button]
             ]
         )
     else:
-        button = None
+        keyboard = None
 
     if len(media_files) >= 1:
         is_first_message = False
@@ -743,7 +750,7 @@ async def send_mailing_message(  # TODO that's not funny
                 to_user_id,
                 media_group[0],
                 caption=mailing_schema.description,
-                reply_markup=button,
+                reply_markup=keyboard,
                 disable_notification=not (
                     mailing_schema.enable_notification_sound),
             ))
@@ -774,13 +781,13 @@ async def send_mailing_message(  # TODO that's not funny
                 text=mailing_schema.description,
                 link_preview_options=LinkPreviewOptions(is_disabled=not (
                     mailing_schema.enable_link_preview)),
-                reply_markup=button,
+                reply_markup=keyboard,
             )
         elif mailing_message_type == MailingMessageType.AFTER_REDACTING:
             await bot_from_send.send_message(
                 chat_id=to_user_id,
                 text=mailing_schema.description,
-                reply_markup=button,
+                reply_markup=keyboard,
                 disable_notification=not (
                     mailing_schema.enable_notification_sound),
                 link_preview_options=LinkPreviewOptions(is_disabled=not (
@@ -790,7 +797,7 @@ async def send_mailing_message(  # TODO that's not funny
             await bot_from_send.send_message(
                 chat_id=to_user_id,
                 text=mailing_schema.description,
-                reply_markup=button,
+                reply_markup=keyboard,
                 disable_notification=not (
                     mailing_schema.enable_notification_sound),
                 link_preview_options=LinkPreviewOptions(is_disabled=not (
