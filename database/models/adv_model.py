@@ -1,4 +1,5 @@
 from datetime import datetime
+from typing import Optional
 
 from pydantic import BaseModel, Field, validate_call, ConfigDict
 
@@ -31,7 +32,7 @@ class AdvSchemaWithoutId(BaseModel):
     total_count: int = 0
     total_unique_count: int = 0
 
-    time: datetime
+    time: Optional[datetime] = None
 
 
 class AdvSchema(AdvSchemaWithoutId):
