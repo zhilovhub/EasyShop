@@ -1,12 +1,16 @@
+from datetime import datetime
+
 from pydantic import BaseModel, Field, validate_call, ConfigDict
-from sqlalchemy import BigInteger, Column, ForeignKey, select, insert, delete, BOOLEAN, update
+from sqlalchemy import BigInteger, Column, ForeignKey, select, insert, delete, BOOLEAN, update, DateTime, desc
 from sqlalchemy.ext.asyncio import AsyncEngine
 
-from bot.exceptions import InvalidParameterFormat
 from database.models import Base
-from database.models.bot_model import Bot
 from database.models.dao import Dao
 from logs.config import extra_params
+
+
+class EmptyAdvTable(Exception):
+    pass
 
 
 class Adv(Base):
@@ -16,14 +20,20 @@ class Adv(Base):
     total_count = Column(BigInteger, default=0)
     total_unique_count = Column(BigInteger, default=0)
 
+    time = Column(DateTime)
 
-class AdvSchema(BaseModel):
+
+class AdvSchemaWithoutId(BaseModel):
     model_config = ConfigDict(from_attributes=True)
-
-    id: int = Field(frozen=True)
 
     total_count: int = 0
     total_unique_count: int = 0
+
+    time: datetime
+
+
+class AdvSchema(AdvSchemaWithoutId):
+    id: int = Field(frozen=True)
 
 
 class AdvDao(Dao):  # TODO write tests
@@ -34,14 +44,13 @@ class AdvDao(Dao):  # TODO write tests
     async def get_last_adv(self) -> AdvSchema:
         async with self.engine.begin() as conn:
             raw_res = await conn.execute(
-                select(Adv).order_by(Adv.id).limit(1)
+                select(Adv).order_by(desc(Adv.id)).limit(1)
             )
         await self.engine.dispose()
 
         raw_res = raw_res.fetchone()
         if raw_res is None:
-            await self.add_new_adv()
-            return await self.get_last_adv()
+            raise EmptyAdvTable
 
         res = AdvSchema.model_validate(raw_res)
 
@@ -54,25 +63,12 @@ class AdvDao(Dao):  # TODO write tests
         return res
 
     @validate_call
-    async def add_new_adv(self) -> None:
+    async def add_adv(self, new_schema: AdvSchemaWithoutId) -> None:
+        new_schema.time = datetime.utcnow().replace(tzinfo=None)
         async with self.engine.begin() as conn:
-            adv_id = (await conn.execute(insert(Adv).values())).inserted_primary_key[0]
+            adv_id = (await conn.execute(insert(Adv).values(new_schema.model_dump(exclude={"id"})))).inserted_primary_key[0]
 
         self.logger.debug(
             f"adv={adv_id}: new adv is created",
             extra=extra_params(adv_id=adv_id)
-        )
-
-    @validate_call
-    async def update_adv(self, updated_adv: AdvSchema) -> None:
-        if not isinstance(updated_adv, AdvSchema):
-            raise InvalidParameterFormat("updated_adv must be type of AdvSchema")
-
-        async with self.engine.begin() as conn:
-            await conn.execute(update(Adv).where(Adv.id == updated_adv.id).values(updated_adv.model_dump()))
-        await self.engine.dispose()
-
-        self.logger.debug(
-            f"adv={updated_adv.id}: adv {updated_adv.id} is updated",
-            extra=extra_params(adv_id=updated_adv.id)
         )
