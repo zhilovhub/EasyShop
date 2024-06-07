@@ -46,9 +46,9 @@ class AdvDao(Dao):  # TODO write tests
         res = AdvSchema.model_validate(raw_res)
 
         self.logger.debug(
-            f"adv={AdvSchema.id}: total_count = {AdvSchema.total_count}, "
-            f"total_unique_count = {AdvSchema.total_unique_count}",
-            extra=extra_params(adv_id=AdvSchema.id)
+            f"adv={res.id}: total_count = {res.total_count}, "
+            f"total_unique_count = {res.total_unique_count}",
+            extra=extra_params(adv_id=res.id)
         )
 
         return res

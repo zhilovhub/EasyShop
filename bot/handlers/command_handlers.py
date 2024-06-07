@@ -5,7 +5,7 @@ from aiogram.types import Message
 from aiogram.filters import CommandStart
 from aiogram.fsm.context import FSMContext
 
-from bot.main import bot, cache_resources_file_id_store, user_db, bot_db
+from bot.main import bot, cache_resources_file_id_store, user_db, bot_db, adv_db
 from bot.keyboards import *
 from bot.states.states import States
 from bot.handlers.routers import commands_router
@@ -31,6 +31,9 @@ async def start_command_handler(message: Message, state: FSMContext):
                 f"user {user_id}, @{message.from_user.username}: tapped to adv again",
                 extra=extra_params(user_id=user_id)
             )
+            current_adv = await adv_db.get_last_adv()
+            current_adv.total_count += 1
+            await adv_db.update_adv(current_adv)
 
     except UserNotFound:
         if message.text == "/start from_adv":
@@ -38,6 +41,10 @@ async def start_command_handler(message: Message, state: FSMContext):
                 f"user {user_id}, {message.from_user.username}: came here from adv",
                 extra=extra_params(user_id=user_id)
             )
+            current_adv = await adv_db.get_last_adv()
+            current_adv.total_unique_count += 1
+            current_adv.total_count += 1
+            await adv_db.update_adv(current_adv)
 
         logger.info(f"user {user_id} not found in db, creating new instance...")
 
