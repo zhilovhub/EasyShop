@@ -173,6 +173,15 @@ logger_configuration = {
                 "file_error_warning_handler",
                 "loki_custom_bot_handler"
             ]
+        },
+        "adv_logger": {
+            "level": "INFO",
+            "handlers": [
+                "console_handler",
+                "file_handler",
+                "file_error_warning_handler",
+                "loki_handler"
+            ]
         }
     }
 }
@@ -182,3 +191,4 @@ logger = logging.getLogger("general_logger")
 db_logger = logging.getLogger("db_logger")
 api_logger = logging.getLogger("api_logger")
 custom_bot_logger = logging.getLogger("custom_bot_logger")
+adv_logger = logging.getLogger("adv_logger")
