@@ -12,6 +12,7 @@ from database.models import Base
 from database.models.dao import Dao
 
 from bot.exceptions.exceptions import *
+from logs.config import extra_params
 
 
 class UserStatusValues(Enum):
@@ -84,7 +85,10 @@ class UserDao(Dao):
         for user in raw_res:
             res.append(UserSchema.model_validate(user))
 
-        self.logger.info(f"get_all_users method success.")
+        self.logger.debug(
+            f"There are {len(res)} users in our service"
+        )
+
         return res
     
     async def get_user(self, user_id: int) -> UserSchema:
@@ -99,8 +103,14 @@ class UserDao(Dao):
         if res is None:
             raise UserNotFound(f"id {user_id} not found in database.")
 
-        self.logger.info(f"get_user method with user_id: {user_id} success.")
-        return UserSchema.model_validate(res)
+        res = UserSchema.model_validate(res)
+
+        self.logger.debug(
+            f"user_id={user_id}: user {user_id} is found",
+            extra=extra_params(user_id=user_id)
+        )
+
+        return res
 
     async def add_user(self, user: UserSchema) -> None:
         if not isinstance(user, UserSchema):
@@ -114,7 +124,10 @@ class UserDao(Dao):
                 await conn.execute(insert(User).values(**user.model_dump(by_alias=True)))
             await self.engine.dispose()
 
-            self.logger.info(f"successfully add user with id {user.id} to db.")
+        self.logger.debug(
+            f"user_id={user.id}: user {user.id} is added",
+            extra=extra_params(user_id=user.id)
+        )
 
     async def update_user(self, updated_user: UserSchema) -> None:
         if not isinstance(updated_user, UserSchema):
@@ -125,7 +138,10 @@ class UserDao(Dao):
                                values(**updated_user.model_dump(by_alias=True)))
         await self.engine.dispose()
 
-        self.logger.info(f"successfully update user with id {updated_user.id} in db.")
+        self.logger.debug(
+            f"user_id={updated_user.id}: user {updated_user.id} is updated",
+            extra=extra_params(user_id=updated_user.id)
+        )
 
     async def del_user(self, user_id: int) -> None:
         if not isinstance(user_id, int):
@@ -135,4 +151,7 @@ class UserDao(Dao):
             await conn.execute(delete(User).where(User.user_id == user_id))
         await self.engine.dispose()
 
-        self.logger.info(f"successfully delete user with id {user_id} from db.")
+        self.logger.debug(
+            f"user_id={user_id}: user {user_id} is deleted",
+            extra=extra_params(user_id=user_id)
+        )

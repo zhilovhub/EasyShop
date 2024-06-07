@@ -18,10 +18,37 @@ GRAFANA_FORMATTER_NAME = "formatter_grafana"
 LOCAL_FORMATTER_NAME = "formatter_local"
 
 
+def extra_params(**kwargs):
+    return {
+        "tags": kwargs
+    }
+
+
 class LokiFilter(logging.Filter):
 
     def filter(self, record: LogRecord) -> bool:
-        print(record.__dict__)
+        if hasattr(record, "tags"):
+            if hasattr(record, "user_id"):
+                record.tags["user_id"] = record.user_id
+            if hasattr(record, "bot_id"):
+                record.tags["bot_id"] = record.bot_id
+            if hasattr(record, "category_id"):
+                record.tags["category_id"] = record.category_id
+            if hasattr(record, "channel_id"):
+                record.tags["channel_id"] = record.channel_id
+            if hasattr(record, "competition_id"):
+                record.tags["competition_id"] = record.competition_id
+            if hasattr(record, "mailing_id"):
+                record.tags["mailing_id"] = record.mailing_id
+            if hasattr(record, "order_id"):
+                record.tags["order_id"] = record.order_id
+            if hasattr(record, "product_id"):
+                record.tags["product_id"] = record.product_id
+            if hasattr(record, "payment_id"):
+                record.tags["payment_id"] = record.payment_id
+            if hasattr(record, "bot_token"):
+                record.msg.replace(record.bot_token[5:-1], "*" * len(record.bot_token[5:-1]))  # hide the token from gr
+
         return LOG_TO_GRAFANA
 
 

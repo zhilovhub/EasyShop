@@ -6,6 +6,7 @@ from bot.exceptions import InvalidParameterFormat
 from database.models import Base
 from database.models.bot_model import Bot
 from database.models.dao import Dao
+from logs.config import extra_params
 
 
 class SameCategoryNameAlreadyExists(Exception):
@@ -49,7 +50,11 @@ class CategoryDao(Dao):  # TODO write tests
         for category in raw_res:
             res.append(CategorySchema.model_validate(category))
 
-        self.logger.info(f"get_all_categories method with bot_id: {bot_id} success")
+        self.logger.debug(
+            f"bot_id={bot_id}: has {len(res)} categories",
+            extra=extra_params(bot_id=bot_id)
+        )
+
         return res
 
     @validate_call(validate_return=True)
@@ -62,7 +67,12 @@ class CategoryDao(Dao):  # TODO write tests
 
         res = raw_res.fetchone()
 
-        self.logger.info(f"get_category method with category_id: {category_id} success")
+        if res is not None:
+            self.logger.debug(
+                f"category_id={category_id}: category {category_id} is found",
+                extra=extra_params(category_id=category_id)
+            )
+
         return res
 
     @validate_call
@@ -78,7 +88,11 @@ class CategoryDao(Dao):  # TODO write tests
                 )
             cat_id = (await conn.execute(insert(Category).values(new_category.model_dump()))).inserted_primary_key[0]
 
-        self.logger.info(f"successfully add new_category {new_category} to db")
+        self.logger.debug(
+            f"category_id={cat_id}: category {cat_id} is added to database",
+            extra=extra_params(bot_id=new_category.bot_id, category_id=cat_id)
+        )
+
         return cat_id
 
     @validate_call
@@ -93,10 +107,18 @@ class CategoryDao(Dao):  # TODO write tests
             await conn.execute(
                 update(Category).where(Category.id == updated_category.id).values(updated_category.model_dump())
             )
-        self.logger.info(f"successfully update category with id {updated_category.id} at db")
+
+        self.logger.debug(
+            f"category_id={updated_category.id}: category {updated_category.id} is updated",
+            extra=extra_params(bot_id=updated_category.bot_id, category_id=updated_category.id)
+        )
 
     @validate_call
     async def delete_category(self, category_id: int):
         async with self.engine.begin() as conn:
             await conn.execute(delete(Category).where(Category.id == category_id))
-        self.logger.info(f"deleted category with id {category_id}")
+
+        self.logger.debug(
+            f"category_id={category_id}: category {category_id} is deleted",
+            extra=extra_params(category_id=category_id)
+        )

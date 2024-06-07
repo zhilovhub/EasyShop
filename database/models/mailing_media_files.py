@@ -7,6 +7,7 @@ from bot.exceptions import InvalidParameterFormat
 from database.models import Base
 from database.models.mailing_model import Mailing
 from database.models.dao import Dao
+from logs.config import extra_params
 
 
 class MailingMediaFileNotFound(Exception):
@@ -51,7 +52,11 @@ class MailingMediaFileDao(Dao):  # TODO write tests
         for mailing_media_file in raw_res:
             res.append(MailingMediaFileSchema.model_validate(mailing_media_file))
 
-        self.logger.info(f"get_all_mailing_media_files method with mailing_id: {mailing_id} success")
+        self.logger.debug(
+            f"mailing_id={mailing_id}: has {len(res)} media_files",
+            extra=extra_params(mailing_id=mailing_id)
+        )
+
         return res
 
     @validate_call
@@ -64,8 +69,9 @@ class MailingMediaFileDao(Dao):  # TODO write tests
                 insert(MailingMediaFile).values(new_mailing_media_file.model_dump())
             )
 
-        self.logger.info(
-            f"successfully add mailing_media_files with mailing_id {new_mailing_media_file.mailing_id}"
+        self.logger.debug(
+            f"mailing_id={new_mailing_media_file.mailing_id}: media file {new_mailing_media_file.file_id_main_bot} is added",
+            extra=extra_params(mailing_id=new_mailing_media_file.mailing_id)
         )
 
     @validate_call
@@ -79,7 +85,11 @@ class MailingMediaFileDao(Dao):  # TODO write tests
                     MailingMediaFile.file_id_main_bot == new_mailing_media_file.file_id_main_bot
                 ).values(new_mailing_media_file.model_dump())
             )
-        self.logger.info(f"successfully update mailing_media_file with id {new_mailing_media_file.mailing_id} at db")
+
+        self.logger.debug(
+            f"mailing_id={new_mailing_media_file.mailing_id}: media file {new_mailing_media_file.file_id_main_bot} is updated",
+            extra=extra_params(mailing_id=new_mailing_media_file.mailing_id)
+        )
 
     @validate_call
     async def delete_mailing_media_files(self, mailing_id: int):
@@ -89,4 +99,8 @@ class MailingMediaFileDao(Dao):  # TODO write tests
                     MailingMediaFile.mailing_id == mailing_id,
                 )
             )
-        self.logger.info(f"deleted mailing_media_files with mailing_id {mailing_id}")
+
+        self.logger.debug(
+            f"mailing_id={mailing_id}: all media files are deleted",
+            extra=extra_params(mailing_id=mailing_id)
+        )

@@ -7,6 +7,7 @@ from bot.exceptions import InvalidParameterFormat
 from database.models import Base
 from database.models.competition_model import Competition
 from database.models.dao import Dao
+from logs.config import extra_params
 
 
 class CompetitionMediaFileNotFound(Exception):
@@ -47,7 +48,10 @@ class CompetitionMediaFileDao(Dao):  # TODO write tests
         for competition_media_file in raw_res:
             res.append(CompetitionMediaFileSchema.model_validate(competition_media_file))
 
-        self.logger.info(f"get_all_competition_media_files method with competition_id: {competition_id} success")
+        self.logger.debug(
+            f"competition_id={competition_id}: has {len(res)} media_files",
+            extra=extra_params(competition_id=competition_id)
+        )
         return res
 
     @validate_call
@@ -59,9 +63,10 @@ class CompetitionMediaFileDao(Dao):  # TODO write tests
             await conn.execute(
                 insert(CompetitionMediaFile).values(new_competition_media_file.model_dump())
             )
-
-        self.logger.info(
-            f"successfully add competition_media_files with competition_id {new_competition_media_file.competition_id}"
+        self.logger.debug(
+            f"competition_id={new_competition_media_file.competition_id}: "
+            f"media_file {new_competition_media_file.file_name} is added",
+            extra=extra_params(competition_id=new_competition_media_file.competition_id)
         )
 
     @validate_call
@@ -72,4 +77,8 @@ class CompetitionMediaFileDao(Dao):  # TODO write tests
                     CompetitionMediaFile.competition_id == competition_id,
                 )
             )
-        self.logger.info(f"deleted competition_media_files with competition_id {competition_id}")
+
+        self.logger.debug(
+            f"competition_id={competition_id}: all media files are deleted",
+            extra=extra_params(competition_id=competition_id)
+        )
