@@ -20,8 +20,8 @@ class Adv(Base):
     __tablename__ = "adv"
 
     id = Column(BigInteger, primary_key=True, autoincrement=True)
-    total_count = Column(BigInteger, default=0)
-    total_unique_count = Column(BigInteger, default=0)
+    total_count = Column(BigInteger, default=1)
+    total_unique_count = Column(BigInteger, default=1)
 
     time = Column(DateTime)
 
@@ -29,8 +29,8 @@ class Adv(Base):
 class AdvSchemaWithoutId(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
-    total_count: int = 0
-    total_unique_count: int = 0
+    total_count: int = 1
+    total_unique_count: int = 1
 
     time: Optional[datetime] = None
 
