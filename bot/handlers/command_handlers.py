@@ -38,6 +38,11 @@ async def start_command_handler(message: Message, state: FSMContext):
                 await adv_db.add_adv(current_adv)
             except EmptyAdvTable:
                 await adv_db.add_adv(AdvSchemaWithoutId.model_validate({"total_count": 1}))
+            except Exception as e:
+                logger.error(
+                    e.__str__(),
+                    extra=extra_params(user_id=user_id)
+                )
 
 
     except UserNotFound:
@@ -53,6 +58,11 @@ async def start_command_handler(message: Message, state: FSMContext):
                 await adv_db.add_adv(current_adv)
             except EmptyAdvTable:
                 await adv_db.add_adv(AdvSchemaWithoutId.model_validate({"total_count": 1, "total_unique_count": 1}))
+            except Exception as e:
+                logger.error(
+                    e.__str__(),
+                    extra=extra_params(user_id=user_id)
+                )
 
         logger.info(f"user {user_id} not found in db, creating new instance...")
 
