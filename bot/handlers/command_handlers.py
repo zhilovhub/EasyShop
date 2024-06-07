@@ -5,7 +5,7 @@ from aiogram.types import Message
 from aiogram.filters import CommandStart
 from aiogram.fsm.context import FSMContext
 
-from bot.main import bot, cache_resources_file_id_store, user_db, bot_db
+from bot.main import bot, cache_resources_file_id_store, user_db, bot_db, adv_db
 from bot.keyboards import *
 from bot.states.states import States
 from bot.handlers.routers import commands_router
@@ -14,8 +14,9 @@ from bot.exceptions.exceptions import *
 from bot.utils.send_instructions import send_instructions
 from bot.utils.check_subscription import check_subscription
 from bot.middlewaries.subscription_middleware import CheckSubscriptionMiddleware
+from database.models.adv_model import EmptyAdvTable, AdvSchema, AdvSchemaWithoutId
 
-from logs.config import logger
+from logs.config import logger, adv_logger, extra_params
 
 from database.models.user_model import UserSchema, UserStatusValues
 
@@ -25,8 +26,46 @@ async def start_command_handler(message: Message, state: FSMContext):
     user_id = message.from_user.id
     try:
         await user_db.get_user(user_id)
+
+        if message.text == "/start from_adv":
+            adv_logger.info(
+                f"user {user_id}, @{message.from_user.username}: tapped to adv again",
+                extra=extra_params(user_id=user_id)
+            )
+            try:
+                current_adv = await adv_db.get_last_adv()
+                current_adv.total_count += 1
+                await adv_db.add_adv(current_adv)
+            except EmptyAdvTable:
+                await adv_db.add_adv(AdvSchemaWithoutId.model_validate({"total_count": 1}))
+            except Exception as e:
+                logger.error(
+                    e.__str__(),
+                    extra=extra_params(user_id=user_id)
+                )
+
+
     except UserNotFound:
+        if message.text == "/start from_adv":
+            adv_logger.info(
+                f"user {user_id}, {message.from_user.username}: came here from adv",
+                extra=extra_params(user_id=user_id)
+            )
+            try:
+                current_adv = await adv_db.get_last_adv()
+                current_adv.total_count += 1
+                current_adv.total_unique_count += 1
+                await adv_db.add_adv(current_adv)
+            except EmptyAdvTable:
+                await adv_db.add_adv(AdvSchemaWithoutId.model_validate({"total_count": 1, "total_unique_count": 1}))
+            except Exception as e:
+                logger.error(
+                    e.__str__(),
+                    extra=extra_params(user_id=user_id)
+                )
+
         logger.info(f"user {user_id} not found in db, creating new instance...")
+
         await send_event(message.from_user, EventTypes.NEW_USER)
         await user_db.add_user(UserSchema(
             user_id=user_id, registered_at=datetime.utcnow(), status=UserStatusValues.NEW, locale="default",

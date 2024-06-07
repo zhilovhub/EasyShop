@@ -46,6 +46,8 @@ class LokiFilter(logging.Filter):
                 record.tags["product_id"] = record.product_id
             if hasattr(record, "payment_id"):
                 record.tags["payment_id"] = record.payment_id
+            if hasattr(record, "adv_id"):
+                record.tags["adv_id"] = record.adv_id
             if hasattr(record, "bot_token"):
                 record.msg.replace(record.bot_token[5:-1], "*" * len(record.bot_token[5:-1]))  # hide the token from gr
 
@@ -173,6 +175,15 @@ logger_configuration = {
                 "file_error_warning_handler",
                 "loki_custom_bot_handler"
             ]
+        },
+        "adv_logger": {
+            "level": "INFO",
+            "handlers": [
+                "console_handler",
+                "file_handler",
+                "file_error_warning_handler",
+                "loki_handler"
+            ]
         }
     }
 }
@@ -182,3 +193,4 @@ logger = logging.getLogger("general_logger")
 db_logger = logging.getLogger("db_logger")
 api_logger = logging.getLogger("api_logger")
 custom_bot_logger = logging.getLogger("custom_bot_logger")
+adv_logger = logging.getLogger("adv_logger")

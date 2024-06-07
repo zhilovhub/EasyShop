@@ -5,6 +5,7 @@ from aiogram.enums import ParseMode
 from aiogram.types import BotCommand
 from aiogram.client.bot import DefaultBotProperties
 from channels_administration.competition.competition import CompetitionModule
+from database.models.adv_model import AdvDao
 from database.models.bot_model import BotDao
 from database.models.channel_model import ChannelDao
 from database.models.mailing_media_files import MailingMediaFileDao
@@ -29,6 +30,7 @@ dp = Dispatcher(storage=storage)
 db_engine: Database = Database(config.SQLALCHEMY_URL, db_logger)
 
 bot_db: BotDao = db_engine.get_bot_dao()
+adv_db: AdvDao = db_engine.get_adv_dao()
 user_db: UserDao = db_engine.get_user_dao()
 order_db: OrderDao = db_engine.get_order_dao()
 pay_db: PaymentDao = db_engine.get_payment_dao()

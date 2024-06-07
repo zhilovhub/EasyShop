@@ -3,6 +3,7 @@ import os
 from sqlalchemy.ext.asyncio import create_async_engine
 
 from database.models.bot_model import BotDao
+from database.models.adv_model import AdvDao
 from database.models.user_model import UserDao
 from database.models.order_model import OrderDao
 from database.models.product_model import ProductDao
@@ -14,8 +15,8 @@ from database.models.randomizer_model import RandomizerDao
 from database.models.competition_model import CompetitionDao
 from database.models.mailing_media_files import MailingMediaFileDao
 from database.models.custom_bot_user_model import CustomBotUserDao
-from database.models import Base
 from database.models.competition_media_files_model import CompetitionMediaFileDao
+from database.models import Base
 
 from dotenv import load_dotenv
 
@@ -54,6 +55,7 @@ class Database:
             self.engine, self.logger)
         self.randomizer_dao = RandomizerDao(self.engine, self.logger)
         self.channel_dao = ChannelDao(self.engine, self.logger)
+        self.adv_dao = AdvDao(self.engine, self.logger)
 
         self.logger.debug("Database class is initialized")
 
@@ -101,3 +103,6 @@ class Database:
 
     def get_channel_dao(self) -> ChannelDao:
         return self.channel_dao
+
+    def get_adv_dao(self) -> AdvDao:
+        return self.adv_dao
