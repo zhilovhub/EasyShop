@@ -28,7 +28,7 @@ async def start_command_handler(message: Message, state: FSMContext):
 
         if message.text == "/start from_adv":
             adv_logger.info(
-                f"user {user_id}, {message.from_user.username}: tapped to adv again",
+                f"user {user_id}, @{message.from_user.username}: tapped to adv again",
                 extra=extra_params(user_id=user_id)
             )
 
