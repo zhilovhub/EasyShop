@@ -194,8 +194,8 @@ class ProductDao(Dao):
             product_id = (await conn.execute(insert(Product).values(new_product.model_dump()))).inserted_primary_key[0]
 
         self.logger.debug(
-            f"bot_id={new_product.bot_id}: product {new_product.id} is added",
-            extra=extra_params(product_id=new_product.id, bot_id=new_product.bot_id)
+            f"bot_id={new_product.bot_id}: product {product_id} is added",
+            extra=extra_params(product_id=product_id, bot_id=new_product.bot_id)
         )
 
         return product_id
