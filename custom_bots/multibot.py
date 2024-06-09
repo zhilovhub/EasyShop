@@ -25,7 +25,7 @@ from database.models.bot_model import BotNotFound
 from database.models.channel_model import ChannelDao
 from database.models.models import Database
 
-from logs.config import custom_bot_logger, db_logger
+from logs.config import custom_bot_logger, db_logger, extra_params
 
 custom_bot_logger.debug("===== New multibot app session =====")
 
@@ -120,11 +120,28 @@ async def add_bot_handler(request):
         new_bot_data = await new_bot.get_me()
     except TelegramUnauthorizedError:
         return web.Response(status=400, text="Unauthorized telegram token.")
+
     await new_bot.delete_webhook(drop_pending_updates=True)
-    await new_bot.set_webhook(
+    custom_bot_logger.debug(
+        f"bot_id={bot_id}: webhook is deleted",
+        extra=extra_params(bot_id=bot_id)
+    )
+
+    result = await new_bot.set_webhook(
         OTHER_BOTS_URL.format(bot_token=bot.token),
         allowed_updates=["message", "my_chat_member", "callback_query"]
     )
+    if result:
+        custom_bot_logger.debug(
+            f"bot_id={bot_id}: webhook is set",
+            extra=extra_params(bot_id=bot_id)
+        )
+    else:
+        custom_bot_logger.warning(
+            f"bot_id={bot_id}: webhook's setting is failed",
+            extra=extra_params(bot_id=bot_id)
+        )
+
     return web.Response(text=f"Started bot with token ({bot.token}) and username (@{new_bot_data.username})")
 
 
@@ -137,12 +154,20 @@ async def stop_bot_handler(request):
         return web.Response(status=404, text=f"Bot with provided id not found (id: {bot_id}).")
     if not is_bot_token(bot.token):
         return web.Response(status=400, text="Incorrect bot token format.")
+
     try:
         new_bot = Bot(token=bot.token, session=session)
         new_bot_data = await new_bot.get_me()
+
     except TelegramUnauthorizedError:
         return web.Response(status=400, text="Unauthorized telegram token.")
+
     await new_bot.delete_webhook(drop_pending_updates=True)
+    custom_bot_logger.debug(
+        f"bot_id={bot_id}: webhook is deleted",
+        extra=extra_params(bot_id=bot_id)
+    )
+
     return web.Response(text=f"Stopped bot with token ({bot.token}) and username (@{new_bot_data.username})")
 
 
@@ -152,20 +177,6 @@ def is_bot_token(value: str) -> Union[bool, Dict[str, Any]]:
     except TokenValidationError:
         return False
     return True
-
-
-async def get_option(param: str, token: str):
-    try:
-        bot_info = await bot_db.get_bot_by_token(token)
-    except BotNotFound:
-        return await Bot(token).delete_webhook()
-
-    options = bot_info.settings
-    if options is None:
-        return None
-    if param in options:
-        return options[param]
-    return None
 
 
 async def main():
