@@ -449,7 +449,6 @@ async def bot_menu_callback_handler(query: CallbackQuery, state: FSMContext):
                 # handle telegram api error "message not modified"
                 pass
 
-
 @admin_bot_menu_router.message(States.BOT_MENU)
 async def bot_menu_handler(message: Message, state: FSMContext):
     state_data = await state.get_data()
