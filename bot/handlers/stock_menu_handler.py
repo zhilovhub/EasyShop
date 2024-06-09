@@ -4,7 +4,28 @@ from aiogram.fsm.context import FSMContext
 from aiogram.utils.media_group import MediaGroupBuilder
 from bot.states import States
 from bot.keyboards import *
-from bot.main import stock_manager, bot
+from bot.main import stock_manager, bot, bot_db
+from config import FILES_PATH
+import random
+from datetime import datetime
+
+
+@stock_menu_router.message(lambda m: m.text and m.text == STOCK_STATE_BACK_BUTTON)
+async def back_to_menu(message: Message, state: FSMContext):
+    bot_id = (await state.get_data())['bot_id']
+    print(bot_id)
+    await state.set_state(States.BOT_MENU)
+    user_bot_db = await bot_db.get_bot(bot_id)
+    user_bot = Bot(user_bot_db.token)
+    user_bot_data = await user_bot.get_me()
+    msg = await message.answer("Возвращаюсь в меню...", reply_markup=get_reply_bot_menu_keyboard(bot_id))
+    # await msg.delete()
+    await message.answer(
+        MessageTexts.BOT_MENU_MESSAGE.value.format(user_bot_data.username),
+        reply_markup=await get_inline_bot_menu_keyboard(bot_id)
+    )
+    await state.set_state(States.BOT_MENU)
+    await state.set_data({'bot_id': bot_id})
 
 
 @stock_menu_router.callback_query(lambda q: q.data.startswith("stock_menu:import"))
@@ -30,10 +51,13 @@ async def handle_stock_manage_input(message: Message, state: FSMContext):
     if message.content_type != "document":
         return await message.answer("Необходимо отправить xlsx файл с товарами.",
                                     reply_markup=get_stock_back_keyboard())
-    if message.document.file_name.split('.')[-1].lower() != "xlsx":
+    file_extension = message.document.file_name.split('.')[-1].lower()
+    if file_extension not in ("xlsx", ):
         return await message.answer("Файл должен быть в формате xlsx товарами.",
                                     reply_markup=get_stock_back_keyboard())
     try:
-        await stock_manager.import_xlsx(path_to_file="", replace=False)
+        file_path = f"{FILES_PATH}docs/{datetime.now().strftime('%d$m%Y_%H%M%S')}.{file_extension}"
+        await bot.download(message.document.file_id, destination=file_path)
+        await stock_manager.import_xlsx(path_to_file=file_path, replace=False)
     except:
         pass

@@ -379,6 +379,7 @@ async def bot_menu_callback_handler(query: CallbackQuery, state: FSMContext):
             )
         case "stock_manage":
             await state.set_state(States.STOCK_MANAGE)
+            await state.set_data({'bot_id': extra_id})
             await query.message.edit_text(
                 MessageTexts.STOCK_STATE_MESSAGE.value,
                 reply_markup=None
