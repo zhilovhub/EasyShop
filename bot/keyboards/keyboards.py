@@ -144,7 +144,7 @@ def get_inline_bot_goods_menu_keyboard(bot_id: int) -> InlineKeyboardMarkup:
             ],
             [
                 InlineKeyboardButton(text="⬇️ Импорт товаров", callback_data="stock_menu:import" + callback_data),
-                InlineKeyboardButton(text="⬆️ Экспорт товаров", callback_data="stock_menu:import" + callback_data),
+                InlineKeyboardButton(text="⬆️ Экспорт товаров", callback_data="stock_menu:export" + callback_data),
             ],
             [
                 InlineKeyboardButton(
