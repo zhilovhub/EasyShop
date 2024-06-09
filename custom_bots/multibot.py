@@ -1,7 +1,5 @@
 import asyncio
 import ssl
-import sys
-from datetime import datetime
 from os import getenv
 from typing import Any, Dict, Union
 
@@ -21,7 +19,6 @@ from aiohttp import web
 from dotenv import load_dotenv
 
 from bot import config
-from bot.config import LOGS_PATH
 from bot.utils import JsonStore
 from bot.utils.storage import AlchemyStorageAsync
 from database.models.bot_model import BotNotFound
@@ -30,9 +27,11 @@ from database.models.models import Database
 
 from logs.config import custom_bot_logger, db_logger
 
+custom_bot_logger.debug("===== New multibot app session =====")
+
 app = web.Application()
 
-local_app = web.Application()
+local_app = web.Application(logger=custom_bot_logger)
 
 routes = web.RouteTableDef()
 
@@ -69,11 +68,6 @@ channel_db: ChannelDao = db_engine.get_channel_dao()
 
 storage = AlchemyStorageAsync(db_url=getenv("CUSTOM_BOT_STORAGE_DB_URL"),
                               table_name=getenv("CUSTOM_BOT_STORAGE_TABLE_NAME"))
-
-
-# logging.basicConfig(format=u'[%(asctime)s][%(levelname)s] ::: %(filename)s(%(lineno)d) -> %(message)s',
-#                     level="INFO", filename='logs/all.log')
-# logger = logging.getLogger('logger')
 
 PREV_ORDER_MSGS = JsonStore(file_path="prev_orders_msg_id.json", json_store_name="PREV_ORDER_MSGS")
 QUESTION_MESSAGES = JsonStore(
@@ -192,28 +186,39 @@ async def main():
 
     local_app.add_routes(routes)
 
+    custom_bot_logger.debug("[1/3] Routes added, application is being setup")
+
     loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)
 
     ssl_context = ssl.create_default_context(ssl.Purpose.CLIENT_AUTH)
     ssl_context.load_cert_chain(getenv('SSL_CERT_PATH'), getenv('SSL_KEY_PATH'))
 
-    custom_bot_logger.info(f"setting up local api server on {LOCAL_API_SERVER_HOST}:{LOCAL_API_SERVER_PORT}")
-    custom_bot_logger.info(f"setting up webhook server on {WEBHOOK_SERVER_HOST}:{WEBHOOK_SERVER_PORT}")
+    custom_bot_logger.debug("[2/3] SSL certificates are downloaded")
 
     await storage.connect()
 
+    custom_bot_logger.debug(f"[3/3] Setting up local api server on {LOCAL_API_SERVER_HOST}:{LOCAL_API_SERVER_PORT}")
+    custom_bot_logger.info(f"[3/3] Setting up webhook server on {WEBHOOK_SERVER_HOST}:{WEBHOOK_SERVER_PORT}")
+
     await asyncio.gather(
-        web._run_app(local_app, host=LOCAL_API_SERVER_HOST, port=LOCAL_API_SERVER_PORT),
-        web._run_app(app, host=WEBHOOK_SERVER_HOST, port=WEBHOOK_SERVER_PORT, ssl_context=ssl_context)
+        web._run_app(
+            local_app,
+            host=LOCAL_API_SERVER_HOST,
+            port=LOCAL_API_SERVER_PORT,
+            access_log=custom_bot_logger,
+            print=custom_bot_logger.debug
+        ),
+        web._run_app(
+            app,
+            host=WEBHOOK_SERVER_HOST,
+            port=WEBHOOK_SERVER_PORT,
+            ssl_context=ssl_context,
+            access_log=custom_bot_logger,
+            print=custom_bot_logger.debug
+        )
     )
 
 
 if __name__ == "__main__":
-    for log_file in ('all.log', 'err.log'):
-        with open(LOGS_PATH + log_file, 'a') as log:
-            log.write(f'=============================\n'
-                      f'New multibot app session\n'
-                      f'[{datetime.now()}]\n'
-                      f'=============================\n')
     asyncio.run(main())

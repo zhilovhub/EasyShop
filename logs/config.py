@@ -107,34 +107,6 @@ logger_configuration = {
             "level": "DEBUG",
             "formatter": GRAFANA_FORMATTER_NAME,
             "url": GRAFANA_URL + "loki/api/v1/push",
-            "tags": {"type": "general"},
-            "filters": ["loki_filter"],
-            "version": "1"
-        },
-        "loki_db_handler": {
-            "class": "logging_loki.LokiHandler",
-            "level": "DEBUG",
-            "formatter": GRAFANA_FORMATTER_NAME,
-            "url": GRAFANA_URL + "loki/api/v1/push",
-            "tags": {"type": "db"},
-            "filters": ["loki_filter"],
-            "version": "1"
-        },
-        "loki_api_handler": {
-            "class": "logging_loki.LokiHandler",
-            "level": "DEBUG",
-            "formatter": GRAFANA_FORMATTER_NAME,
-            "url": GRAFANA_URL + "loki/api/v1/push",
-            "tags": {"type": "api"},
-            "filters": ["loki_filter"],
-            "version": "1"
-        },
-        "loki_custom_bot_handler": {
-            "class": "logging_loki.LokiHandler",
-            "level": "DEBUG",
-            "formatter": GRAFANA_FORMATTER_NAME,
-            "url": GRAFANA_URL + "loki/api/v1/push",
-            "tags": {"type": "custom_bot"},
             "filters": ["loki_filter"],
             "version": "1"
         },
@@ -155,7 +127,7 @@ logger_configuration = {
                 "console_handler",
                 "file_handler",
                 "file_error_warning_handler",
-                "loki_db_handler"
+                "loki_handler"
             ]
         },
         "api_logger": {
@@ -164,7 +136,7 @@ logger_configuration = {
                 "console_handler",
                 "file_handler",
                 "file_error_warning_handler",
-                "loki_api_handler"
+                "loki_handler"
             ]
         },
         "custom_bot_logger": {
@@ -173,7 +145,7 @@ logger_configuration = {
                 "console_handler",
                 "file_handler",
                 "file_error_warning_handler",
-                "loki_custom_bot_handler"
+                "loki_handler"
             ]
         },
         "adv_logger": {
