@@ -140,10 +140,41 @@ def get_inline_bot_goods_menu_keyboard(bot_id: int) -> InlineKeyboardMarkup:
             ],
             [
                 InlineKeyboardButton(
+                    text="📦 Управление остатками", callback_data="bot_menu:stock_manage" + callback_data),
+            ],
+            [
+                InlineKeyboardButton(text="⬇️ Импорт товаров", callback_data="stock_menu:import" + callback_data),
+                InlineKeyboardButton(text="⬆️ Экспорт товаров", callback_data="stock_menu:import" + callback_data),
+            ],
+            [
+                InlineKeyboardButton(
                     text="🔙 Назад", callback_data="bot_menu:back_to_menu" + callback_data),
             ],
         ],
     )
+
+
+def get_stock_import_options_keyboard(bot_id: int) -> InlineKeyboardMarkup:
+    callback_data = f":{bot_id}"
+
+    return InlineKeyboardMarkup(inline_keyboard=[
+        [
+            InlineKeyboardButton(text="1", callback_data="stock_menu:replace_all" + callback_data),
+            InlineKeyboardButton(text="2", callback_data="stock_menu:replace_duplicates" + callback_data),
+            InlineKeyboardButton(text="3", callback_data="stock_menu:dont_replace_duplicates" + callback_data),
+        ]
+    ])
+
+
+STOCK_STATE_BACK_BUTTON = "🔙 Назад"
+
+
+def get_stock_back_keyboard():
+    return ReplyKeyboardMarkup(keyboard=[
+        [
+            KeyboardButton(text=STOCK_STATE_BACK_BUTTON)
+        ]
+    ], resize_keyboard=True)
 
 
 async def get_competition_menu_keyboard(competition_id: int) -> InlineKeyboardMarkup:
