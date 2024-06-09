@@ -29,8 +29,6 @@ from logs.config import custom_bot_logger, db_logger, extra_params
 
 custom_bot_logger.debug("===== New multibot app session =====")
 
-custom_bot_logger.debug("===== New multibot app session =====")
-
 app = web.Application()
 
 local_app = web.Application(logger=custom_bot_logger)
