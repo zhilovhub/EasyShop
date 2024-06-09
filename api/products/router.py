@@ -11,7 +11,7 @@ from database.models.product_model import (
     ProductFilterWithoutBot,
     FilterNotFound,
     PRODUCT_FILTERS)
-from loader import db_engine, logger, DEBUG, PROJECT_ROOT
+from loader import db_engine, DEBUG, PROJECT_ROOT
 from fastapi import HTTPException, APIRouter, File, UploadFile, Body, Depends, Header, Request, Form
 from typing import Annotated, List, Optional
 from pydantic import BaseModel, Field, field_validator, InstanceOf, model_validator
