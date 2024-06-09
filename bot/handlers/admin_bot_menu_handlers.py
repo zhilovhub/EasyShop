@@ -15,7 +15,7 @@ from aiogram.utils.token import validate_token, TokenValidationError
 from aiogram.types import Message, FSInputFile, CallbackQuery
 from aiogram.fsm.context import FSMContext
 
-from bot.main import bot, user_db, bot_db, product_db, order_db, custom_bot_user_db, QUESTION_MESSAGES
+from bot.main import bot, user_db, bot_db, product_db, order_db, custom_bot_user_db, QUESTION_MESSAGES, stock_manager
 from bot.keyboards import *
 from bot.exceptions import InstanceAlreadyExists
 from bot.states.states import States
@@ -377,6 +377,17 @@ async def bot_menu_callback_handler(query: CallbackQuery, state: FSMContext):
                 MessageTexts.BOT_CHANNEL_MENU_MESSAGE.value.format(channel_username, (await custom_tg_bot.get_me()).username),
                 reply_markup=await get_inline_channel_menu_keyboard(custom_bot.bot_id, int(query.data.split(":")[-1]))
             )
+        case "stock_manage":
+            await state.set_state(States.STOCK_MANAGE)
+            await query.message.edit_text(
+                MessageTexts.STOCK_STATE_MESSAGE.value,
+                reply_markup=None
+            )
+            xlsx_file_path = await stock_manager.export_xlsx(bot_id=extra_id, with_pictures=False)
+            await query.message.answer_document(document=FSInputFile(xlsx_file_path),
+                                                caption="Список товаров на складе",
+                                                reply_markup=get_stock_back_keyboard())
+
 
 
 @admin_bot_menu_router.message(States.BOT_MENU)
