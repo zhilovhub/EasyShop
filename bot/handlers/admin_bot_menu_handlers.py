@@ -383,7 +383,7 @@ async def bot_menu_callback_handler(query: CallbackQuery, state: FSMContext):
                 MessageTexts.STOCK_STATE_MESSAGE.value,
                 reply_markup=None
             )
-            xlsx_file_path = await stock_manager.export_xlsx(bot_id=extra_id, with_pictures=False)
+            xlsx_file_path, photo_path = await stock_manager.export_xlsx(bot_id=extra_id, with_pictures=False)
             await query.message.answer_document(document=FSInputFile(xlsx_file_path),
                                                 caption="Список товаров на складе",
                                                 reply_markup=get_stock_back_keyboard())
