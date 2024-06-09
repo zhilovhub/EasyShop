@@ -25,6 +25,7 @@ from subscription.subscription import Subscription
 from subscription.scheduler import Scheduler
 from bot import config
 from bot.utils import AlchemyStorageAsync, JsonStore, send_start_message_to_admins
+from stoke.stoke import Stoke
 
 from logs.config import logger, db_logger
 
@@ -49,6 +50,8 @@ channel_post_media_file_db: ChannelPostMediaFileDao = db_engine.get_channel_post
 channel_user_db: ChannelUserDao = db_engine.get_channel_user_dao()
 contest_channel_db: ContestChannelDao = db_engine.get_contest_channel_dao()
 contest_user_db: ContestUserDao = db_engine.get_contest_user_dao()
+
+stock_manager = Stoke(db_engine)
 
 _scheduler = Scheduler(config.SCHEDULER_URL, 'postgres', config.TIMEZONE)
 subscription = Subscription(database=db_engine, scheduler=_scheduler)
@@ -92,12 +95,14 @@ async def on_start():
 
 
 if __name__ == "__main__":
-    from bot.handlers import admin_bot_menu_router, channel_menu_router, custom_bot_editing_router, commands_router, subscribe_router
+    from bot.handlers import (admin_bot_menu_router, channel_menu_router, custom_bot_editing_router, commands_router,
+                              subscribe_router, stock_menu_router)
     dp.include_router(commands_router)  # should be first
     dp.include_router(admin_bot_menu_router)
     dp.include_router(channel_menu_router)
     dp.include_router(subscribe_router)
     dp.include_router(custom_bot_editing_router)
+    dp.include_router(stock_menu_router)
 
     for log_file in ('all.log', 'err.log'):
         with open(config.LOGS_PATH + log_file, 'a') as log:
