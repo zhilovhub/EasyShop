@@ -13,7 +13,6 @@ from datetime import datetime
 @stock_menu_router.message(lambda m: m.text and m.text == STOCK_STATE_BACK_BUTTON)
 async def back_to_menu(message: Message, state: FSMContext):
     bot_id = (await state.get_data())['bot_id']
-    print(bot_id)
     await state.set_state(States.BOT_MENU)
     user_bot_db = await bot_db.get_bot(bot_id)
     user_bot = Bot(user_bot_db.token)
@@ -56,8 +55,10 @@ async def handle_stock_manage_input(message: Message, state: FSMContext):
         return await message.answer("Файл должен быть в формате xlsx товарами.",
                                     reply_markup=get_stock_back_keyboard())
     try:
+        bot_id = (await state.get_data())['bot_id']
         file_path = f"{FILES_PATH}docs/{datetime.now().strftime('%d$m%Y_%H%M%S')}.{file_extension}"
         await bot.download(message.document.file_id, destination=file_path)
-        await stock_manager.import_xlsx(path_to_file=file_path, replace=False)
+        await stock_manager.import_xlsx(bot_id=bot_id, path_to_file=file_path, replace=False)
+        await message.answer("Кол-во товаров на складе обновлено.")
     except:
-        pass
+        raise
