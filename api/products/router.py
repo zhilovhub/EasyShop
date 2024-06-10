@@ -189,7 +189,7 @@ async def add_product_api(
         raise HTTPException(status_code=500, detail="Internal error.")
 
     api_logger.debug(
-        f"bot_id={new_product.bot_id}: product_id={product_id} has been added to database",
+        f"bot_id={new_product.bot_id}: product_id={product_id} has been added to database -> {new_product}",
         extra=extra_params(bot_id=new_product.bot_id, product_id=product_id)
     )
 
