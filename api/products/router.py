@@ -23,7 +23,7 @@ from dataclasses import dataclass
 import json
 from io import BytesIO
 
-from logs.config import api_logger
+from logs.config import api_logger, extra_params
 
 PATH = "/api/products"
 router = APIRouter(
@@ -50,6 +50,10 @@ class GetProductsRequest(BaseModel):
 
 @router.get("/get_filters/")
 async def get_filters_api():
+    api_logger.debug(
+        f"/get_filters/ has returned {PRODUCT_FILTERS}"
+    )
+
     return PRODUCT_FILTERS
 
 
@@ -104,16 +108,33 @@ async def get_all_products_api(payload: GetProductsRequest = Depends(
                                                          price_max=payload.price_max,
                                                          filters=filters)
     except FilterNotFound as ex:
+        api_logger.error(
+            f"bot_id={payload.bot_id}: {ex.message}",
+            extra=extra_params(bot_id=payload.bot_id)
+        )
         raise HTTPException(status_code=400, detail=ex.message)
     except SearchWordMustNotBeEmpty:
+        api_logger.error(
+            f"bot_id={payload.bot_id}: SearchWordMustNotBeEmpty with {payload}",
+            extra=extra_params(bot_id=payload.bot_id)
+        )
         raise HTTPException(
             status_code=400,
             detail="'search' filter is provided, search_word must not be empty")
     # except CategoryFilterNotFound as ex:
     #     raise HTTPException(status_code=400, detail=ex.message)
     except Exception:
-        api_logger.error("Error while execute get_all_products db_method", exc_info=True)
+        api_logger.error(
+            f"bot_id={payload.bot_id}: Error while execute get_all_products db_method",
+            extra=extra_params(bot_id=payload.bot_id)
+        )
         raise HTTPException(status_code=500, detail="Internal error.")
+
+    api_logger.info(
+        f"bot_id={payload.bot_id}: has {len(products)} products -> {products}",
+        extra=extra_params(bot_id=payload.bot_id)
+    )
+
     return products
 
 
@@ -121,11 +142,26 @@ async def get_all_products_api(payload: GetProductsRequest = Depends(
 async def get_product_api(bot_id: int, product_id: int) -> ProductSchema:
     try:
         product = await product_db.get_product(product_id)
+
     except ProductNotFound:
+        api_logger.error(
+            f"bot_id={bot_id}: product_id={product_id} is not found in database",
+            extra=extra_params(bot_id=bot_id, product_id=product_id)
+        )
         raise HTTPException(status_code=404, detail="Product not found.")
+
     except Exception:
-        api_logger.error("Error while execute get_product db_method", exc_info=True)
+        api_logger.error(
+            f"bot_id={bot_id}: Error while execute get_product db_method with product_id={product_id}",
+            extra=extra_params(bot_id=bot_id, product_id=product_id)
+        )
         raise HTTPException(status_code=500, detail="Internal error.")
+
+    api_logger.debug(
+        f"bot_id={bot_id}: product_id={product_id} is found database -> {product}",
+        extra=extra_params(bot_id=bot_id, product_id=product_id)
+    )
+
     return product
 
 
@@ -137,11 +173,26 @@ async def add_product_api(
     await check_admin_authorization(new_product.bot_id, authorization_data)
     try:
         product_id = await product_db.add_product(new_product)
+
     except IntegrityError as ex:
+        api_logger.error(
+            f"bot_id={new_product.bot_id}: IntegrityError while execute add_product db_method with product={new_product}",
+            extra=extra_params(bot_id=new_product.bot_id)
+        )
         raise HTTPException(status_code=409, detail=str(ex))
+
     except Exception:
-        api_logger.error("Error while execute add_product db_method", exc_info=True)
+        api_logger.error(
+            f"bot_id={new_product.bot_id}: Error while execute add_product db_method with product={new_product}",
+            extra=extra_params(bot_id=new_product.bot_id)
+        )
         raise HTTPException(status_code=500, detail="Internal error.")
+
+    api_logger.debug(
+        f"bot_id={new_product.bot_id}: product_id={product_id} has been added to database",
+        extra=extra_params(bot_id=new_product.bot_id, product_id=product_id)
+    )
+
     return product_id
 
 
@@ -151,6 +202,7 @@ async def create_file(bot_id: int,
                       files: list[UploadFile],
                       authorization_data: str = Header()):
     await check_admin_authorization(bot_id, authorization_data)
+
     try:
         product = await product_db.get_product(product_id)
         for file in files:
@@ -161,7 +213,12 @@ async def create_file(bot_id: int,
                     15))
             files_path = f"{PROJECT_ROOT}Files/"
             photo_path = f"{bot_id}_{random_string}.{file.filename.split('.')[-1]}"
-            logger.info(f"downloading new file in directory: {photo_path}")
+
+            api_logger.debug(
+                f"bot_id={bot_id}: downloading new file in directory {photo_path} for product_id={product_id}",
+                extra=extra_params(bot_id=bot_id, product_id=product_id)
+            )
+
             with open(files_path + photo_path, "wb") as photo:
                 photo.write(await file.read())
 
@@ -169,11 +226,26 @@ async def create_file(bot_id: int,
                 product.picture = []
             product.picture.append(photo_path)
         await product_db.update_product(product)
+
     except ProductNotFound:
+        api_logger.error(
+            f"bot_id={bot_id}: product_id={product_id} is not found in database",
+            extra=extra_params(bot_id=bot_id, product_id=product_id)
+        )
         return HTTPException(status_code=404,
                              detail="Product with provided id not found")
     except BaseException:
+        api_logger.error(
+            f"bot_id={bot_id}: Error while adding photos to product_id={product_id}",
+            extra=extra_params(bot_id=bot_id, product_id=product_id)
+        )
         raise
+
+    api_logger.debug(
+        f"bot_id={bot_id}: {len(files)} photos added to product_id={product_id}",
+        extra=extra_params(bot_id=bot_id, product_id=product_id)
+    )
+
     return f"{len(files)} photo added to product"
 
 
@@ -182,11 +254,21 @@ async def edit_product_api(
         product: ProductSchema,
         authorization_data: str = Header()) -> bool:
     await check_admin_authorization(product.bot_id, authorization_data)
+
     try:
         await product_db.update_product(product)
     except Exception:
-        api_logger.error("Error while execute update_product db_method", exc_info=True)
+        api_logger.error(
+            f"bot_id={product.bot_id}: Error while execute update_product db_method with product={product}",
+            extra=extra_params(bot_id=product.bot_id, product_id=product.id)
+        )
         raise HTTPException(status_code=500, detail="Internal error.")
+
+    api_logger.debug(
+        f"bot_id={product.bot_id}: updated product={product}",
+        extra=extra_params(bot_id=product.bot_id, product_id=product.id)
+    )
+
     return True
 
 
@@ -196,13 +278,27 @@ async def delete_product_api(
         product_id: int,
         authorization_data: str = Header()) -> str:
     await check_admin_authorization(bot_id, authorization_data)
+
     try:
         await product_db.delete_product(product_id)
     except ProductNotFound:
+        api_logger.error(
+            f"bot_id={bot_id}: product_id={product_id} is not found in database",
+            extra=extra_params(bot_id=bot_id, product_id=product_id)
+        )
         raise HTTPException(status_code=404, detail="Product not found.")
     except Exception:
-        api_logger.error("Error while execute delete_product db_method", exc_info=True)
+        api_logger.error(
+            f"bot_id={bot_id}: Error while execute delete_product db_method with product_id={product_id}",
+            extra=extra_params(bot_id=bot_id, product_id=product_id)
+        )
         raise HTTPException(status_code=500, detail="Internal error.")
+
+    api_logger.debug(
+        f"bot_id={bot_id}: product_id={product_id} is delete from database",
+        extra=extra_params(bot_id=bot_id, product_id=product_id)
+    )
+
     return "product deleted"
 
 
