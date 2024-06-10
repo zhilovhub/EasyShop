@@ -70,7 +70,8 @@ channel_db: ChannelDao = db_engine.get_channel_dao()
 storage = AlchemyStorageAsync(db_url=getenv("CUSTOM_BOT_STORAGE_DB_URL"),
                               table_name=getenv("CUSTOM_BOT_STORAGE_TABLE_NAME"))
 
-PREV_ORDER_MSGS = JsonStore(file_path="prev_orders_msg_id.json", json_store_name="PREV_ORDER_MSGS")
+PREV_ORDER_MSGS = JsonStore(
+    file_path="prev_orders_msg_id.json", json_store_name="PREV_ORDER_MSGS")
 QUESTION_MESSAGES = JsonStore(
     file_path=config.RESOURCES_PATH.format("question_messages.json"),
     json_store_name="QUESTION_MESSAGES"
@@ -211,8 +212,10 @@ async def main():
 
     await storage.connect()
 
-    custom_bot_logger.debug(f"[3/3] Setting up local api server on {LOCAL_API_SERVER_HOST}:{LOCAL_API_SERVER_PORT}")
-    custom_bot_logger.info(f"[3/3] Setting up webhook server on {WEBHOOK_SERVER_HOST}:{WEBHOOK_SERVER_PORT}")
+    custom_bot_logger.debug(
+        f"[3/3] Setting up local api server on {LOCAL_API_SERVER_HOST}:{LOCAL_API_SERVER_PORT}")
+    custom_bot_logger.info(
+        f"[3/3] Setting up webhook server on {WEBHOOK_SERVER_HOST}:{WEBHOOK_SERVER_PORT}")
 
     await asyncio.gather(
         web._run_app(
