@@ -19,7 +19,9 @@ class MainLogMiddleware(BaseMiddleware):
             handler: Callable[[TelegramObject, Dict[str, Any]], Awaitable[Any]],
             event: TelegramObject,
             data: Dict[str, Any]) -> Any:
-        print(1)
+        print(data)
+
+        # TODO cache by message_id
 
         try:
             user: User = data["event_from_user"]
