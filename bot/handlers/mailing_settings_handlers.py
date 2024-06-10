@@ -379,6 +379,7 @@ async def editing_mailing_delay_date_handler(message: Message, state: FSMContext
                 ),
                 reply_markup=await get_inline_bot_mailing_menu_keyboard(bot_id)
             )
+            await state.set_state(States.BOT_MENU)
         else:
             try:
                 datetime_obj = datetime.strptime(
@@ -433,6 +434,7 @@ async def editing_mailing_message_handler(message: Message, state: FSMContext):
                 ),
                 reply_markup=await get_inline_bot_mailing_menu_keyboard(bot_id)
             )
+            await state.set_state(States.BOT_MENU)
         else:
             mailing.description = message.html_text
             media_files = await mailing_media_file_db.get_all_mailing_media_files(mailing_id)
@@ -492,6 +494,7 @@ async def editing_mailing_button_text_handler(message: Message, state: FSMContex
                 ),
                 reply_markup=await get_inline_bot_mailing_menu_keyboard(bot_id)
             )
+            await state.set_state(States.BOT_MENU)
         else:
             mailing.button_text = message.text
             media_files = await mailing_media_file_db.get_all_mailing_media_files(mailing_id)

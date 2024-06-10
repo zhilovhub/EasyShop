@@ -31,6 +31,7 @@ from custom_bots.multibot import storage as custom_bot_storage
 from database.models.bot_model import BotSchemaWithoutId
 from database.models.order_model import OrderSchema, OrderNotFound
 from database.models.product_model import ProductWithoutId
+from database.models.channel_model import ChannelNotFound
 
 
 @channel_menu_router.callback_query(lambda query: query.data.startswith("channel_menu"))
@@ -44,9 +45,30 @@ async def channel_menu_callback_handler(query: CallbackQuery, state: FSMContext)
     custom_bot = await bot_db.get_bot(bot_id)
     custom_tg_bot = Bot(custom_bot.token)
     custom_bot_username = (await custom_tg_bot.get_me()).username
+    try:
+        await channel_db.get_channel(channel_id)
+    except ChannelNotFound:
+        await query.answer("Канал не найден", show_alert=True)
+        await query.message.delete()
+        return
+
     channel_username = (await custom_tg_bot.get_chat(channel_id)).username
 
     match action:
+        case "leave_channel":
+            leave_result = await custom_tg_bot.leave_chat(chat_id=channel_id)
+            if leave_result:
+                await query.message.answer(f"Вышел из канала {channel_username}.")
+                await query.message.answer(
+                    MessageTexts.BOT_MENU_MESSAGE.value.format((await Bot(custom_bot.token).get_me()).username),
+                    reply_markup=await get_inline_bot_menu_keyboard(bot_id)
+                )
+            else:
+                await query.message.answer(f"Произошла ошибка при выходе из канала {channel_username}")
+                await query.message.answer(
+                    MessageTexts.BOT_MENU_MESSAGE.value.format((await Bot(custom_bot.token).get_me()).username),
+                    reply_markup=await get_inline_bot_menu_keyboard(bot_id)
+                )
         case "create_competition":
             competition_id = await competition.create_competition(
                 channel_id=channel_id,
@@ -62,13 +84,15 @@ async def channel_menu_callback_handler(query: CallbackQuery, state: FSMContext)
             )
         case "competitions_list":
             await query.message.edit_text(
-                text=MessageTexts.BOT_COMPETITIONS_LIST_MESSAGE.value.format(custom_bot_username),
+                text=MessageTexts.BOT_COMPETITIONS_LIST_MESSAGE.value.format(
+                    custom_bot_username),
                 reply_markup=await get_competitions_list_keyboard(bot_id, channel_id)
             )
 
         case "back_to_channels_list":
             await query.message.edit_text(
-                text=MessageTexts.BOT_CHANNELS_LIST_MESSAGE.value.format(custom_bot_username),
+                text=MessageTexts.BOT_CHANNELS_LIST_MESSAGE.value.format(
+                    custom_bot_username),
                 reply_markup=await get_inline_bot_channels_list_keyboard(bot_id)
             )
 
@@ -99,7 +123,8 @@ async def competitions_list_callback_handler(query: CallbackQuery, state: FSMCon
             )
         case "back_to_channel_menu":
             await query.message.edit_text(
-                text=MessageTexts.BOT_CHANNEL_MENU_MESSAGE.value.format(channel_username, custom_bot_username),
+                text=MessageTexts.BOT_CHANNEL_MENU_MESSAGE.value.format(
+                    channel_username, custom_bot_username),
                 reply_markup=await get_inline_channel_menu_keyboard(bot_id, channel_id)
             )
 
@@ -165,7 +190,8 @@ async def competition_menu_callback_handler(query: CallbackQuery, state: FSMCont
 
         case "back_to_competitions_list":
             await query.message.edit_text(
-                text=MessageTexts.BOT_COMPETITIONS_LIST_MESSAGE.value.format(custom_bot_username),
+                text=MessageTexts.BOT_COMPETITIONS_LIST_MESSAGE.value.format(
+                    custom_bot_username),
                 reply_markup=await get_competitions_list_keyboard(bot_id, channel_id)
             )
 
@@ -189,7 +215,8 @@ async def editing_competition_name_handler(message: Message, state: FSMContext):
         if message_text == "🔙 Назад":
             await message.answer(
                 "Возвращаемся в меню...",
-                reply_markup=get_reply_bot_menu_keyboard(bot_id=state_data["bot_id"])
+                reply_markup=get_reply_bot_menu_keyboard(
+                    bot_id=state_data["bot_id"])
             )
             await message.answer(
                 text=MessageTexts.BOT_COMPETITION_MENU_MESSAGE.value.format(
@@ -238,7 +265,8 @@ async def editing_competition_description_handler(message: Message, state: FSMCo
         if message_text == "🔙 Назад":
             await message.answer(
                 "Возвращаемся в меню...",
-                reply_markup=get_reply_bot_menu_keyboard(bot_id=state_data["bot_id"])
+                reply_markup=get_reply_bot_menu_keyboard(
+                    bot_id=state_data["bot_id"])
             )
             await message.answer(
                 text=MessageTexts.BOT_COMPETITION_MENU_MESSAGE.value.format(
@@ -254,7 +282,8 @@ async def editing_competition_description_handler(message: Message, state: FSMCo
 
             await message.answer(
                 "Предпросмотр конкурса 👇",
-                reply_markup=get_reply_bot_menu_keyboard(bot_id=state_data["bot_id"])
+                reply_markup=get_reply_bot_menu_keyboard(
+                    bot_id=state_data["bot_id"])
             )
             await send_demonstration(
                 competition_schema,
@@ -297,7 +326,8 @@ async def editing_competition_media_files_handler(message: Message, state: FSMCo
     if message.text == "✅ Готово":
         await message.answer(
             "Возвращаемся в меню...",
-            reply_markup=get_reply_bot_menu_keyboard(bot_id=state_data["bot_id"])
+            reply_markup=get_reply_bot_menu_keyboard(
+                bot_id=state_data["bot_id"])
         )
         await message.answer(
             text=MessageTexts.BOT_COMPETITION_MENU_MESSAGE.value.format(
@@ -361,7 +391,8 @@ async def send_demonstration(
             elif media_file.media_type == "audio":
                 media_group.append(InputMediaAudio(media=media_file.file_name))
             elif media_file.media_type == "document":
-                media_group.append(InputMediaDocument(media=media_file.file_name))
+                media_group.append(InputMediaDocument(
+                    media=media_file.file_name))
 
         media_group[0].caption = competition_schema.description
 

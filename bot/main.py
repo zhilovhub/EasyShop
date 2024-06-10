@@ -86,7 +86,6 @@ if __name__ == "__main__":
     dp.include_router(subscribe_router)
     dp.include_router(custom_bot_editing_router)
 
-
     for log_file in ('all.log', 'err.log'):
         with open(config.LOGS_PATH + log_file, 'a') as log:
             log.write(f'=============================\n'
