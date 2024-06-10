@@ -107,6 +107,7 @@ logger_configuration = {
             "level": "DEBUG",
             "formatter": GRAFANA_FORMATTER_NAME,
             "url": GRAFANA_URL + "loki/api/v1/push",
+            "tags": {"from_local": "Arsen"},
             "filters": ["loki_filter"],
             "version": "1"
         },

@@ -231,6 +231,10 @@ async def main():
             ssl_context=ssl_context,
             access_log=custom_bot_logger,
             print=custom_bot_logger.debug
+        ),
+        Bot(MAIN_TELEGRAM_TOKEN).send_message(
+            chat_id=1128894056,
+            text=f"version 1.0 has been started"
         )
     )
 
