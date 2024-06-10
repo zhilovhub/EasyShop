@@ -48,7 +48,7 @@ class LokiFilter(logging.Filter):
                 record.tags["payment_id"] = record.payment_id
             if hasattr(record, "adv_id"):
                 record.tags["adv_id"] = record.adv_id
-            if hasattr(record, "bot_token"):
+            if hasattr(record, "bot_token") or "bot_token" in record.tags:
                 record.msg = record.msg.replace(record.bot_token[5:-1], "*" * len(record.bot_token[5:-1]))  # hide the token from gr
 
         return LOG_TO_GRAFANA
