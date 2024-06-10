@@ -28,8 +28,6 @@ from database.models.models import Database
 
 from logs.config import custom_bot_logger, db_logger, extra_params
 
-custom_bot_logger.debug("===== New multibot app session =====")
-
 app = web.Application()
 
 local_app = web.Application(logger=custom_bot_logger)
@@ -234,10 +232,11 @@ async def main():
         ),
         Bot(MAIN_TELEGRAM_TOKEN).send_message(
             chat_id=1128894056,
-            text=f"version 1.0 has been started"
+            text=f"version 2.0 has been started"
         )
     )
 
 
 if __name__ == "__main__":
+    custom_bot_logger.debug("===== New multibot app session =====\n\n\n\n")
     asyncio.run(main())
