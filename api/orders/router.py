@@ -7,7 +7,7 @@ import random
 import string
 from products.router import check_admin_authorization
 
-from logs.config import api_logger
+from logs.config import api_logger, extra_params
 
 PATH = "/api/orders"
 router = APIRouter(
@@ -24,11 +24,17 @@ async def generate_order_id_api() -> str:
     date = datetime.now().strftime("%d%m%y")
     random_string = ''.join(random.sample(string.digits + string.ascii_letters, 5))
     order_id = date + random_string
+
     try:
         await db.get_order(order_id)
     except OrderNotFound:
+        api_logger.debug(
+            f"order_id={random_string}: order_id has been generated",
+            extra=extra_params(order_id=random_string)
+        )
         return random_string
-    api_logger.info("generated order_id already exist, regenerating...")
+
+    api_logger.debug("generated order_id already exist, regenerating...")
     await generate_order_id_api()
 
 
@@ -66,12 +72,19 @@ async def add_order_api(new_order: OrderSchema = Depends(), authorization_hash: 
     await check_admin_authorization(new_order.bot_id, authorization_hash)
     try:
         new_order.ordered_at = new_order.ordered_at.replace(tzinfo=None)
-        order = await db.add_order(new_order)
+        await db.add_order(new_order)
+        api_logger.error(
+            f"bot_id={new_order.bot_id}: order {new_order} has been added",
+            extra=extra_params(bot_id=new_order.bot_id, order_id=new_order.id)
+        )
     # except ValidationError as ex:
     #     logger.warning("incorrect data in request", exc_info=True)
     #     raise HTTPException(status_code=400, detail=f"Incorrect input data.\n{str(ex)}")
     except Exception:
-        api_logger.error("Error while execute add_order db_method", exc_info=True)
+        api_logger.error(
+            f"Error while execute add_order db_method with {new_order}",
+            extra=extra_params(bot_id=new_order.bot_id, order_id=new_order.id)
+        )
         raise HTTPException(status_code=500, detail="Internal error.")
     return "success"
 #
