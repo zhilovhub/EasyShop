@@ -228,10 +228,6 @@ async def get_inline_channel_menu_keyboard(bot_id: int, channel_id: int) -> Inli
             ],
             [
                 InlineKeyboardButton(
-                    text="Создать запись", callback_data="channel_menu:create_post" + callback_metadata)
-            ],
-            [
-                InlineKeyboardButton(
                     text="🔙 Назад", callback_data="channel_menu:back_to_channels_list" + callback_metadata),
                 InlineKeyboardButton(
                     text="🛑 Выйти из канала", callback_data="channel_menu:leave_channel" + callback_metadata)
