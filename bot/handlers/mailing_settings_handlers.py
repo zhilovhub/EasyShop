@@ -238,7 +238,7 @@ async def mailing_menu_callback_handler(query: CallbackQuery, state: FSMContext)
                 )
         case "delete_mailing":
             await query.message.edit_text(
-                text=MessageTexts.BOT_MAILING_MENU_WHILE_RUNNING.value.format(
+                text=MessageTexts.BOT_MAILINGS_MENU_ACCEPT_DELETING_MESSAGE.value.format(
                     custom_bot_username),
                 reply_markup=await get_inline_bot_mailing_menu_accept_deleting_keyboard(bot_id, mailing_id)
             )
@@ -552,6 +552,7 @@ async def editing_mailing_button_url_handler(message: Message, state: FSMContext
                 ),
                 reply_markup=await get_inline_bot_mailing_menu_keyboard(bot_id)
             )
+            await state.set_state(States.BOT_MENU)
         else:
             pattern = r"(?i)\b((?:https?://|www\d{0,3}[.]|[a-z0-9.\-]+[.][a-z]{2,4}/)(?:[^\s()<>]+|\(([^\s()<>]+|(\([^\s()<>]+\)))*\))+(?:\(([^\s()<>]+|(\([^\s()<>]+\)))*\)|[^\s`!()\[\]{};:'\".,<>?«»“”‘’]))"
             if not re.fullmatch(pattern, message.text):
