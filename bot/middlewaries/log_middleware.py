@@ -19,33 +19,33 @@ class MainLogMiddleware(BaseMiddleware):
             handler: Callable[[TelegramObject, Dict[str, Any]], Awaitable[Any]],
             event: TelegramObject,
             data: Dict[str, Any]) -> Any:
-        print(data)
-
-        # TODO cache by message_id
 
         try:
-            user: User = data["event_from_user"]
-            state: FSMContext = data["state"]
-            raw_state: FSMContext = data["raw_state"]
+            if not "already_was" in data:
+                data["already_was"] = True
 
-            state_data = await state.get_data()
-            callback_info = f"New event: user_id={user.id}, @{user.username}, {raw_state}, {state_data}"
+                user: User = data["event_from_user"]
+                state: FSMContext = data["state"]
+                raw_state: FSMContext = data["raw_state"]
 
-            if isinstance(event, Message):
-                logger.info(
-                    f"{callback_info} has written {event.text}",
-                    extra=extra_params(user_id=user.id)
-                )
-            elif isinstance(event, CallbackQuery):
-                logger.info(
-                    f"{callback_info} has sent callback_data {event.data}",
-                    extra=extra_params(user_id=user.id)
-                )
-            else:
-                logger.warning(
-                    f"{callback_info} has sent unexpected event {event}",
-                    extra=extra_params(user_id=user.id)
-                )
+                state_data = await state.get_data()
+                callback_info = f"New event: user_id={user.id}, @{user.username}, {raw_state}, {state_data}"
+
+                if isinstance(event, Message):
+                    logger.info(
+                        f"{callback_info} has written {event.text}",
+                        extra=extra_params(user_id=user.id)
+                    )
+                elif isinstance(event, CallbackQuery):
+                    logger.info(
+                        f"{callback_info} has sent callback_data {event.data}",
+                        extra=extra_params(user_id=user.id)
+                    )
+                else:
+                    logger.warning(
+                        f"{callback_info} has sent unexpected event {event}",
+                        extra=extra_params(user_id=user.id)
+                    )
         except Exception as e:
             logger.error(
                 "New event: logger error",
