@@ -1,12 +1,13 @@
 from aiogram.fsm.context import FSMContext
 from aiogram.types import Message
 
-from bot import config
 from bot.keyboards import free_trial_start_kb, create_continue_subscription_kb
 from bot.main import subscription
 from bot.states import States
 from bot.utils import MessageTexts
 from database.models.user_model import UserStatusValues
+
+from logs.config import logger
 
 
 async def check_subscription(message: Message, state: FSMContext = None):
@@ -15,7 +16,7 @@ async def check_subscription(message: Message, state: FSMContext = None):
     try:
         bot_id = (await state.get_data())["bot_id"]
     except (KeyError, AttributeError):
-        config.logger.warning(f"check_sub_cmd: bot_id of user {user_id} not found, setting it to None")
+        logger.warning(f"check_sub_cmd: bot_id of user {user_id} not found, setting it to None")
         bot_id = None
     kb = create_continue_subscription_kb(bot_id=bot_id)
 

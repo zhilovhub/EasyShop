@@ -15,6 +15,7 @@ from bot.exceptions import InvalidParameterFormat
 
 from database.models import Base
 from database.models.dao import Dao
+from logs.config import extra_params
 
 from .bot_model import Bot
 from .category_model import Category
@@ -87,7 +88,7 @@ class Product(Base):
     article = Column(String)
     price = Column(Integer, nullable=False)
     count = Column(BigInteger, nullable=False, default=0)
-    picture = Column(String)
+    picture = Column(ARRAY(String))
     extra_options = Column(JSON, default="{}")
 
 
@@ -97,13 +98,13 @@ class ProductWithoutId(BaseModel):
     bot_id: int = Field(frozen=True)
 
     name: str = Field(max_length=55)
-    category: list[int] | None
+    category: list[int] | None = None
     description: str = Field(max_length=255)
-    article: Optional[str | None]
+    article: Optional[str | None] = None
     price: int
     count: int
-    picture: Optional[str | None]
-    extra_options: Optional[dict | None] = {}
+    picture: Optional[list[str] | None] = None
+    extra_options: Optional[dict | None] = None
 
 
 class ProductSchema(ProductWithoutId):
@@ -158,7 +159,11 @@ class ProductDao(Dao):
         for product in raw_res:
             res.append(ProductSchema.model_validate(product))
 
-        self.logger.info(f"get_all_products method with bot_id: {bot_id} success.")
+        self.logger.debug(
+            f"bot_id={bot_id}: has {len(res)} products",
+            extra=extra_params(bot_id=bot_id)
+        )
+
         return res
 
     @validate_call(validate_return=True)
@@ -171,8 +176,14 @@ class ProductDao(Dao):
         if not raw_res:
             raise ProductNotFound
 
-        self.logger.info(f"get_product method with product_id: {product_id} success.")
-        return ProductSchema.model_validate(raw_res)
+        res = ProductSchema.model_validate(raw_res)
+
+        self.logger.debug(
+            f"bot_id={res.bot_id}: product {res.id} is found",
+            extra=extra_params(product_id=res.id, bot_id=res.bot_id)
+        )
+
+        return res
 
     @validate_call
     async def add_product(self, new_product: ProductWithoutId) -> int:
@@ -182,7 +193,11 @@ class ProductDao(Dao):
         async with self.engine.begin() as conn:
             product_id = (await conn.execute(insert(Product).values(new_product.model_dump()))).inserted_primary_key[0]
 
-        self.logger.info(f"successfully add product with id {product_id} to db")
+        self.logger.debug(
+            f"bot_id={new_product.bot_id}: product {product_id} is added",
+            extra=extra_params(product_id=product_id, bot_id=new_product.bot_id)
+        )
+
         return product_id
 
     @validate_call
@@ -198,7 +213,11 @@ class ProductDao(Dao):
             )
             product_id = (await conn.execute(upsert_query)).inserted_primary_key[0]
 
-        self.logger.info(f"successfully upserted product with id {product_id} to db")
+        self.logger.debug(
+            f"bot_id={new_product.bot_id}: product {product_id} is upserted",
+            extra=extra_params(product_id=product_id, bot_id=new_product.bot_id)
+        )
+
         return product_id
 
     @validate_call
@@ -208,16 +227,28 @@ class ProductDao(Dao):
             await conn.execute(
                 update(Product).where(Product.id == updated_product.id).values(updated_product.model_dump())
             )
-        self.logger.info(f"successfully update product with id {updated_product.id} at db.")
+
+        self.logger.debug(
+            f"bot_id={updated_product.bot_id}: product {updated_product.id} is updated",
+            extra=extra_params(product_id=updated_product.id, bot_id=updated_product.bot_id)
+        )
 
     @validate_call
     async def delete_product(self, product_id: int):
         async with self.engine.begin() as conn:
             await conn.execute(delete(Product).where(Product.id == product_id))
-        self.logger.info(f"deleted product with id {product_id}")
+
+        self.logger.debug(
+            f"product_id={product_id}: product {product_id} is deleted",
+            extra=extra_params(product_id=product_id)
+        )
 
     @validate_call
     async def delete_all_products(self, bot_id: int):
         async with self.engine.begin() as conn:
             await conn.execute(delete(Product).where(Product.bot_id == bot_id))
-        self.logger.info(f"deleted all products with bot_id {bot_id}")
+
+        self.logger.debug(
+            f"bot_id={bot_id}: all products are deleted",
+            extra=extra_params(bot_id=bot_id)
+        )

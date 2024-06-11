@@ -58,7 +58,6 @@ export default {
         this.$store.state.price_max = this.toPrice;
       }
       this.chosenBasedFilter === 'По убыванию' ? this.$store.state.reverse_order = true : this.$store.state.reverse_order = false;
-      this.isMounted = false;
       setTimeout(() => {
         this.isMounted = false;
         this.$emit("close");
@@ -132,7 +131,7 @@ export default {
   width: 100vw;
   height: 100vh;
   background-color: var(--app-background-color);
-  transition: opacity 0.5s ease;;
+  transition: opacity 0.5s ease;
   .block {
     padding: 20px 5%;
     .span-block {

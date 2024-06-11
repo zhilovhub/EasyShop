@@ -8,6 +8,9 @@ from categories.router import router as category_router
 from products.router import router as product_router
 from files.router import router as files_router
 
+from logs.config import logger_configuration
+from loader import LOGS_PATH
+
 tags_metadata = [
     {
         "name": "products",
@@ -54,7 +57,6 @@ async def read_root():
 # Start uvicorn from python
 if __name__ == "__main__":
     import uvicorn
-    from loader import LOGGING_SETUP
 
     try:
         os.system("mkdir logs")
@@ -62,20 +64,20 @@ if __name__ == "__main__":
         pass
 
     for log_file in ('all.log', 'err.log'):
-        with open(f'logs/{log_file}', 'a') as log:
+        with open(LOGS_PATH + log_file, 'a') as log:
             log.write(f'=============================\n'
-                      f'New app session\n'
+                      f'New api session\n'
                       f'[{datetime.datetime.now()}]\n'
                       f'=============================\n')
 
     protocol = os.getenv("API_PROTOCOL")
     if protocol == "http":
         uvicorn.run("main:app", host=os.getenv("API_HOST"), port=int(os.getenv("API_PORT")), log_level="info",
-                    log_config=LOGGING_SETUP)
+                    log_config=logger_configuration)
     elif protocol == "https":
         uvicorn.run("main:app", host=os.getenv("API_HOST"), port=int(os.getenv("API_PORT")), log_level="info",
                     ssl_keyfile=os.getenv("SSL_KEY_PATH"), ssl_certfile=os.getenv("SSL_CERT_PATH"),
-                    log_config=LOGGING_SETUP)
+                    log_config=logger_configuration)
 
 # Start uvicorn from cli (no logs)
 if __name__ == "api.main":

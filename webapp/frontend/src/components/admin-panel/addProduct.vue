@@ -199,7 +199,7 @@ export default {
 <template>
 <div class="wrapper" :style="{ opacity: isMounted ? 1 : 0 }">
   <div class="header">
-    <span @click="addProduct">Добавление товара</span>
+    <span>Добавление товара</span>
   </div>
   <div class="main">
     <div class="card">

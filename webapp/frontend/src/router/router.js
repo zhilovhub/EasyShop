@@ -4,6 +4,8 @@ const PRODUCTS_PAGE = 'products-page'
 const PRODUCT_CARD = 'product-card'
 const SHOPPING_CART = 'shopping-cart'
 const ORDER_DETAILS = 'order-details'
+const ADMIN_PANEL = 'admin-panel'
+const ADDING_PRODUCT = 'adding-product'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -55,9 +57,9 @@ const router = createRouter({
     },
     {
       path: '/admin-panel',
-      name: 'admin-panel',
+      name: ADMIN_PANEL,
       component: () => import('@/components/admin-panel/adminPanel.vue')
-    }
+    },
   ]
 });
-export default { router, PRODUCTS_PAGE, PRODUCT_CARD, SHOPPING_CART, ORDER_DETAILS }
+export default { router, PRODUCTS_PAGE, PRODUCT_CARD, SHOPPING_CART, ORDER_DETAILS, ADMIN_PANEL}

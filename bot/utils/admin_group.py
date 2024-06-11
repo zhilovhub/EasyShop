@@ -2,7 +2,9 @@ from aiogram.enums import ParseMode
 from aiogram.types import Message, User
 from aiogram import Bot
 
-from bot.main import bot, config, logger
+from bot.main import bot, config
+
+from logs.config import logger
 
 from enum import Enum
 

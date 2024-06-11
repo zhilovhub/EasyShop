@@ -9,3 +9,6 @@ apscheduler
 openpyxl
 psycopg2-binary
 APScheduler
+
+sqlalchemy_filters
+python-logging-loki

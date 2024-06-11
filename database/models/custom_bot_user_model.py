@@ -2,12 +2,13 @@ from sqlalchemy import BigInteger, Column, String, ForeignKey, insert, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncEngine
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ConfigDict
 
 from bot.exceptions import InvalidParameterFormat, InstanceAlreadyExists
 from database.models import Base
 from database.models.bot_model import Bot
 from database.models.dao import Dao
+from logs.config import extra_params
 
 
 class CustomBotUserNotFound(Exception):
@@ -23,6 +24,8 @@ class CustomBotUser(Base):
 
 
 class CustomBotUserSchema(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     bot_id: int
     user_id: int
 
@@ -42,17 +45,28 @@ class CustomBotUserDao(Dao):
         if res is None:
             raise CustomBotUserNotFound(f"user with user_id = {user_id} of bot_id = {bot_id} not found in database")
 
-        self.logger.info(f"get_custom_bot_user method for bot_id {bot_id} and user_id {user_id} success")
+        self.logger.debug(
+            f"bot_id={bot_id}: user {user_id} is found",
+            extra=extra_params(user_id=user_id, bot_id=bot_id)
+        )
 
         return res
 
-    async def get_custom_bot_users(self, bot_id: int) -> list[int]:  # TODO write tests
+    async def get_custom_bot_users(self, bot_id: int) -> list[CustomBotUserSchema]:  # TODO write tests
         async with self.engine.begin() as conn:
             raw_res = await conn.execute(select(CustomBotUser).where(CustomBotUser.bot_id == bot_id))
         await self.engine.dispose()
 
-        users = raw_res.fetchall()
-        self.logger.info(f"get_custom_bot_users method for bot_id {bot_id} success")
+        users = []
+        for raw in raw_res.fetchall():
+            users.append(
+                CustomBotUserSchema.model_validate(raw)
+            )
+
+        self.logger.debug(
+            f"bot_id={bot_id}: has {len(users)} users",
+            extra=extra_params(bot_id=bot_id)
+        )
 
         return users
 
@@ -68,4 +82,7 @@ class CustomBotUserDao(Dao):
                                             f"bot_id = {bot_id} does not exist")
         await self.engine.dispose()
 
-        self.logger.info(f"successfully add custom_user with bot_id {bot_id} and user_id {user_id} to db")
+        self.logger.debug(
+            f"bot_id={bot_id}: user {user_id} is added",
+            extra=extra_params(user_id=user_id, bot_id=bot_id)
+        )

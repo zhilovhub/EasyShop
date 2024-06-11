@@ -9,7 +9,8 @@ from sqlalchemy import select, insert, delete, update
 from sqlalchemy.ext.asyncio import create_async_engine
 
 from bot import config
-from bot.config import logger
+
+from logs.config import logger
 
 
 class AlchemyStorageAsync(BaseStorage, ABC):
@@ -25,7 +26,7 @@ class AlchemyStorageAsync(BaseStorage, ABC):
             Column("state", String(55)),
             Column("data", JSON),
         )
-        self.engine = create_async_engine(f"{db_url}", echo=config.DEBUG)
+        self.engine = create_async_engine(f"{db_url}")
 
     async def connect(self) -> None:
         async with self.engine.begin() as conn:

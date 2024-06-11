@@ -3,15 +3,12 @@ import random
 from typing import Callable
 from datetime import datetime
 
-import logging.config
-
 from bot import config
 
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.jobstores.sqlalchemy import SQLAlchemyJobStore
 
-logging.config.dictConfig(config.LOGGING_SETUP)
-logger = logging.getLogger('logger')
+from logs.config import logger
 
 
 def singleton(class_):

@@ -16,7 +16,6 @@ from aiogram.types import Message, FSInputFile, CallbackQuery
 from aiogram.fsm.context import FSMContext
 
 from bot.main import bot, user_db, bot_db, product_db, order_db, custom_bot_user_db, QUESTION_MESSAGES
-from bot.config import logger
 from bot.keyboards import *
 from bot.exceptions import InstanceAlreadyExists
 from bot.states.states import States
@@ -24,9 +23,12 @@ from bot.handlers.routers import admin_bot_menu_router
 from bot.utils.custom_bot_api import start_custom_bot, stop_custom_bot
 from sqlalchemy.exc import IntegrityError
 
+from logs.config import logger
+
 from custom_bots.multibot import storage as custom_bot_storage
 
 from database.models.bot_model import BotSchemaWithoutId
+from database.models.mailing_model import MailingSchemaWithoutId
 from database.models.order_model import OrderSchema, OrderNotFound, OrderItem
 from database.models.product_model import ProductWithoutId
 
@@ -225,7 +227,7 @@ async def waiting_for_the_token_handler(message: Message, state: FSMContext):
     )
     await message.answer(
         MessageTexts.BOT_MENU_MESSAGE.value.format(bot_username),
-        reply_markup=get_inline_bot_menu_keyboard(user_bot.status)
+        reply_markup=await get_inline_bot_menu_keyboard(user_bot.bot_id)
     )
     await state.set_state(States.BOT_MENU)
     await state.set_data({"bot_id": bot_id})
@@ -271,9 +273,10 @@ async def bot_menu_photo_handler(message: Message, state: FSMContext):
 @admin_bot_menu_router.callback_query(lambda query: query.data.startswith("bot_menu"))
 async def bot_menu_callback_handler(query: CallbackQuery, state: FSMContext):
     state_data = await state.get_data()
-    query_data = query.data.split(":")[-1]
+    action = query.data.split(":")[1]
+    extra_id = int(query.data.split(":")[2])
 
-    match query_data:
+    match action:
         case "start_text":
             await query.message.answer("Введите текст, который будет отображаться у пользователей Вашего бота "
                                        "при <b>первом обращении</b> и команде <b>/start</b>:",
@@ -288,19 +291,19 @@ async def bot_menu_callback_handler(query: CallbackQuery, state: FSMContext):
             await state.set_state(States.EDITING_DEFAULT_MESSAGE)
             await state.set_data(state_data)
         case "start_bot":
-            await start_custom_bot(state_data['bot_id'])
+            await start_custom_bot(extra_id)
             await query.message.edit_text(
                 query.message.text,
                 parse_mode=ParseMode.HTML,
-                reply_markup=get_inline_bot_menu_keyboard(bot_status="online")
+                reply_markup=await get_inline_bot_menu_keyboard(extra_id)
             )
             await query.answer("Ваш бот запущен ✅", show_alert=True)
         case "stop_bot":
-            await stop_custom_bot(state_data['bot_id'])
+            await stop_custom_bot(extra_id)
             await query.message.edit_text(
                 query.message.text,
                 parse_mode=ParseMode.HTML,
-                reply_markup=get_inline_bot_menu_keyboard(bot_status="offline")
+                reply_markup=await get_inline_bot_menu_keyboard(extra_id)
             )
             await query.answer("Ваш бот приостановлен ❌", show_alert=True)
         case "delete_bot":
@@ -312,41 +315,66 @@ async def bot_menu_callback_handler(query: CallbackQuery, state: FSMContext):
             await state.set_state(States.DELETE_BOT)
             await state.set_data(state_data)
         case "statistic":
-            users = await custom_bot_user_db.get_custom_bot_users(bot_id=state_data["bot_id"])
+            users = await custom_bot_user_db.get_custom_bot_users(bot_id=extra_id)
             await query.message.answer(
                 f"Статистика:\n\n"
                 f"👨🏻‍🦱 Всего пользователей: {len(users)}"
             )
             await query.answer()
+        case "mailing_menu" | "mailing_create":
+            if action == "mailing_create":
+                await mailing_db.add_mailing(MailingSchemaWithoutId.model_validate(
+                    {"bot_id": extra_id, "created_at": datetime.now().replace(tzinfo=None)}
+                ))
+            custom_bot = await bot_db.get_bot(bot_id=extra_id)
+            await query.message.edit_text(
+                MessageTexts.BOT_MAILINGS_MENU_MESSAGE.value.format((await Bot(custom_bot.token).get_me()).username),
+                reply_markup=await get_inline_bot_mailing_menu_keyboard(bot_id=extra_id)
+            )
         case "goods":
-            await query.message.edit_text("Меню склада:", reply_markup=get_inline_bot_goods_menu_keyboard(state_data['bot_id']))
+            await query.message.edit_text("Меню склада:", reply_markup=get_inline_bot_goods_menu_keyboard(extra_id))
         case "goods_count":
-            products = await product_db.get_all_products(state_data["bot_id"])
+            products = await product_db.get_all_products(extra_id)
             await query.message.answer(f"Количество товаров: {len(products)}")
             await query.answer()
-        case "goods_list":
-            products = await product_db.get_all_products(state_data["bot_id"])
-            if not products:
-                await query.message.answer("Список товаров Вашего магазина пуст")
-            else:
-                await query.message.answer(
-                    "Список товаров Вашего магазина 👇\nЧтобы удалить товар, нажмите на тег рядом с ним")
-                for product in products:
-                    await query.message.answer_photo(
-                        photo=FSInputFile(os.getenv('FILES_PATH') + product.picture),
-                        caption=f"<b>{product.name}</b>\n\n"
-                                f"Цена: <b>{float(product.price)}₽</b>",
-                        reply_markup=get_inline_delete_button(product.id))
-            await query.answer()
+        # case "goods_list":
+        #     products = await product_db.get_all_products(state_data["bot_id"])
+        #     if not products:
+        #         await query.message.answer("Список товаров Вашего магазина пуст")
+        #     else:
+        #         await query.message.answer(
+        #             "Список товаров Вашего магазина 👇\nЧтобы удалить товар, нажмите на тег рядом с ним")
+        #         for product in products:
+        #             await query.message.answer_photo(
+        #                 photo=FSInputFile(os.getenv('FILES_PATH') + product.picture),
+        #                 caption=f"<b>{product.name}</b>\n\n"
+        #                         f"Цена: <b>{float(product.price)}₽</b>",
+        #                 reply_markup=get_inline_delete_button(product.id))
+        #     await query.answer()
         case "add_new_good":
             await query.message.answer("Чтобы добавить товар, прикрепите его картинку и отправьте сообщение в виде:"
                                        "\n\nНазвание\nЦена в рублях")
             await query.answer()
-        case "back_from_goods":
-            custom_bot = await bot_db.get_bot(state_data['bot_id'])
+        case "back_to_menu":
+            custom_bot = await bot_db.get_bot(extra_id)
             await query.message.edit_text(
                 MessageTexts.BOT_MENU_MESSAGE.value.format((await Bot(custom_bot.token).get_me()).username),
-                reply_markup=get_inline_bot_menu_keyboard(custom_bot.status)
+                reply_markup=await get_inline_bot_menu_keyboard(custom_bot.bot_id)
+            )
+        case "channels":
+            custom_bot = await bot_db.get_bot(state_data["bot_id"])
+            await query.message.edit_text(
+                MessageTexts.BOT_CHANNELS_LIST_MESSAGE.value.format((await Bot(custom_bot.token).get_me()).username),
+                reply_markup=await get_inline_bot_channels_list_keyboard(custom_bot.bot_id)
+            )
+        case "channel":
+            custom_bot = await bot_db.get_bot(state_data["bot_id"])
+            custom_tg_bot = Bot(custom_bot.token)
+            channel_id = int(query.data.split(":")[-1])
+            channel_username = (await custom_tg_bot.get_chat(channel_id)).username
+            await query.message.edit_text(
+                MessageTexts.BOT_CHANNEL_MENU_MESSAGE.value.format(channel_username, (await custom_tg_bot.get_me()).username),
+                reply_markup=await get_inline_channel_menu_keyboard(custom_bot.bot_id, int(query.data.split(":")[-1]))
             )
 
 
@@ -359,7 +387,7 @@ async def bot_menu_handler(message: Message, state: FSMContext):
         case ReplyBotMenuButtons.SETTINGS.value:
             await message.answer(
                 MessageTexts.BOT_MENU_MESSAGE.value.format((await Bot(custom_bot.token).get_me()).username),
-                reply_markup=get_inline_bot_menu_keyboard(custom_bot.status)
+                reply_markup=await get_inline_bot_menu_keyboard(custom_bot.bot_id)
             )
 
         case ReplyBotMenuButtons.CONTACTS.value:
@@ -373,7 +401,7 @@ async def bot_menu_handler(message: Message, state: FSMContext):
             )
             await message.answer(
                 MessageTexts.BOT_MENU_MESSAGE.value.format((await Bot(custom_bot.token).get_me()).username),
-                reply_markup=get_inline_bot_menu_keyboard(custom_bot.status)
+                reply_markup=await get_inline_bot_menu_keyboard(custom_bot.bot_id)
             )
 
 

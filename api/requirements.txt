@@ -5,3 +5,4 @@ uvicorn
 starlette
 sqlalchemy
 sqlalchemy-filters
+pillow

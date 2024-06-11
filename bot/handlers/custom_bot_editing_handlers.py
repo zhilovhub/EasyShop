@@ -3,11 +3,12 @@ from aiogram.types import Message, ReplyKeyboardRemove, CallbackQuery
 from aiogram.fsm.context import FSMContext
 
 from bot.main import bot_db, product_db, bot, cache_resources_file_id_store
-from bot.config import logger
 from bot.keyboards import *
 from bot.states.states import States
 from bot.handlers.routers import custom_bot_editing_router
 from bot.utils.send_instructions import send_instructions
+
+from logs.config import logger
 
 
 @custom_bot_editing_router.message(States.EDITING_START_MESSAGE)
@@ -23,7 +24,7 @@ async def editing_start_message_handler(message: Message, state: FSMContext):
             )
             await message.answer(
                 MessageTexts.BOT_MENU_MESSAGE.value.format((await Bot(custom_bot.token).get_me()).username),
-                reply_markup=get_inline_bot_menu_keyboard(custom_bot.status)
+                reply_markup=await get_inline_bot_menu_keyboard(custom_bot.bot_id)
             )
             await state.set_state(States.BOT_MENU)
             await state.set_data(state_data)
@@ -40,7 +41,7 @@ async def editing_start_message_handler(message: Message, state: FSMContext):
             )
             await message.answer(
                 MessageTexts.BOT_MENU_MESSAGE.value.format((await Bot(custom_bot.token).get_me()).username),
-                reply_markup=get_inline_bot_menu_keyboard(custom_bot.status)
+                reply_markup=await get_inline_bot_menu_keyboard(custom_bot.bot_id)
             )
 
             await state.set_state(States.BOT_MENU)
@@ -62,7 +63,7 @@ async def editing_default_message_handler(message: Message, state: FSMContext):
             )
             await message.answer(
                 MessageTexts.BOT_MENU_MESSAGE.value.format((await Bot(custom_bot.token).get_me()).username),
-                reply_markup=get_inline_bot_menu_keyboard(custom_bot.status)
+                reply_markup=await get_inline_bot_menu_keyboard(custom_bot.bot_id)
             )
             await state.set_state(States.BOT_MENU)
             await state.set_data(state_data)
@@ -79,7 +80,7 @@ async def editing_default_message_handler(message: Message, state: FSMContext):
             )
             await message.answer(
                 MessageTexts.BOT_MENU_MESSAGE.value.format((await Bot(custom_bot.token).get_me()).username),
-                reply_markup=get_inline_bot_menu_keyboard(custom_bot.status)
+                reply_markup=await get_inline_bot_menu_keyboard(custom_bot.bot_id)
             )
             await state.set_state(States.BOT_MENU)
             await state.set_data(state_data)
@@ -110,7 +111,7 @@ async def delete_bot_handler(message: Message, state: FSMContext):
         )
         await message.answer(
             MessageTexts.BOT_MENU_MESSAGE.value.format((await Bot(custom_bot.token).get_me()).username),
-            reply_markup=get_inline_bot_menu_keyboard(custom_bot.status)
+            reply_markup=await get_inline_bot_menu_keyboard(custom_bot.bot_id)
         )
         await state.set_state(States.BOT_MENU)
         await state.set_data(state_data)

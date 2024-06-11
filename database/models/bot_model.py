@@ -14,6 +14,7 @@ from database.models.dao import Dao
 
 from bot.exceptions.exceptions import *
 from database.models.user_model import User
+from logs.config import extra_params
 
 
 class Bot(Base):
@@ -59,7 +60,12 @@ class BotDao(Dao):
         res = []
         for bot in raw_res:
             res.append(BotSchema.model_validate(bot))
-        self.logger.info(f"get_bots method for user {user_id} success.")
+
+        self.logger.debug(
+            f"user_id={user_id}: has {len(res)} bots",
+            extra=extra_params(user_id=user_id)
+        )
+
         return res
 
     async def get_bot(self, bot_id: int) -> BotSchema:
@@ -73,7 +79,12 @@ class BotDao(Dao):
 
         res = raw_res.fetchone()
         if res is None:
-            raise BotNotFound(f"bot with bot_id = {bot_id} not found in database.")
+            raise BotNotFound(f"bot_id={bot_id}: not found in database.")
+
+        self.logger.debug(
+            f"bot_id={bot_id}: bot {bot_id} is found",
+            extra=extra_params(bot_id=bot_id)
+        )
 
         return BotSchema.model_validate(res)
 
@@ -88,10 +99,16 @@ class BotDao(Dao):
 
         res = raw_res.fetchone()
         if res is None:
-            raise BotNotFound(f"bot with created_by = {created_by} not found in database")
+            raise BotNotFound(f"bot with created_by={created_by} not found in database")
 
-        self.logger.info(f"get_bot_by_created_by method created_by: {created_by} success")
-        return BotSchema.model_validate(res)
+        res = BotSchema.model_validate(res)
+
+        self.logger.debug(
+            f"bot_id={res.bot_id}: bot with created_by={created_by} is found",
+            extra=extra_params(bot_id=res.bot_id, user_id=created_by)
+        )
+
+        return res
 
     async def get_bot_by_token(self, bot_token: str) -> BotSchema:
         try:
@@ -108,8 +125,14 @@ class BotDao(Dao):
         if res is None:
             raise BotNotFound(f"bot with bot_token = {bot_token} not found in database")
 
-        self.logger.info(f"get_bot method token: {bot_token} success.")
-        return BotSchema.model_validate(res)
+        res = BotSchema.model_validate(res)
+
+        self.logger.debug(
+            f"bot_id={res.bot_id}: bot with bot_token={bot_token} is found",
+            extra=extra_params(bot_id=res.bot_id, bot_token=bot_token)
+        )
+
+        return res
 
     async def add_bot(self, bot: BotSchemaWithoutId) -> int:
         if type(bot) != BotSchemaWithoutId:
@@ -123,7 +146,11 @@ class BotDao(Dao):
                                             f"user_id = {bot.created_by} not exists")
         await self.engine.dispose()
 
-        self.logger.info(f"successfully add bot with bot_id {bot_id} to db.")
+        self.logger.debug(
+            f"bot_id={bot_id}: bot {bot_id} is added to",
+            extra=extra_params(user_id=bot.created_by, bot_id=bot_id)
+        )
+
         return bot_id
 
     async def update_bot(self, updated_bot: BotSchema) -> None:
@@ -135,7 +162,10 @@ class BotDao(Dao):
                                values(**updated_bot.model_dump(by_alias=True)))
         await self.engine.dispose()
 
-        self.logger.info(f"successfully update bot with token {updated_bot.token} in db.")
+        self.logger.debug(
+            f"bot_id={updated_bot.bot_id}: bot {updated_bot.bot_id} is updated",
+            extra=extra_params(user_id=updated_bot.created_by, bot_id=updated_bot.bot_id)
+        )
 
     async def del_bot(self, bot_id: int) -> None:
         if not isinstance(bot_id, int):
@@ -146,4 +176,7 @@ class BotDao(Dao):
             await conn.execute(delete(Bot).where(Bot.bot_id == bot_id))
         await self.engine.dispose()
 
-        self.logger.info(f"successfully delete bot with bot_id = {bot_id} from db")
+        self.logger.debug(
+            f"bot_id={bot_id}: bot {bot_id} is deleted",
+            extra=extra_params(bot_id=bot_id)
+        )

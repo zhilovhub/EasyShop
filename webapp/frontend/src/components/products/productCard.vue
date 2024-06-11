@@ -8,7 +8,7 @@
     >
       <swiper-slide
         v-for="(picture, index) in productObject.picture">
-        <img @click="addToShoppingCart" :src="`${this.apiUrl()}/files/` + (productObject.picture ? productObject.picture[index] : null)" alt="main-picture">
+        <img :src="`${this.apiUrl()}/files/` + (productObject.picture ? productObject.picture[index] : null)" alt="main-picture">
       </swiper-slide>
     </swiper>
     <div class="text">{{productObject.name}}</div>
@@ -114,7 +114,6 @@ export default {
       });
       target.classList.add('chosen');
       this.productObject.chosenOption = target.innerText;
-      console.log(this.$store.state.items);
     },
     toggleDescription() {
       this.descriptionVisible = !this.descriptionVisible;
@@ -161,9 +160,10 @@ export default {
     }
   },
   mounted() {
+    console.log(this.productObject);
     tg.BackButton.show();  // показываем всегда самой первой строчкой
 
-    this.$nextTick(this.setFirstOptionChosen)
+    this.$nextTick(this.setFirstOptionChosen);
 
     tg.MainButton.text = "Добавить";  // сначала назначаем цвета и текст кнопкам
 
