@@ -1,9 +1,19 @@
 <template>
   <div>
-  <img @click="this.addToShoppingCart" v-if="productObject.picture" :src="`${this.apiUrl()}/files/` + productObject.picture" alt="main-picture">
-  <div class="text">{{productObject.name}}</div>
-  <div class="text">{{priceRub(productObject.price)}}</div>
-  <div v-for="(option, type) in productObject.extra_options">
+    <swiper v-if="productObject.picture && productObject.picture[0]"
+      :slidesPerView="1"
+      :modules="modules"
+      :navigation="true"
+      style="margin: 0"
+    >
+      <swiper-slide
+        v-for="(picture, index) in productObject.picture">
+        <img @click="addToShoppingCart" :src="`${this.apiUrl()}/files/` + (productObject.picture ? productObject.picture[index] : null)" alt="main-picture">
+      </swiper-slide>
+    </swiper>
+    <div class="text">{{productObject.name}}</div>
+    <div class="text">{{priceRub(productObject.price)}}</div>
+    <div v-for="(option, type) in productObject.extra_options">
       <div class="block extra-options">
         <div class="span-block">
           <h1>{{type}}</h1>
