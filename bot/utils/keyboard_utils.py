@@ -1,9 +1,10 @@
 from aiogram import Bot
 from aiogram.types import WebAppInfo
 
-from bot.main import bot_db, channel_db, mailing_db, competition
+from database.models.channel_post_model import ChannelPostNotFound, ChannelPostSchema
+from bot.main import bot_db, channel_db, mailing_db, competition, channel_post_db
 from bot.config import WEB_APP_URL, WEB_APP_PORT
-from database.models.channel_model import ChannelSchema
+from database.models.channel_model import ChannelNotFound, ChannelSchema
 from database.models.competition_model import CompetitionSchema
 from database.models.mailing_model import MailingSchema, MailingNotFound
 
@@ -31,6 +32,14 @@ async def get_bot_mailing(bot_id: int) -> MailingSchema | None:
         mailing = await mailing_db.get_mailing_by_bot_id(bot_id=bot_id)
         return mailing
     except MailingNotFound:
+        return None
+
+
+async def get_channel_post(channel_id: int) -> ChannelPostSchema | None:
+    try:
+        channel_post = await channel_post_db.get_channel_post(channel_id=channel_id)
+        return channel_post
+    except ChannelPostNotFound:
         return None
 
 

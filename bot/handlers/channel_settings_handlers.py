@@ -17,7 +17,7 @@ from aiogram.types import Message, FSInputFile, CallbackQuery, ReplyKeyboardRemo
     InputMediaPhoto, InputMediaVideo, InputMediaAudio, InputMediaDocument
 from aiogram.fsm.context import FSMContext
 
-from bot.main import bot, user_db, bot_db, product_db, order_db, custom_bot_user_db, QUESTION_MESSAGES, competition
+from bot.main import bot, user_db, bot_db, product_db, order_db, custom_bot_user_db, QUESTION_MESSAGES, competition, channel_post_db, channel_post_media_file_db
 from bot.keyboards import *
 from bot.exceptions import InstanceAlreadyExists
 from bot.states.states import States
@@ -32,6 +32,8 @@ from database.models.bot_model import BotSchemaWithoutId
 from database.models.order_model import OrderSchema, OrderNotFound
 from database.models.product_model import ProductWithoutId
 from database.models.channel_model import ChannelNotFound
+from database.models.channel_post_model import ChannelPostSchema, ChannelPostSchemaWithoutId
+from database.models.channel_post_media_files_model import ChannelPostMediaFileSchema
 
 
 @channel_menu_router.callback_query(lambda query: query.data.startswith("channel_menu"))
@@ -55,6 +57,17 @@ async def channel_menu_callback_handler(query: CallbackQuery, state: FSMContext)
     channel_username = (await custom_tg_bot.get_chat(channel_id)).username
 
     match action:
+        case "create_post":
+            await channel_post_db.add_channel_post(ChannelPostSchemaWithoutId.model_validate(
+                {"channel_id": channel_id, "bot_id": bot_id,
+                    "created_at": datetime.now().replace(tzinfo=None)}
+            ))
+            custom_bot = await bot_db.get_bot(bot_id=bot_id)
+            await query.message.edit_text(
+                MessageTexts.BOT_CHANNEL_POST_MENU_MESSAGE.value.format(
+                    channel_username),
+                reply_markup=await get_inline_bot_channel_post_menu_keyboard(bot_id=bot_id, channel_id=channel_id)
+            )
         case "leave_channel":
             leave_result = await custom_tg_bot.leave_chat(chat_id=channel_id)
             if leave_result:

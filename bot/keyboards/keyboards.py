@@ -219,6 +219,10 @@ async def get_inline_channel_menu_keyboard(bot_id: int, channel_id: int) -> Inli
             ],
             [
                 InlineKeyboardButton(
+                    text="Создать запись", callback_data="channel_menu:create_post" + callback_metadata)
+            ],
+            [
+                InlineKeyboardButton(
                     text="🔙 Назад", callback_data="channel_menu:back_to_channels_list" + callback_metadata),
                 InlineKeyboardButton(
                     text="🛑 Выйти из канала", callback_data="channel_menu:leave_channel" + callback_metadata)
@@ -461,4 +465,73 @@ def get_inline_delete_button(product_id: int) -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(inline_keyboard=[
         [InlineKeyboardButton(
             text="Удалить", callback_data=f"product:delete_{product_id}")]
+    ])
+
+
+async def get_inline_bot_channel_post_menu_keyboard(bot_id: int, channel_id: int) -> InlineKeyboardMarkup:
+    channel_post = await get_channel_post(channel_id=channel_id)
+    callback_metadata = f":{bot_id}:{channel_id}"
+    if channel_post.is_delayed:
+        delay_btn = InlineKeyboardButton(
+            text="Убрать откладывание", callback_data="channel_menu:cancel_delay" + callback_metadata)
+    else:
+        delay_btn = InlineKeyboardButton(
+            text="Отложить", callback_data="channel_menu:delay" + callback_metadata)
+
+    if channel_post.has_button:
+        inline_buttons = [
+            [
+                InlineKeyboardButton(
+                    text="Ссылка кнопки", callback_data="channel_menu:button_url" + callback_metadata
+                ),
+                InlineKeyboardButton(
+                    text="Текст на кнопке", callback_data="channel_menu:button_text" + callback_metadata
+                )
+            ],
+            [
+                InlineKeyboardButton(
+                    text="Удалить кнопку", callback_data="channel_menu:delete_button" + callback_metadata
+                )
+            ]
+        ]
+    else:
+        inline_buttons = [
+            [
+                InlineKeyboardButton(
+                    text="Добавить кнопку", callback_data="channel_menu:add_button" + callback_metadata
+                ),
+            ]
+        ]
+
+    return InlineKeyboardMarkup(inline_keyboard=[
+        [
+            InlineKeyboardButton(
+                text="Текст сообщения", callback_data="channel_menu:message" + callback_metadata
+            ),
+            InlineKeyboardButton(
+                text="Медиафайлы", callback_data="channel_menu:media" + callback_metadata
+            )
+        ],
+        *inline_buttons,
+        [
+            InlineKeyboardButton(
+                text="Запустить", callback_data="channel_menu:start" + callback_metadata
+            ),
+            InlineKeyboardButton(
+                text="Проверить", callback_data="channel_menu:demo" + callback_metadata
+            ),
+        ],
+        [
+            delay_btn,
+            InlineKeyboardButton(
+                text="Доп настройки", callback_data="channel_menu:extra_settings" + callback_metadata
+            ),
+        ],
+        [
+            InlineKeyboardButton(
+                text="🔙 Назад", callback_data="bot_menu:back_to_menu" + callback_metadata),
+            InlineKeyboardButton(
+                text="Удалить рассылку", callback_data="channel_menu:delete_mailing" + callback_metadata
+            ),
+        ]
     ])

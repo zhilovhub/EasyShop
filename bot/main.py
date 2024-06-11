@@ -16,6 +16,8 @@ from database.models.order_model import OrderDao
 from database.models.payment_model import PaymentDao
 from database.models.product_model import ProductDao
 from database.models.custom_bot_user_model import CustomBotUserDao
+from database.models.channel_post_model import ChannelPostDao
+from database.models.channel_post_media_files_model import ChannelPostMediaFileDao
 from subscription.subscription import Subscription
 from subscription.scheduler import Scheduler
 from bot import config
@@ -39,6 +41,8 @@ channel_db: ChannelDao = db_engine.get_channel_dao()
 mailing_db: MailingDao = db_engine.get_mailing_dao()
 custom_bot_user_db: CustomBotUserDao = db_engine.get_custom_bot_user_db()
 mailing_media_file_db: MailingMediaFileDao = db_engine.get_mailing_media_file_dao()
+channel_post_db: ChannelPostDao = db_engine.get_channel_post_dao()
+channel_post_media_file_db: ChannelPostMediaFileDao = db_engine.get_channel_post_media_file_dao()
 
 _scheduler = Scheduler(config.SCHEDULER_URL, 'postgres', config.TIMEZONE)
 subscription = Subscription(database=db_engine, scheduler=_scheduler)

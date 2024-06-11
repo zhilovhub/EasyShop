@@ -1,5 +1,5 @@
 from pydantic import BaseModel, Field, validate_call, ConfigDict
-from sqlalchemy import BigInteger, Column, ForeignKey, select, insert, delete, BOOLEAN
+from sqlalchemy import BigInteger, Column, ForeignKey, UniqueConstraint, select, insert, delete, BOOLEAN
 from sqlalchemy.ext.asyncio import AsyncEngine
 
 from bot.exceptions import InvalidParameterFormat
@@ -16,13 +16,14 @@ class ChannelNotFound(Exception):
 
 class Channel(Base):
     __tablename__ = "channels"
-
-    channel_id = Column(BigInteger, primary_key=True)
-    bot_id = Column(ForeignKey(Bot.bot_id, ondelete="CASCADE"),
-                    primary_key=True)
+    channel_id = Column(BigInteger, primary_key=True, unique=True)
+    bot_id = Column(ForeignKey(Bot.bot_id, ondelete="CASCADE"))
 
     # import because everyone can add bots. So now let our admins know only about their channels
     added_by_admin = Column(BOOLEAN, nullable=False)
+    __table_args__ = (
+        UniqueConstraint('channel_id', 'bot_id', name='unique_channel_bot'),
+    )
 
 
 class ChannelSchema(BaseModel):
