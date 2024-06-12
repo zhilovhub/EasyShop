@@ -35,6 +35,10 @@ class FilterNotFound(Exception):
         super().__init__(self.message)
 
 
+class NotEnoughProductsInStockToReduce(Exception):
+    """Raised when auto_reduce on order option is enabled and product reduce amount is more than product count"""
+    pass
+
 # class CategoryFilterNotFound(Exception):
 #     """Raised when category name provided to ProductFilter class is not exist in categories table"""
 #
