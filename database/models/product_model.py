@@ -124,7 +124,7 @@ class NotEnoughProductsInStockToReduce(Exception):
 
     def __init__(self, product: ProductSchema, amount: int,
                  message: str = "Product with name ('{PRODUCT_NAME}') and id ({PRODUCT_ID}) has not enough items "
-                                "in stock (need: {ITEMS_NEED}, stock: {ITEMS_STOCK)"):
+                                "in stock (need: {ITEMS_NEED}, stock: {ITEMS_STOCK})"):
         self.message = message.replace("{PRODUCT_NAME}", product.name.lower()).replace(
             "{PRODUCT_ID}", str(product.id)
         ).replace(
