@@ -7,8 +7,18 @@ from bot.utils import MessageTexts
 from custom_bots.handlers.routers import multi_bot_channel_router
 from custom_bots.multibot import bot_db, channel_db, main_bot
 from database.models.channel_model import ChannelSchema
-
+from aiogram.filters import IS_MEMBER, IS_NOT_MEMBER, ChatMemberUpdatedFilter
 from logs.config import custom_bot_logger
+
+
+@multi_bot_channel_router.chat_member(ChatMemberUpdatedFilter(IS_MEMBER >> IS_NOT_MEMBER))
+async def on_user_leave(event: ChatMemberUpdated):
+    pass
+
+
+@multi_bot_channel_router.chat_member(ChatMemberUpdatedFilter(IS_NOT_MEMBER >> IS_MEMBER))
+async def on_user_join(event: ChatMemberUpdated):
+    pass
 
 
 @multi_bot_channel_router.my_chat_member()
@@ -27,12 +37,12 @@ async def my_chat_member_handler(my_chat_member: ChatMemberUpdated) -> Any:
     performed_by_admin = my_chat_member.from_user.id == custom_bot.created_by
 
     channel_schema = ChannelSchema(
-            channel_id=my_chat_member.chat.id,
-            bot_id=bot_id,
-            added_by_admin=performed_by_admin
+        channel_id=my_chat_member.chat.id,
+        bot_id=bot_id,
+        added_by_admin=performed_by_admin
     )
 
-    ## Bot added
+    # Bot added
     if isinstance(my_chat_member.old_chat_member, (ChatMemberLeft, ChatMemberBanned)) and \
             isinstance(my_chat_member.new_chat_member, ChatMemberAdministrator):
         await channel_db.add_channel(channel_schema)
@@ -41,10 +51,11 @@ async def my_chat_member_handler(my_chat_member: ChatMemberUpdated) -> Any:
 
         await main_bot.send_message(
             chat_id=custom_bot.created_by,
-            text=MessageTexts.BOT_ADDED_TO_CHANNEL_MESSAGE.value.format(custom_bot_username, channel_username),
+            text=MessageTexts.BOT_ADDED_TO_CHANNEL_MESSAGE.value.format(
+                custom_bot_username, channel_username),
             reply_markup=await get_inline_bot_menu_keyboard(custom_bot.bot_id)
         )
-    ## Bot removed
+    # Bot removed
     elif isinstance(my_chat_member.new_chat_member, (ChatMemberLeft, ChatMemberBanned)):
         await channel_db.delete_channel(channel_schema)
         custom_bot_logger.info(
@@ -52,6 +63,13 @@ async def my_chat_member_handler(my_chat_member: ChatMemberUpdated) -> Any:
 
         await main_bot.send_message(
             chat_id=custom_bot.created_by,
-            text=MessageTexts.BOT_REMOVED_FROM_CHANNEL_MESSAGE.value.format(custom_bot_username, channel_username),
+            text=MessageTexts.BOT_REMOVED_FROM_CHANNEL_MESSAGE.value.format(
+                custom_bot_username, channel_username),
+            reply_markup=await get_inline_bot_menu_keyboard(custom_bot.bot_id)
+        )
+    elif isinstance(my_chat_member.new_chat_member, ChatMemberAdministrator):
+        await main_bot.send_message(
+            chat_id=custom_bot.created_by,
+            text="right changed",
             reply_markup=await get_inline_bot_menu_keyboard(custom_bot.bot_id)
         )
