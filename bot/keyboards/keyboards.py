@@ -482,7 +482,13 @@ async def get_inline_bot_channel_post_menu_keyboard(bot_id: int, channel_id: int
     else:
         delay_btn = InlineKeyboardButton(
             text="Отложить", callback_data="channel_menu:delay" + callback_metadata)
-
+    if channel_post.is_running == True:
+        return InlineKeyboardMarkup(
+            inline_keyboard=[
+                [InlineKeyboardButton(
+                    text="Отменить", callback_data="channel_menu:stop_post" + callback_metadata)]
+            ]
+        )
     if channel_post.has_button:
         inline_buttons = [
             [

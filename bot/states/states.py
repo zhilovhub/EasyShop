@@ -35,4 +35,4 @@ class States(StatesGroup):
     EDITING_POST_BUTTON_TEXT = State()
     EDITING_POST_BUTTON_URL = State()
     EDITING_POST_MEDIA_FILES = State()
-    EDITING_DELAY_DATE = State()
+    EDITING_POST_DELAY_DATE = State()

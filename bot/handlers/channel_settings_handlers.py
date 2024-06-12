@@ -30,7 +30,7 @@ from logs.config import logger
 
 from custom_bots.multibot import storage as custom_bot_storage
 
-from database.models.bot_model import BotSchemaWithoutId
+from database.models.bot_model import BotSchema, BotSchemaWithoutId
 from database.models.order_model import OrderSchema, OrderNotFound
 from database.models.product_model import ProductWithoutId
 from database.models.channel_model import ChannelNotFound
@@ -93,14 +93,17 @@ async def channel_menu_callback_handler(query: CallbackQuery, state: FSMContext)
                         "created_at": datetime.now().replace(tzinfo=None)}
                 ))
                 custom_bot = await bot_db.get_bot(bot_id=bot_id)
-                await query.message.answer(
+                return await query.message.answer(
                     MessageTexts.BOT_CHANNEL_POST_MENU_MESSAGE.value.format(
                         channel_username),
                     reply_markup=await get_inline_bot_channel_post_menu_keyboard(bot_id=bot_id, channel_id=channel_id)
                 )
             case _:
-                await query.answer("Пост не найден", show_alert=True)
-                return await query.message.delete()
+                try:
+                    return await query.answer("Пост не найден", show_alert=True)
+                except Exception as e:
+                    pass
+                # return await query.message.delete()
     if channel_post.is_running == True:
         match action:
             case "stop_post":
@@ -112,19 +115,30 @@ async def channel_menu_callback_handler(query: CallbackQuery, state: FSMContext)
                 except:
                     logger.warning(f"Job ID {channel_post.job_id} not found")
                 channel_post.job_id = None
-
+                await channel_post_db.update_channel_post(channel_post)
                 await query.message.answer(f"Отправка поста остановлена")
 
                 await query.message.answer(
                     MessageTexts.BOT_MENU_MESSAGE.value.format((await Bot(custom_bot.token).get_me()).username),
                     reply_markup=await get_inline_bot_menu_keyboard(bot_id)
                 )
-                await query.message.delete()
+                return await query.message.delete()
             case _:
                 await query.answer("Пост уже в очереди", show_alert=True)
+                await query.message.answer(
+                    text=MessageTexts.BOT_CHANNEL_POST_MENU_WHILE_RUNNING.value.format(
+                        channel_username),
+                    reply_markup=await get_inline_bot_channel_post_menu_keyboard(
+                        bot_id, channel_id)
+                )
                 return await query.message.delete()
 
     match action:
+        case "cancel_delay":
+            channel_post.is_delayed = False
+            channel_post.send_date = None
+            await channel_post_db.update_channel_post(channel_post)
+            await query.message.edit_reply_markup(reply_markup=await get_inline_bot_channel_post_menu_keyboard(bot_id, channel_id))
         case "edit_post":
             return await query.message.edit_text(
                 MessageTexts.BOT_CHANNEL_POST_MENU_MESSAGE.value.format(
@@ -199,7 +213,8 @@ async def channel_menu_callback_handler(query: CallbackQuery, state: FSMContext)
                     channel_post,
                     media_files,
                     MailingMessageType.DEMO,
-                    query.message
+                    query.from_user.id,
+                    query.message.message_id
                 )
                 await query.message.answer(
                     text=MessageTexts.BOT_MAILINGS_MENU_MESSAGE.value.format(
@@ -324,25 +339,31 @@ async def channel_menu_callback_handler(query: CallbackQuery, state: FSMContext)
 
                 text = f"Рассылка начнется в {channel_post.send_date}" if channel_post.is_delayed else "Отправляю пост"
                 await query.message.answer(text)
-
-                await query.message.answer(
-                    text=MessageTexts.BOT_CHANNEL_POST_MENU_MESSAGE.value.format(
-                        channel_username),
-                    reply_markup=await get_inline_bot_channel_post_menu_keyboard(
-                        bot_id, channel_id)
-                )
+                if channel_post.is_delayed:
+                    await query.message.answer(
+                        text=MessageTexts.BOT_CHANNEL_POST_MENU_WHILE_RUNNING.value.format(
+                            channel_username),
+                        reply_markup=await get_inline_bot_channel_post_menu_keyboard(
+                            bot_id, channel_id)
+                    )
 
                 if not (channel_post.is_delayed):
                     await send_channel_post_message(
-                        bot_from_send=custom_tg_bot,
+                        bot_from_send=custom_bot,
                         to_user_id=channel_post.channel_id,
                         channel_post_schema=channel_post,
                         media_files=media_files,
                         mailing_message_type=MailingMessageType.RELEASE,
-                        message=query.message)
+                        chat_id=query.from_user.id,
+                        message_id=query.message.message_id,
+                    )
+                    await query.message.edit_text(
+                        MessageTexts.BOT_CHANNEL_MENU_MESSAGE.value.format(channel_username, (await custom_tg_bot.get_me()).username),
+                        reply_markup=await get_inline_channel_menu_keyboard(custom_bot.bot_id, int(query.data.split(":")[-1]))
+                    )
                 else:
                     job_id = await _scheduler.add_scheduled_job(
-                        func=send_channel_post_message, run_date=channel_post.send_date, args=[custom_tg_bot, channel_post.channel_id, channel_post, media_files, MailingMessageType.RELEASE, query.message])
+                        func=send_channel_post_message, run_date=channel_post.send_date, args=[custom_bot, channel_post.channel_id, channel_post, media_files, MailingMessageType.RELEASE, query.from_user.id, query.message.message_id])
                     channel_post.job_id = job_id
                     await channel_post_db.update_channel_post(channel_post)
             else:
@@ -410,6 +431,65 @@ async def channel_menu_callback_handler(query: CallbackQuery, state: FSMContext)
                     bot_id)
             )
             await query.message.delete()
+        case "delay":
+            await query.message.answer(f"Введите дату рассылки\n\n{MessageTexts.DATE_RULES.value}",
+                                       reply_markup=get_back_keyboard())
+            await query.answer()
+            await state.set_state(States.EDITING_POST_DELAY_DATE)
+            await state.set_data({"bot_id": bot_id, "channel_id": channel_id})
+
+
+@channel_menu_router.message(States.EDITING_POST_DELAY_DATE)
+async def editing_channel_post_delay_date_handler(message: Message, state: FSMContext):
+    message_text = message.html_text
+
+    state_data = await state.get_data()
+
+    bot_id = state_data["bot_id"]
+    channel_id = state_data["channel_id"]
+
+    channel_post = await channel_post_db.get_channel_post(channel_id=channel_id)
+    custom_bot_tg = Bot((await bot_db.get_bot(bot_id)).token)
+    custom_bot_username = (await custom_bot_tg.get_me()).username
+    channel_username = (await custom_bot_tg.get_chat(channel_id)).username
+    if message_text:
+        if message_text == "🔙 Назад":
+            await message.answer(
+                "Возвращаемся в меню...",
+                reply_markup=get_reply_bot_menu_keyboard(
+                    bot_id=state_data["bot_id"])
+            )
+            await message.answer(
+                MessageTexts.BOT_CHANNEL_POST_MENU_MESSAGE.value.format(
+                    channel_username),
+                reply_markup=await get_inline_bot_channel_post_menu_keyboard(bot_id=bot_id, channel_id=channel_id)
+            )
+            await state.set_state(States.BOT_MENU)
+        else:
+            try:
+                datetime_obj = datetime.strptime(
+                    message_text, "%d.%m.%Y %H:%M")
+                datetime_obj.replace(tzinfo=None)
+                if datetime.now() > datetime_obj:
+                    await message.reply("Введенное время уже прошло, попробуйте ввести другое")
+                    return
+                channel_post.is_delayed = True
+                channel_post.send_date = datetime_obj
+
+                await channel_post_db.update_channel_post(channel_post)
+
+                await message.reply(f"Запланировано на: {datetime_obj.strftime('%Y-%m-%d %H:%M')}\n\n"
+                                    f"Для запуска отложенной рассылки нажмите <b>Запустить</b>")
+                await message.answer(
+                    MessageTexts.BOT_CHANNEL_POST_MENU_MESSAGE.value.format(
+                        channel_username),
+                    reply_markup=await get_inline_bot_channel_post_menu_keyboard(bot_id=bot_id, channel_id=channel_id)
+                )
+
+                await state.set_state(States.BOT_MENU)
+                await state.set_data({"bot_id": bot_id, "channel_id": channel_id})
+            except ValueError:
+                await message.reply("Некорректный формат. Пожалуйста, введите время и дату в правильном формате.")
 
 
 @channel_menu_router.message(States.EDITING_POST_MEDIA_FILES)
@@ -854,7 +934,8 @@ async def editing_post_message_handler(message: Message, state: FSMContext):
                 channel_post,
                 media_files,
                 MailingMessageType.AFTER_REDACTING,
-                message,
+                message.from_user.id,
+                message.message_id,
             )
             await message.delete()
             await message.answer(
@@ -871,13 +952,16 @@ async def editing_post_message_handler(message: Message, state: FSMContext):
 
 
 async def send_channel_post_message(  # TODO that's not funny
-        bot_from_send: Bot,
+        bot_from_send: BotSchema | Bot,
         to_user_id: int,
         channel_post_schema: ChannelPostSchema,
         media_files: list[ChannelPostMediaFileSchema],
         mailing_message_type: MailingMessageType,
-        message: Message = None,
+        chat_id: int = None,
+        message_id: int = None,
 ) -> None:
+    if mailing_message_type == MailingMessageType.RELEASE:
+        bot_from_send = Bot(bot_from_send.token)
     if channel_post_schema.has_button:
         if channel_post_schema.button_url == f"{WEB_APP_URL}:{WEB_APP_PORT}/products-page/?bot_id={channel_post_schema.bot_id}":
             button = InlineKeyboardButton(
@@ -946,8 +1030,8 @@ async def send_channel_post_message(  # TODO that's not funny
                 disable_notification=not (
                     channel_post_schema.enable_link_preview),
             ))
-            if message:
-                await message.delete()
+            if chat_id and message_id:
+                await bot.delete_message(chat_id, message_id)
         elif len(media_files) == 1:
             media_file = media_files[0]
 
@@ -971,8 +1055,8 @@ async def send_channel_post_message(  # TODO that's not funny
                     channel_post_schema.enable_notification_sound),
             ))
 
-            if message:
-                await message.delete()
+            if chat_id and message_id:
+                await bot.delete_message(chat_id, message_id)
 
         if is_first_message:  # первое сообщение, отправленное в рассылке с кастомного бота. Сохраняем file_id в бд
             for ind in range(len(uploaded_media_files)):
@@ -995,12 +1079,10 @@ async def send_channel_post_message(  # TODO that's not funny
         if channel_post_schema.description is None:
             return
         if mailing_message_type == MailingMessageType.DEMO:  # только при демо с главного бота срабатывает
-            await message.edit_text(
-                text=channel_post_schema.description,
-                link_preview_options=LinkPreviewOptions(is_disabled=not (
-                    channel_post_schema.enable_link_preview)),
-                reply_markup=keyboard,
-            )
+            await bot.send_message(chat_id=chat_id, text=channel_post_schema.description,
+                                   link_preview_options=LinkPreviewOptions(is_disabled=not (
+                                       channel_post_schema.enable_link_preview)),
+                                   reply_markup=keyboard,)
         elif mailing_message_type == MailingMessageType.AFTER_REDACTING:
             await bot_from_send.send_message(
                 chat_id=to_user_id,
@@ -1021,8 +1103,11 @@ async def send_channel_post_message(  # TODO that's not funny
                 link_preview_options=LinkPreviewOptions(is_disabled=not (
                     channel_post_schema.enable_link_preview))
             )
-    channel_post_schema.is_running = False
-    await channel_post_db.update_channel_post(channel_post_schema)
+    # channel_post_schema.is_running = False
+    # await channel_post_db.update_channel_post(channel_post_schema)
+    if mailing_message_type == MailingMessageType.RELEASE:
+        await channel_post_db.delete_channel_post(channel_post_id=channel_post_schema.channel_post_id)
+        await bot.send_message(chat_id, "Пост отправлен в канал!")
 
 
 @channel_menu_router.message(States.EDITING_POST_BUTTON_TEXT)
@@ -1068,7 +1153,8 @@ async def editing_channel_post_button_text_handler(message: Message, state: FSMC
                 channel_post,
                 media_files,
                 MailingMessageType.AFTER_REDACTING,
-                message
+                message.from_user.id,
+                message.message_id,
             )
             await message.answer(
                 text=MessageTexts.BOT_MAILINGS_MENU_MESSAGE.value.format(
@@ -1130,7 +1216,8 @@ async def editing_channel_post_button_url_handler(message: Message, state: FSMCo
                 channel_post,
                 media_files,
                 MailingMessageType.AFTER_REDACTING,
-                message
+                message.from_user.id,
+                message.message_id,
             )
             await message.answer(
                 text=MessageTexts.BOT_MAILINGS_MENU_MESSAGE.value.format(
