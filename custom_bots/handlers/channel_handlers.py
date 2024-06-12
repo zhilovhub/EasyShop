@@ -75,8 +75,6 @@ async def my_chat_member_handler(my_chat_member: ChatMemberUpdated) -> Any:
             getattr(ChatMemberAdministrator, attr)) and not attr.startswith("__")]
         final_message_text = f"Права бота в канале @{channel_username} изменены:\n\n"
         for member in members:
-            if member.startswith("can") is False:
-                continue
             status = "✅" if getattr(new_user, member) else "❌"
             if getattr(old_user, member) == getattr(new_user, member):
                 final_message_text += f"{member} {status}\n"
