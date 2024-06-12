@@ -68,8 +68,20 @@ async def my_chat_member_handler(my_chat_member: ChatMemberUpdated) -> Any:
             reply_markup=await get_inline_bot_menu_keyboard(custom_bot.bot_id)
         )
     elif isinstance(my_chat_member.new_chat_member, ChatMemberAdministrator):
+        old_user = my_chat_member.old_chat_member
+        new_user = my_chat_member.new_chat_member
+        members = [attr for attr in dir(old_user) if not callable(
+            getattr(old_user, attr)) and not attr.startswith("__")]
+        final_message_text = f"Права бота в канале @{channel_username} изменены:\n\n"
+        for member in members:
+            status = "✅" if getattr(new_user, member) else "❌"
+            if getattr(old_user, member) == getattr(new_user, member):
+                final_message_text += f"{member} {status}\n"
+            else:
+                final_message_text += f"{member} изменено на {status}\n"
+
         await main_bot.send_message(
             chat_id=custom_bot.created_by,
-            text="right changed",
+            text=final_message_text,
             reply_markup=await get_inline_bot_menu_keyboard(custom_bot.bot_id)
         )
