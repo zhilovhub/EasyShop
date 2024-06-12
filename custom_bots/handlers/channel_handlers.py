@@ -81,7 +81,7 @@ async def my_chat_member_handler(my_chat_member: ChatMemberUpdated) -> Any:
             if getattr(old_user, member) == getattr(new_user, member):
                 final_message_text += f"{member} {status}\n"
             else:
-                final_message_text += f"{member} изменено на {status}\n"
+                final_message_text += f"{member} =====> {status}\n"
 
         await main_bot.send_message(
             chat_id=custom_bot.created_by,
