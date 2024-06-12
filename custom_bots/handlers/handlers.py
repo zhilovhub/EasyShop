@@ -143,7 +143,7 @@ async def start_cmd(message: Message, state: FSMContext, command: CommandObject)
     await state.set_state(CustomUserStates.MAIN_MENU)
     # await message.answer("Custom update works!")
     if args == "show_shop_inline":
-        return await message.answer("Наш магазин:", reply_markup=keyboards.get_show_inline_button())
+        return await message.answer("Наш магазин:", reply_markup=keyboards.get_show_inline_button(bot.bot_id))
 
     return await message.answer(
         format_locales(start_msg, message.from_user, message.chat),

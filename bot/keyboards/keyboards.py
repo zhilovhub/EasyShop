@@ -231,7 +231,7 @@ async def get_inline_channel_menu_keyboard(bot_id: int, channel_id: int) -> Inli
             [
                 InlineKeyboardButton(
                     text="Права бота", callback_data="channel_menu:manage" + callback_metadata, url=f"https://t.me/{await get_bot_username(bot_id)}?startchannel")
-            ]
+            ],
             [
                 InlineKeyboardButton(
                     text="🔙 Назад", callback_data="channel_menu:back_to_channels_list" + callback_metadata),

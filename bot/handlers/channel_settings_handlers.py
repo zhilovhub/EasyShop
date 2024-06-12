@@ -290,7 +290,7 @@ async def channel_menu_callback_handler(query: CallbackQuery, state: FSMContext)
                 await query.answer("Кнопку нельзя добавить, если в сообщение больше одного медиафайла", show_alert=True)
             else:
                 channel_post.button_text = "Shop"
-                link = await create_start_link(bot, 'show_shop_inline')
+                link = await create_start_link(custom_tg_bot, 'show_shop_inline')
                 # channel_post.button_url = f"{WEB_APP_URL}:{WEB_APP_PORT}/products-page/?bot_id={bot_id}"
                 channel_post.button_url = link
                 channel_post.has_button = True
