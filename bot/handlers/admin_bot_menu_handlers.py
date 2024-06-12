@@ -333,7 +333,13 @@ async def bot_menu_callback_handler(query: CallbackQuery, state: FSMContext):
                 reply_markup=await get_inline_bot_mailing_menu_keyboard(bot_id=extra_id)
             )
         case "goods":
-            await query.message.edit_text("Меню склада:", reply_markup=get_inline_bot_goods_menu_keyboard(extra_id))
+            bot_data = await bot_db.get_bot(extra_id)
+            if not bot_data.settings or "auto_reduce" not in bot_data.settings:
+                button_data = False
+            else:
+                button_data = True
+            await query.message.edit_text("Меню склада:",
+                                          reply_markup=get_inline_bot_goods_menu_keyboard(extra_id, button_data))
         case "goods_count":
             products = await product_db.get_all_products(extra_id)
             await query.message.answer(f"Количество товаров: {len(products)}")
@@ -388,6 +394,26 @@ async def bot_menu_callback_handler(query: CallbackQuery, state: FSMContext):
             await query.message.answer_document(document=FSInputFile(xlsx_file_path),
                                                 caption="Список товаров на складе",
                                                 reply_markup=get_stock_back_keyboard())
+        case "auto_reduce":
+            bot_data = await bot_db.get_bot(extra_id)
+            if not bot_data.settings:
+                bot_data.settings = {}
+            if "auto_reduce" not in bot_data.settings:
+                bot_data.settings["auto_reduce"] = True
+            else:
+                bot_data.settings["auto_reduce"] = not bot_data.settings["auto_reduce"]
+            await bot_db.update_bot(bot_data)
+            if bot_data.settings["auto_reduce"]:
+                await query.message.answer("✅ Автоуменьшение кол-ва товаров после заказа <b>включено</b>.")
+            else:
+                await query.message.answer("❌ Автоуменьшение кол-ва товаров после заказа <b>выключено</b>.")
+            try:
+                await query.message.edit_text(query.message.text,
+                    reply_markup=get_inline_bot_goods_menu_keyboard(extra_id, bot_data.settings["auto_reduce"]))
+            except:
+                # handle telegram api error "message not modified"
+                pass
+
 
 
 @admin_bot_menu_router.message(States.BOT_MENU)

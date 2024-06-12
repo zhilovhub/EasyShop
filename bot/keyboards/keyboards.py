@@ -123,7 +123,7 @@ def get_reply_bot_menu_keyboard(bot_id: int) -> ReplyKeyboardMarkup:
     )
 
 
-def get_inline_bot_goods_menu_keyboard(bot_id: int) -> InlineKeyboardMarkup:
+def get_inline_bot_goods_menu_keyboard(bot_id: int, autoreduce: bool = False) -> InlineKeyboardMarkup:
     callback_data = f":{bot_id}"
 
     return InlineKeyboardMarkup(
@@ -145,6 +145,10 @@ def get_inline_bot_goods_menu_keyboard(bot_id: int) -> InlineKeyboardMarkup:
             [
                 InlineKeyboardButton(text="⬇️ Импорт товаров", callback_data="stock_menu:import" + callback_data),
                 InlineKeyboardButton(text="⬆️ Экспорт товаров", callback_data="stock_menu:export" + callback_data),
+            ],
+            [
+                InlineKeyboardButton(text=f"{'✅' if autoreduce else '❌'} Автоуменьшение на складе",
+                                     callback_data="bot_menu:auto_reduce" + callback_data),
             ],
             [
                 InlineKeyboardButton(
