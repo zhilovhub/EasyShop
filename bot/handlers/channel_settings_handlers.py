@@ -36,6 +36,7 @@ from database.models.product_model import ProductWithoutId
 from database.models.channel_model import ChannelNotFound
 from database.models.channel_post_model import ChannelPostSchema, ChannelPostSchemaWithoutId
 from database.models.channel_post_media_files_model import ChannelPostMediaFileSchema
+from aiogram.utils.deep_linking import create_start_link
 
 
 class MailingMessageType(Enum):
@@ -57,6 +58,44 @@ async def channel_menu_callback_handler(query: CallbackQuery, state: FSMContext)
     custom_bot = await bot_db.get_bot(bot_id)
     custom_tg_bot = Bot(custom_bot.token)
     custom_bot_username = (await custom_tg_bot.get_me()).username
+
+    match action:
+        case "analytics":
+            pass
+        case "leave_channel":
+            leave_result = await custom_tg_bot.leave_chat(chat_id=channel_id)
+            if leave_result:
+                await query.message.answer(f"Вышел из канала {channel_username}.")
+                await query.message.answer(
+                    MessageTexts.BOT_MENU_MESSAGE.value.format((await Bot(custom_bot.token).get_me()).username),
+                    reply_markup=await get_inline_bot_menu_keyboard(bot_id)
+                )
+            else:
+                await query.message.answer(f"Произошла ошибка при выходе из канала {channel_username}")
+                await query.message.answer(
+                    MessageTexts.BOT_MENU_MESSAGE.value.format((await Bot(custom_bot.token).get_me()).username),
+                    reply_markup=await get_inline_bot_menu_keyboard(bot_id)
+                )
+        case "create_competition":
+            competition_id = await competition.create_competition(
+                channel_id=channel_id,
+                bot_id=bot_id
+            )
+            await query.message.edit_text(
+                text=MessageTexts.BOT_COMPETITION_MENU_MESSAGE.value.format(
+                    "-",
+                    channel_username,
+                    custom_bot_username
+                ),
+                reply_markup=await get_competition_menu_keyboard(competition_id)
+            )
+        case "competitions_list":
+            await query.message.edit_text(
+                text=MessageTexts.BOT_COMPETITIONS_LIST_MESSAGE.value.format(
+                    custom_bot_username),
+                reply_markup=await get_competitions_list_keyboard(bot_id, channel_id)
+            )
+
     try:
         await channel_db.get_channel(channel_id)
     except ChannelNotFound:
@@ -152,39 +191,6 @@ async def channel_menu_callback_handler(query: CallbackQuery, state: FSMContext)
             await query.answer()
             await state.set_state(States.EDITING_POST_TEXT)
             await state.set_data({"bot_id": bot_id, "channel_id": channel_id})
-        case "leave_channel":
-            leave_result = await custom_tg_bot.leave_chat(chat_id=channel_id)
-            if leave_result:
-                await query.message.answer(f"Вышел из канала {channel_username}.")
-                await query.message.answer(
-                    MessageTexts.BOT_MENU_MESSAGE.value.format((await Bot(custom_bot.token).get_me()).username),
-                    reply_markup=await get_inline_bot_menu_keyboard(bot_id)
-                )
-            else:
-                await query.message.answer(f"Произошла ошибка при выходе из канала {channel_username}")
-                await query.message.answer(
-                    MessageTexts.BOT_MENU_MESSAGE.value.format((await Bot(custom_bot.token).get_me()).username),
-                    reply_markup=await get_inline_bot_menu_keyboard(bot_id)
-                )
-        case "create_competition":
-            competition_id = await competition.create_competition(
-                channel_id=channel_id,
-                bot_id=bot_id
-            )
-            await query.message.edit_text(
-                text=MessageTexts.BOT_COMPETITION_MENU_MESSAGE.value.format(
-                    "-",
-                    channel_username,
-                    custom_bot_username
-                ),
-                reply_markup=await get_competition_menu_keyboard(competition_id)
-            )
-        case "competitions_list":
-            await query.message.edit_text(
-                text=MessageTexts.BOT_COMPETITIONS_LIST_MESSAGE.value.format(
-                    custom_bot_username),
-                reply_markup=await get_competitions_list_keyboard(bot_id, channel_id)
-            )
 
         case "back_to_channels_list":
             await query.message.edit_text(
@@ -284,7 +290,9 @@ async def channel_menu_callback_handler(query: CallbackQuery, state: FSMContext)
                 await query.answer("Кнопку нельзя добавить, если в сообщение больше одного медиафайла", show_alert=True)
             else:
                 channel_post.button_text = "Shop"
-                channel_post.button_url = f"{WEB_APP_URL}:{WEB_APP_PORT}/products-page/?bot_id={bot_id}"
+                link = await create_start_link(bot, 'show_shop_inline')
+                # channel_post.button_url = f"{WEB_APP_URL}:{WEB_APP_PORT}/products-page/?bot_id={bot_id}"
+                channel_post.button_url = link
                 channel_post.has_button = True
                 await channel_post_db.update_channel_post(channel_post)
 

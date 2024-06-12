@@ -224,8 +224,14 @@ async def get_inline_channel_menu_keyboard(bot_id: int, channel_id: int) -> Inli
                     text="🆕 Создать конкурс", callback_data="channel_menu:create_competition" + callback_metadata)
             ],
             [
-                channel_post_button
+                channel_post_button,
+                InlineKeyboardButton(
+                    text="Аналитика", callback_data="channel_menu:analytics" + callback_metadata)
             ],
+            [
+                InlineKeyboardButton(
+                    text="Права бота", callback_data="channel_menu:manage" + callback_metadata, url=f"https://t.me/{await get_bot_username(bot_id)}?startchannel")
+            ]
             [
                 InlineKeyboardButton(
                     text="🔙 Назад", callback_data="channel_menu:back_to_channels_list" + callback_metadata),
@@ -463,6 +469,13 @@ def get_custom_bot_menu_keyboard(button_text: str, bot_id: int) -> ReplyKeyboard
     return ReplyKeyboardMarkup(keyboard=[
         [KeyboardButton(text="Открыть магазин",
                         web_app=make_webapp_info(bot_id))]
+    ], resize_keyboard=True, one_time_keyboard=False)
+
+
+def get_show_inline_button(bot_id: int) -> ReplyKeyboardMarkup:
+    return InlineKeyboardMarkup(keyboard=[
+        [InlineKeyboardButton(text="Открыть магазин",
+                              web_app=make_webapp_info(bot_id))]
     ], resize_keyboard=True, one_time_keyboard=False)
 
 
