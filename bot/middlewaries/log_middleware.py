@@ -1,17 +1,37 @@
+from logging import Logger
 from typing import Callable, Dict, Any, Awaitable
 
 from aiogram import BaseMiddleware
 from aiogram.fsm.context import FSMContext
 from aiogram.types import CallbackQuery, Message, TelegramObject, User
 
-from logs.config import logger, extra_params
+from logs.config import extra_params
 
 import redis
 
 
-class MainLogMiddleware(BaseMiddleware):
-    def __init__(self) -> None:
-        self.redis = redis.Redis()
+class _MockRedis:
+    """If connect to real Redis is broken"""
+
+    def get(self, *args, **kwargs) -> None:
+        return None
+
+    def set(self, *args, **kwargs) -> None:
+        pass
+
+
+class LogMiddleware(BaseMiddleware):
+    def __init__(self, logger: Logger) -> None:
+        self.logger = logger
+        try:
+            self.redis = redis.Redis()
+            self.redis.info()
+        except redis.ConnectionError as e:
+            self.redis = _MockRedis()
+            self.logger.warning(
+                f"Unable to connect to Redis",
+                exc_info=e
+            )
 
     async def __call__(
             self,
@@ -29,7 +49,7 @@ class MainLogMiddleware(BaseMiddleware):
 
             if isinstance(event, Message):
                 if self.redis.get(str(event.message_id)) is None:
-                    logger.info(
+                    self.logger.info(
                         f"{callback_info} has written {event.text}",
                         extra=extra_params(user_id=user.id)
                     )
@@ -37,19 +57,19 @@ class MainLogMiddleware(BaseMiddleware):
                     self.redis.set(name=str(event.message_id), value="", ex=2)
             elif isinstance(event, CallbackQuery):
                 if self.redis.get(str(event.id)) is None:
-                    logger.info(
+                    self.logger.info(
                             f"{callback_info} has sent callback_data {event.data}",
                             extra=extra_params(user_id=user.id)
                         )
                     # noinspection PyAsyncCall
                     self.redis.set(name=str(event.id), value="", ex=2)
             else:
-                logger.warning(
+                self.logger.warning(
                     f"{callback_info} has sent unexpected event {event}",
                     extra=extra_params(user_id=user.id)
                 )
         except Exception as e:
-            logger.error(
+            self.logger.error(
                 "New event: logger error",
                 exc_info=e
             )

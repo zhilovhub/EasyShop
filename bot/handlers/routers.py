@@ -3,9 +3,11 @@ from aiogram import Router
 from bot.filters import ChatTypeFilter
 from bot.middlewaries.subscription_middleware import CheckSubscriptionMiddleware
 from bot.middlewaries.errors_middleware import ErrorMiddleware
-from bot.middlewaries.log_middleware import MainLogMiddleware
+from bot.middlewaries.log_middleware import LogMiddleware
 
-log_middleware = MainLogMiddleware()
+from logs.config import logger
+
+log_middleware = LogMiddleware(logger=logger)
 
 custom_bot_editing_router = Router(name="custom_bot_editing")  # only for SUBSCRIBERS
 custom_bot_editing_router.message.filter(ChatTypeFilter(chat_type="private"))
