@@ -83,7 +83,7 @@ async def process_web_app_request(event: Message):
         )
     except Exception as e:
         if isinstance(e, NotEnoughProductsInStockToReduce):
-            await event.answer(":( К сожалению на складе недостаточно товаров для выполнения Вашего заказа.")
+            await event.answer(f":(\nК сожалению на складе недостаточно <b>{product.name}</b> для выполнения Вашего заказа.")
         await event.answer("Произошла ошибка при создании заказа, администраторы уведомлены.")
 
         try:

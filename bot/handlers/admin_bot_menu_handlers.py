@@ -85,7 +85,7 @@ async def process_web_app_request(event: Message):
         logger.info(f"order with id #{order.id} created")
     except Exception as e:
         if isinstance(e, NotEnoughProductsInStockToReduce):
-            await event.answer(":( К сожалению на складе недостаточно товаров для выполнения Вашего заказа.")
+            await event.answer(f":(\nК сожалению на складе недостаточно <b>{product.name}</b> для выполнения Вашего заказа.")
         logger.warning("error while creating order", exc_info=True)
         return await event.answer("Произошла ошибка при создании заказа, попробуйте еще раз.")
     try:
