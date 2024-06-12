@@ -50,7 +50,7 @@ async def process_web_app_request(event: Message):
         logger.info(f"receive web app data: {data}")
 
         bot_id = data["bot_id"]
-        bot_data = await bot_db.get_bot(bot_id)
+        bot_data = await bot_db.get_bot(int(bot_id))
 
         data["from_user"] = user_id
         data["payment_method"] = "Картой Онлайн"

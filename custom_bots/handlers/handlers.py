@@ -35,7 +35,7 @@ async def process_web_app_request(event: Message):
         data = json.loads(event.web_app_data.data)
 
         bot_id = data["bot_id"]
-        bot_data = await bot_db.get_bot(bot_id)
+        bot_data = await bot_db.get_bot(int(bot_id))
 
         custom_bot_logger.info(
             f"user_id={user_id}: received web app data: {data}",
