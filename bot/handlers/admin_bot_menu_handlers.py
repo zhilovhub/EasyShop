@@ -30,7 +30,7 @@ from custom_bots.multibot import storage as custom_bot_storage
 from database.models.bot_model import BotSchemaWithoutId
 from database.models.mailing_model import MailingSchemaWithoutId
 from database.models.order_model import OrderSchema, OrderNotFound, OrderItem
-from database.models.product_model import ProductWithoutId
+from database.models.product_model import ProductWithoutId, NotEnoughProductsInStockToReduce
 
 import random
 
@@ -49,6 +49,9 @@ async def process_web_app_request(event: Message):
         data = json.loads(event.web_app_data.data)
         logger.info(f"receive web app data: {data}")
 
+        bot_id = data["bot_id"]
+        bot_data = await bot_db.get_bot(bot_id)
+
         data["from_user"] = user_id
         data["payment_method"] = "Картой Онлайн"
         data["status"] = "backlog"
@@ -65,6 +68,11 @@ async def process_web_app_request(event: Message):
                 chosen_options[option_title] = item['chosen_option']
             items[item_id] = OrderItem(amount=item['amount'], used_extra_option=used_options,
                                       extra_options=chosen_options)
+            if bot_data.settings and "auto_reduce" in bot_data.settings and bot_data.settings["auto_reduce"] == True:
+                if product.count < item['amount']:
+                    raise NotEnoughProductsInStockToReduce
+                product.count -= item['amount']
+                await product_db.update_product(product)
 
         data['items'] = items
 
@@ -75,13 +83,14 @@ async def process_web_app_request(event: Message):
         order = OrderSchema(**data)
 
         logger.info(f"order with id #{order.id} created")
-    except Exception:
+    except Exception as e:
+        if isinstance(e, NotEnoughProductsInStockToReduce):
+            await event.answer(":( К сожалению на складе недостаточно товаров для выполнения Вашего заказа.")
         logger.warning("error while creating order", exc_info=True)
         return await event.answer("Произошла ошибка при создании заказа, попробуйте еще раз.")
-
     try:
         await send_new_order_notify(order, user_id)
-    except Exception as ex:
+    except Exception:
         logger.warning("error while sending test order notification", exc_info=True)
 
 
