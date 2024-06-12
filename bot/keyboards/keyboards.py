@@ -473,7 +473,7 @@ def get_custom_bot_menu_keyboard(button_text: str, bot_id: int) -> ReplyKeyboard
 
 
 def get_show_inline_button(bot_id: int) -> ReplyKeyboardMarkup:
-    return InlineKeyboardMarkup(keyboard=[
+    return InlineKeyboardMarkup(inline_keyboard=[
         [InlineKeyboardButton(text="Открыть магазин",
                               web_app=make_webapp_info(bot_id))]
     ], resize_keyboard=True, one_time_keyboard=False)
