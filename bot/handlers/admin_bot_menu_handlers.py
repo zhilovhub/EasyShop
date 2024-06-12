@@ -58,6 +58,8 @@ async def process_web_app_request(event: Message):
 
         items: dict[int, OrderItem] = {}
 
+        zero_products = []
+
         for item_id, item in data['raw_items'].items():
             product = await product_db.get_product(item_id)
             chosen_options = {}
@@ -72,7 +74,13 @@ async def process_web_app_request(event: Message):
                 if product.count < item['amount']:
                     raise NotEnoughProductsInStockToReduce(product, item['amount'])
                 product.count -= item['amount']
+                if product.count == 0:
+                    zero_products.append(product)
                 await product_db.update_product(product)
+
+        if zero_products:
+            msg = await event.answer("⚠️ Внимание, после этого заказа кол-во следующих товаров будет равно 0.")
+            await msg.reply("\n".join([f"{p.name} [{p.id}]" for p in zero_products]))
 
         data['items'] = items
 
