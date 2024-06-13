@@ -36,6 +36,8 @@ class LokiFilter(logging.Filter):
                 record.tags["category_id"] = record.category_id
             if hasattr(record, "channel_id"):
                 record.tags["channel_id"] = record.channel_id
+            if hasattr(record, "channel_user_id"):
+                record.tags["channel_user_id"] = record.channel_user_id
             if hasattr(record, "competition_id"):
                 record.tags["competition_id"] = record.competition_id
             if hasattr(record, "mailing_id"):
