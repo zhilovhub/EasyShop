@@ -133,7 +133,8 @@ async def add_bot_handler(request):
 
     result = await new_bot.set_webhook(
         OTHER_BOTS_URL.format(bot_token=bot.token),
-        allowed_updates=["message", "my_chat_member", "callback_query"]
+        allowed_updates=["message", "my_chat_member",
+                         "callback_query", "chat_member"]
     )
     if result:
         custom_bot_logger.debug(
