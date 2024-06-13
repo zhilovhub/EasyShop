@@ -41,6 +41,7 @@ export default {
     tg.MainButton.show();
     tg.BackButton.show();
     tg.MainButton.text = "Добавить товар";
+    tg.MainButton.textColor = "#0C0C0C";
 
     tg.onEvent('mainButtonClicked', this.addProduct);
     tg.onEvent('backButtonClicked', this.closingComponent);
@@ -62,7 +63,7 @@ export default {
   },
   methods: {
     addProduct() {
-      if (this.productName && this.productDescription && this.productArticle && this.productPrice && this.productCount) {
+      if (this.productName && this.productDescription && this.productArticle && this.productPrice && this.productCount && this.chosenCategory && this.chosenCategory.id) {
         this.$store.dispatch("addProduct", {
           name: this.productName,
           categories: this.chosenCategory.id,
@@ -274,15 +275,15 @@ export default {
     <div class="card" style="display: flex; justify-content: space-between">
       <div class="block-input">
         <h1>Цена</h1>
-        <div style="">
-          <input class="required" v-model="productPrice" type="number" placeholder="Цена" style="width: 80%">
+        <div class="required">
+          <input v-model="productPrice" type="number" placeholder="Цена" style="width: 80%">
           <span>₽</span>
         </div>
       </div>
       <div class="block-input">
         <h1>Кол-во на складе</h1>
-        <div style="width: 100%;">
-          <input class="required" v-model="productCount" type="number" placeholder="Количество">
+        <div class="required" style="width: 100%;">
+          <input v-model="productCount" type="number" placeholder="Количество">
           <span>шт.</span>
         </div>
       </div>

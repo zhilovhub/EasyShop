@@ -166,6 +166,7 @@ export default {
     this.$nextTick(this.setFirstOptionChosen);
 
     tg.MainButton.text = "Добавить";  // сначала назначаем цвета и текст кнопкам
+    tg.MainButton.textColor = "#0C0C0C";
 
     tg.onEvent('mainButtonClicked', this.addToShoppingCart);  // затем навешиваем листенеры
     tg.onEvent('backButtonClicked', this.backButtonMethod);
