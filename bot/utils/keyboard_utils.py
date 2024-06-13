@@ -19,7 +19,7 @@ async def get_bot_username(bot_id: int) -> str:
 
 
 async def get_bot_status(bot_id: int) -> str:
-    return (await bot_db.get_bot(bot_id=bot_id)).status
+    return (await bot_db.get_bot(bot_id=int(bot_id))).status
 
 
 async def get_bot_channels(bot_id: int) -> list[tuple[ChannelSchema, str]]:

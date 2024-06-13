@@ -163,9 +163,9 @@ def get_stock_import_options_keyboard(bot_id: int) -> InlineKeyboardMarkup:
 
     return InlineKeyboardMarkup(inline_keyboard=[
         [
-            InlineKeyboardButton(text="1", callback_data="stock_menu:replace_all" + callback_data),
-            InlineKeyboardButton(text="2", callback_data="stock_menu:replace_duplicates" + callback_data),
-            InlineKeyboardButton(text="3", callback_data="stock_menu:dont_replace_duplicates" + callback_data),
+            InlineKeyboardButton(text="1", callback_data="import_menu:replace_all" + callback_data),
+            InlineKeyboardButton(text="2", callback_data="import_menu:replace_duplicates" + callback_data),
+            InlineKeyboardButton(text="3", callback_data="import_menu:dont_replace_duplicates" + callback_data),
         ]
     ])
 
