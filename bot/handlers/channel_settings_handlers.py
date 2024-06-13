@@ -1,4 +1,5 @@
 from datetime import timedelta, datetime
+from enum import Enum
 import re
 import json
 import os
@@ -19,8 +20,8 @@ from aiogram.types import Message, FSInputFile, CallbackQuery, ReplyKeyboardRemo
     InputMediaPhoto, InputMediaVideo, InputMediaAudio, InputMediaDocument, BufferedInputFile
 from aiogram.fsm.context import FSMContext
 
-from bot.main import bot, user_db, _scheduler, bot_db, product_db, order_db, custom_bot_user_db, QUESTION_MESSAGES, competition, channel_post_db, channel_post_media_file_db
-from bot.keyboards import *
+from bot.utils.message_texts import MessageTexts
+from bot.main import bot, user_db, _scheduler, bot_db, product_db, order_db, custom_bot_user_db, QUESTION_MESSAGES, competition, channel_post_db, channel_post_media_file_db, channel_user_db
 from bot.exceptions import InstanceAlreadyExists
 from bot.states.states import States
 from bot.handlers.routers import channel_menu_router
@@ -37,6 +38,7 @@ from database.models.channel_model import ChannelNotFound
 from database.models.channel_post_model import ChannelPostSchema, ChannelPostSchemaWithoutId
 from database.models.channel_post_media_files_model import ChannelPostMediaFileSchema
 from aiogram.utils.deep_linking import create_start_link
+from bot.keyboards import *
 
 
 class MailingMessageType(Enum):
@@ -59,9 +61,18 @@ async def channel_menu_callback_handler(query: CallbackQuery, state: FSMContext)
     custom_tg_bot = Bot(custom_bot.token)
     custom_bot_username = (await custom_tg_bot.get_me()).username
 
+    channel_username = (await custom_tg_bot.get_chat(channel_id)).username
+
     match action:
         case "analytics":
-            pass
+            plus_users = await channel_user_db.get_joined_channel_users_by_channel_id(channel_id)
+            minus_users = await channel_user_db.get_left_channel_users_by_channel_id(channel_id)
+            return await query.answer(
+                text=f"Прирост подписчиков в канале @{channel_username}: {len(plus_users)-len(minus_users)}\n\n"
+                f"Отписалось - {len(minus_users)}\n"
+                f"Подписалось - {len(plus_users)}\n",
+                show_alert=True
+            )
         case "leave_channel":
             leave_result = await custom_tg_bot.leave_chat(chat_id=channel_id)
             if leave_result:
@@ -109,7 +120,6 @@ async def channel_menu_callback_handler(query: CallbackQuery, state: FSMContext)
         new_channel_flag = True
         await query.message.delete()
 
-    channel_username = (await custom_tg_bot.get_chat(channel_id)).username
     if new_channel_flag:
         match action:
             case "create_post":

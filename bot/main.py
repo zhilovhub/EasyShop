@@ -1,10 +1,3 @@
-import sys
-try:
-    # Or os.getcwd() for this directory
-    sys.path.index('C:\\Users\\Arsen\\Home\\Python_code\\Kwork\\TgShop\\EasyShop')
-except ValueError:
-    # Or os.getcwd() for this directory
-    sys.path.append('C:\\Users\\Arsen\\Home\\Python_code\\Kwork\\TgShop\\EasyShop')
 import asyncio
 from datetime import datetime
 from aiogram import Bot, Dispatcher
