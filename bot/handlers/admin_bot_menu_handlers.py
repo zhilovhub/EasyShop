@@ -144,7 +144,8 @@ async def handle_reply_to_question(message: Message, state: FSMContext):
 async def handle_callback(query: CallbackQuery, state: FSMContext):
     state_data = await state.get_data()
     data = query.data.split(":")
-    bot_token = (await bot_db.get_bot(state_data['bot_id'])).token
+    bot_data = await bot_db.get_bot(state_data['bot_id'])
+    bot_token = bot_data.token
 
     try:
         order = await order_db.get_order(data[1])
@@ -192,6 +193,23 @@ async def handle_callback(query: CallbackQuery, state: FSMContext):
                     is_admin=True
                 ), reply_markup=None if data[0] in ("order_finish", "order_cancel") else
                 create_change_order_status_kb(order.id, int(data[2]), int(data[3]), order.status))
+
+            if data[0] in ("order_finish", ):
+                if bot_data.settings and "auto_reduce" in bot_data.settings and bot_data.settings['auto_reduce'] == True:
+                    zero_products = []
+                    for item_id, item in order.items.items():
+                        product = await product_db.get_product(item_id)
+                        if product.count == 0:
+                            zero_products.append(product)
+                    if zero_products:
+                        msg = await query.message.answer(
+                            "⚠️ Внимание, кол-во следующих товаров на складе равно 0.")
+                        await msg.reply("\n".join([f"{p.name} [{p.id}]" for p in zero_products]))
+            if data[0] in ("order_cancel", ):
+                for item_id, item in order.items.items():
+                    product = await product_db.get_product(item_id)
+                    product.count += item.amount
+                    await product_db.update_product(product)
 
             await Bot(bot_token, parse_mode=ParseMode.HTML).send_message(
                 chat_id=data[3],
