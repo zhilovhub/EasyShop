@@ -35,7 +35,7 @@ class Stoke:  # TODO raise specific exceptions in import methods + optimize (uni
         self.files_path = os.environ["FILES_PATH"]
 
     async def import_json(
-            self, bot_id: int, path_to_file: str, replace: bool, path_to_file_with_pictures: str = None
+            self, bot_id: int, path_to_file: str, replace: bool, path_to_file_with_pictures: str = None, replace_duplicates: bool = False
     ) -> None:
         """If ``replace`` is true then first delete all products else just add or update by name"""
         with open(path_to_file, "r", encoding="utf-8") as f:
@@ -44,7 +44,7 @@ class Stoke:  # TODO raise specific exceptions in import methods + optimize (uni
         if replace:
             await self.product_db.delete_all_products(bot_id)
 
-        await self._import_products(bot_id, products, replace, path_to_file_with_pictures)
+        await self._import_products(bot_id, products, replace, path_to_file_with_pictures, replace_duplicates=replace_duplicates)
 
     async def export_json(self, bot_id: int, with_pictures: bool = False) -> tuple[str, str | None]:
         """Экспорт товаров в виде json файла"""
@@ -75,7 +75,7 @@ class Stoke:  # TODO raise specific exceptions in import methods + optimize (uni
         return path_to_file, path_to_images
 
     async def import_csv(
-            self, bot_id: int, path_to_file: str, replace: bool, path_to_file_with_pictures: str = None
+            self, bot_id: int, path_to_file: str, replace: bool, path_to_file_with_pictures: str = None, replace_duplicates: bool = False
     ) -> None:
         """If ``replace`` is true then first delete all products else just add or update by name"""
         with open(path_to_file, "r", encoding="latin-1") as f:
@@ -90,12 +90,12 @@ class Stoke:  # TODO raise specific exceptions in import methods + optimize (uni
                     bot_id=bot_id,
                     name=row[0],
                     description=row[1] if row[1] is not None else "",
-                    price=row[2],
-                    count=row[3],
-                    picture=row[4]
+                    price=int(row[2]),
+                    count=int(row[3]),
+                    picture=[row[4]]
                 ))
 
-        await self._import_products(bot_id, products, replace, path_to_file_with_pictures)
+        await self._import_products(bot_id, products, replace, path_to_file_with_pictures, replace_duplicates=replace_duplicates)
 
     async def export_csv(self, bot_id: int, with_pictures: bool = False) -> tuple[str, str | None]:
         """Экспорт товаров в виде csv файла"""
@@ -122,25 +122,27 @@ class Stoke:  # TODO raise specific exceptions in import methods + optimize (uni
         return path_to_file, path_to_images
 
     async def import_xlsx(
-            self, bot_id: int, path_to_file: str, replace: bool, path_to_file_with_pictures: str = None
+            self, bot_id: int, path_to_file: str, replace: bool, path_to_file_with_pictures: str = None, replace_duplicates: bool = False
     ) -> None:
         """If ``replace`` is true then first delete all products else just add or update by name"""
         wb = load_workbook(filename=path_to_file)
         ws = wb.active
 
-        # should be name, description, price, count, picture
+        # should be name, description, price, count, picture, article, category
         products = []
         for row in list(ws.values)[1:]:
             products.append(ProductWithoutId(
+                article=row[5],
+                category=[row[6]],
                 bot_id=bot_id,
                 name=row[0],
                 description=row[1] if row[1] is not None else "",
-                price=row[2],
-                count=row[3],
-                picture=row[4] if len(row) > 4 else None
+                price=int(row[2]),
+                count=int(row[3]),
+                picture=[row[4]] if row[4] else None
             ))
 
-        await self._import_products(bot_id, products, replace, path_to_file_with_pictures)
+        await self._import_products(bot_id, products, replace, path_to_file_with_pictures, replace_duplicates=replace_duplicates)
 
     async def export_xlsx(self, bot_id: int, with_pictures: bool = False) -> tuple[str, str | None]:
         """Экспорт товаров в виде Excel файла"""
@@ -193,7 +195,7 @@ class Stoke:  # TODO raise specific exceptions in import methods + optimize (uni
         await self.product_db.update_product(product)
 
     async def _import_products(
-            self, bot_id: int, products: Iterable[ProductWithoutId], replace: bool, path_to_file_with_pictures: str
+            self, bot_id: int, products: Iterable[ProductWithoutId], replace: bool, path_to_file_with_pictures: str, replace_duplicates: bool = False
     ) -> None:
         if replace:
             await self.product_db.delete_all_products(bot_id)
@@ -202,7 +204,7 @@ class Stoke:  # TODO raise specific exceptions in import methods + optimize (uni
                 self._update_product_picture(product, path_to_file_with_pictures)
             else:
                 product.picture = None
-            await self.product_db.upsert_product(product)
+            await self.product_db.upsert_product(product, replace_duplicates)
 
     def _update_product_picture(self, product: ProductWithoutId, path_to_file_with_pictures: str) -> None:
         new_picture_path = self._generate_path_to_picture()
