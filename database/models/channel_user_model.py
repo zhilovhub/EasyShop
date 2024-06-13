@@ -31,7 +31,6 @@ class ChannelUserSchemaWithoutId(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
     id: int = Field(alias="channel_user_id", frozen=True)
-    channel_user_id: int = Field(frozen=True)
     channel_id: int = Field(frozen=True)
     is_channel_member: bool = None
     join_date: datetime = Field()
