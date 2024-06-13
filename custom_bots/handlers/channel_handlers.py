@@ -14,9 +14,11 @@ from database.models.channel_user_model import ChannelUserSchema, ChannelUserNot
 from datetime import datetime
 
 
-@multi_bot_channel_router.chat_member(ChatMemberUpdatedFilter(IS_MEMBER >> IS_NOT_MEMBER))
-async def on_user_leave(event: ChatMemberUpdated):
-    user_id = event.from_user.id
+@multi_bot_channel_router.chat_member(ChatMemberUpdatedFilter(IS_NOT_MEMBER >> IS_MEMBER))
+async def on_user_join(event: ChatMemberUpdated):
+    custom_bot_logger.info(
+        f"New user event")
+    user_id = event.new_chat_member.user.id
     channel_id = event.chat.id
     try:
         channel_user = await channel_user_db.get_channel_user_by_channel_user_id_and_channel_id(user_id, channel_id)
@@ -33,9 +35,11 @@ async def on_user_leave(event: ChatMemberUpdated):
         )
 
 
-@ multi_bot_channel_router.chat_member(ChatMemberUpdatedFilter(IS_NOT_MEMBER >> IS_MEMBER))
-async def on_user_join(event: ChatMemberUpdated):
-    user_id = event.from_user.id
+@ multi_bot_channel_router.chat_member(ChatMemberUpdatedFilter(IS_MEMBER >> IS_NOT_MEMBER))
+async def on_user_leave(event: ChatMemberUpdated):
+    custom_bot_logger.info(
+        f"User left event")
+    user_id = event.old_chat_member.user.id
     channel_id = event.chat.id
     try:
         channel_user = await channel_user_db.get_channel_user_by_channel_user_id_and_channel_id(user_id, channel_id)
