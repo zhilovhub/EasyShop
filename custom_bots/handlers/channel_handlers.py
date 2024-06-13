@@ -17,7 +17,7 @@ from datetime import datetime
 @multi_bot_channel_router.chat_member(ChatMemberUpdatedFilter(IS_NOT_MEMBER >> IS_MEMBER))
 async def on_user_join(event: ChatMemberUpdated):
     custom_bot_logger.info(
-        f"New user event")
+        f"User {user_id} joined chat {channel_id}")
     user_id = event.new_chat_member.user.id
     channel_id = event.chat.id
     try:
@@ -26,9 +26,10 @@ async def on_user_join(event: ChatMemberUpdated):
         channel_user.is_channel_member = True
         await channel_user_db.update_channel_user(channel_user)
     except ChannelUserNotFound:
-        await channel_user_db.add_chanel_user_id(
+        custom_bot_logger.info(f"user {user_id} not found, adding to db")
+        await channel_user_db.add_chanel_user(
             ChannelUserSchemaWithoutId.model_validate(
-                {"id": user_id, "channel_id": channel_id,
+                {"channel_user_id": user_id, "channel_id": channel_id,
                     "join_date": datetime.now().replace(tzinfo=None),
                     "is_channel_member": True}
             )
@@ -37,19 +38,20 @@ async def on_user_join(event: ChatMemberUpdated):
 
 @ multi_bot_channel_router.chat_member(ChatMemberUpdatedFilter(IS_MEMBER >> IS_NOT_MEMBER))
 async def on_user_leave(event: ChatMemberUpdated):
-    custom_bot_logger.info(
-        f"User left event")
     user_id = event.old_chat_member.user.id
     channel_id = event.chat.id
+    custom_bot_logger.info(
+        f"User {user_id} left chat {channel_id}")
     try:
         channel_user = await channel_user_db.get_channel_user_by_channel_user_id_and_channel_id(user_id, channel_id)
         channel_user.join_date = datetime.now().replace(tzinfo=None)
         channel_user.is_channel_member = False
         await channel_user_db.update_channel_user(channel_user)
     except ChannelUserNotFound:
-        await channel_user_db.add_chanel_user_id(
+        custom_bot_logger.info(f"user {user_id} not found, adding to db")
+        await channel_user_db.add_chanel_user(
             ChannelUserSchemaWithoutId.model_validate(
-                {"id": user_id, "channel_id": channel_id,
+                {"channel_user_id": user_id, "channel_id": channel_id,
                     "join_date": datetime.now().replace(tzinfo=None),
                     "is_channel_member": False}
             )

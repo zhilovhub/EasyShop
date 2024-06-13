@@ -130,7 +130,7 @@ class ChannelUserDao(Dao):
 
         return res
 
-    async def add_chanel_user_id(self, chanel_user: ChannelUserSchemaWithoutId) -> None:
+    async def add_chanel_user(self, chanel_user: ChannelUserSchemaWithoutId) -> None:
         if not isinstance(chanel_user, ChannelUserSchemaWithoutId):
             raise InvalidParameterFormat(
                 "ChannelUser must be type of database.DbChannelUser.")
