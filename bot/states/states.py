@@ -43,3 +43,5 @@ class States(StatesGroup):
     WAITING_FOR_SPONSOR_CHANNEL_LINKS = State()
 
     EDITING_CONTEST_MENU = State()
+
+    IMPORT_PRODUCTS = State()
