@@ -6,7 +6,6 @@ from bot.states import States
 from bot.keyboards import *
 from bot.main import stock_manager, bot, bot_db
 from config import FILES_PATH
-import random
 from datetime import datetime
 
 
@@ -29,7 +28,10 @@ async def back_to_menu(message: Message, state: FSMContext):
 
 @stock_menu_router.callback_query(lambda q: q.data.startswith("stock_menu:import"))
 async def import_products_callback(query: CallbackQuery, state: FSMContext):
-    bot_id = query.data.split(':')[2]
+    bot_id = (await state.get_data())['bot_id']
+    await query.message.answer(MessageTexts.STOCK_IMPORT_COMMANDS.value,
+                               reply_markup=get_stock_import_options_keyboard(bot_id))
+
 
 
 @stock_menu_router.callback_query(lambda q: q.data.startswith("stock_menu:export"))
@@ -61,4 +63,5 @@ async def handle_stock_manage_input(message: Message, state: FSMContext):
         await stock_manager.import_xlsx(bot_id=bot_id, path_to_file=file_path, replace=False)
         await message.answer("Кол-во товаров на складе обновлено.")
     except:
+        # TODO
         raise
