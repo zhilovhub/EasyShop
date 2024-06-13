@@ -218,22 +218,28 @@ class ProductDao(Dao):
         return product_id
 
     @validate_call
-    async def upsert_product(self, new_product: ProductWithoutId) -> int:  # TODO write tests for it
+    async def upsert_product(self, new_product: ProductWithoutId,
+                             replace_duplicates: bool = False) -> int:  # TODO write tests for it
         if type(new_product) not in (ProductWithoutId, ProductSchema):
             raise InvalidParameterFormat("new_product must be a subclass of ProductWithoutId")
 
         new_product_dict = new_product.model_dump(exclude={"id"})
         async with self.engine.begin() as conn:
-            upsert_query = upsert(Product).values(new_product_dict).on_conflict_do_update(
-                constraint=f"products_name_key",
-                set_=new_product_dict
-            )
-            product_id = (await conn.execute(upsert_query)).inserted_primary_key[0]
-
-        self.logger.debug(
-            f"bot_id={new_product.bot_id}: product {product_id} is upserted",
-            extra=extra_params(product_id=product_id, bot_id=new_product.bot_id)
-        )
+            if replace_duplicates:
+                upsert_query = upsert(Product).values(new_product_dict).on_conflict_do_update(
+                    constraint=f"products_name_key",
+                    set_=new_product_dict
+                )
+                product_id = (await conn.execute(upsert_query)).inserted_primary_key[0]
+                self.logger.debug(
+                    f"bot_id={new_product.bot_id}: product {product_id} is upserted",
+                    extra=extra_params(product_id=product_id, bot_id=new_product.bot_id)
+                )
+            else:
+                upsert_query = upsert(Product).values(new_product_dict).on_conflict_do_nothing(
+                    constraint=f"products_name_key",
+                )
+                product_id = -1
 
         return product_id
 
