@@ -103,14 +103,14 @@ class ChannelUserDao(Dao):
 
         return res
 
-    async def get_channel_user_by_channel_user_id_and_channel_id(self, chanel_user_id: int, channel_id: int) -> ChannelUserSchema:
-        if not isinstance(chanel_user_id, int):
+    async def get_channel_user_by_channel_user_id_and_channel_id(self, channel_user_id: int, channel_id: int) -> ChannelUserSchema:
+        if not isinstance(channel_user_id, int):
             raise InvalidParameterFormat("ChannelUser_id must be type of int.")
 
         async with self.engine.begin() as conn:
             raw_res = await conn.execute(
                 select(ChannelUser).where(
-                    (ChannelUser.channel_user_id == chanel_user_id),
+                    (ChannelUser.channel_user_id == channel_user_id),
                     (ChannelUser.channel_id == channel_id)
                 )
             )
@@ -119,34 +119,36 @@ class ChannelUserDao(Dao):
         res = raw_res.fetchone()
         if res is None:
             raise ChannelUserNotFound(
-                f"id {chanel_user_id} not found in database.")
+                f"id {channel_user_id} not found in database.")
 
         res = ChannelUserSchema.model_validate(res)
 
         self.logger.debug(
-            f"chanel_user_id={chanel_user_id}: ChannelUser {chanel_user_id} is found",
-            extra=extra_params(chanel_user_id=chanel_user_id)
+            f"channel_user_id={channel_user_id}: ChannelUser {channel_user_id} is found",
+            extra=extra_params(channel_user_id=channel_user_id)
         )
 
         return res
 
-    async def add_chanel_user(self, chanel_user: ChannelUserSchemaWithoutId) -> None:
-        if not isinstance(chanel_user, ChannelUserSchemaWithoutId):
+    async def add_channel_user(self, channel_user: ChannelUserSchemaWithoutId) -> None:
+        if not isinstance(channel_user, ChannelUserSchemaWithoutId):
             raise InvalidParameterFormat(
                 "ChannelUser must be type of database.DbChannelUser.")
 
         try:
-            await self.get_chanel_user_id(chanel_user_id=chanel_user.id)
+            await self.get_channel_user_by_channel_user_id_and_channel_id(
+                channel_user_id=channel_user.channel_user_id, channel_id=channel_user.channel_id
+            )
             raise InstanceAlreadyExists(
-                f"ChannelUser with {chanel_user.id} already exists in db.")
+                f"ChannelUser with {channel_user.id} already exists in db.")
         except ChannelUserNotFound:
             async with self.engine.begin() as conn:
-                await conn.execute(insert(ChannelUser).values(**chanel_user.model_dump(by_alias=True)))
+                await conn.execute(insert(ChannelUser).values(**channel_user.model_dump(by_alias=True)))
             await self.engine.dispose()
 
         self.logger.debug(
-            f"chanel_user_id={chanel_user.id}: ChannelUser {chanel_user.id} is added",
-            extra=extra_params(chanel_user_id=chanel_user.id)
+            f"channel_user_id={channel_user.id}: ChannelUser {channel_user.id} is added",
+            extra=extra_params(channel_user_id=channel_user.id)
         )
 
     async def update_channel_user(self, updated_channel_user: ChannelUserSchema) -> None:
