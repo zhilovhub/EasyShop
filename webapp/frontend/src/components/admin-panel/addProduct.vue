@@ -66,7 +66,7 @@ export default {
       if (this.productName && this.productDescription && this.productArticle && this.productPrice && this.productCount && this.chosenCategory && this.chosenCategory.id) {
         this.$store.dispatch("addProduct", {
           name: this.productName,
-          category: this.chosenCategory.id,
+          category: [this.chosenCategory.id],
           description: this.productDescription,
           article: this.productArticle,
           price: this.productPrice,
