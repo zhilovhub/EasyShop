@@ -19,21 +19,26 @@ from database.models.channel_model import Channel
 
 class ChannelUser(Base):
     __tablename__ = "channel_users"
-
-    channel_user_id = Column(BigInteger, primary_key=True)
+    channel_user_pk = Column(BigInteger, primary_key=True, autoincrement=True)
+    channel_user_id = Column(BigInteger, nullable=False)
     channel_id = Column(ForeignKey(Channel.channel_id,
                         ondelete="CASCADE"), nullable=False)
     is_channel_member = Column(BOOLEAN, nullable=True)
     join_date = Column(DateTime, nullable=False)
 
 
-class ChannelUserSchema(BaseModel):
+class ChannelUserSchemaWithoutId(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
     id: int = Field(alias="channel_user_id", frozen=True)
+
     channel_id: int = Field(frozen=True)
     is_channel_member: bool = None
-    join_date: datetime = Field(frozen=True)
+    join_date: datetime = Field()
+
+
+class ChannelUserSchema(ChannelUserSchemaWithoutId):
+    channel_user_pk: int = Field(frozen=True)
 
 
 class ChannelUserDao(Dao):
@@ -98,12 +103,17 @@ class ChannelUserDao(Dao):
 
         return res
 
-    async def get_channel_user(self, chanel_user_id: int) -> ChannelUserSchema:
+    async def get_channel_user_by_channel_user_id_and_channel_id(self, chanel_user_id: int, channel_id: int) -> ChannelUserSchema:
         if not isinstance(chanel_user_id, int):
             raise InvalidParameterFormat("ChannelUser_id must be type of int.")
 
         async with self.engine.begin() as conn:
-            raw_res = await conn.execute(select(ChannelUser).where(ChannelUser.channel_user_id == chanel_user_id))
+            raw_res = await conn.execute(
+                select(ChannelUser).where(
+                    (ChannelUser.channel_user_id == chanel_user_id),
+                    (ChannelUser.channel_id == channel_id)
+                )
+            )
         await self.engine.dispose()
 
         res = raw_res.fetchone()
@@ -120,8 +130,8 @@ class ChannelUserDao(Dao):
 
         return res
 
-    async def add_chanel_user_id(self, chanel_user: ChannelUserSchema) -> None:
-        if not isinstance(chanel_user, ChannelUserSchema):
+    async def add_chanel_user_id(self, chanel_user: ChannelUserSchemaWithoutId) -> None:
+        if not isinstance(chanel_user, ChannelUserSchemaWithoutId):
             raise InvalidParameterFormat(
                 "ChannelUser must be type of database.DbChannelUser.")
 
