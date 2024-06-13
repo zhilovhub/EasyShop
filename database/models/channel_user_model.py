@@ -30,7 +30,7 @@ class ChannelUser(Base):
 class ChannelUserSchemaWithoutId(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
-    id: int = Field(alias="channel_user_id", frozen=True)
+    channel_user_id: int = Field(frozen=True)
     channel_id: int = Field(frozen=True)
     is_channel_member: bool = None
     join_date: datetime = Field()
@@ -139,15 +139,15 @@ class ChannelUserDao(Dao):
                 channel_user_id=channel_user.channel_user_id, channel_id=channel_user.channel_id
             )
             raise InstanceAlreadyExists(
-                f"ChannelUser with {channel_user.id} already exists in db.")
+                f"ChannelUser with {channel_user.channel_user_id} already exists in db.")
         except ChannelUserNotFound:
             async with self.engine.begin() as conn:
                 await conn.execute(insert(ChannelUser).values(**channel_user.model_dump(by_alias=True)))
             await self.engine.dispose()
 
         self.logger.debug(
-            f"channel_user_id={channel_user.id}: ChannelUser {channel_user.id} is added",
-            extra=extra_params(channel_user_id=channel_user.id)
+            f"channel_user_id={channel_user.channel_user_id}: ChannelUser {channel_user.channel_user_id} is added",
+            extra=extra_params(channel_user_id=channel_user.channel_user_id)
         )
 
     async def update_channel_user(self, updated_channel_user: ChannelUserSchema) -> None:
@@ -156,13 +156,14 @@ class ChannelUserDao(Dao):
                 "updated_ChannelUser must be type of database.DbChannelUser.")
 
         async with self.engine.begin() as conn:
-            await conn.execute(update(ChannelUser).where(ChannelUser.channel_user_id == updated_channel_user.id).
+            await conn.execute(update(ChannelUser).where(ChannelUser.channel_user_id == updated_channel_user.channel_user_id).
                                values(**updated_channel_user.model_dump(by_alias=True)))
         await self.engine.dispose()
 
         self.logger.debug(
-            f"channel_user_id={updated_channel_user.id}: ChannelUser {updated_channel_user.id} is updated",
-            extra=extra_params(channel_user_id=updated_channel_user.id)
+            f"channel_user_id={updated_channel_user.channel_user_id}: ChannelUser {updated_channel_user.channel_user_id} is updated",
+            extra=extra_params(
+                channel_user_id=updated_channel_user.channel_user_id)
         )
 
     async def del_channel_user(self, channel_user_id: int) -> None:
