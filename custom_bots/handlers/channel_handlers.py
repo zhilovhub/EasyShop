@@ -27,7 +27,7 @@ async def on_user_join(event: ChatMemberUpdated):
         await channel_user_db.update_channel_user(channel_user)
     except ChannelUserNotFound:
         custom_bot_logger.info(f"user {user_id} not found, adding to db")
-        await channel_user_db.add_chanel_user(
+        await channel_user_db.add_chanтel_user(
             ChannelUserSchemaWithoutId.model_validate(
                 {"channel_user_id": user_id, "channel_id": channel_id,
                     "join_date": datetime.now().replace(tzinfo=None),
