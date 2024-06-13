@@ -16,10 +16,10 @@ from datetime import datetime
 
 @multi_bot_channel_router.chat_member(ChatMemberUpdatedFilter(IS_NOT_MEMBER >> IS_MEMBER))
 async def on_user_join(event: ChatMemberUpdated):
-    custom_bot_logger.info(
-        f"User {user_id} joined chat {channel_id}")
     user_id = event.new_chat_member.user.id
     channel_id = event.chat.id
+    custom_bot_logger.info(
+        f"User {user_id} joined chat {channel_id}")
     try:
         channel_user = await channel_user_db.get_channel_user_by_channel_user_id_and_channel_id(user_id, channel_id)
         channel_user.join_date = datetime.now().replace(tzinfo=None)
