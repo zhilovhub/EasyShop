@@ -18,6 +18,7 @@ from database.models.custom_bot_user_model import CustomBotUserDao
 from database.models.competition_media_files_model import CompetitionMediaFileDao
 from database.models.channel_post_model import ChannelPostDao
 from database.models.channel_post_media_files_model import ChannelPostMediaFileDao
+from database.models.channel_user_model import ChannelUserDao
 from database.models import Base
 
 from dotenv import load_dotenv
@@ -61,6 +62,7 @@ class Database:
         self.channel_post_dao = ChannelPostDao(self.engine, self.logger)
         self.channel_post_media_file_dao = ChannelPostMediaFileDao(
             self.engine, self.logger)
+        self.channel_user_dao = ChannelUserDao(self.engine, self.logger)
 
         self.logger.debug("Database class is initialized")
 
@@ -108,6 +110,9 @@ class Database:
 
     def get_channel_post_media_file_dao(self) -> ChannelPostMediaFileDao:
         return self.channel_post_media_file_dao
+
+    def get_channel_user_dao(self) -> ChannelUserDao:
+        return self.channel_user_dao
 
     def get_randomizer_dao(self) -> RandomizerDao:
         return self.randomizer_dao
