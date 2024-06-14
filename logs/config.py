@@ -13,6 +13,10 @@ LOG_TO_GRAFANA = bool(int(os.getenv("LOG_TO_GRAFANA")))
 
 LOGS_PATH = os.getenv("PROJECT_ROOT") + "logs/"
 GRAFANA_URL = os.getenv("GRAFANA_URL")
+FROM = os.getenv("FROM")
+
+if not FROM:
+    raise Exception("В .env присвойте переменной FROM Ваше имя, чтобы в логах можно было фильтроваться")
 
 GRAFANA_FORMATTER_NAME = "formatter_grafana"
 LOCAL_FORMATTER_NAME = "formatter_local"
@@ -112,7 +116,7 @@ logger_configuration = {
             "level": "DEBUG",
             "formatter": GRAFANA_FORMATTER_NAME,
             "url": GRAFANA_URL + "loki/api/v1/push",
-            "tags": {"from_local": "Arsen"},
+            "tags": {"from": FROM},
             "filters": ["loki_filter"],
             "version": "1"
         },

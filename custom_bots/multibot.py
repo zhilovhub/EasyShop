@@ -237,7 +237,7 @@ async def main():
             print=custom_bot_logger.debug
         ),
         Bot(MAIN_TELEGRAM_TOKEN).send_message(
-            chat_id=734609007,
+            chat_id=1128894056,
             text=f"version 2.0 has been started"
         )
     )

@@ -81,6 +81,12 @@ async def on_start():
     await subscription.start_scheduler()
 
     logger.info("onStart finished. Bot online")
+
+    await bot.send_message(
+        chat_id=1128894056,
+        text=f"Main Bot, version 2.0 has been started"
+    )
+
     await dp.start_polling(bot)
 
 
