@@ -36,7 +36,7 @@ async def on_user_join(event: ChatMemberUpdated):
         )
 
 
-@ multi_bot_channel_router.chat_member(ChatMemberUpdatedFilter(IS_MEMBER >> IS_NOT_MEMBER))
+@multi_bot_channel_router.chat_member(ChatMemberUpdatedFilter(IS_MEMBER >> IS_NOT_MEMBER))
 async def on_user_leave(event: ChatMemberUpdated):
     user_id = event.old_chat_member.user.id
     channel_id = event.chat.id
@@ -58,7 +58,7 @@ async def on_user_leave(event: ChatMemberUpdated):
         )
 
 
-@ multi_bot_channel_router.my_chat_member()
+@multi_bot_channel_router.my_chat_member()
 async def my_chat_member_handler(my_chat_member: ChatMemberUpdated) -> Any:
     custom_bot_logger.info(f"Bot @{(await my_chat_member.bot.get_me()).username} has rights update in @{my_chat_member.chat.username}")
 

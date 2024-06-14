@@ -1,41 +1,22 @@
-from datetime import timedelta, datetime
-from enum import Enum
+from datetime import timedelta
 import re
-import json
-import os
-import string
-from random import sample
 from datetime import datetime
-from typing import Dict, Any
 
-from aiogram.fsm.storage.base import StorageKey
-from aiohttp import ClientConnectorError
-
-from aiogram import Bot, F
 from aiogram.enums import ParseMode
-from aiogram.exceptions import TelegramUnauthorizedError
-from aiogram.utils.token import validate_token, TokenValidationError
 
-from aiogram.types import Message, FSInputFile, CallbackQuery, ReplyKeyboardRemove, MessageEntity, LinkPreviewOptions, \
+from aiogram.types import Message, CallbackQuery, LinkPreviewOptions, \
     InputMediaPhoto, InputMediaVideo, InputMediaAudio, InputMediaDocument, BufferedInputFile
 from aiogram.fsm.context import FSMContext
 
-from bot.utils.message_texts import MessageTexts
-from bot.main import bot, user_db, _scheduler, bot_db, product_db, order_db, custom_bot_user_db, QUESTION_MESSAGES, competition, channel_post_db, channel_post_media_file_db, channel_user_db
-from bot.exceptions import InstanceAlreadyExists
+from bot.main import bot, _scheduler, custom_bot_user_db, channel_post_media_file_db, channel_user_db
 from bot.states.states import States
 from bot.handlers.routers import channel_menu_router
-from bot.utils.custom_bot_api import start_custom_bot, stop_custom_bot
 
 from logs.config import logger
 
-from custom_bots.multibot import storage as custom_bot_storage
 
-from database.models.bot_model import BotSchema, BotSchemaWithoutId
-from database.models.order_model import OrderSchema, OrderNotFound
-from database.models.product_model import ProductWithoutId
-from database.models.channel_model import ChannelNotFound
-from database.models.channel_post_model import ChannelPostSchema, ChannelPostSchemaWithoutId
+from database.models.bot_model import BotSchema
+from database.models.channel_post_model import ChannelPostSchemaWithoutId
 from database.models.channel_post_media_files_model import ChannelPostMediaFileSchema
 from aiogram.utils.deep_linking import create_start_link
 from bot.keyboards import *
@@ -113,12 +94,6 @@ async def channel_menu_callback_handler(query: CallbackQuery, state: FSMContext)
                 reply_markup=await get_competitions_list_keyboard(bot_id, channel_id)
             )
 
-    try:
-        await channel_db.get_channel(channel_id)
-    except ChannelNotFound:
-        await query.answer("Канал не найден", show_alert=True)
-        await query.message.delete()
-        return
     new_channel_flag = False
     try:
         channel_post = await channel_post_db.get_channel_post(channel_id=channel_id)
