@@ -262,7 +262,8 @@ async def bot_menu_photo_handler(message: Message, state: FSMContext):
                                    count=0,
                                    picture=[filename],
                                    article=params[0],
-                                   category=[0])
+                                   category=[0],
+                                   extra_options={})
     try:
         await product_db.add_product(new_product)
     except IntegrityError:
