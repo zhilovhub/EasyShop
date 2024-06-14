@@ -1,5 +1,5 @@
 from pydantic import BaseModel, Field, validate_call, ConfigDict
-from sqlalchemy import BigInteger, Column, ForeignKey, select, insert, delete, BOOLEAN
+from sqlalchemy import BigInteger, Column, ForeignKey, UniqueConstraint, select, insert, delete, BOOLEAN
 from sqlalchemy.ext.asyncio import AsyncEngine
 
 from bot.exceptions import InvalidParameterFormat
@@ -16,12 +16,14 @@ class ChannelNotFound(Exception):
 
 class Channel(Base):
     __tablename__ = "channels"
-
-    channel_id = Column(BigInteger, primary_key=True)
-    bot_id = Column(ForeignKey(Bot.bot_id, ondelete="CASCADE"), primary_key=True)
+    channel_id = Column(BigInteger, primary_key=True, unique=True)
+    bot_id = Column(ForeignKey(Bot.bot_id, ondelete="CASCADE"))
 
     # import because everyone can add bots. So now let our admins know only about their channels
     added_by_admin = Column(BOOLEAN, nullable=False)
+    __table_args__ = (
+        UniqueConstraint('channel_id', 'bot_id', name='unique_channel_bot'),
+    )
 
 
 class ChannelSchema(BaseModel):
@@ -60,7 +62,7 @@ class ChannelDao(Dao):  # TODO write tests
     @validate_call(validate_return=True)
     async def get_channel(self, channel_id: int) -> ChannelSchema:
         async with self.engine.begin() as conn:
-            raw_res = await conn.execute(select(Channel).where(Channel.id == channel_id))
+            raw_res = await conn.execute(select(Channel).where(Channel.channel_id == channel_id))
         await self.engine.dispose()
 
         raw_res = raw_res.fetchone()
@@ -79,20 +81,23 @@ class ChannelDao(Dao):  # TODO write tests
     @validate_call
     async def add_channel(self, new_channel: ChannelSchema) -> None:
         if type(new_channel) != ChannelSchema:
-            raise InvalidParameterFormat("new_channel must be type of ChannelSchema")
+            raise InvalidParameterFormat(
+                "new_channel must be type of ChannelSchema")
 
         async with self.engine.begin() as conn:
             await conn.execute(insert(Channel).values(new_channel.model_dump()))
 
         self.logger.debug(
             f"bot_id={new_channel.bot_id}: channel {new_channel.channel_id} is added",
-            extra=extra_params(bot_id=new_channel.bot_id, channel_id=new_channel.channel_id)
+            extra=extra_params(bot_id=new_channel.bot_id,
+                               channel_id=new_channel.channel_id)
         )
 
     @validate_call
     async def delete_channel(self, new_channel: ChannelSchema) -> None:
         if type(new_channel) != ChannelSchema:
-            raise InvalidParameterFormat("new_channel must be type of ChannelSchema")
+            raise InvalidParameterFormat(
+                "new_channel must be type of ChannelSchema")
 
         async with self.engine.begin() as conn:
             await conn.execute(
@@ -103,5 +108,6 @@ class ChannelDao(Dao):  # TODO write tests
 
         self.logger.debug(
             f"bot_id={new_channel.bot_id}: channel {new_channel.channel_id} is deleted",
-            extra=extra_params(bot_id=new_channel.bot_id, channel_id=new_channel.channel_id)
+            extra=extra_params(bot_id=new_channel.bot_id,
+                               channel_id=new_channel.channel_id)
         )

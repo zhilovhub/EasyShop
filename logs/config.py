@@ -13,6 +13,10 @@ LOG_TO_GRAFANA = bool(int(os.getenv("LOG_TO_GRAFANA")))
 
 LOGS_PATH = os.getenv("PROJECT_ROOT") + "logs/"
 GRAFANA_URL = os.getenv("GRAFANA_URL")
+FROM = os.getenv("FROM")
+
+if not FROM:
+    raise Exception("В .env присвойте переменной FROM Ваше имя, чтобы в логах можно было фильтроваться")
 
 GRAFANA_FORMATTER_NAME = "formatter_grafana"
 LOCAL_FORMATTER_NAME = "formatter_local"
@@ -36,6 +40,8 @@ class LokiFilter(logging.Filter):
                 record.tags["category_id"] = record.category_id
             if hasattr(record, "channel_id"):
                 record.tags["channel_id"] = record.channel_id
+            if hasattr(record, "channel_user_id"):
+                record.tags["channel_user_id"] = record.channel_user_id
             if hasattr(record, "competition_id"):
                 record.tags["competition_id"] = record.competition_id
             if hasattr(record, "mailing_id"):
@@ -48,8 +54,11 @@ class LokiFilter(logging.Filter):
                 record.tags["payment_id"] = record.payment_id
             if hasattr(record, "adv_id"):
                 record.tags["adv_id"] = record.adv_id
-            if hasattr(record, "bot_token") or "bot_token" in record.tags:
+            if hasattr(record, "bot_token"):
                 record.msg = record.msg.replace(record.bot_token[5:-1], "*" * len(record.bot_token[5:-1]))  # hide the token from gr
+            if "bot_token" in record.tags:
+                record.msg = record.msg.replace(record.tags["bot_token"][5:-1], "*" * len(record.tags["bot_token"][5:-1]))  # hide the token from gr
+
 
         return LOG_TO_GRAFANA
 
@@ -107,6 +116,7 @@ logger_configuration = {
             "level": "DEBUG",
             "formatter": GRAFANA_FORMATTER_NAME,
             "url": GRAFANA_URL + "loki/api/v1/push",
+            "tags": {"from": FROM},
             "filters": ["loki_filter"],
             "version": "1"
         },

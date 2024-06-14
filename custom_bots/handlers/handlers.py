@@ -1,3 +1,4 @@
+from aiogram.filters import CommandStart, CommandObject
 import json
 import random
 import string
@@ -55,7 +56,8 @@ async def process_web_app_request(event: Message):
         data['items'] = items
 
         date = datetime.now().strftime("%d%m%y")
-        random_string = ''.join(random.sample(string.digits + string.ascii_letters, 5))
+        random_string = ''.join(random.sample(
+            string.digits + string.ascii_letters, 5))
         data['order_id'] = date + random_string
 
         order = OrderSchema(**data)
@@ -65,7 +67,8 @@ async def process_web_app_request(event: Message):
 
         custom_bot_logger.info(
             f"user_id={user_id}: order with order_id {order.id} is created",
-            extra=extra_params(user_id=user_id, bot_id=bot_id, order_id=order.id)
+            extra=extra_params(
+                user_id=user_id, bot_id=bot_id, order_id=order.id)
         )
     except Exception as e:
         await event.answer("Произошла ошибка при создании заказа, администраторы уведомлены.")
@@ -111,8 +114,9 @@ async def process_web_app_request(event: Message):
     )
 
 
-@multi_bot_router.message(CommandStart())
-async def start_cmd(message: Message, state: FSMContext):
+@multi_bot_router.message(CommandStart(deep_link=True))
+async def start_cmd(message: Message, state: FSMContext, command: CommandObject):
+    args = command.args
     user_id = message.from_user.id
 
     start_msg = await get_option("start_msg", message.bot.token)
@@ -137,10 +141,14 @@ async def start_cmd(message: Message, state: FSMContext):
         return await message.answer("Бот не инициализирован")
 
     await state.set_state(CustomUserStates.MAIN_MENU)
+    # await message.answer("Custom update works!")
+    if args == "show_shop_inline":
+        return await message.answer("Наш магазин:", reply_markup=keyboards.get_show_inline_button(bot.bot_id))
 
     return await message.answer(
         format_locales(start_msg, message.from_user, message.chat),
-        reply_markup=keyboards.get_custom_bot_menu_keyboard(web_app_button, bot.bot_id)
+        reply_markup=keyboards.get_custom_bot_menu_keyboard(
+            web_app_button, bot.bot_id)
     )
 
 
@@ -167,7 +175,8 @@ async def default_cmd(message: Message):
 
     await message.answer(
         format_locales(default_msg, message.from_user, message.chat),
-        reply_markup=keyboards.get_custom_bot_menu_keyboard(web_app_button, bot.bot_id)
+        reply_markup=keyboards.get_custom_bot_menu_keyboard(
+            web_app_button, bot.bot_id)
     )
 
 

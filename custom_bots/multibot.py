@@ -1,5 +1,6 @@
 import asyncio
 import ssl
+from datetime import datetime
 from os import getenv
 from typing import Any, Dict, Union
 
@@ -23,11 +24,10 @@ from bot.utils import JsonStore
 from bot.utils.storage import AlchemyStorageAsync
 from database.models.bot_model import BotNotFound
 from database.models.channel_model import ChannelDao
+from database.models.channel_user_model import ChannelUserDao
 from database.models.models import Database
 
 from logs.config import custom_bot_logger, db_logger, extra_params
-
-custom_bot_logger.debug("===== New multibot app session =====")
 
 app = web.Application()
 
@@ -50,7 +50,8 @@ session = AiohttpSession()
 bot_settings = {"parse_mode": ParseMode.HTML}
 
 MAIN_TELEGRAM_TOKEN = getenv("TELEGRAM_TOKEN")
-main_bot = Bot(MAIN_TELEGRAM_TOKEN, default=DefaultBotProperties(**bot_settings), session=session)
+main_bot = Bot(MAIN_TELEGRAM_TOKEN, default=DefaultBotProperties(
+    **bot_settings), session=session)
 
 OTHER_BOTS_URL = f"{BASE_URL}{OTHER_BOTS_PATH}"
 
@@ -59,17 +60,20 @@ WEB_APP_URL = f"{getenv('WEB_APP_URL')}:{getenv('WEB_APP_PORT')}/products-page/?
 LOCAL_API_SERVER_HOST = getenv("WEBHOOK_LOCAL_API_URL")
 LOCAL_API_SERVER_PORT = int(getenv("WEBHOOK_LOCAL_API_PORT"))
 
-db_engine: Database = Database(sqlalchemy_url=getenv("SQLALCHEMY_URL"), logger=db_logger)
+db_engine: Database = Database(
+    sqlalchemy_url=getenv("SQLALCHEMY_URL"), logger=db_logger)
 bot_db = db_engine.get_bot_dao()
 product_db = db_engine.get_product_db()
 order_db = db_engine.get_order_dao()
 custom_bot_user_db = db_engine.get_custom_bot_user_db()
 channel_db: ChannelDao = db_engine.get_channel_dao()
+channel_user_db: ChannelUserDao = db_engine.get_channel_user_dao()
 
 storage = AlchemyStorageAsync(db_url=getenv("CUSTOM_BOT_STORAGE_DB_URL"),
                               table_name=getenv("CUSTOM_BOT_STORAGE_TABLE_NAME"))
 
-PREV_ORDER_MSGS = JsonStore(file_path="prev_orders_msg_id.json", json_store_name="PREV_ORDER_MSGS")
+PREV_ORDER_MSGS = JsonStore(
+    file_path="prev_orders_msg_id.json", json_store_name="PREV_ORDER_MSGS")
 QUESTION_MESSAGES = JsonStore(
     file_path=config.RESOURCES_PATH.format("question_messages.json"),
     json_store_name="QUESTION_MESSAGES"
@@ -129,7 +133,8 @@ async def add_bot_handler(request):
 
     result = await new_bot.set_webhook(
         OTHER_BOTS_URL.format(bot_token=bot.token),
-        allowed_updates=["message", "my_chat_member", "callback_query"]
+        allowed_updates=["message", "my_chat_member",
+                         "callback_query", "chat_member"]
     )
     if result:
         custom_bot_logger.debug(
@@ -203,14 +208,17 @@ async def main():
     asyncio.set_event_loop(loop)
 
     ssl_context = ssl.create_default_context(ssl.Purpose.CLIENT_AUTH)
-    ssl_context.load_cert_chain(getenv('SSL_CERT_PATH'), getenv('SSL_KEY_PATH'))
+    ssl_context.load_cert_chain(
+        getenv('SSL_CERT_PATH'), getenv('SSL_KEY_PATH'))
 
     custom_bot_logger.debug("[2/3] SSL certificates are downloaded")
 
     await storage.connect()
 
-    custom_bot_logger.debug(f"[3/3] Setting up local api server on {LOCAL_API_SERVER_HOST}:{LOCAL_API_SERVER_PORT}")
-    custom_bot_logger.info(f"[3/3] Setting up webhook server on {WEBHOOK_SERVER_HOST}:{WEBHOOK_SERVER_PORT}")
+    custom_bot_logger.debug(
+        f"[3/3] Setting up local api server on {LOCAL_API_SERVER_HOST}:{LOCAL_API_SERVER_PORT}")
+    custom_bot_logger.info(
+        f"[3/3] Setting up webhook server on {WEBHOOK_SERVER_HOST}:{WEBHOOK_SERVER_PORT}")
 
     await asyncio.gather(
         web._run_app(
@@ -227,9 +235,14 @@ async def main():
             ssl_context=ssl_context,
             access_log=custom_bot_logger,
             print=custom_bot_logger.debug
+        ),
+        Bot(MAIN_TELEGRAM_TOKEN).send_message(
+            chat_id=1128894056,
+            text=f"version 2.0 has been started"
         )
     )
 
 
 if __name__ == "__main__":
+    custom_bot_logger.debug("===== New multibot app session =====\n\n\n\n")
     asyncio.run(main())

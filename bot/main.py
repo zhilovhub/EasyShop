@@ -16,6 +16,9 @@ from database.models.order_model import OrderDao
 from database.models.payment_model import PaymentDao
 from database.models.product_model import ProductDao
 from database.models.custom_bot_user_model import CustomBotUserDao
+from database.models.channel_post_model import ChannelPostDao
+from database.models.channel_post_media_files_model import ChannelPostMediaFileDao
+from database.models.channel_user_model import ChannelUserDao
 from subscription.subscription import Subscription
 from subscription.scheduler import Scheduler
 from bot import config
@@ -39,6 +42,9 @@ channel_db: ChannelDao = db_engine.get_channel_dao()
 mailing_db: MailingDao = db_engine.get_mailing_dao()
 custom_bot_user_db: CustomBotUserDao = db_engine.get_custom_bot_user_db()
 mailing_media_file_db: MailingMediaFileDao = db_engine.get_mailing_media_file_dao()
+channel_post_db: ChannelPostDao = db_engine.get_channel_post_dao()
+channel_post_media_file_db: ChannelPostMediaFileDao = db_engine.get_channel_post_media_file_dao()
+channel_user_db: ChannelUserDao = db_engine.get_channel_user_dao()
 
 _scheduler = Scheduler(config.SCHEDULER_URL, 'postgres', config.TIMEZONE)
 subscription = Subscription(database=db_engine, scheduler=_scheduler)
@@ -75,6 +81,12 @@ async def on_start():
     await subscription.start_scheduler()
 
     logger.info("onStart finished. Bot online")
+
+    await bot.send_message(
+        chat_id=1128894056,
+        text=f"Main Bot, version 2.0 has been started"
+    )
+
     await dp.start_polling(bot)
 
 
@@ -85,7 +97,6 @@ if __name__ == "__main__":
     dp.include_router(channel_menu_router)
     dp.include_router(subscribe_router)
     dp.include_router(custom_bot_editing_router)
-
 
     for log_file in ('all.log', 'err.log'):
         with open(config.LOGS_PATH + log_file, 'a') as log:

@@ -42,7 +42,7 @@ class UserStatus(TypeDecorator):
                 return UserStatusValues.SUBSCRIBED
             case UserStatusValues.SUBSCRIPTION_ENDED.value:
                 return UserStatusValues.SUBSCRIPTION_ENDED
-        
+
 
 class NotInUserStatusesList(ValueError):
     """Error when value of user status not in values list"""
@@ -76,12 +76,12 @@ class UserSchema(BaseModel):
 class UserDao(Dao):
     def __init__(self, engine: AsyncEngine, logger) -> None:
         super().__init__(engine, logger)
-        
+
     async def get_users(self) -> list[UserSchema]:
         async with self.engine.begin() as conn:
             raw_res = await conn.execute(select(User))
         await self.engine.dispose()
-        
+
         raw_res = raw_res.fetchall()
         res = []
         for user in raw_res:
@@ -92,15 +92,15 @@ class UserDao(Dao):
         )
 
         return res
-    
+
     async def get_user(self, user_id: int) -> UserSchema:
         if not isinstance(user_id, int):
             raise InvalidParameterFormat("user_id must be type of int.")
-        
+
         async with self.engine.begin() as conn:
             raw_res = await conn.execute(select(User).where(User.user_id == user_id))
         await self.engine.dispose()
-        
+
         res = raw_res.fetchone()
         if res is None:
             raise UserNotFound(f"id {user_id} not found in database.")
@@ -116,11 +116,13 @@ class UserDao(Dao):
 
     async def add_user(self, user: UserSchema) -> None:
         if not isinstance(user, UserSchema):
-            raise InvalidParameterFormat("user must be type of database.DbUser.")
+            raise InvalidParameterFormat(
+                "user must be type of database.DbUser.")
 
         try:
             await self.get_user(user_id=user.id)
-            raise InstanceAlreadyExists(f"user with {user.id} already exists in db.")
+            raise InstanceAlreadyExists(
+                f"user with {user.id} already exists in db.")
         except UserNotFound:
             async with self.engine.begin() as conn:
                 await conn.execute(insert(User).values(**user.model_dump(by_alias=True)))
@@ -133,7 +135,8 @@ class UserDao(Dao):
 
     async def update_user(self, updated_user: UserSchema) -> None:
         if not isinstance(updated_user, UserSchema):
-            raise InvalidParameterFormat("updated_user must be type of database.DbUser.")
+            raise InvalidParameterFormat(
+                "updated_user must be type of database.DbUser.")
 
         async with self.engine.begin() as conn:
             await conn.execute(update(User).where(User.user_id == updated_user.id).

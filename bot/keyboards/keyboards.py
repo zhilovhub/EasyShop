@@ -208,7 +208,13 @@ async def get_competitions_list_keyboard(bot_id: int, channel_id: int) -> Inline
 
 async def get_inline_channel_menu_keyboard(bot_id: int, channel_id: int) -> InlineKeyboardMarkup:
     callback_metadata = f":{bot_id}:{channel_id}"
-
+    try:
+        await channel_post_db.get_channel_post(channel_id=channel_id)
+        channel_post_button = InlineKeyboardButton(
+            text="Редактировать запись", callback_data="channel_menu:edit_post" + callback_metadata)
+    except ChannelPostNotFound:
+        channel_post_button = InlineKeyboardButton(
+            text="Создать запись", callback_data="channel_menu:create_post" + callback_metadata)
     return InlineKeyboardMarkup(
         inline_keyboard=[
             [
@@ -218,12 +224,19 @@ async def get_inline_channel_menu_keyboard(bot_id: int, channel_id: int) -> Inli
                     text="🆕 Создать конкурс", callback_data="channel_menu:create_competition" + callback_metadata)
             ],
             [
+                channel_post_button,
                 InlineKeyboardButton(
-                    text="🛑 Выйти из канала", callback_data="channel_menu:leave_channel" + callback_metadata)
+                    text="Аналитика", callback_data="channel_menu:analytics" + callback_metadata)
             ],
             [
                 InlineKeyboardButton(
-                    text="🔙 Назад", callback_data="channel_menu:back_to_channels_list" + callback_metadata)
+                    text="Права бота", callback_data="channel_menu:manage" + callback_metadata, url=f"https://t.me/{await get_bot_username(bot_id)}?startchannel")
+            ],
+            [
+                InlineKeyboardButton(
+                    text="🔙 Назад", callback_data="channel_menu:back_to_channels_list" + callback_metadata),
+                InlineKeyboardButton(
+                    text="🛑 Выйти из канала", callback_data="channel_menu:leave_channel" + callback_metadata)
             ]
         ],
     )
@@ -399,15 +412,15 @@ async def get_inline_bot_mailing_menu_keyboard(bot_id: int) -> InlineKeyboardMar
 async def get_inline_bot_menu_keyboard(bot_id: int) -> InlineKeyboardMarkup:
     callback_metadata = f":{bot_id}"
 
-    # channel_inline_button = InlineKeyboardButton(
-    #                 text="📢 Добавить в канал",
-    #                 callback_data="bot_menu:add_to_channel" + callback_metadata,
-    #                 url=f"https://t.me/{await get_bot_username(bot_id)}?startchannel"
-    #     ) if not await get_bot_channels(bot_id=bot_id) else \
-    #     InlineKeyboardButton(
-    #         text="📢 Каналы бота",
-    #         callback_data="bot_menu:channels" + callback_metadata
-    #     )
+    channel_inline_button = InlineKeyboardButton(
+        text="📢 Добавить в канал",
+        callback_data="bot_menu:add_to_channel",
+        url=f"https://t.me/{await get_bot_username(bot_id)}?startchannel"
+    ) if not await get_bot_channels(bot_id=bot_id) else \
+        InlineKeyboardButton(
+            text="📢 Каналы бота",
+            callback_data="bot_menu:channels" + callback_metadata
+    )
 
     mailing_inline_button = InlineKeyboardButton(
         text="💌 Создать рассылку в ЛС",
@@ -438,9 +451,9 @@ async def get_inline_bot_menu_keyboard(bot_id: int) -> InlineKeyboardMarkup:
                 InlineKeyboardButton(
                     text="📦 Мои товары", callback_data="bot_menu:goods" + callback_metadata)
             ],
-            # [
-            #     channel_inline_button
-            # ],
+            [
+                channel_inline_button
+            ],
             [
                 mailing_inline_button,
             ],
@@ -459,8 +472,155 @@ def get_custom_bot_menu_keyboard(button_text: str, bot_id: int) -> ReplyKeyboard
     ], resize_keyboard=True, one_time_keyboard=False)
 
 
+def get_show_inline_button(bot_id: int) -> ReplyKeyboardMarkup:
+    return InlineKeyboardMarkup(inline_keyboard=[
+        [InlineKeyboardButton(text="Открыть магазин",
+                              web_app=make_webapp_info(bot_id))]
+    ], resize_keyboard=True, one_time_keyboard=False)
+
+
 def get_inline_delete_button(product_id: int) -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(inline_keyboard=[
         [InlineKeyboardButton(
             text="Удалить", callback_data=f"product:delete_{product_id}")]
+    ])
+
+
+async def get_inline_bot_channel_post_menu_keyboard(bot_id: int, channel_id: int) -> InlineKeyboardMarkup:
+    channel_post = await get_channel_post(channel_id=channel_id)
+    callback_metadata = f":{bot_id}:{channel_id}"
+    if channel_post.is_delayed:
+        delay_btn = InlineKeyboardButton(
+            text="Убрать откладывание", callback_data="channel_menu:cancel_delay" + callback_metadata)
+    else:
+        delay_btn = InlineKeyboardButton(
+            text="Отложить", callback_data="channel_menu:delay" + callback_metadata)
+    if channel_post.is_running == True:
+        return InlineKeyboardMarkup(
+            inline_keyboard=[
+                [InlineKeyboardButton(
+                    text="Отменить", callback_data="channel_menu:stop_post" + callback_metadata)]
+            ]
+        )
+    if channel_post.has_button:
+        inline_buttons = [
+            [
+                InlineKeyboardButton(
+                    text="Ссылка кнопки", callback_data="channel_menu:button_url" + callback_metadata
+                ),
+                InlineKeyboardButton(
+                    text="Текст на кнопке", callback_data="channel_menu:button_text" + callback_metadata
+                )
+            ],
+            [
+                InlineKeyboardButton(
+                    text="Удалить кнопку", callback_data="channel_menu:delete_button" + callback_metadata
+                )
+            ]
+        ]
+    else:
+        inline_buttons = [
+            [
+                InlineKeyboardButton(
+                    text="Добавить кнопку", callback_data="channel_menu:add_button" + callback_metadata
+                ),
+            ]
+        ]
+
+    return InlineKeyboardMarkup(inline_keyboard=[
+        [
+            InlineKeyboardButton(
+                text="Текст сообщения", callback_data="channel_menu:message" + callback_metadata
+            ),
+            InlineKeyboardButton(
+                text="Медиафайлы", callback_data="channel_menu:media" + callback_metadata
+            )
+        ],
+        *inline_buttons,
+        [
+            InlineKeyboardButton(
+                text="Отправить", callback_data="channel_menu:start" + callback_metadata
+            ),
+            InlineKeyboardButton(
+                text="Проверить", callback_data="channel_menu:demo" + callback_metadata
+            ),
+        ],
+        [
+            delay_btn,
+            InlineKeyboardButton(
+                text="Доп настройки", callback_data="channel_menu:extra_settings" + callback_metadata
+            ),
+        ],
+        [
+            InlineKeyboardButton(
+                text="🔙 Назад", callback_data="channel_menu:back_to_channel_list" + callback_metadata),
+            InlineKeyboardButton(
+                text="Удалить пост", callback_data="channel_menu:delete_channel_post" + callback_metadata
+            ),
+        ]
+    ])
+
+
+async def get_inline_bot_channel_post_start_confirm_keybaord(bot_id: int, channel_id: int) -> InlineKeyboardMarkup:
+    callback_metadata = f":{bot_id}:{channel_id}"
+
+    return InlineKeyboardMarkup(inline_keyboard=[
+        [
+            InlineKeyboardButton(
+                text="Отправить", callback_data="channel_menu:accept_start" + callback_metadata
+            ),
+            InlineKeyboardButton(
+                text="🔙 Назад", callback_data="channel_menu:back_to_channel_list" + callback_metadata
+            )
+        ]
+    ])
+
+
+async def get_inline_bot_channel_post_menu_extra_settings_keyboard(bot_id: int,
+                                                                   channel_id: int,
+                                                                   is_notification_sound: bool,
+                                                                   is_link_preview: bool) -> InlineKeyboardMarkup:
+    callback_metadata = f":{bot_id}:{channel_id}"
+    notification_text = "Звуковое уведомление: "
+    if is_notification_sound:
+        notification_text += "вкл"
+    else:
+        notification_text += "выкл"
+    preview_text = "Предпросмотр ссылок: "
+    if is_link_preview:
+        preview_text += "вкл"
+    else:
+        preview_text += "выкл"
+    return InlineKeyboardMarkup(inline_keyboard=[
+        [
+            InlineKeyboardButton(
+                text=notification_text, callback_data="channel_menu:toggle_notigication_sound" +
+                callback_metadata
+            )
+        ],
+        [
+            InlineKeyboardButton(
+                text=preview_text, callback_data="channel_menu:toggle_link_preview" + callback_metadata
+            )
+        ],
+        [
+            InlineKeyboardButton(
+                text="🔙 Назад", callback_data="channel_menu:back_to_editing_channel_post" + callback_metadata
+            ),
+        ]
+    ])
+
+
+async def get_inline_bot_channel_post_menu_accept_deleting_keyboard(bot_id: int, channel_id: int) -> InlineKeyboardMarkup:
+    callback_metadata = f":{bot_id}:{channel_id}"
+
+    return InlineKeyboardMarkup(inline_keyboard=[
+        [
+            InlineKeyboardButton(
+                text="Удалить", callback_data="channel_menu:accept_delete" + callback_metadata
+            ),
+            InlineKeyboardButton(
+                text="🔙 Назад", callback_data="channel_menu:back_to_editing_channel_post" + callback_metadata
+            )
+        ]
     ])
