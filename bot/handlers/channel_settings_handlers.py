@@ -63,6 +63,12 @@ async def channel_menu_callback_handler(query: CallbackQuery, state: FSMContext)
 
     channel_username = (await custom_tg_bot.get_chat(channel_id)).username
 
+    try:
+        await channel_db.get_channel(channel_id=channel_id)
+    except ChannelNotFound:
+        await query.answer("Канал удален", show_alert=True)
+        return query.message.delete()
+
     match action:
         case "analytics":
             plus_users = await channel_user_db.get_joined_channel_users_by_channel_id(channel_id)
