@@ -68,8 +68,8 @@ async def start_command_handler(message: Message, state: FSMContext):
 
         await send_event(message.from_user, EventTypes.NEW_USER)
         await user_db.add_user(UserSchema(
-            user_id=user_id, registered_at=datetime.utcnow(), status=UserStatusValues.NEW, locale="default",
-            subscribed_until=None)
+            user_id=user_id, username=message.from_user.username, registered_at=datetime.utcnow(),
+            status=UserStatusValues.NEW, locale="default", subscribed_until=None)
         )
 
     user_bots = await bot_db.get_bots(user_id)

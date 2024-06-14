@@ -53,6 +53,7 @@ class User(Base):
     __tablename__ = "users"
 
     user_id = Column(BigInteger, primary_key=True)
+    username = Column(String, nullable=True)
     status = Column(UserStatus, nullable=False)
     subscribed_until = Column(DateTime)
     registered_at = Column(DateTime, nullable=False)
@@ -64,6 +65,7 @@ class UserSchema(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
     id: int = Field(alias="user_id", frozen=True)
+    username: str | None = None
     status: UserStatusValues
     subscribed_until: datetime | None
     registered_at: datetime = Field(frozen=True)

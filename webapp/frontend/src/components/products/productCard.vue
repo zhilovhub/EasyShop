@@ -1,9 +1,19 @@
 <template>
   <div>
-  <img @click="this.addToShoppingCart" v-if="productObject.picture" :src="`${this.apiUrl()}/files/` + productObject.picture" alt="main-picture">
-  <div class="text">{{productObject.name}}</div>
-  <div class="text">{{priceRub(productObject.price)}}</div>
-  <div v-for="(option, type) in productObject.extra_options">
+    <swiper v-if="productObject.picture && productObject.picture[0]"
+      :slidesPerView="1"
+      :modules="modules"
+      :navigation="true"
+      style="margin: 0"
+    >
+      <swiper-slide
+        v-for="(picture, index) in productObject.picture">
+        <img :src="`${this.apiUrl()}/files/` + (productObject.picture ? productObject.picture[index] : null)" alt="main-picture">
+      </swiper-slide>
+    </swiper>
+    <div class="text">{{productObject.name}}</div>
+    <div class="text">{{priceRub(productObject.price)}}</div>
+    <div v-for="(option, type) in productObject.extra_options">
       <div class="block extra-options">
         <div class="span-block">
           <h1>{{type}}</h1>
@@ -104,7 +114,6 @@ export default {
       });
       target.classList.add('chosen');
       this.productObject.chosenOption = target.innerText;
-      console.log(this.$store.state.items);
     },
     toggleDescription() {
       this.descriptionVisible = !this.descriptionVisible;
@@ -151,11 +160,13 @@ export default {
     }
   },
   mounted() {
+    console.log(this.productObject);
     tg.BackButton.show();  // показываем всегда самой первой строчкой
 
-    this.$nextTick(this.setFirstOptionChosen)
+    this.$nextTick(this.setFirstOptionChosen);
 
     tg.MainButton.text = "Добавить";  // сначала назначаем цвета и текст кнопкам
+    tg.MainButton.textColor = "#0C0C0C";
 
     tg.onEvent('mainButtonClicked', this.addToShoppingCart);  // затем навешиваем листенеры
     tg.onEvent('backButtonClicked', this.backButtonMethod);

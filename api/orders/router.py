@@ -5,7 +5,7 @@ from fastapi import APIRouter, HTTPException, Depends, Header
 from datetime import datetime
 import random
 import string
-from products.router import check_admin_authorization
+from utils import check_admin_authorization
 
 from logs.config import api_logger, extra_params
 
@@ -34,21 +34,33 @@ async def generate_order_id_api() -> str:
         )
         return random_string
 
-    api_logger.debug("generated order_id already exist, regenerating...")
+    api_logger.warning("generated order_id already exist, regenerating...")
     await generate_order_id_api()
 
 
 @router.get("/get_all_orders/{bot_id}")
-async def get_all_orders_api(bot_id: int, authorization_hash: str = Header()) -> list[OrderSchema]:
-    await check_admin_authorization(bot_id, authorization_hash)
+async def get_all_orders_api(bot_id: int, authorization_data: str = Header()) -> list[OrderSchema]:
+    await check_admin_authorization(bot_id, authorization_data)
     try:
         orders = await db.get_all_orders(bot_id)
     except ValidationError as ex:
-        api_logger.warning("validation error", exc_info=True)
+        api_logger.error(
+            f"bot_id={bot_id}: validation error",
+            extra=extra_params(bot_id=bot_id)
+        )
         raise HTTPException(status_code=400, detail=f"Incorrect input data.\n{str(ex)}")
     except Exception:
-        api_logger.error("Error while execute get_all_orders db_method", exc_info=True)
+        api_logger.error(
+            f"bot_id={bot_id}: Error while execute get_all_orders db_method",
+            extra=extra_params(bot_id=bot_id)
+        )
         raise HTTPException(status_code=500, detail="Internal error.")
+
+    api_logger.debug(
+        f"bot_id={bot_id}: has {len(orders)} orders -> {orders}",
+        extra=extra_params(bot_id=bot_id)
+    )
+
     return orders
 
 #
@@ -68,12 +80,13 @@ async def get_all_orders_api(bot_id: int, authorization_hash: str = Header()) ->
 
 
 @router.post("/add_order")
-async def add_order_api(new_order: OrderSchema = Depends(), authorization_hash: str = Header()) -> str:
-    await check_admin_authorization(new_order.bot_id, authorization_hash)
+async def add_order_api(new_order: OrderSchema = Depends(), authorization_data: str = Header()) -> str:
+    await check_admin_authorization(new_order.bot_id, authorization_data)
     try:
         new_order.ordered_at = new_order.ordered_at.replace(tzinfo=None)
         await db.add_order(new_order)
-        api_logger.error(
+
+        api_logger.debug(
             f"bot_id={new_order.bot_id}: order {new_order} has been added",
             extra=extra_params(bot_id=new_order.bot_id, order_id=new_order.id)
         )
@@ -86,6 +99,7 @@ async def add_order_api(new_order: OrderSchema = Depends(), authorization_hash: 
             extra=extra_params(bot_id=new_order.bot_id, order_id=new_order.id)
         )
         raise HTTPException(status_code=500, detail="Internal error.")
+
     return "success"
 #
 #

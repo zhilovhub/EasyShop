@@ -98,8 +98,8 @@ export default {
         :key="item.id"
         class="item-block"
       >
-        <img style="border-radius: 7px; width: 150px; height: 150px; object-fit: cover;" v-if="item.picture" :src="`${this.$store.state.api_url}/files/` + item.picture" alt="img">
-        <div v-else style="width: 150px; height: 150px; border-radius: 7px; background-color: #293C47;"></div>
+        <img style="border-radius: 7px; width: 150px; height: 150px; object-fit: cover;" v-if="item.picture && item.picture[0]" :src="`${this.$store.state.api_url}/files/` + (item.picture ? item.picture[0] : null)" alt="img">
+        <img style="border-radius: 7px; width: 150px; height: 150px; object-fit: cover;" v-else src="@/assets/productArt.png" alt="img">
         <div style="display: flex; flex-direction: column; justify-content: space-between; padding: 0 2.5%">
           <div class="text-block">
             <span style="font-size: 15px; margin-bottom: 10px">{{ shortenName(item.name) }}</span>
@@ -115,24 +115,6 @@ export default {
                 @click="incrementCount(item)"
               >+</div>
             </div>
-<!--            <div class="calcBtn">-->
-<!--              <button-->
-<!--                style="background-color: #FF7171; display: flex; align-items: center; justify-content: center; width: 45%;"-->
-<!--                @click="decrementCount(item)"-->
-<!--              >-->
-<!--                <svg width="22" height="4" viewBox="0 0 22 4" fill="none" xmlns="http://www.w3.org/2000/svg">-->
-<!--                  <path d="M20.625 3.875H1.375C0.615613 3.875 0 3.03553 0 2C0 0.964473 0.615613 0.125 1.375 0.125H20.625C21.3844 0.125 22 0.964473 22 2C22 3.03553 21.3844 3.875 20.625 3.875Z" fill="white"/>-->
-<!--                </svg>-->
-<!--              </button>-->
-<!--              <button-->
-<!--                style="background-color:#71CBFF; display: flex; align-items: center; justify-content: center; width: 45%;"-->
-<!--                @click="incrementCount(item)"-->
-<!--              >-->
-<!--                <svg width="21" height="21" viewBox="0 0 21 21" fill="none" xmlns="http://www.w3.org/2000/svg">-->
-<!--                  <path d="M19.6875 9.1875H11.8125V1.3125C11.8125 0.587631 11.2249 0 10.5 0C9.77513 0 9.1875 0.587631 9.1875 1.3125V9.1875H1.3125C0.587631 9.1875 0 9.77513 0 10.5C0 11.2249 0.587631 11.8125 1.3125 11.8125H9.1875V19.6875C9.1875 20.4124 9.77513 21 10.5 21C11.2249 21 11.8125 20.4124 11.8125 19.6875V11.8125H19.6875C20.4124 11.8125 21 11.2249 21 10.5C21 9.77513 20.4124 9.1875 19.6875 9.1875Z" fill="white"/>-->
-<!--                </svg>-->
-<!--              </button>-->
-<!--            </div>-->
           </div>
         </div>
       </li>

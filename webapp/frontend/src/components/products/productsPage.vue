@@ -85,7 +85,8 @@
           class="item-block"
           style="position: relative;"
       >
-        <img @click="redirectToProductCard(item.id)" v-if="item.picture" :src="`${this.$store.state.api_url}/files/` + item.picture" alt="img">
+        <img @click="redirectToProductCard(item.id)" v-if="item.picture && item.picture[0]" :src="`${this.$store.state.api_url}/files/` + (item.picture ? item.picture[0] : null)" alt="img">
+        <img @click="redirectToProductCard(item.id)" v-else src="@/assets/productArt.png" alt="img">
         <div style="margin: 10px 0;">
           <span style="font-size: 20px; font-weight: 600">
           {{priceComma(item.price)}}
@@ -231,7 +232,6 @@ export default {
     },
     redirectToProductCard(itemId) {
       router.router.push({ name: router.PRODUCT_CARD, params: { id: itemId }});
-
     },
     closeSearching() {
       tg.BackButton.hide();
