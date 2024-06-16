@@ -14,7 +14,7 @@ from aiogram.types import Message, CallbackQuery, FSInputFile
 from bot.keyboards import keyboards
 from custom_bots.handlers.routers import multi_bot_router
 from custom_bots.multibot import order_db, product_db, bot_db, main_bot, PREV_ORDER_MSGS, custom_bot_user_db, \
-    CustomUserStates, QUESTION_MESSAGES, format_locales
+    CustomUserStates, QUESTION_MESSAGES, format_locales, channel_db
 from database.models.bot_model import BotNotFound
 from database.models.custom_bot_user_model import CustomBotUserNotFound
 from database.models.order_model import OrderSchema, OrderStatusValues, OrderNotFound, OrderItem
@@ -177,7 +177,7 @@ async def accept_ad_handler(query: CallbackQuery, state: FSMContext):
     bot_id = int(query.data.split(':')[-1])
     msg = await query.message.answer_photo(photo=FSInputFile("ad_example.jpg"),
                                            caption=MessageTexts.EXAMPLE_AD_POST_TEXT.value)
-    await msg.reply("Условия для принятия:\n1. В канале должно быть 2 и более подписчиков."
+    await msg.reply("Условия для принятия:\n1. В канале должно быть 3 и более подписчиков."
                     "\n2. В течении 25 минут после рекламного поста нельзя публиковать посты."
                     "\n3. Время сделки: 24ч."
                     "\n4. Стоимость: 1000руб.",
@@ -196,6 +196,26 @@ async def back_to_partnership(query: CallbackQuery, state: FSMContext):
     bot_id = int(query.data.split(':')[-1])
     await query.message.edit_text(MessageTexts.CUSTOM_BOT_PARTNERSHIP.value,
                                   reply_markup=keyboards.get_partnership_inline_kb(bot_id))
+
+
+@multi_bot_router.callback_query(lambda q: q.data.startswith("ad_channel"))
+async def ad_channel_handler(query: CallbackQuery, state: FSMContext):
+    bot_id = int(query.data.split(':')[-2])
+    chan_id = int(query.data.split(':')[-1])
+    channel_chat = await query.bot.get_chat(chan_id)
+    members_count = await channel_chat.get_member_count()
+    if members_count < 3:
+        return await query.answer(f"В этом канале не достаточно подписчиков. ({members_count} < 3)",
+                                  show_alert=True)
+    msg = await query.bot.send_photo(chat_id=chan_id,
+                                     photo=FSInputFile("ad_example.jpg"),
+                                     caption=MessageTexts.EXAMPLE_AD_POST_TEXT.value)
+    await query.message.edit_text("Сообщение отправлено в канал. Для завершения сделки, "
+                                  "продолжайте соблюдать условия."
+                                  "\n1. В канале должно быть 3 и более подписчиков."
+                                  "\n2. В течении 25 минут после рекламного поста нельзя публиковать посты."
+                                  "\n3. Время сделки: 24ч."
+                                  "\n4. Стоимость: 1000руб.", reply_markup=None)
 
 
 @multi_bot_router.message(CustomUserStates.MAIN_MENU)
