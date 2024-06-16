@@ -158,8 +158,7 @@ async def start_cmd(message: Message, state: FSMContext, command: CommandObject)
 
 @multi_bot_router.message(lambda m: m.text == keyboards.CUSTOM_BOT_KEYBOARD_BUTTONS['partnership'])
 async def partnership_handler(message: Message, state: FSMContext):
-    state_data = await state.get_data()
-    bot_id = state_data['bot_id']
+    bot_id = (await bot_db.get_bot_by_token(message.bot.token)).bot_id
     await message.answer(MessageTexts.CUSTOM_BOT_PARTNERSHIP.value,
                          reply_markup=keyboards.get_partnership_inline_kb(bot_id))
 
