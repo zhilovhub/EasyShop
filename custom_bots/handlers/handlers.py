@@ -9,16 +9,19 @@ from aiogram import F, Bot
 from aiogram.exceptions import TelegramAPIError
 from aiogram.filters import CommandStart
 from aiogram.fsm.context import FSMContext
-from aiogram.types import Message, CallbackQuery
+from aiogram.types import Message, CallbackQuery, FSInputFile
 
 from bot.keyboards import keyboards
 from custom_bots.handlers.routers import multi_bot_router
-from custom_bots.multibot import order_db, product_db, bot_db, main_bot, PREV_ORDER_MSGS, custom_bot_user_db, CustomUserStates, QUESTION_MESSAGES, format_locales
+from custom_bots.multibot import order_db, product_db, bot_db, main_bot, PREV_ORDER_MSGS, custom_bot_user_db, \
+    CustomUserStates, QUESTION_MESSAGES, format_locales
 from database.models.bot_model import BotNotFound
 from database.models.custom_bot_user_model import CustomBotUserNotFound
 from database.models.order_model import OrderSchema, OrderStatusValues, OrderNotFound, OrderItem
 
 from logs.config import custom_bot_logger, extra_params
+
+from bot.utils.message_texts import MessageTexts
 
 
 @multi_bot_router.message(F.web_app_data)
@@ -141,6 +144,7 @@ async def start_cmd(message: Message, state: FSMContext, command: CommandObject)
         return await message.answer("Бот не инициализирован")
 
     await state.set_state(CustomUserStates.MAIN_MENU)
+    await state.set_data({"bot_id": bot.bot_id})
     # await message.answer("Custom update works!")
     if args == "show_shop_inline":
         return await message.answer("Наш магазин:", reply_markup=keyboards.get_show_inline_button(bot.bot_id))
@@ -150,6 +154,42 @@ async def start_cmd(message: Message, state: FSMContext, command: CommandObject)
         reply_markup=keyboards.get_custom_bot_menu_keyboard(
             web_app_button, bot.bot_id)
     )
+
+
+@multi_bot_router.message(lambda m: m.text == keyboards.CUSTOM_BOT_KEYBOARD_BUTTONS['partnership'])
+async def partnership_handler(message: Message, state: FSMContext):
+    state_data = await state.get_data()
+    bot_id = state_data['bot_id']
+    await message.answer(MessageTexts.CUSTOM_BOT_PARTNERSHIP.value,
+                         reply_markup=keyboards.get_partnership_inline_kb(bot_id))
+
+
+@multi_bot_router.callback_query(lambda q: q.data.startswith("request_ad"))
+async def request_ad_handler(query: CallbackQuery, state: FSMContext):
+    bot_id = int(query.data.split(':')[-1])
+    bot_data = await bot_db.get_bot(bot_id)
+    admin_user = await query.bot.get_chat(bot_data.created_by)
+    await query.message.edit_text("Правила размещения рекламы:\n1. ...\n2. ...\n3. ...",
+                                  reply_markup=keyboards.get_request_ad_keyboard(bot_id, admin_user.username))
+
+
+@multi_bot_router.callback_query(lambda q: q.data.startswith("accept_ad"))
+async def accept_ad_handler(query: CallbackQuery, state: FSMContext):
+    bot_id = int(query.data.split(':')[-1])
+    msg = await query.message.answer_photo(photo=FSInputFile("custom_bots/ad_example.jpg"),
+                                           caption=MessageTexts.EXAMPLE_AD_POST_TEXT.value)
+    await msg.reply("Условия для принятия:\n1. В канале должно быть 2 и более подписчиков."
+                    "\n2. В течении 25 минут после рекламного поста нельзя публиковать посты."
+                    "\n3. Время сделки: 24ч."
+                    "\n4. Стоимость: 1000руб.",
+                    reply_markup=await keyboards.get_accept_ad_keyboard(bot_id))
+
+
+@multi_bot_router.callback_query(lambda q: q.data.startswith("back_to_partnership"))
+async def back_to_partnership(query: CallbackQuery, state: FSMContext):
+    bot_id = int(query.data.split(':')[-1])
+    await query.message.edit_text(MessageTexts.CUSTOM_BOT_PARTNERSHIP.value,
+                                  reply_markup=keyboards.get_partnership_inline_kb(bot_id))
 
 
 @multi_bot_router.message(CustomUserStates.MAIN_MENU)

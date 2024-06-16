@@ -1,6 +1,7 @@
 from enum import Enum
 from typing import Optional
 
+from aiogram.types import InlineKeyboardMarkup
 from aiogram.utils.keyboard import InlineKeyboardMarkup, InlineKeyboardButton, ReplyKeyboardMarkup, KeyboardButton
 
 from bot.utils.keyboard_utils import *
@@ -465,17 +466,64 @@ async def get_inline_bot_menu_keyboard(bot_id: int) -> InlineKeyboardMarkup:
     )
 
 
-def get_custom_bot_menu_keyboard(button_text: str, bot_id: int) -> ReplyKeyboardMarkup:
+CUSTOM_BOT_KEYBOARD_BUTTONS = {
+    "open_shop": "🛍 Открыть магазин",
+    "partnership": "🤝 Партнёрство",
+}
+
+
+def get_custom_bot_menu_keyboard(button_text: str | None, bot_id: int) -> ReplyKeyboardMarkup:
+    if not button_text:
+        button_text = CUSTOM_BOT_KEYBOARD_BUTTONS['open_shop']
     return ReplyKeyboardMarkup(keyboard=[
-        [KeyboardButton(text="Открыть магазин",
-                        web_app=make_webapp_info(bot_id))]
+        [KeyboardButton(text=CUSTOM_BOT_KEYBOARD_BUTTONS['open_shop'],
+                        web_app=make_webapp_info(bot_id))],
+        [
+            KeyboardButton(text=CUSTOM_BOT_KEYBOARD_BUTTONS['partnership'])
+        ]
     ], resize_keyboard=True, one_time_keyboard=False)
 
 
-def get_show_inline_button(bot_id: int) -> ReplyKeyboardMarkup:
+def get_partnership_inline_kb(bot_id: int) -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(inline_keyboard=[
-        [InlineKeyboardButton(text="Открыть магазин",
-                              web_app=make_webapp_info(bot_id))]
+        [
+            InlineKeyboardButton(text="Заказать рекламу", callback_data=f"request_ad:{bot_id}")
+        ],
+        [
+            InlineKeyboardButton(text="Принять рекламное предложение", callback_data=f"accept_ad:{bot_id}")
+        ],
+    ])
+
+
+def get_request_ad_keyboard(bot_id: int, admin_username: str) -> InlineKeyboardMarkup:
+    return InlineKeyboardMarkup(inline_keyboard=[
+        [
+            InlineKeyboardButton(text="Связаться с админом", url=f"t.me/{admin_username}")
+        ],
+        [
+            InlineKeyboardButton(text="Назад", callback_data=f"back_to_partnership:{bot_id}")
+        ]
+    ])
+
+
+async def get_accept_ad_keyboard(bot_id: int) -> InlineKeyboardMarkup:
+    return InlineKeyboardMarkup(inline_keyboard=[
+        [
+            InlineKeyboardButton(text="Добавить в канал",
+                                 url=f"https://t.me/{await get_bot_username(bot_id)}?startchannel")
+        ],
+        [
+            InlineKeyboardButton(text="Продолжить", callback_data=f"continue_ad_accept:{bot_id}")
+        ],
+        [
+            InlineKeyboardButton(text="Назад", callback_data=f"back_to_partnership:{bot_id}")
+        ]
+    ])
+
+
+def get_show_inline_button(bot_id: int, partnership: bool = False) -> InlineKeyboardMarkup:
+    return InlineKeyboardMarkup(inline_keyboard=[
+        [InlineKeyboardButton(text="🛍 Открыть магазин", web_app=make_webapp_info(bot_id))]
     ], resize_keyboard=True, one_time_keyboard=False)
 
 
