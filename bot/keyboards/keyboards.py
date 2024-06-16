@@ -289,7 +289,7 @@ async def get_custom_bot_ad_channels_list_keyboard(bot_id: int) -> InlineKeyboar
                 text="🔙 Назад", callback_data="back_to_partnership" + callback_metadata),
             InlineKeyboardButton(
                 text="➕ Добавить канал",
-                url=f"https://t.me/{await get_bot_username(bot_id)}?startchannel"
+                url=f"https://t.me/{await get_bot_username(bot_id)}?startchannel&admin=post_messages"
             )
         ],
     ])
@@ -537,7 +537,7 @@ async def get_accept_ad_keyboard(bot_id: int) -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(inline_keyboard=[
         [
             InlineKeyboardButton(text="➕ Добавить канал",
-                                 url=f"https://t.me/{await get_bot_username(bot_id)}?startchannel")
+                                 url=f"https://t.me/{await get_bot_username(bot_id)}?startchannel&admin=post_messages")
         ],
         [
             InlineKeyboardButton(text="Продолжить", callback_data=f"continue_ad_accept:{bot_id}")
