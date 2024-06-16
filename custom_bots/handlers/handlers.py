@@ -184,6 +184,13 @@ async def accept_ad_handler(query: CallbackQuery, state: FSMContext):
                     reply_markup=await keyboards.get_accept_ad_keyboard(bot_id))
 
 
+@multi_bot_router.callback_query(lambda q: q.data.startswith("continue_ad_accept"))
+async def continue_ad_accept_handler(query: CallbackQuery, state: FSMContext):
+    bot_id = int(query.data.split(':')[-1])
+    await query.message.edit_text("Выберите канал для отправки рекламного сообщения.",
+                                  reply_markup=await keyboards.get_custom_bot_ad_channels_list_keyboard(bot_id))
+
+
 @multi_bot_router.callback_query(lambda q: q.data.startswith("back_to_partnership"))
 async def back_to_partnership(query: CallbackQuery, state: FSMContext):
     bot_id = int(query.data.split(':')[-1])

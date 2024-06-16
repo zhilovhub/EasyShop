@@ -35,7 +35,7 @@ def create_change_order_status_kb(order_id: str, msg_id: int = 0, chat_id: int =
                                  callback_data=f"order_backlog:{order_id}:{msg_id}:{chat_id}"),
             InlineKeyboardButton(
                 text=("🔸 " if current_status ==
-                      OrderStatusValues.WAITING_PAYMENT else "") + "Ждет оплаты",
+                              OrderStatusValues.WAITING_PAYMENT else "") + "Ждет оплаты",
                 callback_data=f"order_waiting_payment:{order_id}:{msg_id}:{chat_id}"),
         ],
         [
@@ -95,7 +95,6 @@ def get_back_keyboard(back_text: str = MessageTexts.BACK_BUTTON_TEXT.value) -> R
 
 
 def get_confirm_media_upload_keyboard() -> ReplyKeyboardMarkup:
-
     return ReplyKeyboardMarkup(keyboard=[
         [KeyboardButton(text="✅ Готово"), KeyboardButton(text="Очистить")],
     ], resize_keyboard=True)
@@ -196,7 +195,8 @@ async def get_competitions_list_keyboard(bot_id: int, channel_id: int) -> Inline
         inline_keyboard=[
             *[
                 [InlineKeyboardButton(
-                    text=i.name, callback_data=f"competitions_list:competition" + callback_metadata + f":{i.competition_id}")]
+                    text=i.name,
+                    callback_data=f"competitions_list:competition" + callback_metadata + f":{i.competition_id}")]
                 for i in competitions
             ],
             [
@@ -231,7 +231,8 @@ async def get_inline_channel_menu_keyboard(bot_id: int, channel_id: int) -> Inli
             ],
             [
                 InlineKeyboardButton(
-                    text="Права бота", callback_data="channel_menu:manage" + callback_metadata, url=f"https://t.me/{await get_bot_username(bot_id)}?startchannel")
+                    text="Права бота", callback_data="channel_menu:manage" + callback_metadata,
+                    url=f"https://t.me/{await get_bot_username(bot_id)}?startchannel")
             ],
             [
                 InlineKeyboardButton(
@@ -249,7 +250,9 @@ async def get_inline_bot_channels_list_keyboard(bot_id: int) -> InlineKeyboardMa
     all_channels = await get_bot_channels(bot_id=bot_id)
 
     channels_buttons = [
-        InlineKeyboardButton(text='@' + channel[1], callback_data=f"bot_menu:channel{callback_metadata}:{channel[0].channel_id}") for channel in all_channels
+        InlineKeyboardButton(text='@' + channel[1],
+                             callback_data=f"bot_menu:channel{callback_metadata}:{channel[0].channel_id}") for channel
+        in all_channels
     ]
     resized_channels_buttons = [channels_buttons[i:i + 4]
                                 for i in range(0, len(channels_buttons), 4)]
@@ -262,6 +265,30 @@ async def get_inline_bot_channels_list_keyboard(bot_id: int) -> InlineKeyboardMa
             InlineKeyboardButton(
                 text="📢 Добавить в канал",
                 callback_data="bot_menu:add_to_channel" + callback_metadata,
+                url=f"https://t.me/{await get_bot_username(bot_id)}?startchannel"
+            )
+        ],
+    ])
+
+
+async def get_custom_bot_ad_channels_list_keyboard(bot_id: int) -> InlineKeyboardMarkup:
+    callback_metadata = f":{bot_id}"
+    all_channels = await get_bot_channels(bot_id=bot_id)
+    channels_buttons = [
+        InlineKeyboardButton(text='@' + channel[1],
+                             callback_data=f"ad_channel{callback_metadata}:{channel[0].channel_id}") for channel
+        in all_channels
+    ]
+    resized_channels_buttons = [channels_buttons[i:i + 4]
+                                for i in range(0, len(channels_buttons), 4)]
+
+    return InlineKeyboardMarkup(inline_keyboard=[
+        *resized_channels_buttons,
+        [
+            InlineKeyboardButton(
+                text="🔙 Назад", callback_data="back_to_partnership" + callback_metadata),
+            InlineKeyboardButton(
+                text="➕ Добавить канал",
                 url=f"https://t.me/{await get_bot_username(bot_id)}?startchannel"
             )
         ],
@@ -287,7 +314,7 @@ async def get_inline_bot_mailing_menu_extra_settings_keyboard(bot_id: int,
         [
             InlineKeyboardButton(
                 text=notification_text, callback_data="mailing_menu:toggle_notigication_sound" +
-                callback_metadata
+                                                      callback_metadata
             )
         ],
         [
@@ -421,7 +448,7 @@ async def get_inline_bot_menu_keyboard(bot_id: int) -> InlineKeyboardMarkup:
         InlineKeyboardButton(
             text="📢 Каналы бота",
             callback_data="bot_menu:channels" + callback_metadata
-    )
+        )
 
     mailing_inline_button = InlineKeyboardButton(
         text="💌 Создать рассылку в ЛС",
@@ -430,7 +457,7 @@ async def get_inline_bot_menu_keyboard(bot_id: int) -> InlineKeyboardMarkup:
         InlineKeyboardButton(
             text="💌 Рассылка в ЛС",
             callback_data="bot_menu:mailing_menu" + callback_metadata
-    )
+        )
 
     return InlineKeyboardMarkup(
         inline_keyboard=[
@@ -509,14 +536,14 @@ def get_request_ad_keyboard(bot_id: int, admin_username: str) -> InlineKeyboardM
 async def get_accept_ad_keyboard(bot_id: int) -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(inline_keyboard=[
         [
-            InlineKeyboardButton(text="Добавить в канал",
+            InlineKeyboardButton(text="➕ Добавить канал",
                                  url=f"https://t.me/{await get_bot_username(bot_id)}?startchannel")
         ],
         [
             InlineKeyboardButton(text="Продолжить", callback_data=f"continue_ad_accept:{bot_id}")
         ],
         [
-            InlineKeyboardButton(text="Назад", callback_data=f"back_to_partnership:{bot_id}")
+            InlineKeyboardButton(text="🔙 Назад", callback_data=f"back_to_partnership:{bot_id}")
         ]
     ])
 
@@ -643,7 +670,7 @@ async def get_inline_bot_channel_post_menu_extra_settings_keyboard(bot_id: int,
         [
             InlineKeyboardButton(
                 text=notification_text, callback_data="channel_menu:toggle_notigication_sound" +
-                callback_metadata
+                                                      callback_metadata
             )
         ],
         [
@@ -659,7 +686,8 @@ async def get_inline_bot_channel_post_menu_extra_settings_keyboard(bot_id: int,
     ])
 
 
-async def get_inline_bot_channel_post_menu_accept_deleting_keyboard(bot_id: int, channel_id: int) -> InlineKeyboardMarkup:
+async def get_inline_bot_channel_post_menu_accept_deleting_keyboard(bot_id: int,
+                                                                    channel_id: int) -> InlineKeyboardMarkup:
     callback_metadata = f":{bot_id}:{channel_id}"
 
     return InlineKeyboardMarkup(inline_keyboard=[
