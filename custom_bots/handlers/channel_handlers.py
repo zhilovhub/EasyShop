@@ -1,6 +1,6 @@
 from typing import Any, get_type_hints
 
-from aiogram.types import ChatMemberUpdated, ChatMemberLeft, ChatMemberAdministrator, ChatMemberBanned
+from aiogram.types import ChatMemberUpdated, ChatMemberLeft, ChatMemberAdministrator, ChatMemberBanned, Message
 
 from bot.keyboards import get_inline_bot_menu_keyboard
 from bot.utils import MessageTexts
@@ -125,3 +125,11 @@ async def my_chat_member_handler(my_chat_member: ChatMemberUpdated) -> Any:
             text=final_message_text,
             reply_markup=await get_inline_bot_menu_keyboard(custom_bot.bot_id)
         )
+
+
+@multi_bot_channel_router.channel_post()
+async def channel_post_handler(message: Message):
+    chan = await channel_db.get_channel(message.chat.id)
+    if chan.is_ad_post_block:
+        if chan.ad_post_block_until > datetime.now():
+            pass

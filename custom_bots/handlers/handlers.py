@@ -3,7 +3,7 @@ import json
 import random
 import string
 import time
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from aiogram import F, Bot
 from aiogram.exceptions import TelegramAPIError
@@ -14,10 +14,11 @@ from aiogram.types import Message, CallbackQuery, FSInputFile
 from bot.keyboards import keyboards
 from custom_bots.handlers.routers import multi_bot_router
 from custom_bots.multibot import order_db, product_db, bot_db, main_bot, PREV_ORDER_MSGS, custom_bot_user_db, \
-    CustomUserStates, QUESTION_MESSAGES, format_locales, channel_db
+    CustomUserStates, QUESTION_MESSAGES, format_locales, channel_db, custom_ad_db
 from database.models.bot_model import BotNotFound
 from database.models.custom_bot_user_model import CustomBotUserNotFound
 from database.models.order_model import OrderSchema, OrderStatusValues, OrderNotFound, OrderItem
+from database.models.custom_ad_model import CustomAdSchemaWithoutId
 
 from logs.config import custom_bot_logger, extra_params
 
@@ -178,8 +179,8 @@ async def accept_ad_handler(query: CallbackQuery, state: FSMContext):
     msg = await query.message.answer_photo(photo=FSInputFile("ad_example.jpg"),
                                            caption=MessageTexts.EXAMPLE_AD_POST_TEXT.value)
     await msg.reply("Условия для принятия:\n1. В канале должно быть 3 и более подписчиков."
-                    "\n2. В течении 25 минут после рекламного поста нельзя публиковать посты."
-                    "\n3. Время сделки: 24ч."
+                    "\n2. В течении 5 минут после рекламного поста нельзя публиковать посты."
+                    "\n3. Время сделки: 10м."
                     "\n4. Стоимость: 1000руб.",
                     reply_markup=await keyboards.get_accept_ad_keyboard(bot_id))
 
@@ -202,6 +203,7 @@ async def back_to_partnership(query: CallbackQuery, state: FSMContext):
 async def ad_channel_handler(query: CallbackQuery, state: FSMContext):
     bot_id = int(query.data.split(':')[-2])
     chan_id = int(query.data.split(':')[-1])
+    chan = await channel_db.get_channel(chan_id)
     channel_chat = await query.bot.get_chat(chan_id)
     members_count = await channel_chat.get_member_count()
     if members_count < 3:
@@ -213,9 +215,16 @@ async def ad_channel_handler(query: CallbackQuery, state: FSMContext):
     await query.message.edit_text("Сообщение отправлено в канал. Для завершения сделки, "
                                   "продолжайте соблюдать условия."
                                   "\n1. В канале должно быть 3 и более подписчиков."
-                                  "\n2. В течении 25 минут после рекламного поста нельзя публиковать посты."
-                                  "\n3. Время сделки: 24ч."
+                                  "\n2. В течении 5 минут после рекламного поста нельзя публиковать посты."
+                                  "\n3. Время сделки: 10мин."
                                   "\n4. Стоимость: 1000руб.", reply_markup=None)
+    chan.is_ad_post_block = True
+    chan.ad_post_block_until = datetime.now() + timedelta(minutes=5)
+    chan.ad_message_id = msg.message_id
+    await channel_db.update_channel(chan)
+    await custom_ad_db.add_ad(CustomAdSchemaWithoutId(channel_id=chan.channel_id,
+                                                      message_id=msg.message_id,
+                                                      time_until=datetime.now() + timedelta(minutes=10)))
 
 
 @multi_bot_router.message(CustomUserStates.MAIN_MENU)

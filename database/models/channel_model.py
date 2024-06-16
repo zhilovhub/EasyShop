@@ -1,5 +1,7 @@
+import datetime
+
 from pydantic import BaseModel, Field, validate_call, ConfigDict
-from sqlalchemy import BigInteger, Column, ForeignKey, UniqueConstraint, select, insert, delete, BOOLEAN
+from sqlalchemy import BigInteger, Column, ForeignKey, UniqueConstraint, select, insert, delete, BOOLEAN, DATETIME, update
 from sqlalchemy.ext.asyncio import AsyncEngine
 
 from bot.exceptions import InvalidParameterFormat
@@ -21,6 +23,10 @@ class Channel(Base):
 
     # import because everyone can add bots. So now let our admins know only about their channels
     added_by_admin = Column(BOOLEAN, nullable=False)
+
+    is_ad_post_block = Column(BOOLEAN, default=False)
+    ad_post_block_until = Column(DATETIME)
+
     __table_args__ = (
         UniqueConstraint('channel_id', 'bot_id', name='unique_channel_bot'),
     )
@@ -33,6 +39,10 @@ class ChannelSchema(BaseModel):
     bot_id: int = Field(frozen=True)
 
     added_by_admin: bool
+
+    is_ad_post_block: bool = False
+    ad_post_block_until: datetime.datetime | None = None
+    ad_message_id: int | None = None
 
 
 class ChannelDao(Dao):  # TODO write tests
@@ -80,7 +90,7 @@ class ChannelDao(Dao):  # TODO write tests
 
     @validate_call
     async def add_channel(self, new_channel: ChannelSchema) -> None:
-        if type(new_channel) != ChannelSchema:
+        if not isinstance(new_channel, ChannelSchema):
             raise InvalidParameterFormat(
                 "new_channel must be type of ChannelSchema")
 
@@ -94,20 +104,35 @@ class ChannelDao(Dao):  # TODO write tests
         )
 
     @validate_call
-    async def delete_channel(self, new_channel: ChannelSchema) -> None:
-        if type(new_channel) != ChannelSchema:
+    async def update_channel(self, updated_channel: ChannelSchema) -> None:
+        if not isinstance(updated_channel, ChannelSchema):
+            raise InvalidParameterFormat(
+                "new_channel must be type of ChannelSchema")
+        async with self.engine.begin() as conn:
+            await conn.execute(update(Channel).where(Channel.channel_id == updated_channel.channel_id).
+                               values(**updated_channel.model_dump(by_alias=True)))
+        await self.engine.dispose()
+
+        self.logger.debug(
+            f"channel_id={updated_channel.channel_id}: channel {updated_channel.channel_id} is updated",
+            extra=extra_params(channel_id=updated_channel.channel_id, bot_id=updated_channel.bot_id)
+        )
+
+    @validate_call
+    async def delete_channel(self, channel: ChannelSchema) -> None:
+        if not isinstance(channel, ChannelSchema):
             raise InvalidParameterFormat(
                 "new_channel must be type of ChannelSchema")
 
         async with self.engine.begin() as conn:
             await conn.execute(
                 delete(Channel).where(
-                    Channel.channel_id == new_channel.channel_id, Channel.bot_id == new_channel.bot_id
+                    Channel.channel_id == channel.channel_id, Channel.bot_id == channel.bot_id
                 )
             )
 
         self.logger.debug(
-            f"bot_id={new_channel.bot_id}: channel {new_channel.channel_id} is deleted",
-            extra=extra_params(bot_id=new_channel.bot_id,
-                               channel_id=new_channel.channel_id)
+            f"bot_id={channel.bot_id}: channel {channel.channel_id} is deleted",
+            extra=extra_params(bot_id=channel.bot_id,
+                               channel_id=channel.channel_id)
         )
