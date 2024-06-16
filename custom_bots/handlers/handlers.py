@@ -220,7 +220,6 @@ async def ad_channel_handler(query: CallbackQuery, state: FSMContext):
                                   "\n4. Стоимость: 1000руб.", reply_markup=None)
     chan.is_ad_post_block = True
     chan.ad_post_block_until = datetime.now() + timedelta(minutes=5)
-    chan.ad_message_id = msg.message_id
     await channel_db.update_channel(chan)
     await custom_ad_db.add_ad(CustomAdSchemaWithoutId(channel_id=chan.channel_id,
                                                       message_id=msg.message_id,

@@ -42,7 +42,6 @@ class ChannelSchema(BaseModel):
 
     is_ad_post_block: bool = False
     ad_post_block_until: datetime.datetime | None = None
-    ad_message_id: int | None = None
 
 
 class ChannelDao(Dao):  # TODO write tests
