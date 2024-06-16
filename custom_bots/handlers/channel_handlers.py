@@ -132,7 +132,9 @@ async def channel_post_handler(message: Message):
     chan = await channel_db.get_channel(message.chat.id)
     bot_data = await bot_db.get_bot(chan.bot_id)
     if chan.is_ad_post_block:
-        custom_bot_logger.info(f"channel block until: {chan.ad_post_block_until}\nnow: {datetime.now()}\ncompare: {chan.ad_post_block_until > datetime.now()}")
+        custom_bot_logger.debug(f"channel post detected with after ad block enabled\nblock until: "
+                                f"{chan.ad_post_block_until}\nnow: {datetime.now()}")
         if chan.ad_post_block_until > datetime.now():
             await message.bot.send_message(bot_data.created_by, "В канале было опубликовано сообщение, "
-                                                                "рекламное предложение разорвано")
+                                                                "рекламное предложение разорвано.")
+
