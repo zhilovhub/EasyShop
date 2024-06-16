@@ -86,6 +86,10 @@ async def on_start():
         chat_id=1128894056,
         text=f"Main Bot, version 2.0 has been started"
     )
+    await bot.send_message(
+        chat_id=694501408,
+        text=f"Main Bot, version 2.0 has been started"
+    )
 
     await dp.start_polling(bot)
 
