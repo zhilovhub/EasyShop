@@ -130,6 +130,8 @@ async def my_chat_member_handler(my_chat_member: ChatMemberUpdated) -> Any:
 @multi_bot_channel_router.channel_post()
 async def channel_post_handler(message: Message):
     chan = await channel_db.get_channel(message.chat.id)
+    bot_data = await bot_db.get_bot(chan.bot_id)
     if chan.is_ad_post_block:
         if chan.ad_post_block_until > datetime.now():
-            pass
+            await message.bot.send_message(bot_data.created_by, "В канале было опубликовано сообщение, "
+                                                                "рекламное предложение разорвано")
