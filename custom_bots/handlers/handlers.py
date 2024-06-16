@@ -175,7 +175,7 @@ async def request_ad_handler(query: CallbackQuery, state: FSMContext):
 @multi_bot_router.callback_query(lambda q: q.data.startswith("accept_ad"))
 async def accept_ad_handler(query: CallbackQuery, state: FSMContext):
     bot_id = int(query.data.split(':')[-1])
-    msg = await query.message.answer_photo(photo=FSInputFile("custom_bots/ad_example.jpg"),
+    msg = await query.message.answer_photo(photo=FSInputFile("ad_example.jpg"),
                                            caption=MessageTexts.EXAMPLE_AD_POST_TEXT.value)
     await msg.reply("Условия для принятия:\n1. В канале должно быть 2 и более подписчиков."
                     "\n2. В течении 25 минут после рекламного поста нельзя публиковать посты."
