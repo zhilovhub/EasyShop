@@ -857,7 +857,7 @@ async def editing_channel_post_delay_date_handler(message: Message, state: FSMCo
                 await message.answer(
                     MessageTexts.BOT_CHANNEL_POST_MENU_MESSAGE.value.format(
                         channel_username),
-                    reply_markup=await get_inline_bot_channel_post_menu_keyboard(bot_id=bot_id, channel_id=channel_id)
+                    reply_markup=await get_inline_bot_channel_post_menu_keyboard(bot_id=bot_id, channel_id=channel_id, is_contest=channel_post.is_contest)
                 )
 
                 await state.set_state(States.BOT_MENU)
