@@ -5,7 +5,7 @@ from aiogram.types import ChatMemberUpdated, ChatMemberLeft, ChatMemberAdministr
 from bot.keyboards import get_inline_bot_menu_keyboard
 from bot.utils import MessageTexts
 from custom_bots.handlers.routers import multi_bot_channel_router
-from custom_bots.multibot import bot_db, channel_db, main_bot, channel_user_db
+from custom_bots.multibot import bot_db, channel_db, main_bot, channel_user_db, custom_ad_db, scheduler
 from database.models.channel_model import ChannelSchema
 from aiogram.filters import IS_MEMBER, IS_NOT_MEMBER, ChatMemberUpdatedFilter
 from logs.config import custom_bot_logger
@@ -134,7 +134,12 @@ async def channel_post_handler(message: Message):
     if chan.is_ad_post_block:
         custom_bot_logger.debug(f"channel post detected with after ad block enabled\nblock until: "
                                 f"{chan.ad_post_block_until}\nnow: {datetime.now()}")
+        adv = await custom_ad_db.get_channel_last_custom_ad(channel_id=chan.channel_id)
         if chan.ad_post_block_until > datetime.now():
             await message.bot.send_message(bot_data.created_by, "В канале было опубликовано сообщение, "
                                                                 "рекламное предложение разорвано.")
+            adv.status = "canceled"
+            await custom_ad_db.update_custom_ad(adv)
+            job = await scheduler.get_job(adv.finish_job_id)
+            await scheduler.del_job(job)
 

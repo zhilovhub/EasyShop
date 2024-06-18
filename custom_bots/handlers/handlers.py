@@ -1,3 +1,5 @@
+import sched
+
 from aiogram.filters import CommandStart, CommandObject
 import json
 import random
@@ -14,11 +16,11 @@ from aiogram.types import Message, CallbackQuery, FSInputFile
 from bot.keyboards import keyboards
 from custom_bots.handlers.routers import multi_bot_router
 from custom_bots.multibot import order_db, product_db, bot_db, main_bot, PREV_ORDER_MSGS, custom_bot_user_db, \
-    CustomUserStates, QUESTION_MESSAGES, format_locales, channel_db, custom_ad_db
+    CustomUserStates, QUESTION_MESSAGES, format_locales, channel_db, custom_ad_db, scheduler
 from database.models.bot_model import BotNotFound
 from database.models.custom_bot_user_model import CustomBotUserNotFound
 from database.models.order_model import OrderSchema, OrderStatusValues, OrderNotFound, OrderItem
-from database.models.custom_ad_model import CustomAdSchemaWithoutId
+from database.models.custom_ad_model import CustomAdSchemaWithoutId, CustomAdSchema
 
 from logs.config import custom_bot_logger, extra_params
 
@@ -199,6 +201,18 @@ async def back_to_partnership(query: CallbackQuery, state: FSMContext):
                                   reply_markup=keyboards.get_partnership_inline_kb(bot_id))
 
 
+async def complete_custom_ad_request(chan_id: int, bot: Bot, bot_id: int):
+    adv = await custom_ad_db.get_channel_last_custom_ad(channel_id=chan_id)
+    adv.status = "finished"
+    chan = await channel_db.get_channel(chan_id)
+    chan.is_ad_post_block = False
+    await channel_db.update_channel(chan)
+    await bot.send_message(adv.by_user, "Рекламное предложение завершено, на Ваш баланс зачислено 1000руб.")
+    user = await custom_bot_user_db.get_custom_bot_user(bot_id, adv.by_user)
+    user.balance += 1000
+    await custom_bot_user_db.update_custom_bot_user(user)
+
+
 @multi_bot_router.callback_query(lambda q: q.data.startswith("ad_channel"))
 async def ad_channel_handler(query: CallbackQuery, state: FSMContext):
     bot_id = int(query.data.split(':')[-2])
@@ -221,9 +235,15 @@ async def ad_channel_handler(query: CallbackQuery, state: FSMContext):
     chan.is_ad_post_block = True
     chan.ad_post_block_until = datetime.now() + timedelta(minutes=5)
     await channel_db.update_channel(chan)
+    job_id = await scheduler.add_scheduled_job(complete_custom_ad_request,
+                                               datetime.now() + timedelta(minutes=10),
+                                               [chan.channel_id, query.bot, bot_id])
     await custom_ad_db.add_ad(CustomAdSchemaWithoutId(channel_id=chan.channel_id,
                                                       message_id=msg.message_id,
-                                                      time_until=datetime.now() + timedelta(minutes=10)))
+                                                      time_until=datetime.now() + timedelta(minutes=10),
+                                                      status="active",
+                                                      finish_job_id=job_id,
+                                                      by_user=query.from_user.id))
 
 
 @multi_bot_router.message(CustomUserStates.MAIN_MENU)

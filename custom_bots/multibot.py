@@ -30,6 +30,8 @@ from database.models.models import Database
 
 from logs.config import custom_bot_logger, db_logger, extra_params
 
+from subscription.scheduler import Scheduler
+
 app = web.Application()
 
 local_app = web.Application(logger=custom_bot_logger)
@@ -80,6 +82,8 @@ QUESTION_MESSAGES = JsonStore(
     file_path=config.RESOURCES_PATH.format("question_messages.json"),
     json_store_name="QUESTION_MESSAGES"
 )
+
+scheduler = Scheduler(getenv("SCHEDULER_URL"), "postgres", getenv("TIMEZONE"))
 
 
 class CustomUserStates(StatesGroup):
@@ -221,6 +225,8 @@ async def main():
         f"[3/3] Setting up local api server on {LOCAL_API_SERVER_HOST}:{LOCAL_API_SERVER_PORT}")
     custom_bot_logger.info(
         f"[3/3] Setting up webhook server on {WEBHOOK_SERVER_HOST}:{WEBHOOK_SERVER_PORT}")
+
+    await scheduler.start()
 
     await asyncio.gather(
         web._run_app(
