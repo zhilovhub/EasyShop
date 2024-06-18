@@ -3,6 +3,7 @@ from typing import Optional
 
 from aiogram.utils.keyboard import InlineKeyboardMarkup, InlineKeyboardButton, ReplyKeyboardMarkup, KeyboardButton
 
+from database.models.channel_post_model import ContestTypeValues
 from bot.utils.keyboard_utils import *
 from bot.utils import MessageTexts, make_admin_panel_webapp_info
 
@@ -589,13 +590,27 @@ async def get_inline_bot_channel_post_menu_keyboard(bot_id: int, channel_id: int
     inline_buttons = [
         [
             InlineKeyboardButton(
-                text="Длительность", callback_data="channel_menu:get_contest_end_date" + callback_metadata
+                text="Длительность конкурса", callback_data="channel_menu:get_contest_end_date" + callback_metadata
             ),
             InlineKeyboardButton(
-                text="Условия выполнения", callback_data="channel_menu:get_contest_type" + callback_metadata
+                text="Условия выполнения", callback_data="channel_menu:pick_contest_type" + callback_metadata
             )
+        ],
+        [
+            InlineKeyboardButton(
+                text="Кол-во победителей", callback_data="channel_menu:get_contest_winner_amount"),
+            InlineKeyboardButton(
+                text="Текст кнопки участия", callback_data="channel_menu:get_contest_button_text")
         ]
     ]
+    if channel_post.contest_type == ContestTypeValues.SPONSOR:
+        inline_buttons.append(
+            [
+                InlineKeyboardButton(
+                    text="Выбрать спонсоров", callback_data="channel_menu:get_sponsors"
+                )
+            ]
+        )
     if channel_post.is_contest is False:
         if channel_post.has_button:
             inline_buttons = [
