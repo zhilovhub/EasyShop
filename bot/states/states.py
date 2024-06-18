@@ -38,3 +38,5 @@ class States(StatesGroup):
     EDITING_POST_DELAY_DATE = State()
 
     EDITING_COMPETITION_END_DATE = State()
+    EDITING_COMPETITION_WINNTER_AMOUNT = State()
+    EDITING_SPONSOR_LINK = State()

@@ -56,6 +56,7 @@ class ChannelPost(Base):
     has_button = Column(BOOLEAN, default=False)
     button_text = Column(String, default="Shop")
     button_url = Column(String)
+    button_query = Column(String, default="contest_join", nullable=False)
 
     created_at = Column(DateTime, nullable=False)
 
@@ -77,6 +78,8 @@ class ChannelPost(Base):
     contest_end_date = Column(DateTime, nullable=True)
     contest_winner_amount = Column(BigInteger, nullable=True)
 
+    contest_sponsor_url = Column(String, nullable=True)
+
 
 class ChannelPostSchemaWithoutId(BaseModel):
     model_config = ConfigDict(from_attributes=True)
@@ -90,6 +93,7 @@ class ChannelPostSchemaWithoutId(BaseModel):
     has_button: bool = False
     button_text: Optional[str | None] = None
     button_url: Optional[str | None] = None
+    button_query: str = "contest_join"
 
     created_at: datetime.datetime = datetime.datetime.now().replace(tzinfo=None)
 
@@ -106,6 +110,7 @@ class ChannelPostSchemaWithoutId(BaseModel):
     contest_type: Optional[ContestTypeValues | None] = None
     contest_end_date: Optional[datetime.datetime | None] = None
     contest_winner_amount: Optional[int | None] = None
+    contest_sponsor_url: Optional[str | None] = None
 
 
 class ChannelPostSchema(ChannelPostSchemaWithoutId):

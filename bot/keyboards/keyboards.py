@@ -598,16 +598,16 @@ async def get_inline_bot_channel_post_menu_keyboard(bot_id: int, channel_id: int
         ],
         [
             InlineKeyboardButton(
-                text="Кол-во победителей", callback_data="channel_menu:get_contest_winner_amount"),
+                text="Кол-во победителей", callback_data="channel_menu:get_contest_winner_amount" + callback_metadata),
             InlineKeyboardButton(
-                text="Текст кнопки участия", callback_data="channel_menu:get_contest_button_text")
+                text="Текст кнопки участия", callback_data="channel_menu:get_contest_button_text" + callback_metadata)
         ]
     ]
     if channel_post.contest_type == ContestTypeValues.SPONSOR:
         inline_buttons.append(
             [
                 InlineKeyboardButton(
-                    text="Выбрать спонсоров", callback_data="channel_menu:get_sponsors"
+                    text="Выбрать спонсоров", callback_data="channel_menu:get_sponsors" + callback_metadata
                 )
             ]
         )
@@ -743,4 +743,28 @@ async def get_inline_bot_channel_post_menu_accept_deleting_keyboard(bot_id: int,
                 text="🔙 Назад", callback_data="channel_menu:back_to_editing_channel_post" + callback_metadata
             )
         ]
+    ])
+
+
+async def get_contest_type_pick_keyboard(bot_id: int, channel_id: int, is_contest: bool = True) -> InlineKeyboardMarkup:
+    callback_metadata = f":{bot_id}:{channel_id}"
+    if is_contest:
+        channel_post = await channel_post_db.get_channel_post(channel_id, True)
+        callback_metadata += f":{channel_post.channel_post_id}"
+    return InlineKeyboardMarkup(inline_keyboard=[
+        [
+            InlineKeyboardButton(
+                text="Рандомайзер", callback_data="channel_menu:pick_random_contest" + callback_metadata
+            )
+        ],
+        [
+            InlineKeyboardButton(
+                text="Спонсорство", callback_data="channel_menu:pick_sponsor_contest" + callback_metadata
+            )
+        ],
+        [
+            InlineKeyboardButton(
+                text="🔙 Назад", callback_data="channel_menu:back_to_editing_channel_post" + callback_metadata
+            )
+        ],
     ])
