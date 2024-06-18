@@ -656,8 +656,11 @@ async def get_inline_bot_channel_post_menu_keyboard(bot_id: int, channel_id: int
     ])
 
 
-async def get_inline_bot_channel_post_start_confirm_keybaord(bot_id: int, channel_id: int) -> InlineKeyboardMarkup:
+async def get_inline_bot_channel_post_start_confirm_keybaord(bot_id: int, channel_id: int, is_contest: bool = False) -> InlineKeyboardMarkup:
     callback_metadata = f":{bot_id}:{channel_id}"
+    if is_contest:
+        channel_post = await channel_post_db.get_channel_post(channel_id, True)
+        callback_metadata += f":{channel_post.channel_post_id}"
 
     return InlineKeyboardMarkup(inline_keyboard=[
         [
@@ -674,8 +677,12 @@ async def get_inline_bot_channel_post_start_confirm_keybaord(bot_id: int, channe
 async def get_inline_bot_channel_post_menu_extra_settings_keyboard(bot_id: int,
                                                                    channel_id: int,
                                                                    is_notification_sound: bool,
-                                                                   is_link_preview: bool) -> InlineKeyboardMarkup:
+                                                                   is_link_preview: bool,
+                                                                   is_contest: bool = False) -> InlineKeyboardMarkup:
     callback_metadata = f":{bot_id}:{channel_id}"
+    if is_contest:
+        channel_post = await channel_post_db.get_channel_post(channel_id, True)
+        callback_metadata += f":{channel_post.channel_post_id}"
     notification_text = "Звуковое уведомление: "
     if is_notification_sound:
         notification_text += "вкл"
@@ -706,9 +713,11 @@ async def get_inline_bot_channel_post_menu_extra_settings_keyboard(bot_id: int,
     ])
 
 
-async def get_inline_bot_channel_post_menu_accept_deleting_keyboard(bot_id: int,
-                                                                    channel_id: int) -> InlineKeyboardMarkup:
+async def get_inline_bot_channel_post_menu_accept_deleting_keyboard(bot_id: int, channel_id: int, is_contest: bool = False) -> InlineKeyboardMarkup:
     callback_metadata = f":{bot_id}:{channel_id}"
+    if is_contest:
+        channel_post = await channel_post_db.get_channel_post(channel_id, True)
+        callback_metadata += f":{channel_post.channel_post_id}"
 
     return InlineKeyboardMarkup(inline_keyboard=[
         [
