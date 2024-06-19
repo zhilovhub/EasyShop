@@ -29,7 +29,7 @@ class CustomBotUserSchema(BaseModel):
 
     bot_id: int
     user_id: int
-    balance: int = 0
+    balance: int | None = 0
 
 
 class CustomBotUserDao(Dao):

@@ -72,7 +72,7 @@ class UserSchema(BaseModel):
     registered_at: datetime = Field(frozen=True)
     settings: dict | None = None
     locale: str = Field(max_length=10, default="default")
-    balance: int = 0
+    balance: int | None = 0
 
 
 class UserDao(Dao):
