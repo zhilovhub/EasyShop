@@ -236,7 +236,7 @@ async def ad_channel_handler(query: CallbackQuery, state: FSMContext):
     chan.ad_post_block_until = datetime.now() + timedelta(minutes=5)
     await channel_db.update_channel(chan)
     job_id = await scheduler.add_scheduled_job(complete_custom_ad_request,
-                                               (datetime.now() + timedelta(minutes=10)).replace(timezone=None),
+                                               (datetime.now() + timedelta(minutes=10)).replace(tzinfo=None),
                                                [chan.channel_id, query.bot, bot_id])
     await custom_ad_db.add_ad(CustomAdSchemaWithoutId(channel_id=chan.channel_id,
                                                       message_id=msg.message_id,
