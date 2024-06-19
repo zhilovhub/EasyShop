@@ -201,7 +201,9 @@ async def back_to_partnership(query: CallbackQuery, state: FSMContext):
                                   reply_markup=keyboards.get_partnership_inline_kb(bot_id))
 
 
-async def complete_custom_ad_request(chan_id: int, bot: Bot, bot_id: int):
+async def complete_custom_ad_request(chan_id: int, bot_id: int):
+    bot_data = await bot_db.get_bot(bot_id)
+    bot = Bot(token=bot_data.token)
     adv = await custom_ad_db.get_channel_last_custom_ad(channel_id=chan_id)
     adv.status = "finished"
     chan = await channel_db.get_channel(chan_id)
@@ -237,7 +239,7 @@ async def ad_channel_handler(query: CallbackQuery, state: FSMContext):
     await channel_db.update_channel(chan)
     job_id = await scheduler.add_scheduled_job(complete_custom_ad_request,
                                                (datetime.now() + timedelta(minutes=10)).replace(tzinfo=None),
-                                               [chan.channel_id, query.bot, bot_id])
+                                               [chan.channel_id, bot_id])
     await custom_ad_db.add_ad(CustomAdSchemaWithoutId(channel_id=chan.channel_id,
                                                       message_id=msg.message_id,
                                                       time_until=datetime.now() + timedelta(minutes=10),
