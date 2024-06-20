@@ -8,7 +8,8 @@ from aiogram.types import Message, CallbackQuery, LinkPreviewOptions, \
     InputMediaPhoto, InputMediaVideo, InputMediaAudio, InputMediaDocument, BufferedInputFile
 from aiogram.fsm.context import FSMContext
 
-from bot.main import bot, _scheduler, custom_bot_user_db, channel_post_media_file_db, channel_user_db
+from database.models.contest_channel_model import ContestChannelSchema, ContestChannelSchemaWithoutId
+from bot.main import bot, _scheduler, custom_bot_user_db, channel_post_media_file_db, channel_user_db, contest_channel_db, contest_user_db
 from bot.states.states import States
 from bot.handlers.routers import channel_menu_router
 
@@ -425,7 +426,22 @@ async def channel_menu_callback_handler(query: CallbackQuery, state: FSMContext)
                     text="В Вашем рассылочном сообщении нет ни текста, ни медиафайлов",
                     show_alert=True
                 )
-
+            if channel_post.is_contest:
+                if channel_post.contest_end_date is None:
+                    return await query.answer(
+                        text="Не установлен конец конкурса",
+                        show_alert=True
+                    )
+                elif channel_post.contest_winner_amount is None:
+                    return await query.answer(
+                        text="Не установлено количество победителей",
+                        show_alert=True
+                    )
+                elif channel_post.contest_type == ContestTypeValues.SPONSOR and channel_post.contest_sponsor_url is None:
+                    return await query.answer(
+                        text="Не выбраны каналы спонсоры",
+                        show_alert=True
+                    )
             await query.message.edit_text(
                 text=MessageTexts.BOT_CHANNEL_POST_MENU_ACCEPT_START.value.format(
                     channel_username),
@@ -439,8 +455,28 @@ async def channel_menu_callback_handler(query: CallbackQuery, state: FSMContext)
                     "Telegram не позволяет прикрепить кнопку, если в сообщении минимум 2 медиафайла",
                     show_alert=True
                 )
-
-            elif channel_post.description or media_files:
+            elif not media_files and not channel_post.description:
+                return await query.answer(
+                    text="В Вашем рассылочном сообщении нет ни текста, ни медиафайлов",
+                    show_alert=True
+                )
+            if channel_post.is_contest:
+                if channel_post.contest_end_date is None:
+                    return await query.answer(
+                        text="Не установлен конец конкурса",
+                        show_alert=True
+                    )
+                elif channel_post.contest_winner_amount is None:
+                    return await query.answer(
+                        text="Не установлено количество победителей",
+                        show_alert=True
+                    )
+                elif channel_post.contest_type == ContestTypeValues.SPONSOR and channel_post.contest_sponsor_url is None:
+                    return await query.answer(
+                        text="Не выбраны каналы спонсоры",
+                        show_alert=True
+                    )
+            if channel_post.description or media_files:
                 if channel_post.is_delayed:
                     # Небольшой запас по времени
                     if datetime.now() > (channel_post.send_date + timedelta(minutes=2)):
@@ -587,15 +623,75 @@ async def editing_contest_sponsor_url(message: Message, state: FSMContext):
         else:
             if message_text.startswith("https://t.me/addlist/") is False:
                 return await message.answer("Вы ввели не ту ссылку, попробуйте еще раз.")
-            channel_post.contest_sponsor_url = message_text
-            await channel_post_db.update_channel_post(channel_post)
             await message.answer(f"Ваши спонсоры изменены на {channel_post.contest_sponsor_url}")
+            # await message.answer(
+            #     MessageTexts.BOT_CHANNEL_POST_MENU_MESSAGE.value.format(
+            #         channel_username),
+            #     reply_markup=await get_inline_bot_channel_post_menu_keyboard(bot_id=bot_id, channel_id=channel_id, is_contest=channel_post.is_contest)
+            # )
+            await message.answer(f"Теперь введите через энтер ссылки на каналы\n\nПример:\nhttps://t.me/durov_russia\nhttps://t.me/durov_russia\nhttps://t.me/durov_russia\n")
+            await state.set_state(States.WAITING_FOR_SPONSOR_CHANNEL_LINKS)
+            if channel_post.is_contest:
+                await state.set_data({"bot_id": bot_id, "channel_id": channel_id, "channel_post_id": channel_post.channel_post_id, "sponsor_url": message_text})
+            else:
+                await state.set_data({"bot_id": bot_id, "channel_id": channel_id})
+
+
+@channel_menu_router.message(States.WAITING_FOR_SPONSOR_CHANNEL_LINKS)
+async def editing_sponsor_channel_links(message: Message, state: FSMContext):
+    message_text = message.html_text
+    state_data = await state.get_data()
+    bot_id = state_data["bot_id"]
+    channel_id = state_data["channel_id"]
+    if state_data.get("channel_post_id", None) != None:
+        is_contest_flag = True
+    sponsor_url = state_data["sponsor_url"]
+    custom_bot_tg = Bot((await bot_db.get_bot(bot_id)).token)
+    channel_username = (await custom_bot_tg.get_chat(channel_id)).username
+    channel_post = await channel_post_db.get_channel_post(channel_id=channel_id, is_contest=is_contest_flag)
+    if message_text:
+        if message_text == "🔙 Назад":
+            await message.answer(
+                "Возвращаемся в меню...",
+                reply_markup=get_reply_bot_menu_keyboard(
+                    bot_id=state_data["bot_id"])
+            )
             await message.answer(
                 MessageTexts.BOT_CHANNEL_POST_MENU_MESSAGE.value.format(
                     channel_username),
                 reply_markup=await get_inline_bot_channel_post_menu_keyboard(bot_id=bot_id, channel_id=channel_id, is_contest=channel_post.is_contest)
             )
-
+            await state.set_state(States.BOT_MENU)
+        else:
+            ids_list = []
+            links = [link.strip() for link in message_text.split("\n")]
+            for link in links:
+                if link.startswith("https://t.me/") is False:
+                    return await message.answer("Введенная ссылка не ведет на канал")
+                try:
+                    s_channel = await bot.get_chat(f"@{link.split('/')[-1]}")
+                except Exception as e:
+                    return await message.answer("Введенная ссылка не ведет на канал 1")
+                if s_channel.id:
+                    ids_list.append(s_channel.id)
+                else:
+                    return await message.answer("Введенная ссылка не ведет на канал 2")
+            await contest_channel_db.delete_channels_by_contest_id(contest_id=channel_post.channel_post_id)
+            for ch_id in ids_list:
+                await contest_channel_db.add_channel(
+                    ContestChannelSchemaWithoutId.model_validate(
+                        {"channel_id": ch_id,
+                            "contest_post_id": channel_post.channel_post_id}
+                    )
+                )
+            channel_post.contest_sponsor_url = sponsor_url
+            await channel_post_db.update_channel_post(channel_post)
+            await message.answer("Ваши каналы сохранены")
+            await message.answer(
+                MessageTexts.BOT_CHANNEL_POST_MENU_MESSAGE.value.format(
+                    channel_username),
+                reply_markup=await get_inline_bot_channel_post_menu_keyboard(bot_id=bot_id, channel_id=channel_id, is_contest=channel_post.is_contest)
+            )
             await state.set_state(States.BOT_MENU)
             if channel_post.is_contest:
                 await state.set_data({"bot_id": bot_id, "channel_id": channel_id, "channel_post_id": channel_post.channel_post_id})
