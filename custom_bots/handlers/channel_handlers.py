@@ -136,6 +136,9 @@ async def channel_post_handler(message: Message):
                                 f"{chan.ad_post_block_until}\nnow: {datetime.now()}")
         adv = await custom_ad_db.get_channel_last_custom_ad(channel_id=chan.channel_id)
         if chan.ad_post_block_until > datetime.now():
+            chan.is_ad_post_block = False
+            await channel_db.update_channel(chan)
+
             await message.bot.send_message(bot_data.created_by, "В канале было опубликовано сообщение, "
                                                                 "рекламное предложение разорвано.")
             adv.status = "canceled"
