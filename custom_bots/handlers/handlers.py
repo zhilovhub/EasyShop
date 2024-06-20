@@ -120,7 +120,7 @@ async def process_web_app_request(event: Message):
     )
 
 
-@multi_bot_router.message(CommandStart(deep_link=True))
+@multi_bot_router.message(CommandStart())
 async def start_cmd(message: Message, state: FSMContext, command: CommandObject):
     args = command.args
     user_id = message.from_user.id
