@@ -46,7 +46,7 @@ async def generate_contest_result(channel_id: int):
     if channel_post.contest_type == ContestTypeValues.RANDOM:
         winners_amount = channel_post.contest_winner_amount
         while len(users_copy) != 0:
-            if len(winners_list) > winners_amount:
+            if len(winners_list) >= winners_amount:
                 break
             random_user = random.choice(users_copy)
             winners_list.append(random_user)
@@ -54,7 +54,7 @@ async def generate_contest_result(channel_id: int):
     else:
         winners_amount = channel_post.contest_winner_amount
         while len(users_copy) != 0:
-            if len(winners_list) > winners_amount:
+            if len(winners_list) >= winners_amount:
                 break
             random_user = random.choice(users_copy)
             for channel in channels:

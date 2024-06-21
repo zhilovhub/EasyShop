@@ -28,7 +28,7 @@ class ContestUser(Base):
     contest_post_id = Column(ForeignKey(
         ChannelPost.channel_post_id, ondelete="CASCADE"), nullable=False)
     user_id = Column(BigInteger, nullable=False)
-    channel_id = Column(BigInteger, unique=True, nullable=False)
+    channel_id = Column(BigInteger, nullable=False)
     join_date = Column(DateTime, nullable=False)
 
 

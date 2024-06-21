@@ -53,7 +53,7 @@ async def register_contest_user(query: CallbackQuery):
                     "join_date": datetime.now().replace(tzinfo=None), "contest_post_id": channel_post.channel_post_id}
             ))
             await query.answer(text="Вы успешно зарегистрировались!", show_alert=True)
-            await query.message.edit_reply_markup(await get_contest_inline_join_button(channel_id))
+            await query.message.edit_reply_markup(reply_markup=await get_contest_inline_join_button(channel_id))
         except InstanceAlreadyExists:
             await query.answer(text="Вы уже зарегистрировались!")
     else:
