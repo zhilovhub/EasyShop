@@ -75,7 +75,7 @@ async def continue_subscription_callback(query: CallbackQuery, state: FSMContext
                 InlineKeyboardButton(text="Перейти на страницу оплаты", url=config.SBP_URL)
             ]
         ]))
-    await query.message.answer(f"По возникновению каких-либо вопросов, пиши @someone", reply_markup=get_back_keyboard())
+    await query.message.answer(f"По возникновению каких-либо вопросов пишите @maxzim398", reply_markup=get_back_keyboard())
 
 
 async def send_subscription_expire_notify(user: UserSchema) -> None:
@@ -223,7 +223,6 @@ async def approve_pay_callback(query: CallbackQuery):
     subscribed_until = await subscription.approve_payment(user_id)
 
     user = await user_db.get_user(user_id)
-    await subscription.create_payment(user_id)
 
     logger.info(f"adding scheduled subscription notifies for user {user.id}")
     await subscription.add_notifications(
@@ -287,7 +286,7 @@ async def cancel_pay_callback(query: CallbackQuery, state: FSMContext):
     await bot.send_message(user_id, "Оплата не была принята, перепроверьте корректность отправленных данный (чека) "
                                     "и отправьте его еще раз")
     await bot.send_message(
-        user_id, f"По возникновению каких-либо вопросов, пишите @someone", reply_markup=get_back_keyboard()
+        user_id, f"По возникновению каких-либо вопросов, пишите @maxzim398", reply_markup=get_back_keyboard()
     )
 
     await query.answer("Оплата отклонена", show_alert=True)

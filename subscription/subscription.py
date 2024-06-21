@@ -8,6 +8,8 @@ from database.models.user_model import UserStatusValues
 from subscription import config
 from subscription.scheduler import Scheduler
 
+from logs.config import logger, extra_params
+
 
 def singleton(class_):
     instances = {}
@@ -42,28 +44,42 @@ class Subscription:
             raise UserHasAlreadyStartedTrial(f"user with user_id {user_id} has already stated a trial")
 
         user.subscribed_until = datetime.now() + timedelta(
-            days=config.TRIAL_DURATION_IN_DAYS)  # TODO change it to 7 days
+            days=config.TRIAL_DURATION_IN_DAYS)
         user.status = UserStatusValues.TRIAL
 
         await self.user_db.update_user(user)
+
+        logger.info(
+            f"user_id={user_id}: the user started trial for {config.TRIAL_DURATION_IN_DAYS} days and he is subscribed"
+            f"until {user.subscribed_until}",
+            extra=extra_params(user_id=user_id)
+        )
+
         return user.subscribed_until
 
     async def approve_payment(self, user_id: int) -> datetime:
         """Approves user's payment"""
         user = await self.user_db.get_user(user_id)
-        await self.create_payment(user_id)
+        payment_id = await self.create_payment(user_id)
 
         subscription_delta = timedelta(days=config.SUBSCRIPTION_DURATION_IN_DAYS)
         if user.status == UserStatusValues.SUBSCRIPTION_ENDED or user.subscribed_until is None:
-            user.subscribed_until = datetime.now() + subscription_delta  # TODO change it to 31 days
+            user.subscribed_until = datetime.now() + subscription_delta
         else:
-            user.subscribed_until = user.subscribed_until + subscription_delta  # TODO change it to 31 days
+            user.subscribed_until = user.subscribed_until + subscription_delta
         user.status = UserStatusValues.SUBSCRIBED
 
         await self.user_db.update_user(user)
+
+        logger.info(
+            f"user_id={user_id}: the user's payment has been approved so the user is subscribed "
+            f"until {user.subscribed_until} (+{subscription_delta} days)",
+            extra=extra_params(user_id=user_id, payment_id=payment_id)
+        )
+
         return user.subscribed_until
 
-    async def create_payment(self, user_id: int) -> None:
+    async def create_payment(self, user_id: int) -> int:
         """Creates a new payment"""
         current_datetime = datetime.now()
         payment = PaymentSchemaWithoutId(from_user=user_id,
@@ -71,7 +87,14 @@ class Subscription:
                                          status="success",
                                          created_at=current_datetime,
                                          last_update=current_datetime)
-        await self.payment_db.add_payment(payment)
+        payment_id = await self.payment_db.add_payment(payment)
+
+        logger.info(
+            f"user_id={user_id}: the user's payment created: {payment}",
+            extra=extra_params(user_id=user_id, payment_id=payment_id)
+        )
+
+        return payment_id
 
     async def add_notifications(self, user_id, on_expiring_notification, on_end_notification,
                                 subscribed_until: datetime) -> list[str]:
@@ -91,26 +114,53 @@ class Subscription:
             args=[user]
         ))
 
+        logger.debug(
+            f"user_id={user_id}: user's notifications about payment are created: job_ids={job_ids}",
+            extra=extra_params(user_id=user_id)
+        )
+
         return job_ids
 
     async def get_user_status(self, user_id: int) -> UserStatusValues:
         """Returns the status of user's subscription"""
-        return (await self.user_db.get_user(user_id)).status
+        user_status = (await self.user_db.get_user(user_id)).status
+
+        logger.debug(
+            f"user_id={user_id}: user's subscription status is {user_status}",
+            extra=extra_params(user_id=user_id)
+        )
+
+        return user_status
 
     async def is_user_subscribed(self, user_id: int) -> bool:
         """Check if user status is subscribed or trial"""
         user = await self.user_db.get_user(user_id)
-        return user.status in (UserStatusValues.TRIAL, UserStatusValues.SUBSCRIBED)
+        is_subscribed = user.status in (UserStatusValues.TRIAL, UserStatusValues.SUBSCRIBED)
+
+        logger.debug(
+            f"user_id={user_id}: user is subscribed with {user.status}",
+            extra=extra_params(user_id=user_id)
+        )
+
+        return is_subscribed
 
     @staticmethod
     def get_subscription_price() -> int:
         """Returns the price of subscription"""
-        return config.SUBSCRIPTION_PRICE
+        price = config.SUBSCRIPTION_PRICE
+        logger.debug(
+            f"returned subscription_price={price}"
+        )
+        return price
 
     @staticmethod
     def get_destination_phone_number() -> str:
         """Returns the phone number to pay to"""
-        return config.DESTINATION_PHONE_NUMBER
+        phone_number = config.DESTINATION_PHONE_NUMBER
+        logger.debug(
+            f"returned phone_number={phone_number}"
+        )
+        return phone_number
 
     async def start_scheduler(self) -> None:
         """Starts the scheduler"""

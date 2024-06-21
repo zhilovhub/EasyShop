@@ -112,7 +112,7 @@ class PaymentDao(Dao):
 
         return res
 
-    async def add_payment(self, payment: PaymentSchemaWithoutId) -> None:
+    async def add_payment(self, payment: PaymentSchemaWithoutId) -> int:
         if not isinstance(payment, PaymentSchemaWithoutId):
             raise InvalidParameterFormat("payment must be type of database.PaymentSchema.")
 
@@ -128,6 +128,8 @@ class PaymentDao(Dao):
             f"user_id={payment.from_user}: payment {payment_id} is added",
             extra=extra_params(payment_id=payment_id, user_id=payment.from_user)
         )
+
+        return payment_id
 
     async def update_payment(self, updated_payment: PaymentSchema) -> None:
         if not isinstance(updated_payment, PaymentSchema):
