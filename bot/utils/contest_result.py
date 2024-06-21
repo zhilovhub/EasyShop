@@ -1,3 +1,4 @@
+from aiogram.exceptions import TelegramNotFound, TelegramBadRequest
 from aiogram.types import BufferedInputFile
 from aiogram.types import InputFile
 from typing import List
@@ -13,6 +14,7 @@ from aiogram.types.chat_member_member import ChatMemberMember
 import openpyxl
 from openpyxl import Workbook
 from io import BytesIO
+from aiogram.enums.chat_member_status import ChatMemberStatus
 
 
 def create_excel(data, sheet_name):
@@ -57,14 +59,20 @@ async def generate_contest_result(channel_id: int):
             if len(winners_list) >= winners_amount:
                 break
             random_user = random.choice(users_copy)
+            user_in_channels = True
             for channel in channels:
                 try:
                     status = await main_bot.get_chat_member(channel.channel_id, random_user.user_id)
-                except Exception:
-                    continue
-                if status == ChatMemberMember:
-                    winners_list.append(random_user)
-                    users_copy.remove(random_user)
+                except TelegramBadRequest:
+                    user_in_channels = False
+                    break
+                if status.status not in [ChatMemberStatus.CREATOR, ChatMemberStatus.ADMINISTRATOR, ChatMemberStatus.MEMBER]:
+                    user_in_channels = False
+            if user_in_channels:
+                winners_list.append(random_user)
+                users_copy.remove(random_user)
+            else:
+                users_copy.remove(random_user)
     wb_data = []
     for user in winners_list:
         chat = await main_bot.get_chat(user.user_id)
@@ -83,5 +91,3 @@ async def generate_contest_result(channel_id: int):
                                  caption='winners.xlsx')
     winners_buffer.close()
     await channel_post_db.delete_channel_post(channel_post.channel_post_id)
-    # if channel_post.contest_type == ContestTypeValues.SPONSOR:
-    #     await contest_channel_db.delete_channels_by_contest_id(channel_post.channel_post_id)

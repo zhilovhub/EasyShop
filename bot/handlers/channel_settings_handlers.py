@@ -630,7 +630,7 @@ async def editing_contest_sponsor_url(message: Message, state: FSMContext):
         else:
             if message_text.startswith("https://t.me/addlist/") is False:
                 return await message.answer("Вы ввели не ту ссылку, попробуйте еще раз.")
-            await message.answer(f"Ваши спонсоры изменены на {channel_post.contest_sponsor_url}")
+            await message.answer(f"Ваши спонсоры изменены на {message_text}")
             # await message.answer(
             #     MessageTexts.BOT_CHANNEL_POST_MENU_MESSAGE.value.format(
             #         channel_username),
