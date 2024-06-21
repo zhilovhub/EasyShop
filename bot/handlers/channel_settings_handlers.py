@@ -205,6 +205,75 @@ async def channel_menu_callback_handler(query: CallbackQuery, state: FSMContext)
 
     # Works only if we get requested object from db
     match action:
+        case "get_sponsors":  # TODO Add instruction on how to create chat folder links
+
+            if channel_post.contest_sponsor_url:
+                await query.message.answer(
+                    f"Отправьте ссылку на новую папку\n\n"
+                    f"Текущая - {channel_post.contest_sponsor_url}",
+                    reply_markup=get_back_keyboard()
+                )
+            else:
+                await query.message.answer(
+                    f"Отправьте ссылку на папку с каналами спонсоров\n\n",
+                    reply_markup=get_back_keyboard()
+                )
+            await query.answer()
+            await state.set_state(States.EDITING_SPONSOR_LINK)
+            await state.set_data({"bot_id": bot_id, "channel_id": channel_id, "channel_post_id": channel_post.channel_post_id})
+        case "get_contest_button_text":
+            await query.message.answer(
+                f"Введите текст, который будет отображаться на кнопке\n\n"
+                "Справа будет отображаться счетчик участвующих",
+                reply_markup=get_back_keyboard()
+            )
+            await query.answer()
+            await state.set_state(States.EDITING_POST_BUTTON_TEXT)
+            await state.set_data({"bot_id": bot_id, "channel_id": channel_id, "channel_post_id": channel_post.channel_post_id})
+        case "get_contest_winner_amount":
+            await query.message.answer(f"Введите количество победителей в конкурсе", reply_markup=get_back_keyboard())
+            await query.answer()
+            await state.set_state(States.EDITING_COMPETITION_WINNTER_AMOUNT)
+            await state.set_data({"bot_id": bot_id, "channel_id": channel_id, "channel_post_id": channel_post.channel_post_id})
+        case "pick_contest_type":
+            await query.message.answer(
+                text=f"Текущий тип конкурса - {channel_post.contest_type.value}\n"
+                f"Выберите нужный тип конкурса: ",
+                reply_markup=await get_contest_type_pick_keyboard(bot_id, channel_id)
+            )
+        case "pick_random_contest":
+            try:
+                await query.message.delete()
+            except:
+                pass
+            if channel_post.contest_type != ContestTypeValues.RANDOM:
+                channel_post.contest_type = ContestTypeValues.RANDOM
+                await channel_post_db.update_channel_post(channel_post)
+            await query.message.answer("Текущий тип конкурса - Рандомайзер")
+            await state.set_state(States.BOT_MENU)
+            await state.set_data({"bot_id": bot_id, "channel_id": channel_id, "channel_post_id": channel_post.channel_post_id})
+            return await query.message.answer(
+                MessageTexts.BOT_CHANNEL_POST_MENU_MESSAGE.value.format(
+                    channel_username),
+                reply_markup=await get_inline_bot_channel_post_menu_keyboard(bot_id=bot_id, channel_id=channel_id, is_contest=channel_post.is_contest)
+            )
+
+        case "pick_sponsor_contest":
+            try:
+                await query.message.delete()
+            except:
+                pass
+            if channel_post.contest_type != ContestTypeValues.SPONSOR:
+                channel_post.contest_type = ContestTypeValues.SPONSOR
+                await channel_post_db.update_channel_post(channel_post)
+            await query.message.answer("Текущий тип конкурса - Спонсорство\n\n Настройте спонсоров с помощью появившейся кнопки")
+            await state.set_state(States.BOT_MENU)
+            await state.set_data({"bot_id": bot_id, "channel_id": channel_id, "channel_post_id": channel_post.channel_post_id})
+            return await query.message.answer(
+                MessageTexts.BOT_CHANNEL_POST_MENU_MESSAGE.value.format(
+                    channel_username),
+                reply_markup=await get_inline_bot_channel_post_menu_keyboard(bot_id=bot_id, channel_id=channel_id, is_contest=channel_post.is_contest)
+            )
         case "get_contest_end_date":
             await query.message.answer(f"Введите дату окончания конкурса\n\n{MessageTexts.DATE_RULES.value}",
                                        reply_markup=get_back_keyboard())
@@ -788,7 +857,7 @@ async def editing_channel_post_delay_date_handler(message: Message, state: FSMCo
                 await message.answer(
                     MessageTexts.BOT_CHANNEL_POST_MENU_MESSAGE.value.format(
                         channel_username),
-                    reply_markup=await get_inline_bot_channel_post_menu_keyboard(bot_id=bot_id, channel_id=channel_id)
+                    reply_markup=await get_inline_bot_channel_post_menu_keyboard(bot_id=bot_id, channel_id=channel_id, is_contest=channel_post.is_contest)
                 )
 
                 await state.set_state(States.BOT_MENU)
