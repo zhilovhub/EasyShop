@@ -1,3 +1,5 @@
+from aiogram.types import BufferedInputFile
+from aiogram.types import InputFile
 from typing import List
 from bot.exceptions.exceptions import BotNotFound
 from database.models.contest_channel_model import ContestChannelSchema
@@ -75,6 +77,11 @@ async def generate_contest_result(channel_id: int):
     winners_buffer = BytesIO()
     winners_wb.save(winners_buffer)
     winners_buffer.seek(0)
-    main_bot.send_document(created_by, document=winners_buffer,
-                           filename='winners.xlsx')
+    winners_file = BufferedInputFile(
+        winners_buffer.read(), filename="winners.xlsx")
+    await main_bot.send_document(created_by, document=winners_file,
+                                 caption='winners.xlsx')
     winners_buffer.close()
+    await channel_post_db.delete_channel_post(channel_post.channel_post_id)
+    if channel_post.contest_type == ContestTypeValues.SPONSOR:
+        await contest_channel_db.delete_channels_by_contest_id(channel_post.channel_post_id)

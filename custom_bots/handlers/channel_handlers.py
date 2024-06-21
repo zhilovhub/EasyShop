@@ -24,6 +24,8 @@ from logs.config import extra_params
 
 @multi_bot_channel_router.callback_query(lambda query: query.data.startswith("contest_join"))
 async def register_contest_user(query: CallbackQuery):
+    if query.message.chat.type != "channel":
+        return
     user_id = query.from_user.id
     channel_id = query.message.chat.id
     try:
