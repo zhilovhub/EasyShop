@@ -69,8 +69,8 @@ async def process_web_app_request(event: Message):
                 await product_db.update_product(product)
 
         if zero_products:
-            msg = await event.bot.send_message(bot_data.created_by,
-                                               "⚠️ Внимание, после этого заказа кол-во следующих товаров будет равно 0.")
+            msg = await main_bot.send_message(bot_data.created_by,
+                                              "⚠️ Внимание, после этого заказа кол-во следующих товаров будет равно 0.")
             await msg.reply("\n".join([f"{p.name} [{p.id}]" for p in zero_products]))
 
         data['items'] = items
@@ -92,7 +92,8 @@ async def process_web_app_request(event: Message):
         )
     except Exception as e:
         if isinstance(e, NotEnoughProductsInStockToReduce):
-            await event.answer(f":(\nК сожалению на складе недостаточно <b>{product.name}</b> для выполнения Вашего заказа.")
+            await event.answer(
+                f":(\nК сожалению на складе недостаточно <b>{product.name}</b> для выполнения Вашего заказа.")
         await event.answer("Произошла ошибка при создании заказа, администраторы уведомлены.")
 
         try:

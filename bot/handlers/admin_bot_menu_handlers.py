@@ -69,7 +69,7 @@ async def process_web_app_request(event: Message):
                 option_title = list(product.extra_options.items())[0][0]
                 chosen_options[option_title] = item['chosen_option']
             items[item_id] = OrderItem(amount=item['amount'], used_extra_option=used_options,
-                                      extra_options=chosen_options)
+                                       extra_options=chosen_options)
             if bot_data.settings and "auto_reduce" in bot_data.settings and bot_data.settings["auto_reduce"] == True:
                 if product.count < item['amount']:
                     raise NotEnoughProductsInStockToReduce(product, item['amount'])
@@ -93,7 +93,8 @@ async def process_web_app_request(event: Message):
         logger.info(f"order with id #{order.id} created")
     except Exception as e:
         if isinstance(e, NotEnoughProductsInStockToReduce):
-            await event.answer(f":(\nК сожалению на складе недостаточно <b>{product.name}</b> для выполнения Вашего заказа.")
+            await event.answer(
+                f":(\nК сожалению на складе недостаточно <b>{product.name}</b> для выполнения Вашего заказа.")
         logger.warning("error while creating order", exc_info=True)
         return await event.answer("Произошла ошибка при создании заказа, попробуйте еще раз.")
     try:
@@ -194,8 +195,9 @@ async def handle_callback(query: CallbackQuery, state: FSMContext):
                 ), reply_markup=None if data[0] in ("order_finish", "order_cancel") else
                 create_change_order_status_kb(order.id, int(data[2]), int(data[3]), order.status))
 
-            if data[0] in ("order_finish", ):
-                if bot_data.settings and "auto_reduce" in bot_data.settings and bot_data.settings['auto_reduce'] == True:
+            if data[0] in ("order_finish",):
+                if bot_data.settings and "auto_reduce" in bot_data.settings and bot_data.settings[
+                    'auto_reduce'] == True:
                     zero_products = []
                     for item_id, item in order.items.items():
                         product = await product_db.get_product(item_id)
@@ -205,7 +207,7 @@ async def handle_callback(query: CallbackQuery, state: FSMContext):
                         msg = await query.message.answer(
                             "⚠️ Внимание, кол-во следующих товаров на складе равно 0.")
                         await msg.reply("\n".join([f"{p.name} [{p.id}]" for p in zero_products]))
-            if data[0] in ("order_cancel", ):
+            if data[0] in ("order_cancel",):
                 for item_id, item in order.items.items():
                     product = await product_db.get_product(item_id)
                     product.count += item.amount
@@ -415,16 +417,17 @@ async def bot_menu_callback_handler(query: CallbackQuery, state: FSMContext):
             channel_id = int(query.data.split(":")[-1])
             channel_username = (await custom_tg_bot.get_chat(channel_id)).username
             await query.message.edit_text(
-                MessageTexts.BOT_CHANNEL_MENU_MESSAGE.value.format(channel_username, (await custom_tg_bot.get_me()).username),
+                MessageTexts.BOT_CHANNEL_MENU_MESSAGE.value.format(channel_username,
+                                                                   (await custom_tg_bot.get_me()).username),
                 reply_markup=await get_inline_channel_menu_keyboard(custom_bot.bot_id, int(query.data.split(":")[-1]))
             )
         case "stock_manage":
-            await state.set_state(States.STOCK_MANAGE)
-            await state.set_data({'bot_id': extra_id})
             await query.message.edit_text(
                 MessageTexts.STOCK_STATE_MESSAGE.value,
                 reply_markup=None
             )
+            await state.set_state(States.STOCK_MANAGE)
+            await state.set_data({'bot_id': extra_id})
             xlsx_file_path, photo_path = await stock_manager.export_xlsx(bot_id=extra_id, with_pictures=False)
             await query.message.answer_document(document=FSInputFile(xlsx_file_path),
                                                 caption="Список товаров на складе",
@@ -444,10 +447,14 @@ async def bot_menu_callback_handler(query: CallbackQuery, state: FSMContext):
                 await query.message.answer("❌ Автоуменьшение кол-ва товаров после заказа <b>выключено</b>.")
             try:
                 await query.message.edit_text(query.message.text,
-                    reply_markup=get_inline_bot_goods_menu_keyboard(extra_id, bot_data.settings["auto_reduce"]))
+                                              reply_markup=get_inline_bot_goods_menu_keyboard(extra_id,
+                                                                                              bot_data.settings[
+                                                                                                  "auto_reduce"]),
+                                              parse_mode=ParseMode.HTML)
             except:
                 # handle telegram api error "message not modified"
                 pass
+
 
 @admin_bot_menu_router.message(States.BOT_MENU)
 async def bot_menu_handler(message: Message, state: FSMContext):

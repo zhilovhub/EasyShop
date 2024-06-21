@@ -12,7 +12,6 @@ from datetime import datetime
 @stock_menu_router.message(lambda m: m.text and m.text == STOCK_STATE_BACK_BUTTON)
 async def back_to_menu(message: Message, state: FSMContext):
     bot_id = (await state.get_data())['bot_id']
-    await state.set_state(States.BOT_MENU)
     user_bot_db = await bot_db.get_bot(int(bot_id))
     user_bot = Bot(user_bot_db.token)
     user_bot_data = await user_bot.get_me()
@@ -35,15 +34,27 @@ async def import_products_callback(query: CallbackQuery, state: FSMContext):
 
 @stock_menu_router.callback_query(lambda q: q.data.startswith("stock_menu:export"))
 async def export_products_callback(query: CallbackQuery, state: FSMContext):
-    bot_id = query.data.split(':')[2]
+    bot_id = int(query.data.split(':')[2])
+    bot_data = await bot_db.get_bot(bot_id)
+
+    if not bot_data.settings or "auto_reduce" not in bot_data.settings:
+        button_data = False
+    else:
+        button_data = True
+
     xlsx_path, photo_path = await stock_manager.export_xlsx(bot_id=bot_id)
     json_path, photo_path = await stock_manager.export_json(bot_id=bot_id)
     csv_path, photo_path = await stock_manager.export_csv(bot_id=bot_id)
+
     media_group = MediaGroupBuilder()
     media_group.add_document(media=FSInputFile(xlsx_path), caption="Excel таблица")
     media_group.add_document(media=FSInputFile(json_path), caption="JSON файл")
     media_group.add_document(media=FSInputFile(csv_path), caption="CSV таблица")
+
     await bot.send_media_group(chat_id=query.message.chat.id, media=media_group.build())
+    await query.message.answer("Меню склада:",
+                               reply_markup=get_inline_bot_goods_menu_keyboard(bot_id, button_data))
+    await query.answer()
 
 
 @stock_menu_router.callback_query(lambda q: q.data.startswith("import_menu:"))
@@ -87,7 +98,7 @@ async def handle_stock_import_input(message: Message, state: FSMContext):
         return await message.answer("Файл должен быть в формате xlsx / json / csv",
                                     reply_markup=get_stock_back_keyboard())
     try:
-        bot_id = (await state.get_data())['bot_id']
+        bot_id = state_data['bot_id']
         file_path = f"{FILES_PATH}docs/{datetime.now().strftime('%d$m%Y_%H%M%S')}.{file_extension}"
         await bot.download(message.document.file_id, destination=file_path)
         if state_data['action'] == "replace_all":
