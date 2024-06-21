@@ -27,6 +27,7 @@ from database.models.channel_model import ChannelDao
 from database.models.channel_user_model import ChannelUserDao
 from database.models.custom_ad_model import CustomAdDao
 from database.models.models import Database
+from database.models.user_model import UserDao
 
 from logs.config import custom_bot_logger, db_logger, extra_params
 
@@ -74,6 +75,7 @@ custom_bot_user_db = db_engine.get_custom_bot_user_db()
 channel_db: ChannelDao = db_engine.get_channel_dao()
 channel_user_db: ChannelUserDao = db_engine.get_channel_user_dao()
 custom_ad_db: CustomAdDao = db_engine.get_custom_ad_dao()
+user_db: UserDao = db_engine.get_user_dao()
 
 storage = AlchemyStorageAsync(db_url=getenv("CUSTOM_BOT_STORAGE_DB_URL"),
                               table_name=getenv("CUSTOM_BOT_STORAGE_TABLE_NAME"))

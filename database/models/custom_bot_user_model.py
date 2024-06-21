@@ -82,7 +82,7 @@ class CustomBotUserDao(Dao):
 
         self.logger.debug(
             f"user_id={updated_user.user_id}, bot_id={updated_user.bot_id}: "
-            f"custom bot user {updated_user.user_id} is updated",
+            f"custom bot user {updated_user.user_id} is updated - {updated_user}",
             extra=extra_params(user_id=updated_user.user_id, bot_id=updated_user.bot_id)
         )
 

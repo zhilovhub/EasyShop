@@ -14,7 +14,7 @@ from aiogram.types import Message, CallbackQuery, FSInputFile
 from bot.keyboards import keyboards
 from custom_bots.handlers.routers import multi_bot_router
 from custom_bots.multibot import order_db, product_db, bot_db, main_bot, PREV_ORDER_MSGS, custom_bot_user_db, \
-    CustomUserStates, QUESTION_MESSAGES, format_locales, channel_db, custom_ad_db, scheduler
+    CustomUserStates, QUESTION_MESSAGES, format_locales, channel_db, custom_ad_db, scheduler, user_db
 from database.models.bot_model import BotNotFound
 from database.models.custom_bot_user_model import CustomBotUserNotFound
 from database.models.order_model import OrderSchema, OrderStatusValues, OrderNotFound, OrderItem
@@ -202,14 +202,23 @@ async def back_to_partnership(query: CallbackQuery, state: FSMContext):
 async def complete_custom_ad_request(channel_id: int, bot_id: int):
     bot_data = await bot_db.get_bot(bot_id)
     bot = Bot(token=bot_data.token)
+
     adv = await custom_ad_db.get_channel_last_custom_ad(channel_id=channel_id)
     adv.status = "finished"
+
     channel = await channel_db.get_channel(channel_id)
     channel.is_ad_post_block = False
     await channel_db.update_channel(channel)
+
     await bot.send_message(adv.by_user, "Рекламное предложение завершено, на Ваш баланс зачислено 1000руб.")
+
     user = await custom_bot_user_db.get_custom_bot_user(bot_id, adv.by_user)
     user.balance += 1000
+
+    admin_user = await user_db.get_user(bot_data.created_by)
+    admin_user.balance -= 1000
+
+    await user_db.update_user(admin_user)
     await custom_bot_user_db.update_custom_bot_user(user)
 
 
@@ -220,6 +229,11 @@ async def ad_channel_handler(query: CallbackQuery, state: FSMContext):
     channel = await channel_db.get_channel(channel_id)
     channel_chat = await query.bot.get_chat(channel_id)
     members_count = await channel_chat.get_member_count()
+    bot_data = await bot_db.get_bot(bot_id)
+    admin_user = await user_db.get_user(bot_data.created_by)
+    if admin_user.balance < 1000:
+        return await query.answer("В данный момент администратор канала не готов принимать рекламные предложения"
+                                  " (на балансе нет средств)")
     if members_count < 3:
         return await query.answer(f"В этом канале не достаточно подписчиков. ({members_count} < 3)",
                                   show_alert=True)
