@@ -779,7 +779,7 @@ async def get_contest_inline_join_button(channel_id: int):
             inline_keyboard=[
                 [
                     InlineKeyboardButton(
-                        text=f"{channel_post.button_text} ({len(users)})", callback_data=f"{channel_post.button_query}"
+                        text=f"{channel_post.button_text.split()[0]} ({len(users)})", callback_data=f"{channel_post.button_query}"
                     ),
                 ],
             ]
