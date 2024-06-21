@@ -4,6 +4,7 @@ import logging_loki
 
 from dotenv import load_dotenv
 import os
+from re import compile, sub, UNICODE
 
 from logging import LogRecord
 
@@ -26,6 +27,33 @@ def extra_params(**kwargs):
     return {
         "tags": kwargs
     }
+
+
+class EmotionsFilter(logging.Filter):
+
+    def filter(self, record: LogRecord) -> bool:
+        emotions = compile("["
+                           u"\U0001F600-\U0001F64F"  # emoticons
+                           u"\U0001F300-\U0001F5FF"  # symbols & pictographs
+                           u"\U0001F680-\U0001F6FF"  # transport & map symbols
+                           u"\U0001F1E0-\U0001F1FF"  # flags (iOS)
+                           u"\U00002500-\U00002BEF"  # chinese char
+                           u"\U00002702-\U000027B0"
+                           u"\U000024C2-\U0001F251"
+                           u"\U0001f926-\U0001f937"
+                           u"\U00010000-\U0010ffff"
+                           u"\u2640-\u2642"
+                           u"\u2600-\u2B55"
+                           u"\u200d"
+                           u"\u23cf"
+                           u"\u23e9"
+                           u"\u231a"
+                           u"\ufe0f"  # dingbats
+                           u"\u3030"
+                           "]+", UNICODE)
+        record.msg = sub(emotions, '*', record.msg)
+
+        return True
 
 
 class LokiFilter(logging.Filter):
@@ -61,7 +89,6 @@ class LokiFilter(logging.Filter):
             if "bot_token" in record.tags:
                 record.msg = record.msg.replace(record.tags["bot_token"][5:-1], "*" * len(record.tags["bot_token"][5:-1]))  # hide the token from gr
 
-
         return LOG_TO_GRAFANA
 
 
@@ -87,6 +114,9 @@ logger_configuration = {
         }
     },
     "filters": {
+        "emotions_filter": {
+            "()": EmotionsFilter
+        },
         "loki_filter": {
             "()": LokiFilter
         },
@@ -99,19 +129,21 @@ logger_configuration = {
             "class": "logging.StreamHandler",
             "level": "DEBUG",
             "formatter": LOCAL_FORMATTER_NAME,
+            "filters": ["emotions_filter"]
         },
         "file_handler": {
             "class": "logging.FileHandler",
             "level": "DEBUG",
             "formatter": LOCAL_FORMATTER_NAME,
-            "filename": LOGS_PATH + "all.log"
+            "filename": LOGS_PATH + "all.log",
+            "filters": ["emotions_filter"]
         },
         "file_error_warning_handler": {
             "class": "logging.FileHandler",
             "level": "WARNING",
             "formatter": LOCAL_FORMATTER_NAME,
             "filename": LOGS_PATH + "err.log",
-            "filters": ["error_warning_filter"]
+            "filters": ["error_warning_filter", "emotions_filter"]
         },
         "loki_handler": {
             "class": "logging_loki.LokiHandler",
