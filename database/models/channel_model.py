@@ -25,7 +25,7 @@ class Channel(Base):
     added_by_admin = Column(BOOLEAN, nullable=False)
 
     is_ad_post_block = Column(BOOLEAN, default=False)
-    ad_post_block_until = Column(DATETIME)
+    ad_post_block_until = Column(DATETIME, default=None)
 
     __table_args__ = (
         UniqueConstraint('channel_id', 'bot_id', name='unique_channel_bot'),

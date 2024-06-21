@@ -53,7 +53,7 @@ class CustomAdDao(Dao):  # TODO write tests
 
         self.logger.debug(
             f"custom ad={ad_id}: new adv is created",
-            extra=extra_params(custom_ad_id=ad_id)
+            extra=extra_params(custom_ad_id=ad_id, user_id=new_ad.by_user, channel_id=new_ad.channel_id)
         )
         return ad_id
 
@@ -70,7 +70,7 @@ class CustomAdDao(Dao):  # TODO write tests
 
         res = CustomAdSchema.model_validate(raw_res)
         self.logger.debug(
-            f"custom_ad={res.id}", extra=extra_params(custom_ad_id=res.id)
+            f"custom_ad={res.id}", extra=extra_params(custom_ad_id=res.id, user_id=res.by_user, channel_id=channel_id)
         )
         return res
 
@@ -82,7 +82,7 @@ class CustomAdDao(Dao):  # TODO write tests
 
         self.logger.debug(
             f"custom_ad_id={updated_ad.id}: custom ad {updated_ad.id} is updated",
-            extra=extra_params(custom_ad_id=updated_ad.id)
+            extra=extra_params(custom_ad_id=updated_ad.id, user_id=updated_ad.by_user, channel_id=updated_ad.channel_id)
         )
 
     async def del_ad(self, ad: CustomAdSchema) -> None:
@@ -95,5 +95,6 @@ class CustomAdDao(Dao):  # TODO write tests
 
         self.logger.debug(
             f"custom_ad_id={ad.id}: custom ad {ad.id} is deleted",
-            extra=extra_params(custom_ad_id=ad.id)
+            extra=extra_params(custom_ad_id=ad.id, user_id=ad.by_user, channel_id=ad.channel_id)
+
         )

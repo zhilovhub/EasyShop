@@ -12,6 +12,7 @@ from logs.config import custom_bot_logger
 from database.models.channel_user_model import ChannelUserSchema, ChannelUserNotFound, ChannelUserSchemaWithoutId
 
 from datetime import datetime
+from logs.config import extra_params
 
 
 @multi_bot_channel_router.chat_member(ChatMemberUpdatedFilter(IS_NOT_MEMBER >> IS_MEMBER))
@@ -133,8 +134,10 @@ async def channel_post_handler(message: Message):
     channel = await channel_db.get_channel(message.chat.id)
     bot_data = await bot_db.get_bot(channel.bot_id)
     if channel.is_ad_post_block:
-        custom_bot_logger.debug(f"channel post detected with after ad block enabled\nblock until: "
-                                f"{channel.ad_post_block_until}\nnow: {datetime.now()}")
+        custom_bot_logger.debug(f"BOT_ID = {channel.bot_id} - "
+                                f"channel post detected with after ad block enabled\nblock until: "
+                                f"{channel.ad_post_block_until}\nnow: {datetime.now()}",
+                                extra=extra_params(bot_id=channel.bot_id, channel_id=channel.channel_id))
         adv = await custom_ad_db.get_channel_last_custom_ad(channel_id=channel.channel_id)
         if channel.ad_post_block_until > datetime.now():
             channel.is_ad_post_block = False
