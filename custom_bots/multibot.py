@@ -32,6 +32,8 @@ from logs.config import custom_bot_logger, db_logger, extra_params
 
 from subscription.scheduler import Scheduler
 
+from bot.utils import send_start_message_to_admins
+
 app = web.Application()
 
 local_app = web.Application(logger=custom_bot_logger)
@@ -244,14 +246,7 @@ async def main():
             access_log=custom_bot_logger,
             print=custom_bot_logger.debug
         ),
-        Bot(MAIN_TELEGRAM_TOKEN).send_message(
-            chat_id=1128894056,
-            text=f"version 2.0 has been started"
-        ),
-        Bot(MAIN_TELEGRAM_TOKEN).send_message(
-            chat_id=694501408,
-            text=f"version 2.0 has been started"
-        )
+        send_start_message_to_admins(Bot(MAIN_TELEGRAM_TOKEN), config.ADMINS, "Custom bots started!")
     )
 
 

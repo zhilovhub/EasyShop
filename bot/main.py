@@ -22,7 +22,7 @@ from database.models.channel_user_model import ChannelUserDao
 from subscription.subscription import Subscription
 from subscription.scheduler import Scheduler
 from bot import config
-from bot.utils import AlchemyStorageAsync, JsonStore
+from bot.utils import AlchemyStorageAsync, JsonStore, send_start_message_to_admins
 
 from logs.config import logger, db_logger
 
@@ -82,14 +82,7 @@ async def on_start():
 
     logger.info("onStart finished. Bot online")
 
-    await bot.send_message(
-        chat_id=1128894056,
-        text=f"Main Bot, version 2.0 has been started"
-    )
-    await bot.send_message(
-        chat_id=694501408,
-        text=f"Main Bot, version 2.0 has been started"
-    )
+    await send_start_message_to_admins(bot=bot, admins=config.ADMINS, msg_text="Main Bot started!")
 
     await dp.start_polling(bot)
 

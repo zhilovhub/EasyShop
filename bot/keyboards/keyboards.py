@@ -1,7 +1,6 @@
 from enum import Enum
 from typing import Optional
 
-from aiogram.types import InlineKeyboardMarkup
 from aiogram.utils.keyboard import InlineKeyboardMarkup, InlineKeyboardButton, ReplyKeyboardMarkup, KeyboardButton
 
 from bot.utils.keyboard_utils import *
