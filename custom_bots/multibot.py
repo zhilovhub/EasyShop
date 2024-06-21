@@ -76,6 +76,8 @@ channel_db: ChannelDao = db_engine.get_channel_dao()
 channel_user_db: ChannelUserDao = db_engine.get_channel_user_dao()
 custom_ad_db: CustomAdDao = db_engine.get_custom_ad_dao()
 user_db: UserDao = db_engine.get_user_dao()
+channel_post_db = db_engine.get_channel_post_dao()
+contest_user_db = db_engine.get_contest_user_dao()
 
 storage = AlchemyStorageAsync(db_url=getenv("CUSTOM_BOT_STORAGE_DB_URL"),
                               table_name=getenv("CUSTOM_BOT_STORAGE_TABLE_NAME"))

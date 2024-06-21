@@ -21,6 +21,7 @@ from database.models.channel_post_model import ChannelPostSchemaWithoutId, Conte
 from database.models.channel_post_media_files_model import ChannelPostMediaFileSchema
 from aiogram.utils.deep_linking import create_start_link
 from bot.keyboards import *
+from utils.contest_result import generate_contest_result
 
 
 class MailingMessageType(Enum):
@@ -1177,6 +1178,11 @@ async def send_channel_post_message(  # TODO that's not funny
     if mailing_message_type == MailingMessageType.RELEASE:
         await channel_post_db.delete_channel_post(channel_post_id=channel_post_schema.channel_post_id)
         await bot.send_message(chat_id, "Пост отправлен в канал!")
+        # Scheduling contest result function
+        if channel_post_schema.is_contest:
+            job_id = await _scheduler.add_scheduled_job(
+                func=generate_contest_result, run_date=channel_post_schema.contest_end_date, args=[channel_post_schema.channel_id])
+            # await generate_contest_result(channel_post_schema.channel_id)
 
 
 @channel_menu_router.message(States.EDITING_POST_BUTTON_TEXT)
