@@ -46,7 +46,7 @@ async def register_contest_user(query: CallbackQuery):
     except BotNotFound:
         return await query.answer("Бот не инициализирован", show_alert=True)
     channel_post = await channel_post_db.get_channel_post(channel_id, is_contest=True)
-    if channel_post.send_date > datetime.now():
+    if channel_post.contest_end_date > datetime.now():
         try:
             await contest_user_db.add_contest_user(ContestUserSchemaWithoutId.model_validate(
                 {"user_id": user_id, "channel_id": channel_id,
