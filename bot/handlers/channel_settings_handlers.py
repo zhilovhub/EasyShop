@@ -125,7 +125,10 @@ async def channel_menu_callback_handler(query: CallbackQuery, state: FSMContext)
                 )
                 return await query.message.delete()
             case _:
-                await query.answer("Пост уже в очереди", show_alert=True)
+                if channel_post.is_contest:
+                    await query.answer("Сейчас в канале есть активный конкурс, дождитесь когда он закончится", show_alert=True)
+                else:
+                    await query.answer("Пост уже в очереди", show_alert=True)
                 await query.message.answer(
                     text=MessageTexts.BOT_CHANNEL_POST_MENU_WHILE_RUNNING.value.format(
                         channel_username),
@@ -1176,7 +1179,8 @@ async def send_channel_post_message(  # TODO that's not funny
     # channel_post_schema.is_running = False
     # await channel_post_db.update_channel_post(channel_post_schema)
     if mailing_message_type == MailingMessageType.RELEASE:
-        await channel_post_db.delete_channel_post(channel_post_id=channel_post_schema.channel_post_id)
+        if channel_post_schema.is_contest is False:
+            await channel_post_db.delete_channel_post(channel_post_id=channel_post_schema.channel_post_id)
         await bot.send_message(chat_id, "Пост отправлен в канал!")
         # Scheduling contest result function
         if channel_post_schema.is_contest:

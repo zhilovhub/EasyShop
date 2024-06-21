@@ -1,3 +1,4 @@
+from bot.main import contest_user_db
 from enum import Enum
 from typing import Optional
 
@@ -768,3 +769,24 @@ async def get_contest_type_pick_keyboard(bot_id: int, channel_id: int, is_contes
             )
         ],
     ])
+
+
+async def get_contest_inline_join_button(channel_id: int):
+    try:
+        channel_post = await channel_post_db.get_channel_post(channel_id=channel_id, is_contest=True)
+        users = await contest_user_db.get_contest_users_by_contest_id(channel_post.channel_post_id)
+        return InlineKeyboardMarkup(inline_keyboard=[
+            [
+                InlineKeyboardButton(
+                    text=f"{channel_post.button_text} ({len(users)})", callback_data=f"{channel_post.button_query}"
+                )
+            ],
+        ])
+    except ChannelPostNotFound:
+        return InlineKeyboardMarkup(inline_keyboard=[
+            [
+                InlineKeyboardButton(
+                    text="Конкурс закончен", callback_data=f"{channel_post.button_query}"
+                )
+            ],
+        ])

@@ -4,7 +4,7 @@ from aiogram.types import ChatMemberUpdated, ChatMemberLeft, ChatMemberAdministr
     Message
 
 from bot.exceptions.exceptions import InstanceAlreadyExists
-from bot.keyboards import get_inline_bot_menu_keyboard
+from bot.keyboards import get_inline_bot_menu_keyboard, get_contest_inline_join_button
 from bot.utils import MessageTexts
 from custom_bots.handlers.routers import multi_bot_channel_router
 from custom_bots.multibot import bot_db, channel_db, main_bot, channel_user_db, custom_ad_db, scheduler, \
@@ -51,6 +51,7 @@ async def register_contest_user(query: CallbackQuery):
                     "join_date": datetime.now().replace(tzinfo=None)}
             ))
             await query.answer(text="Вы успешно зарегистрировались!", show_alert=True)
+            await query.message.edit_reply_markup(await get_contest_inline_join_button(channel_id))
         except InstanceAlreadyExists:
             await query.answer(text="Вы уже зарегистрировались!")
     else:
