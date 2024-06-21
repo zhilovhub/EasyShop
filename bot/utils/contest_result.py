@@ -83,5 +83,5 @@ async def generate_contest_result(channel_id: int):
                                  caption='winners.xlsx')
     winners_buffer.close()
     await channel_post_db.delete_channel_post(channel_post.channel_post_id)
-    if channel_post.contest_type == ContestTypeValues.SPONSOR:
-        await contest_channel_db.delete_channels_by_contest_id(channel_post.channel_post_id)
+    # if channel_post.contest_type == ContestTypeValues.SPONSOR:
+    #     await contest_channel_db.delete_channels_by_contest_id(channel_post.channel_post_id)

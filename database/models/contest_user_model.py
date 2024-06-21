@@ -26,10 +26,9 @@ class ContestUser(Base):
     __tablename__ = "contest_users"
     channel_user_pk = Column(BigInteger, primary_key=True, autoincrement=True)
     contest_post_id = Column(ForeignKey(
-        ChannelPost.channel_post_id), nullable=False)
+        ChannelPost.channel_post_id, ondelete="CASCADE"), nullable=False)
     user_id = Column(BigInteger, nullable=False)
-    channel_id = Column(ForeignKey(Channel.channel_id,
-                        ondelete="CASCADE"), nullable=False)
+    channel_id = Column(BigInteger, unique=True, nullable=False)
     join_date = Column(DateTime, nullable=False)
 
 

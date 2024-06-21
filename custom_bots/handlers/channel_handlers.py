@@ -50,7 +50,7 @@ async def register_contest_user(query: CallbackQuery):
         try:
             await contest_user_db.add_contest_user(ContestUserSchemaWithoutId.model_validate(
                 {"user_id": user_id, "channel_id": channel_id,
-                    "join_date": datetime.now().replace(tzinfo=None)}
+                    "join_date": datetime.now().replace(tzinfo=None), "contest_post_id": channel_post.channel_post_id}
             ))
             await query.answer(text="Вы успешно зарегистрировались!", show_alert=True)
             await query.message.edit_reply_markup(await get_contest_inline_join_button(channel_id))

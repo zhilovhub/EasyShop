@@ -286,6 +286,9 @@ async def channel_menu_callback_handler(query: CallbackQuery, state: FSMContext)
             await channel_post_db.update_channel_post(channel_post)
             await query.message.edit_reply_markup(reply_markup=await get_inline_bot_channel_post_menu_keyboard(bot_id, channel_id, channel_post.is_contest))
         case "edit_post":
+            if channel_post.is_contest:
+                if channel_post.is_running is True and channel_post.is_delayed is False:
+                    return await query.answer("Сейчас уже идет конкурс, дождитесь его завершения")
             return await query.message.edit_text(
                 MessageTexts.BOT_CHANNEL_POST_MENU_MESSAGE.value.format(
                     channel_username),
