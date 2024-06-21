@@ -1,5 +1,3 @@
-import sched
-
 from aiogram.filters import CommandStart, CommandObject
 import json
 import random
@@ -201,14 +199,14 @@ async def back_to_partnership(query: CallbackQuery, state: FSMContext):
                                   reply_markup=keyboards.get_partnership_inline_kb(bot_id))
 
 
-async def complete_custom_ad_request(chan_id: int, bot_id: int):
+async def complete_custom_ad_request(channel_id: int, bot_id: int):
     bot_data = await bot_db.get_bot(bot_id)
     bot = Bot(token=bot_data.token)
-    adv = await custom_ad_db.get_channel_last_custom_ad(channel_id=chan_id)
+    adv = await custom_ad_db.get_channel_last_custom_ad(channel_id=channel_id)
     adv.status = "finished"
-    chan = await channel_db.get_channel(chan_id)
-    chan.is_ad_post_block = False
-    await channel_db.update_channel(chan)
+    channel = await channel_db.get_channel(channel_id)
+    channel.is_ad_post_block = False
+    await channel_db.update_channel(channel)
     await bot.send_message(adv.by_user, "Рекламное предложение завершено, на Ваш баланс зачислено 1000руб.")
     user = await custom_bot_user_db.get_custom_bot_user(bot_id, adv.by_user)
     user.balance += 1000
@@ -218,14 +216,14 @@ async def complete_custom_ad_request(chan_id: int, bot_id: int):
 @multi_bot_router.callback_query(lambda q: q.data.startswith("ad_channel"))
 async def ad_channel_handler(query: CallbackQuery, state: FSMContext):
     bot_id = int(query.data.split(':')[-2])
-    chan_id = int(query.data.split(':')[-1])
-    chan = await channel_db.get_channel(chan_id)
-    channel_chat = await query.bot.get_chat(chan_id)
+    channel_id = int(query.data.split(':')[-1])
+    channel = await channel_db.get_channel(channel_id)
+    channel_chat = await query.bot.get_chat(channel_id)
     members_count = await channel_chat.get_member_count()
     if members_count < 3:
         return await query.answer(f"В этом канале не достаточно подписчиков. ({members_count} < 3)",
                                   show_alert=True)
-    msg = await query.bot.send_photo(chat_id=chan_id,
+    msg = await query.bot.send_photo(chat_id=channel_id,
                                      photo=FSInputFile("ad_example.jpg"),
                                      caption=MessageTexts.EXAMPLE_AD_POST_TEXT.value)
     await query.message.edit_text("Сообщение отправлено в канал. Для завершения сделки, "
@@ -234,13 +232,13 @@ async def ad_channel_handler(query: CallbackQuery, state: FSMContext):
                                   "\n2. В течении 5 минут после рекламного поста нельзя публиковать посты."
                                   "\n3. Время сделки: 10мин."
                                   "\n4. Стоимость: 1000руб.", reply_markup=None)
-    chan.is_ad_post_block = True
-    chan.ad_post_block_until = datetime.now() + timedelta(minutes=5)
-    await channel_db.update_channel(chan)
+    channel.is_ad_post_block = True
+    channel.ad_post_block_until = datetime.now() + timedelta(minutes=5)
+    await channel_db.update_channel(channel)
     job_id = await scheduler.add_scheduled_job(complete_custom_ad_request,
                                                (datetime.now() + timedelta(minutes=10)).replace(tzinfo=None),
-                                               [chan.channel_id, bot_id])
-    await custom_ad_db.add_ad(CustomAdSchemaWithoutId(channel_id=chan.channel_id,
+                                               [channel.channel_id, bot_id])
+    await custom_ad_db.add_ad(CustomAdSchemaWithoutId(channel_id=channel.channel_id,
                                                       message_id=msg.message_id,
                                                       time_until=datetime.now() + timedelta(minutes=10),
                                                       status="active",

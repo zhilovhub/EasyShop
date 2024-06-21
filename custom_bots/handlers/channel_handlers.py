@@ -30,8 +30,8 @@ async def on_user_join(event: ChatMemberUpdated):
         await channel_user_db.add_channel_user(
             ChannelUserSchemaWithoutId.model_validate(
                 {"channel_user_id": user_id, "channel_id": channel_id,
-                    "join_date": datetime.now().replace(tzinfo=None),
-                    "is_channel_member": True}
+                 "join_date": datetime.now().replace(tzinfo=None),
+                 "is_channel_member": True}
             )
         )
 
@@ -52,15 +52,16 @@ async def on_user_leave(event: ChatMemberUpdated):
         await channel_user_db.add_chanel_user(
             ChannelUserSchemaWithoutId.model_validate(
                 {"channel_user_id": user_id, "channel_id": channel_id,
-                    "join_date": datetime.now().replace(tzinfo=None),
-                    "is_channel_member": False}
+                 "join_date": datetime.now().replace(tzinfo=None),
+                 "is_channel_member": False}
             )
         )
 
 
 @multi_bot_channel_router.my_chat_member()
 async def my_chat_member_handler(my_chat_member: ChatMemberUpdated) -> Any:
-    custom_bot_logger.info(f"Bot @{(await my_chat_member.bot.get_me()).username} has rights update in @{my_chat_member.chat.username}")
+    custom_bot_logger.info(
+        f"Bot @{(await my_chat_member.bot.get_me()).username} has rights update in @{my_chat_member.chat.username}")
 
     if my_chat_member.chat.type != "channel":
         return
@@ -129,20 +130,30 @@ async def my_chat_member_handler(my_chat_member: ChatMemberUpdated) -> Any:
 
 @multi_bot_channel_router.channel_post()
 async def channel_post_handler(message: Message):
-    chan = await channel_db.get_channel(message.chat.id)
-    bot_data = await bot_db.get_bot(chan.bot_id)
-    if chan.is_ad_post_block:
+    channel = await channel_db.get_channel(message.chat.id)
+    bot_data = await bot_db.get_bot(channel.bot_id)
+    if channel.is_ad_post_block:
         custom_bot_logger.debug(f"channel post detected with after ad block enabled\nblock until: "
-                                f"{chan.ad_post_block_until}\nnow: {datetime.now()}")
-        adv = await custom_ad_db.get_channel_last_custom_ad(channel_id=chan.channel_id)
-        if chan.ad_post_block_until > datetime.now():
-            chan.is_ad_post_block = False
-            await channel_db.update_channel(chan)
+                                f"{channel.ad_post_block_until}\nnow: {datetime.now()}")
+        adv = await custom_ad_db.get_channel_last_custom_ad(channel_id=channel.channel_id)
+        if channel.ad_post_block_until > datetime.now():
+            channel.is_ad_post_block = False
+            await channel_db.update_channel(channel)
 
-            await message.bot.send_message(bot_data.created_by, "В канале было опубликовано сообщение, "
-                                                                "рекламное предложение разорвано.")
+            chat_data = await message.bot.get_chat(channel.channel_id)
+            adv_user_data = await message.bot.get_chat(adv.by_user)
+
+            await message.bot.send_message(bot_data.created_by,
+                                           f"В канале <b>{('@' + chat_data.username) if chat_data.username else chat_data.full_name}</b> "
+                                           f"было опубликовано сообщение, "
+                                           f"рекламное предложение разорвано. "
+                                           f"(от пользователя @{adv_user_data.username})")
+
+            await message.bot.send_message(adv.by_user,
+                                           f"В канале <b>{('@' + chat_data.username) if chat_data.username else chat_data.full_name}</b> "
+                                           f"было опубликовано сообщение, "
+                                           f"рекламное предложение разорвано.")
             adv.status = "canceled"
             await custom_ad_db.update_custom_ad(adv)
             job = await scheduler.get_job(adv.finish_job_id)
             await scheduler.del_job(job)
-
