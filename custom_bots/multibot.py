@@ -25,9 +25,15 @@ from bot.utils.storage import AlchemyStorageAsync
 from database.models.bot_model import BotNotFound
 from database.models.channel_model import ChannelDao
 from database.models.channel_user_model import ChannelUserDao
+from database.models.custom_ad_model import CustomAdDao
 from database.models.models import Database
+from database.models.user_model import UserDao
 
 from logs.config import custom_bot_logger, db_logger, extra_params
+
+from subscription.scheduler import Scheduler
+
+from bot.utils import send_start_message_to_admins
 
 app = web.Application()
 
@@ -68,6 +74,8 @@ order_db = db_engine.get_order_dao()
 custom_bot_user_db = db_engine.get_custom_bot_user_db()
 channel_db: ChannelDao = db_engine.get_channel_dao()
 channel_user_db: ChannelUserDao = db_engine.get_channel_user_dao()
+custom_ad_db: CustomAdDao = db_engine.get_custom_ad_dao()
+user_db: UserDao = db_engine.get_user_dao()
 
 storage = AlchemyStorageAsync(db_url=getenv("CUSTOM_BOT_STORAGE_DB_URL"),
                               table_name=getenv("CUSTOM_BOT_STORAGE_TABLE_NAME"))
@@ -78,6 +86,8 @@ QUESTION_MESSAGES = JsonStore(
     file_path=config.RESOURCES_PATH.format("question_messages.json"),
     json_store_name="QUESTION_MESSAGES"
 )
+
+scheduler = Scheduler(getenv("SCHEDULER_URL"), "postgres", getenv("TIMEZONE"))
 
 
 class CustomUserStates(StatesGroup):
@@ -134,7 +144,7 @@ async def add_bot_handler(request):
     result = await new_bot.set_webhook(
         OTHER_BOTS_URL.format(bot_token=bot.token),
         allowed_updates=["message", "my_chat_member",
-                         "callback_query", "chat_member"]
+                         "callback_query", "chat_member", "channel_post"]
     )
     if result:
         custom_bot_logger.debug(
@@ -220,6 +230,8 @@ async def main():
     custom_bot_logger.info(
         f"[3/3] Setting up webhook server on {WEBHOOK_SERVER_HOST}:{WEBHOOK_SERVER_PORT}")
 
+    await scheduler.start()
+
     await asyncio.gather(
         web._run_app(
             local_app,
@@ -236,10 +248,7 @@ async def main():
             access_log=custom_bot_logger,
             print=custom_bot_logger.debug
         ),
-        Bot(MAIN_TELEGRAM_TOKEN).send_message(
-            chat_id=1128894056,
-            text=f"version 2.0 has been started"
-        )
+        send_start_message_to_admins(Bot(MAIN_TELEGRAM_TOKEN), config.ADMINS, "Custom bots started!")
     )
 
 

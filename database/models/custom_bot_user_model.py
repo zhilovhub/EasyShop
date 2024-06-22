@@ -1,4 +1,4 @@
-from sqlalchemy import BigInteger, Column, String, ForeignKey, insert, select
+from sqlalchemy import BigInteger, Column, String, ForeignKey, insert, select, update
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncEngine
 
@@ -21,6 +21,7 @@ class CustomBotUser(Base):
 
     bot_id = Column(ForeignKey(Bot.bot_id, ondelete="CASCADE"), primary_key=True)
     user_id = Column(BigInteger, primary_key=True)
+    balance = Column(BigInteger, default=0)
 
 
 class CustomBotUserSchema(BaseModel):
@@ -28,13 +29,14 @@ class CustomBotUserSchema(BaseModel):
 
     bot_id: int
     user_id: int
+    balance: int | None = 0
 
 
 class CustomBotUserDao(Dao):
     def __init__(self, engine: AsyncEngine, logger) -> None:
         super().__init__(engine, logger)
 
-    async def get_custom_bot_user(self, bot_id: int, user_id: int) -> int:  # TODO write tests
+    async def get_custom_bot_user(self, bot_id: int, user_id: int) -> CustomBotUserSchema:  # TODO write tests
         async with self.engine.begin() as conn:
             raw_res = await conn.execute(select(CustomBotUser).where(
                 CustomBotUser.bot_id == bot_id, CustomBotUser.user_id == user_id)
@@ -44,6 +46,8 @@ class CustomBotUserDao(Dao):
         res = raw_res.fetchone()
         if res is None:
             raise CustomBotUserNotFound(f"user with user_id = {user_id} of bot_id = {bot_id} not found in database")
+
+        res = CustomBotUserSchema.model_validate(res)
 
         self.logger.debug(
             f"bot_id={bot_id}: user {user_id} is found",
@@ -69,6 +73,18 @@ class CustomBotUserDao(Dao):
         )
 
         return users
+
+    async def update_custom_bot_user(self, updated_user: CustomBotUserSchema):
+        async with self.engine.begin() as conn:
+            await conn.execute(update(CustomBotUser).where(CustomBotUser.user_id == updated_user.user_id).
+                               values(**updated_user.model_dump(by_alias=True)))
+        await self.engine.dispose()
+
+        self.logger.debug(
+            f"user_id={updated_user.user_id}, bot_id={updated_user.bot_id}: "
+            f"custom bot user {updated_user.user_id} is updated - {updated_user}",
+            extra=extra_params(user_id=updated_user.user_id, bot_id=updated_user.bot_id)
+        )
 
     async def add_custom_bot_user(self, bot_id: int, user_id: int) -> None:  # TODO write tests
         if type(bot_id) != int or type(user_id) != int:

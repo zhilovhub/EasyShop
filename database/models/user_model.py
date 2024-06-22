@@ -59,6 +59,7 @@ class User(Base):
     registered_at = Column(DateTime, nullable=False)
     settings = Column(JSON)
     locale = Column(String(10), nullable=False)
+    balance = Column(BigInteger, default=0)
 
 
 class UserSchema(BaseModel):
@@ -71,6 +72,7 @@ class UserSchema(BaseModel):
     registered_at: datetime = Field(frozen=True)
     settings: dict | None = None
     locale: str = Field(max_length=10, default="default")
+    balance: int | None = 0
 
 
 class UserDao(Dao):
