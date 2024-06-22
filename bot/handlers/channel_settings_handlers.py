@@ -8,7 +8,8 @@ from aiogram.types import Message, CallbackQuery, LinkPreviewOptions, \
     InputMediaPhoto, InputMediaVideo, InputMediaAudio, InputMediaDocument, BufferedInputFile
 from aiogram.fsm.context import FSMContext
 
-from bot.main import bot, _scheduler, custom_bot_user_db, channel_post_media_file_db, channel_user_db
+from database.models.contest_channel_model import ContestChannelSchema, ContestChannelSchemaWithoutId
+from bot.main import bot, _scheduler, custom_bot_user_db, channel_post_media_file_db, channel_user_db, contest_channel_db, contest_user_db
 from bot.states.states import States
 from bot.handlers.routers import channel_menu_router
 
@@ -16,10 +17,11 @@ from logs.config import logger
 
 
 from database.models.bot_model import BotSchema
-from database.models.channel_post_model import ChannelPostSchemaWithoutId
+from database.models.channel_post_model import ChannelPostSchemaWithoutId, ContestTypeValues
 from database.models.channel_post_media_files_model import ChannelPostMediaFileSchema
 from aiogram.utils.deep_linking import create_start_link
 from bot.keyboards import *
+from bot.utils.contest_result import generate_contest_result
 
 
 class MailingMessageType(Enum):
@@ -34,6 +36,7 @@ class MailingMessageType(Enum):
 async def channel_menu_callback_handler(query: CallbackQuery, state: FSMContext):
     query_data = query.data.split(":")
 
+    # Standart fields
     action = query_data[1]
     bot_id = int(query_data[2])
     channel_id = int(query_data[3])
@@ -44,12 +47,14 @@ async def channel_menu_callback_handler(query: CallbackQuery, state: FSMContext)
 
     channel_username = (await custom_tg_bot.get_chat(channel_id)).username
 
+    # Detect if we have requested channel in db
     try:
         await channel_db.get_channel(channel_id=channel_id)
     except ChannelNotFound:
         await query.answer("Канал удален", show_alert=True)
         return query.message.delete()
 
+    # Channel specific actions (can be executed without additional validation)
     match action:
         case "analytics":
             plus_users = await channel_user_db.get_joined_channel_users_by_channel_id(channel_id)
@@ -74,38 +79,72 @@ async def channel_menu_callback_handler(query: CallbackQuery, state: FSMContext)
                     MessageTexts.BOT_MENU_MESSAGE.value.format((await Bot(custom_bot.token).get_me()).username),
                     reply_markup=await get_inline_bot_menu_keyboard(bot_id)
                 )
-        case "create_competition":
-            competition_id = await competition.create_competition(
-                channel_id=channel_id,
-                bot_id=bot_id
-            )
-            await query.message.edit_text(
-                text=MessageTexts.BOT_COMPETITION_MENU_MESSAGE.value.format(
-                    "-",
-                    channel_username,
-                    custom_bot_username
-                ),
-                reply_markup=await get_competition_menu_keyboard(competition_id)
-            )
-        case "competitions_list":
-            await query.message.edit_text(
-                text=MessageTexts.BOT_COMPETITIONS_LIST_MESSAGE.value.format(
-                    custom_bot_username),
-                reply_markup=await get_competitions_list_keyboard(bot_id, channel_id)
-            )
+    # TODO Fix with post_type parameter in state_data
+    # Channel Post Validation:
+    # Temp variables to detect which type of request we recieve
+    is_running = False
+    channel_post = None
 
-    new_channel_flag = False
-    try:
-        channel_post = await channel_post_db.get_channel_post(channel_id=channel_id)
-    except ChannelPostNotFound:
-        new_channel_flag = True
-        await query.message.delete()
+    # if requested object is contest post, len(query_data) will have 5 fields (last one "channel_post_id")
+    # if requested object is reqular post or creation request, len(query_data) will have 4 fields
 
-    if new_channel_flag:
+    if len(query_data) > 4:
+        # Searching for contest object
+        try:
+            channel_post = await channel_post_db.get_channel_post(channel_id, is_contest=True)
+            is_running = channel_post.is_running
+        except ChannelPostNotFound:
+            pass
+    else:
+        # Searching for regular post object
+        # (if not found, channel_post will still be None, so we surely know that it is createion request)
+        try:
+            channel_post = await channel_post_db.get_channel_post(channel_id, is_contest=False)
+            is_running = channel_post.is_running
+        except ChannelPostNotFound:
+            pass
+    # If we found requested object and it is running now we can only stop it
+    if is_running is True:
+        match action:
+            case "stop_post":
+                custom_users_length = len(await custom_bot_user_db.get_custom_bot_users(bot_id=bot_id))
+
+                channel_post.is_running = False
+                try:
+                    await _scheduler.del_job_by_id(channel_post.job_id)
+                except:
+                    logger.warning(
+                        f"Job ID {channel_post.job_id} not found")
+                channel_post.job_id = None
+                await channel_post_db.update_channel_post(channel_post)
+                await query.message.answer(f"Отправка поста остановлена")
+
+                await query.message.answer(
+                    MessageTexts.BOT_MENU_MESSAGE.value.format((await Bot(custom_bot.token).get_me()).username),
+                    reply_markup=await get_inline_bot_menu_keyboard(bot_id)
+                )
+                return await query.message.delete()
+            case _:
+                if channel_post.is_contest:
+                    await query.answer("Сейчас в канале есть активный конкурс, дождитесь когда он закончится", show_alert=True)
+                else:
+                    await query.answer("Пост уже в очереди", show_alert=True)
+                await query.message.answer(
+                    text=MessageTexts.BOT_CHANNEL_POST_MENU_WHILE_RUNNING.value.format(
+                        channel_username),
+                    reply_markup=await get_inline_bot_channel_post_menu_keyboard(
+                        bot_id, channel_id, is_contest=channel_post.is_contest)
+                )
+                return await query.message.delete()
+
+    # If channel_post is still None, it means that the requested objectd is deleted or
+    # not created yet, which means we receive "create_post" or "create_contest" request
+    # other requests will be blocked
+    if channel_post is None:
         match action:
             case "create_post":
                 try:
-                    await channel_post_db.get_channel_post(channel_id=channel_id)
+                    await channel_post_db.get_channel_post(channel_id=channel_id, is_contest=False)
                     await query.answer(
                         "Пост для этого канала уже создан",
                         show_alert=True
@@ -120,7 +159,7 @@ async def channel_menu_callback_handler(query: CallbackQuery, state: FSMContext)
                     pass
                 await channel_post_db.add_channel_post(ChannelPostSchemaWithoutId.model_validate(
                     {"channel_id": channel_id, "bot_id": bot_id,
-                        "created_at": datetime.now().replace(tzinfo=None)}
+                        "created_at": datetime.now().replace(tzinfo=None), "contest_type": ContestTypeValues.NONE}
                 ))
                 custom_bot = await bot_db.get_bot(bot_id=bot_id)
                 return await query.message.answer(
@@ -128,52 +167,163 @@ async def channel_menu_callback_handler(query: CallbackQuery, state: FSMContext)
                         channel_username),
                     reply_markup=await get_inline_bot_channel_post_menu_keyboard(bot_id=bot_id, channel_id=channel_id)
                 )
-            case _:
+            case "create_contest":  # TODO Change to contest
                 try:
-                    return await query.answer("Пост не найден", show_alert=True)
-                except Exception as e:
+                    await channel_post_db.get_channel_post(channel_id=channel_id, is_contest=True)
+                    await query.answer(
+                        "Конкурс для этого канала уже создан",
+                        show_alert=True
+                    )
+                    await query.message.delete()
+                    return await query.message.edit_text(
+                        MessageTexts.BOT_CHANNEL_POST_MENU_MESSAGE.value.format(
+                            channel_username),
+                        reply_markup=await get_inline_bot_channel_post_menu_keyboard(bot_id=bot_id, channel_id=channel_id, is_contest=True)
+                    )
+                except ChannelPostNotFound:
                     pass
-                # return await query.message.delete()
-    if channel_post.is_running == True:
-        match action:
-            case "stop_post":
-                custom_users_length = len(await custom_bot_user_db.get_custom_bot_users(bot_id=bot_id))
-
-                channel_post.is_running = False
-                try:
-                    await _scheduler.del_job_by_id(channel_post.job_id)
-                except:
-                    logger.warning(f"Job ID {channel_post.job_id} not found")
-                channel_post.job_id = None
-                await channel_post_db.update_channel_post(channel_post)
-                await query.message.answer(f"Отправка поста остановлена")
-
-                await query.message.answer(
-                    MessageTexts.BOT_MENU_MESSAGE.value.format((await Bot(custom_bot.token).get_me()).username),
-                    reply_markup=await get_inline_bot_menu_keyboard(bot_id)
-                )
-                return await query.message.delete()
-            case _:
-                await query.answer("Пост уже в очереди", show_alert=True)
-                await query.message.answer(
-                    text=MessageTexts.BOT_CHANNEL_POST_MENU_WHILE_RUNNING.value.format(
+                await channel_post_db.add_channel_post(ChannelPostSchemaWithoutId.model_validate(
+                    {"channel_id": channel_id, "bot_id": bot_id,
+                        "created_at": datetime.now().replace(tzinfo=None), "is_contest": True,
+                        "contest_type": ContestTypeValues.RANDOM,
+                        "has_button": True,
+                        "button_text": "Участвовать (0)"
+                     }
+                ))
+                custom_bot = await bot_db.get_bot(bot_id=bot_id)
+                return await query.message.answer(
+                    MessageTexts.BOT_CHANNEL_POST_MENU_MESSAGE.value.format(
                         channel_username),
-                    reply_markup=await get_inline_bot_channel_post_menu_keyboard(
-                        bot_id, channel_id)
+                    reply_markup=await get_inline_bot_channel_post_menu_keyboard(bot_id=bot_id, channel_id=channel_id, is_contest=True)
                 )
-                return await query.message.delete()
+            case _:
+                if action != "back_to_channels_list":
+                    await query.answer("Запись не найдена", show_alert=True)
+                    try:
+                        await query.message.delete()
+                    except:
+                        pass
 
+    # Works only if we get requested object from db
     match action:
+        case "get_sponsors":  # TODO Add instruction on how to create chat folder links
+
+            if channel_post.contest_sponsor_url:
+                await query.message.answer(
+                    f"Отправьте ссылку на новую папку\n\n"
+                    f"Текущая - {channel_post.contest_sponsor_url}",
+                    reply_markup=get_back_keyboard()
+                )
+            else:
+                await query.message.answer(
+                    f"Отправьте ссылку на папку с каналами спонсоров\n\n",
+                    reply_markup=get_back_keyboard()
+                )
+            await query.answer()
+            await state.set_state(States.EDITING_SPONSOR_LINK)
+            await state.set_data({"bot_id": bot_id, "channel_id": channel_id, "channel_post_id": channel_post.channel_post_id})
+        case "get_contest_button_text":
+            await query.message.answer(
+                f"Введите текст, который будет отображаться на кнопке\n\n"
+                "Справа будет отображаться счетчик участвующих",
+                reply_markup=get_back_keyboard()
+            )
+            await query.answer()
+            await state.set_state(States.EDITING_POST_BUTTON_TEXT)
+            await state.set_data({"bot_id": bot_id, "channel_id": channel_id, "channel_post_id": channel_post.channel_post_id})
+        case "get_contest_winner_amount":
+            await query.message.answer(f"Введите количество победителей в конкурсе", reply_markup=get_back_keyboard())
+            await query.answer()
+            await state.set_state(States.EDITING_COMPETITION_WINNER_AMOUNT)
+            await state.set_data({"bot_id": bot_id, "channel_id": channel_id, "channel_post_id": channel_post.channel_post_id})
+        case "pick_contest_type":
+            if channel_post.contest_type == ContestTypeValues.RANDOM:
+                menu_text = MessageTexts.BOT_CONTEST_MENU.value.format(
+                    "Рандомайзер 🎲", "Спонсорство 🤝")
+            else:
+                menu_text = MessageTexts.BOT_CONTEST_MENU.value.format(
+                    "Спонсорство 🤝", "Рандомайзер 🎲")
+            await query.message.answer(
+                text=menu_text,
+                reply_markup=await get_contest_menu_keyboard(bot_id, channel_id, is_contest=True)
+            )
+            # await query.message.answer(
+            #     text=f"Текущий тип конкурса - {channel_post.contest_type.value}\n"
+            #     f"Выберите нужный тип конкурса: ",
+            #     reply_markup=await get_contest_type_pick_keyboard(bot_id, channel_id)
+            # )
+        case "pick_random_contest":
+            try:
+                await query.message.delete()
+            except:
+                pass
+            if channel_post.contest_type != ContestTypeValues.RANDOM:
+                channel_post.contest_type = ContestTypeValues.RANDOM
+                await channel_post_db.update_channel_post(channel_post)
+            await query.message.answer("Текущий тип конкурса - Рандомайзер")
+            await state.set_state(States.BOT_MENU)
+            await state.set_data({"bot_id": bot_id, "channel_id": channel_id, "channel_post_id": channel_post.channel_post_id})
+            # return await query.message.answer(
+            #     MessageTexts.BOT_CHANNEL_POST_MENU_MESSAGE.value.format(
+            #         channel_username),
+            #     reply_markup=await get_inline_bot_channel_post_menu_keyboard(bot_id=bot_id, channel_id=channel_id, is_contest=channel_post.is_contest)
+            # )
+            if channel_post.contest_type == ContestTypeValues.RANDOM:
+                menu_text = MessageTexts.BOT_CONTEST_MENU.value.format(
+                    "Рандомайзер 🎲", "Спонсорство 🤝")
+            else:
+                menu_text = MessageTexts.BOT_CONTEST_MENU.value.format(
+                    "Спонсорство 🤝", "Рандомайзер 🎲")
+            await query.message.answer(
+                text=menu_text,
+                reply_markup=await get_contest_menu_keyboard(bot_id, channel_id, is_contest=True)
+            )
+
+        case "pick_sponsor_contest":
+            try:
+                await query.message.delete()
+            except:
+                pass
+            if channel_post.contest_type != ContestTypeValues.SPONSOR:
+                channel_post.contest_type = ContestTypeValues.SPONSOR
+                await channel_post_db.update_channel_post(channel_post)
+            await query.message.answer("Текущий тип конкурса - Спонсорство\n\n Настройте спонсоров с помощью появившейся кнопки")
+            await state.set_state(States.BOT_MENU)
+            await state.set_data({"bot_id": bot_id, "channel_id": channel_id, "channel_post_id": channel_post.channel_post_id})
+            # return await query.message.answer(
+            #     MessageTexts.BOT_CHANNEL_POST_MENU_MESSAGE.value.format(
+            #         channel_username),
+            #     reply_markup=await get_inline_bot_channel_post_menu_keyboard(bot_id=bot_id, channel_id=channel_id, is_contest=channel_post.is_contest)
+            # )
+            if channel_post.contest_type == ContestTypeValues.RANDOM:
+                menu_text = MessageTexts.BOT_CONTEST_MENU.value.format(
+                    "Рандомайзер 🎲", "Спонсорство 🤝")
+            else:
+                menu_text = MessageTexts.BOT_CONTEST_MENU.value.format(
+                    "Спонсорство 🤝", "Рандомайзер 🎲")
+            await query.message.answer(
+                text=menu_text,
+                reply_markup=await get_contest_menu_keyboard(bot_id, channel_id, is_contest=True)
+            )
+        case "get_contest_end_date":
+            await query.message.answer(f"Введите дату окончания конкурса\n\n{MessageTexts.DATE_RULES.value}",
+                                       reply_markup=get_back_keyboard())
+            await query.answer()
+            await state.set_state(States.EDITING_COMPETITION_END_DATE)
+            await state.set_data({"bot_id": bot_id, "channel_id": channel_id, "channel_post_id": channel_post.channel_post_id})
         case "cancel_delay":
             channel_post.is_delayed = False
             channel_post.send_date = None
             await channel_post_db.update_channel_post(channel_post)
-            await query.message.edit_reply_markup(reply_markup=await get_inline_bot_channel_post_menu_keyboard(bot_id, channel_id))
+            await query.message.edit_reply_markup(reply_markup=await get_inline_bot_channel_post_menu_keyboard(bot_id, channel_id, channel_post.is_contest))
         case "edit_post":
+            if channel_post.is_contest:
+                if channel_post.is_running is True and channel_post.is_delayed is False:
+                    return await query.answer("Сейчас уже идет конкурс, дождитесь его завершения")
             return await query.message.edit_text(
                 MessageTexts.BOT_CHANNEL_POST_MENU_MESSAGE.value.format(
                     channel_username),
-                reply_markup=await get_inline_bot_channel_post_menu_keyboard(bot_id=bot_id, channel_id=channel_id)
+                reply_markup=await get_inline_bot_channel_post_menu_keyboard(bot_id=bot_id, channel_id=channel_id, is_contest=channel_post.is_contest)
             )
         case "message":
 
@@ -181,8 +331,10 @@ async def channel_menu_callback_handler(query: CallbackQuery, state: FSMContext)
                                        reply_markup=get_back_keyboard())
             await query.answer()
             await state.set_state(States.EDITING_POST_TEXT)
-            await state.set_data({"bot_id": bot_id, "channel_id": channel_id})
-
+            if channel_post.is_contest:
+                await state.set_data({"bot_id": bot_id, "channel_id": channel_id, "channel_post_id": channel_post.channel_post_id})
+            else:
+                await state.set_data({"bot_id": bot_id, "channel_id": channel_id})
         case "back_to_channels_list":
             await query.message.edit_text(
                 text=MessageTexts.BOT_CHANNELS_LIST_MESSAGE.value.format(
@@ -192,7 +344,7 @@ async def channel_menu_callback_handler(query: CallbackQuery, state: FSMContext)
         case "back_to_channel_list":
             await query.message.edit_text(
                 MessageTexts.BOT_CHANNEL_MENU_MESSAGE.value.format(channel_username, (await custom_tg_bot.get_me()).username),
-                reply_markup=await get_inline_channel_menu_keyboard(custom_bot.bot_id, int(query.data.split(":")[-1]))
+                reply_markup=await get_inline_channel_menu_keyboard(custom_bot.bot_id, channel_id)
             )
         case "demo":
             media_files = await channel_post_media_file_db.get_all_channel_post_media_files(channel_post_id=channel_post.channel_post_id)
@@ -217,7 +369,7 @@ async def channel_menu_callback_handler(query: CallbackQuery, state: FSMContext)
                     text=MessageTexts.BOT_MAILINGS_MENU_MESSAGE.value.format(
                         custom_bot_username
                     ),
-                    reply_markup=await get_inline_bot_channel_post_menu_keyboard(bot_id, channel_id)
+                    reply_markup=await get_inline_bot_channel_post_menu_keyboard(bot_id, channel_id, is_contest=channel_post.is_contest)
                 )
 
             else:
@@ -232,8 +384,10 @@ async def channel_menu_callback_handler(query: CallbackQuery, state: FSMContext)
                                        reply_markup=get_confirm_media_upload_keyboard())
             await query.answer()
             await state.set_state(States.EDITING_POST_MEDIA_FILES)
-            await state.set_data({"bot_id": bot_id, "channel_id": channel_id})
-
+            if channel_post.is_contest:
+                await state.set_data({"bot_id": bot_id, "channel_id": channel_id, "channel_post_id": channel_post.channel_post_id})
+            else:
+                await state.set_data({"bot_id": bot_id, "channel_id": channel_id})
         case "button_url":
             if not channel_post.has_button:
                 await query.answer("В посте кнопки уже нет", show_alert=True)
@@ -269,7 +423,7 @@ async def channel_menu_callback_handler(query: CallbackQuery, state: FSMContext)
                     text=MessageTexts.BOT_MAILINGS_MENU_MESSAGE.value.format(
                         custom_bot_username
                     ),
-                    reply_markup=await get_inline_bot_channel_post_menu_keyboard(bot_id, channel_id)
+                    reply_markup=await get_inline_bot_channel_post_menu_keyboard(bot_id, channel_id, channel_post.is_contest)
                 )
         case "add_button":
             media_files = await channel_post_media_file_db.get_all_channel_post_media_files(channel_post_id=channel_post.channel_post_id)
@@ -294,8 +448,9 @@ async def channel_menu_callback_handler(query: CallbackQuery, state: FSMContext)
                     text=MessageTexts.BOT_MAILINGS_MENU_MESSAGE.value.format(
                         custom_bot_username
                     ),
-                    reply_markup=await get_inline_bot_channel_post_menu_keyboard(bot_id, channel_id)
+                    reply_markup=await get_inline_bot_channel_post_menu_keyboard(bot_id, channel_id, channel_post.is_Contest)
                 )
+        # TODO Add contest validation
         case "start":
             media_files = await channel_post_media_file_db.get_all_channel_post_media_files(channel_post_id=channel_post.channel_post_id)
 
@@ -309,11 +464,31 @@ async def channel_menu_callback_handler(query: CallbackQuery, state: FSMContext)
                     text="В Вашем рассылочном сообщении нет ни текста, ни медиафайлов",
                     show_alert=True
                 )
-
+            if channel_post.is_contest:
+                if channel_post.contest_end_date is None:
+                    return await query.answer(
+                        text="Не установлен конец конкурса",
+                        show_alert=True
+                    )
+                elif channel_post.contest_winner_amount is None:
+                    return await query.answer(
+                        text="Не установлено количество победителей",
+                        show_alert=True
+                    )
+                elif channel_post.contest_type == ContestTypeValues.SPONSOR and channel_post.contest_sponsor_url is None:
+                    return await query.answer(
+                        text="Не выбраны каналы спонсоры",
+                        show_alert=True
+                    )
+                elif channel_post.contest_end_date < (timedelta(minutes=2) + datetime.now()):
+                    return await query.answer(
+                        text="Дата окончания конкурса уже прошла",
+                        show_alert=True
+                    )
             await query.message.edit_text(
                 text=MessageTexts.BOT_CHANNEL_POST_MENU_ACCEPT_START.value.format(
                     channel_username),
-                reply_markup=await get_inline_bot_channel_post_start_confirm_keybaord(bot_id, channel_id)
+                reply_markup=await get_inline_bot_channel_post_start_confirm_keybaord(bot_id, channel_id, channel_post.is_contest)
             )
         case "accept_start":
             media_files = await channel_post_media_file_db.get_all_channel_post_media_files(channel_post_id=channel_post.channel_post_id)
@@ -323,8 +498,33 @@ async def channel_menu_callback_handler(query: CallbackQuery, state: FSMContext)
                     "Telegram не позволяет прикрепить кнопку, если в сообщении минимум 2 медиафайла",
                     show_alert=True
                 )
-
-            elif channel_post.description or media_files:
+            elif not media_files and not channel_post.description:
+                return await query.answer(
+                    text="В Вашем рассылочном сообщении нет ни текста, ни медиафайлов",
+                    show_alert=True
+                )
+            if channel_post.is_contest:
+                if channel_post.contest_end_date is None:
+                    return await query.answer(
+                        text="Не установлен конец конкурса",
+                        show_alert=True
+                    )
+                elif channel_post.contest_winner_amount is None:
+                    return await query.answer(
+                        text="Не установлено количество победителей",
+                        show_alert=True
+                    )
+                elif channel_post.contest_type == ContestTypeValues.SPONSOR and channel_post.contest_sponsor_url is None:
+                    return await query.answer(
+                        text="Не выбраны каналы спонсоры",
+                        show_alert=True
+                    )
+                elif channel_post.contest_end_date < (timedelta(minutes=2) + datetime.now()):
+                    return await query.answer(
+                        text="Дата окончания конкурса уже прошла",
+                        show_alert=True
+                    )
+            if channel_post.description or media_files:
                 if channel_post.is_delayed:
                     # Небольшой запас по времени
                     if datetime.now() > (channel_post.send_date + timedelta(minutes=2)):
@@ -343,7 +543,7 @@ async def channel_menu_callback_handler(query: CallbackQuery, state: FSMContext)
                         text=MessageTexts.BOT_CHANNEL_POST_MENU_WHILE_RUNNING.value.format(
                             channel_username),
                         reply_markup=await get_inline_bot_channel_post_menu_keyboard(
-                            bot_id, channel_id)
+                            bot_id, channel_id, channel_post.is_contest)
                     )
 
                 if not (channel_post.is_delayed):
@@ -358,7 +558,7 @@ async def channel_menu_callback_handler(query: CallbackQuery, state: FSMContext)
                     )
                     await query.message.edit_text(
                         MessageTexts.BOT_CHANNEL_MENU_MESSAGE.value.format(channel_username, (await custom_tg_bot.get_me()).username),
-                        reply_markup=await get_inline_channel_menu_keyboard(custom_bot.bot_id, int(query.data.split(":")[-1]))
+                        reply_markup=await get_inline_channel_menu_keyboard(custom_bot.bot_id, channel_id)
                     )
                 else:
                     job_id = await _scheduler.add_scheduled_job(
@@ -378,7 +578,8 @@ async def channel_menu_callback_handler(query: CallbackQuery, state: FSMContext)
                     bot_id,
                     channel_id,
                     channel_post.enable_notification_sound,
-                    channel_post.enable_link_preview
+                    channel_post.enable_link_preview,
+                    channel_post.is_contest
                 )
             )
         case "toggle_link_preview":
@@ -389,7 +590,8 @@ async def channel_menu_callback_handler(query: CallbackQuery, state: FSMContext)
                     bot_id,
                     channel_id,
                     channel_post.enable_notification_sound,
-                    channel_post.enable_link_preview
+                    channel_post.enable_link_preview,
+                    channel_post.is_contest
                 )
             )
         case "toggle_notigication_sound":
@@ -400,21 +602,22 @@ async def channel_menu_callback_handler(query: CallbackQuery, state: FSMContext)
                     bot_id,
                     channel_id,
                     channel_post.enable_notification_sound,
-                    channel_post.enable_link_preview
+                    channel_post.enable_link_preview,
+                    channel_post.is_contest
                 )
             )
         case "back_to_editing_channel_post":
             return await query.message.edit_text(
                 MessageTexts.BOT_CHANNEL_POST_MENU_MESSAGE.value.format(
                     channel_username),
-                reply_markup=await get_inline_bot_channel_post_menu_keyboard(bot_id=bot_id, channel_id=channel_id)
+                reply_markup=await get_inline_bot_channel_post_menu_keyboard(bot_id=bot_id, channel_id=channel_id, is_contest=channel_post.is_contest)
             )
 
         case "delete_channel_post":
             await query.message.edit_text(
                 text=MessageTexts.BOT_CHANNEL_POST_MENU_ACCEPT_DELETING_MESSAGE.value.format(
                     channel_username),
-                reply_markup=await get_inline_bot_channel_post_menu_accept_deleting_keyboard(bot_id, channel_id)
+                reply_markup=await get_inline_bot_channel_post_menu_accept_deleting_keyboard(bot_id, channel_id, channel_post.is_contest)
             )
 
         case "accept_delete":
@@ -435,7 +638,265 @@ async def channel_menu_callback_handler(query: CallbackQuery, state: FSMContext)
                                        reply_markup=get_back_keyboard())
             await query.answer()
             await state.set_state(States.EDITING_POST_DELAY_DATE)
-            await state.set_data({"bot_id": bot_id, "channel_id": channel_id})
+            if channel_post.is_contest:
+                await state.set_data({"bot_id": bot_id, "channel_id": channel_id, "channel_post_id": channel_post.channel_post_id})
+            else:
+                await state.set_data({"bot_id": bot_id, "channel_id": channel_id})
+
+
+@channel_menu_router.message(States.EDITING_SPONSOR_LINK)
+async def editing_contest_sponsor_url(message: Message, state: FSMContext):
+    message_text = message.html_text
+    state_data = await state.get_data()
+    bot_id = state_data["bot_id"]
+    channel_id = state_data["channel_id"]
+    if state_data.get("channel_post_id", None) != None:
+        is_contest_flag = True
+    custom_bot_tg = Bot((await bot_db.get_bot(bot_id)).token)
+    channel_username = (await custom_bot_tg.get_chat(channel_id)).username
+    channel_post = await channel_post_db.get_channel_post(channel_id=channel_id, is_contest=is_contest_flag)
+    if message_text:
+        if message_text == "🔙 Назад":
+            await message.answer(
+                "Возвращаемся в меню...",
+                reply_markup=get_reply_bot_menu_keyboard(
+                    bot_id=state_data["bot_id"])
+            )
+            if channel_post.contest_type == ContestTypeValues.RANDOM:
+                menu_text = MessageTexts.BOT_CONTEST_MENU.value.format(
+                    "Рандомайзер 🎲", "Спонсорство 🤝")
+            else:
+                menu_text = MessageTexts.BOT_CONTEST_MENU.value.format(
+                    "Спонсорство 🤝", "Рандомайзер 🎲")
+            await message.answer(
+                text=menu_text,
+                reply_markup=await get_contest_menu_keyboard(bot_id, channel_id, is_contest=True)
+            )
+            await state.set_state(States.BOT_MENU)
+            await state.set_data(state_data)
+        else:
+            if message_text.startswith("https://t.me/addlist/") is False:
+                return await message.answer("Вы ввели не ту ссылку, попробуйте еще раз.")
+            await message.answer(f"Ваши спонсоры изменены на {message_text}")
+            # await message.answer(
+            #     MessageTexts.BOT_CHANNEL_POST_MENU_MESSAGE.value.format(
+            #         channel_username),
+            #     reply_markup=await get_inline_bot_channel_post_menu_keyboard(bot_id=bot_id, channel_id=channel_id, is_contest=channel_post.is_contest)
+            # )
+            await message.answer(f"Теперь введите через энтер ссылки на каналы\n\nПример:\nhttps://t.me/durov_russia\nhttps://t.me/durov_russia\nhttps://t.me/durov_russia\n")
+            await state.set_state(States.WAITING_FOR_SPONSOR_CHANNEL_LINKS)
+            if channel_post.is_contest:
+                await state.set_data({"bot_id": bot_id, "channel_id": channel_id, "channel_post_id": channel_post.channel_post_id, "sponsor_url": message_text})
+            else:
+                await state.set_data({"bot_id": bot_id, "channel_id": channel_id})
+
+
+@channel_menu_router.message(States.WAITING_FOR_SPONSOR_CHANNEL_LINKS)
+async def editing_sponsor_channel_links(message: Message, state: FSMContext):
+    message_text = message.html_text
+    state_data = await state.get_data()
+    bot_id = state_data["bot_id"]
+    channel_id = state_data["channel_id"]
+    if state_data.get("channel_post_id", None) != None:
+        is_contest_flag = True
+    sponsor_url = state_data["sponsor_url"]
+    custom_bot_tg = Bot((await bot_db.get_bot(bot_id)).token)
+    channel_username = (await custom_bot_tg.get_chat(channel_id)).username
+    channel_post = await channel_post_db.get_channel_post(channel_id=channel_id, is_contest=is_contest_flag)
+    if message_text:
+        if message_text == "🔙 Назад":
+            await message.answer(
+                "Возвращаемся в меню...",
+                reply_markup=get_reply_bot_menu_keyboard(
+                    bot_id=state_data["bot_id"])
+            )
+            if channel_post.contest_type == ContestTypeValues.RANDOM:
+                menu_text = MessageTexts.BOT_CONTEST_MENU.value.format(
+                    "Рандомайзер 🎲", "Спонсорство 🤝")
+            else:
+                menu_text = MessageTexts.BOT_CONTEST_MENU.value.format(
+                    "Спонсорство 🤝", "Рандомайзер 🎲")
+            await message.answer(
+                text=menu_text,
+                reply_markup=await get_contest_menu_keyboard(bot_id, channel_id, is_contest=True)
+            )
+            await state.set_state(States.BOT_MENU)
+            await state.set_data(state_data)
+        else:
+            ids_list = []
+            links = [link.strip() for link in message_text.split("\n")]
+            for link in links:
+                if link.startswith("https://t.me/") is False:
+                    return await message.answer("Введенная ссылка не ведет на канал")
+                try:
+                    s_channel = await bot.get_chat(f"@{link.split('/')[-1]}")
+                except Exception as e:
+                    return await message.answer("Введенная ссылка не ведет на канал 1")
+                if s_channel.id:
+                    ids_list.append(s_channel.id)
+                else:
+                    return await message.answer("Введенная ссылка не ведет на канал 2")
+            await contest_channel_db.delete_channels_by_contest_id(contest_id=channel_post.channel_post_id)
+            for ch_id in ids_list:
+                await contest_channel_db.add_channel(
+                    ContestChannelSchemaWithoutId.model_validate(
+                        {"channel_id": ch_id,
+                            "contest_post_id": channel_post.channel_post_id}
+                    )
+                )
+            channel_post.contest_sponsor_url = sponsor_url
+            await channel_post_db.update_channel_post(channel_post)
+            await message.answer("Ваши каналы сохранены")
+            if channel_post.contest_type == ContestTypeValues.RANDOM:
+                menu_text = MessageTexts.BOT_CONTEST_MENU.value.format(
+                    "Рандомайзер 🎲", "Спонсорство 🤝")
+            else:
+                menu_text = MessageTexts.BOT_CONTEST_MENU.value.format(
+                    "Спонсорство 🤝", "Рандомайзер 🎲")
+            await message.answer(
+                text=menu_text,
+                reply_markup=await get_contest_menu_keyboard(bot_id, channel_id, is_contest=True)
+            )
+            await state.set_state(States.BOT_MENU)
+            if channel_post.is_contest:
+                await state.set_data({"bot_id": bot_id, "channel_id": channel_id, "channel_post_id": channel_post.channel_post_id})
+            else:
+                await state.set_data({"bot_id": bot_id, "channel_id": channel_id})
+
+
+@channel_menu_router.message(States.EDITING_COMPETITION_WINNER_AMOUNT)
+async def editing_competition_winner_amount(message: Message, state: FSMContext):
+    message_text = message.html_text
+    state_data = await state.get_data()
+    bot_id = state_data["bot_id"]
+    channel_id = state_data["channel_id"]
+    if state_data.get("channel_post_id", None) != None:
+        is_contest_flag = True
+    custom_bot_tg = Bot((await bot_db.get_bot(bot_id)).token)
+    channel_username = (await custom_bot_tg.get_chat(channel_id)).username
+    channel_post = await channel_post_db.get_channel_post(channel_id=channel_id, is_contest=is_contest_flag)
+    if message_text:
+        if message_text == "🔙 Назад":
+            await message.answer(
+                "Возвращаемся в меню...",
+                reply_markup=get_reply_bot_menu_keyboard(
+                    bot_id=state_data["bot_id"])
+            )
+            if channel_post.contest_type == ContestTypeValues.RANDOM:
+                menu_text = MessageTexts.BOT_CONTEST_MENU.value.format(
+                    "Рандомайзер 🎲", "Спонсорство 🤝")
+            else:
+                menu_text = MessageTexts.BOT_CONTEST_MENU.value.format(
+                    "Спонсорство 🤝", "Рандомайзер 🎲")
+            await message.answer(
+                text=menu_text,
+                reply_markup=await get_contest_menu_keyboard(bot_id, channel_id, is_contest=True)
+            )
+            await state.set_state(States.BOT_MENU)
+            await state.set_data(state_data)
+        else:
+            try:
+                winner_amount = int(message_text)
+                if (winner_amount < 0) or (winner_amount > 2_000_000):
+                    await message.answer("Введите положительное число, меньшее 2млн")
+                    return
+            except ValueError:
+                return await message.answer("Вы ввели не число")
+
+            channel_post.contest_winner_amount = winner_amount
+            await channel_post_db.update_channel_post(channel_post)
+            await message.answer(f"Количество победителей: {winner_amount}")
+            # await message.answer(
+            #     MessageTexts.BOT_CHANNEL_POST_MENU_MESSAGE.value.format(
+            #         channel_username),
+            #     reply_markup=await get_inline_bot_channel_post_menu_keyboard(bot_id=bot_id, channel_id=channel_id, is_contest=channel_post.is_contest)
+            # )
+            if channel_post.contest_type == ContestTypeValues.RANDOM:
+                menu_text = MessageTexts.BOT_CONTEST_MENU.value.format(
+                    "Рандомайзер 🎲", "Спонсорство 🤝")
+            else:
+                menu_text = MessageTexts.BOT_CONTEST_MENU.value.format(
+                    "Спонсорство 🤝", "Рандомайзер 🎲")
+            await message.answer(
+                text=menu_text,
+                reply_markup=await get_contest_menu_keyboard(bot_id, channel_id, is_contest=True)
+            )
+            await state.set_state(States.BOT_MENU)
+            if channel_post.is_contest:
+                await state.set_data({"bot_id": bot_id, "channel_id": channel_id, "channel_post_id": channel_post.channel_post_id})
+            else:
+                await state.set_data({"bot_id": bot_id, "channel_id": channel_id})
+
+
+@channel_menu_router.message(States.EDITING_COMPETITION_END_DATE)
+async def editing_competition_end_date(message: Message, state: FSMContext):
+    message_text = message.html_text
+
+    state_data = await state.get_data()
+    bot_id = state_data["bot_id"]
+    channel_id = state_data["channel_id"]
+    if state_data.get("channel_post_id", None) != None:
+        is_contest_flag = True
+
+    custom_bot_tg = Bot((await bot_db.get_bot(bot_id)).token)
+    channel_username = (await custom_bot_tg.get_chat(channel_id)).username
+    channel_post = await channel_post_db.get_channel_post(channel_id=channel_id, is_contest=is_contest_flag)
+    if message_text:
+        if message_text == "🔙 Назад":
+            await message.answer(
+                "Возвращаемся в меню...",
+                reply_markup=get_reply_bot_menu_keyboard(
+                    bot_id=state_data["bot_id"])
+            )
+            if channel_post.contest_type == ContestTypeValues.RANDOM:
+                menu_text = MessageTexts.BOT_CONTEST_MENU.value.format(
+                    "Рандомайзер 🎲", "Спонсорство 🤝")
+            else:
+                menu_text = MessageTexts.BOT_CONTEST_MENU.value.format(
+                    "Спонсорство 🤝", "Рандомайзер 🎲")
+            await message.answer(
+                text=menu_text,
+                reply_markup=await get_contest_menu_keyboard(bot_id, channel_id, is_contest=True)
+            )
+            await state.set_state(States.BOT_MENU)
+            await state.set_data(state_data)
+        else:
+            try:
+                datetime_obj = datetime.strptime(
+                    message_text, "%d.%m.%Y %H:%M")
+                datetime_obj.replace(tzinfo=None)
+                if datetime.now() > datetime_obj:
+                    await message.reply("Введенное время уже прошло, попробуйте ввести другое")
+                    return
+
+                channel_post.contest_end_date = datetime_obj
+
+                await channel_post_db.update_channel_post(channel_post)
+
+                await message.reply(f"Конец конкурса: {datetime_obj.strftime('%Y-%m-%d %H:%M')}")
+                # await message.answer(
+                #     MessageTexts.BOT_CHANNEL_POST_MENU_MESSAGE.value.format(
+                #         channel_username),
+                #     reply_markup=await get_inline_bot_channel_post_menu_keyboard(bot_id=bot_id, channel_id=channel_id, is_contest=channel_post.is_contest)
+                # )
+                if channel_post.contest_type == ContestTypeValues.RANDOM:
+                    menu_text = MessageTexts.BOT_CONTEST_MENU.value.format(
+                        "Рандомайзер 🎲", "Спонсорство 🤝")
+                else:
+                    menu_text = MessageTexts.BOT_CONTEST_MENU.value.format(
+                        "Спонсорство 🤝", "Рандомайзер 🎲")
+                await message.answer(
+                    text=menu_text,
+                    reply_markup=await get_contest_menu_keyboard(bot_id, channel_id, is_contest=True)
+                )
+
+                await state.set_state(States.BOT_MENU)
+                if channel_post.is_contest:
+                    await state.set_data({"bot_id": bot_id, "channel_id": channel_id, "channel_post_id": channel_post.channel_post_id})
+                else:
+                    await state.set_data({"bot_id": bot_id, "channel_id": channel_id})
+            except ValueError:
+                await message.reply("Некорректный формат. Пожалуйста, введите время и дату в правильном формате.")
 
 
 @channel_menu_router.message(States.EDITING_POST_DELAY_DATE)
@@ -446,8 +907,11 @@ async def editing_channel_post_delay_date_handler(message: Message, state: FSMCo
 
     bot_id = state_data["bot_id"]
     channel_id = state_data["channel_id"]
+    is_contest_flag = False
+    if state_data.get("channel_post_id", None) != None:
+        is_contest_flag = True
 
-    channel_post = await channel_post_db.get_channel_post(channel_id=channel_id)
+    channel_post = await channel_post_db.get_channel_post(channel_id=channel_id, is_contest=is_contest_flag)
     custom_bot_tg = Bot((await bot_db.get_bot(bot_id)).token)
     custom_bot_username = (await custom_bot_tg.get_me()).username
     channel_username = (await custom_bot_tg.get_chat(channel_id)).username
@@ -461,9 +925,10 @@ async def editing_channel_post_delay_date_handler(message: Message, state: FSMCo
             await message.answer(
                 MessageTexts.BOT_CHANNEL_POST_MENU_MESSAGE.value.format(
                     channel_username),
-                reply_markup=await get_inline_bot_channel_post_menu_keyboard(bot_id=bot_id, channel_id=channel_id)
+                reply_markup=await get_inline_bot_channel_post_menu_keyboard(bot_id=bot_id, channel_id=channel_id, is_contest=channel_post.is_contest)
             )
             await state.set_state(States.BOT_MENU)
+            await state.set_data(state_data)
         else:
             try:
                 datetime_obj = datetime.strptime(
@@ -482,11 +947,14 @@ async def editing_channel_post_delay_date_handler(message: Message, state: FSMCo
                 await message.answer(
                     MessageTexts.BOT_CHANNEL_POST_MENU_MESSAGE.value.format(
                         channel_username),
-                    reply_markup=await get_inline_bot_channel_post_menu_keyboard(bot_id=bot_id, channel_id=channel_id)
+                    reply_markup=await get_inline_bot_channel_post_menu_keyboard(bot_id=bot_id, channel_id=channel_id, is_contest=channel_post.is_contest)
                 )
 
                 await state.set_state(States.BOT_MENU)
-                await state.set_data({"bot_id": bot_id, "channel_id": channel_id})
+                if channel_post.is_contest:
+                    await state.set_data({"bot_id": bot_id, "channel_id": channel_id, "channel_post_id": channel_post.channel_post_id})
+                else:
+                    await state.set_data({"bot_id": bot_id, "channel_id": channel_id})
             except ValueError:
                 await message.reply("Некорректный формат. Пожалуйста, введите время и дату в правильном формате.")
 
@@ -497,8 +965,12 @@ async def editing_channel_post_media_files_handler(message: Message, state: FSMC
 
     bot_id = state_data["bot_id"]
     channel_id = state_data["channel_id"]
+    if state_data.get("channel_post_id", None) != None:
+        is_contest_flag = True
+    else:
+        is_contest_flag = False
 
-    channel_post = await channel_post_db.get_channel_post(channel_id=channel_id)
+    channel_post = await channel_post_db.get_channel_post(channel_id=channel_id, is_contest=is_contest_flag)
 
     if (message.photo or message.video or message.audio or message.document) and "first" not in state_data:
         await channel_post_media_file_db.delete_channel_post_media_files(channel_post_id=channel_post.channel_post_id)
@@ -519,11 +991,14 @@ async def editing_channel_post_media_files_handler(message: Message, state: FSMC
             text=MessageTexts.BOT_MAILINGS_MENU_MESSAGE.value.format(
                 custom_bot_username
             ),
-            reply_markup=await get_inline_bot_channel_post_menu_keyboard(bot_id, channel_id)
+            reply_markup=await get_inline_bot_channel_post_menu_keyboard(bot_id, channel_id, channel_post.is_contest)
         )
 
         await state.set_state(States.BOT_MENU)
-        await state.set_data({"bot_id": bot_id, "channel_id": channel_id})
+        if channel_post.is_contest:
+            await state.set_data({"bot_id": bot_id, "channel_id": channel_id, "channel_post_id": channel_post.channel_post_id})
+        else:
+            await state.set_data({"bot_id": bot_id, "channel_id": channel_id})
 
         return
     elif message.text == "Очистить":
@@ -572,324 +1047,6 @@ async def editing_channel_post_media_files_handler(message: Message, state: FSMC
     await message.answer(answer_text)
 
 
-@channel_menu_router.callback_query(lambda query: query.data.startswith("competitions_list"))
-async def competitions_list_callback_handler(query: CallbackQuery, state: FSMContext):
-    query_data = query.data.split(":")
-
-    action = query_data[1]
-    bot_id = int(query_data[2])
-    channel_id = int(query_data[3])
-
-    custom_bot = await bot_db.get_bot(bot_id)
-    custom_tg_bot = Bot(custom_bot.token)
-    custom_bot_username = (await custom_tg_bot.get_me()).username
-    channel_username = (await custom_tg_bot.get_chat(channel_id)).username
-
-    match action:
-        case "competition":
-            competition_id = int(query_data[-1])
-            await query.message.edit_text(
-                text=MessageTexts.BOT_COMPETITION_MENU_MESSAGE.value.format(
-                    (await competition.get_competition(competition_id)).name,
-                    channel_username,
-                    custom_bot_username
-                ),
-                reply_markup=await get_competition_menu_keyboard(competition_id)
-            )
-        case "back_to_channel_menu":
-            await query.message.edit_text(
-                text=MessageTexts.BOT_CHANNEL_MENU_MESSAGE.value.format(
-                    channel_username, custom_bot_username),
-                reply_markup=await get_inline_channel_menu_keyboard(bot_id, channel_id)
-            )
-
-
-@channel_menu_router.callback_query(lambda query: query.data.startswith("competition_menu"))
-async def competition_menu_callback_handler(query: CallbackQuery, state: FSMContext):
-    query_data = query.data.split(":")
-
-    action = query_data[1]
-    competition_id = int(query_data[2])
-
-    competition_schema = await competition.get_competition(competition_id)
-    bot_id = competition_schema.bot_id
-    channel_id = competition_schema.channel_id
-
-    custom_bot_tg = Bot((await bot_db.get_bot(bot_id)).token)
-    custom_bot_username = (await custom_bot_tg.get_me()).username
-    channel_username = (await custom_bot_tg.get_chat(channel_id)).username
-
-    match action:
-        case "name":
-            await query.message.answer("Введите короткое название (оно только для вас), чтобы отличать этот конкурс от других",
-                                       reply_markup=get_back_keyboard())
-            await query.answer()
-            await state.set_state(States.EDITING_COMPETITION_NAME)
-            await state.set_data({"bot_id": bot_id, "channel_id": channel_id, "competition_id": competition_id})
-
-        case "description":
-            await query.message.answer("Введите текст, который будет отображаться ",
-                                       reply_markup=get_back_keyboard())
-            await query.answer()
-            await state.set_state(States.EDITING_COMPETITION_DESCRIPTION)
-            await state.set_data({"bot_id": bot_id, "channel_id": channel_id, "competition_id": competition_id})
-
-        case "media_files":
-            await query.message.answer("Отправьте одним сообщение медиафайлы для конкурсного сообщения\n\n"
-                                       "❗ Старые медиафайлы к этому конкурсному сообщению <b>перезапишутся</b>",
-                                       reply_markup=get_back_keyboard("✅ Готово"))
-            await query.answer()
-            await state.set_state(States.EDITING_COMPETITION_MEDIA_FILES)
-            await state.set_data({"bot_id": bot_id, "channel_id": channel_id, "competition_id": competition_id})
-
-        case "demo":
-            if competition_schema.description:
-                await send_demonstration(
-                    competition_schema,
-                    query.message
-                )
-                await query.message.answer(
-                    text=MessageTexts.BOT_COMPETITION_MENU_MESSAGE.value.format(
-                        (await competition.get_competition(competition_id)).name,
-                        channel_username,
-                        custom_bot_username
-                    ),
-                    reply_markup=await get_competition_menu_keyboard(competition_id)
-                )
-
-            else:
-                await query.answer(
-                    text="В Вашем конкурсе отсутсвует текст содержания",
-                    show_alert=True
-                )
-
-        case "back_to_competitions_list":
-            await query.message.edit_text(
-                text=MessageTexts.BOT_COMPETITIONS_LIST_MESSAGE.value.format(
-                    custom_bot_username),
-                reply_markup=await get_competitions_list_keyboard(bot_id, channel_id)
-            )
-
-
-@channel_menu_router.message(States.EDITING_COMPETITION_NAME)
-async def editing_competition_name_handler(message: Message, state: FSMContext):
-    message_text = message.text
-
-    state_data = await state.get_data()
-
-    competition_id = state_data["competition_id"]
-    bot_id = state_data["bot_id"]
-    channel_id = state_data["channel_id"]
-
-    competition_schema = await competition.get_competition(competition_id)
-    custom_bot_tg = Bot((await bot_db.get_bot(bot_id)).token)
-    custom_bot_username = (await custom_bot_tg.get_me()).username
-    channel_username = (await custom_bot_tg.get_chat(channel_id)).username
-
-    if message_text:
-        if message_text == "🔙 Назад":
-            await message.answer(
-                "Возвращаемся в меню...",
-                reply_markup=get_reply_bot_menu_keyboard(
-                    bot_id=state_data["bot_id"])
-            )
-            await message.answer(
-                text=MessageTexts.BOT_COMPETITION_MENU_MESSAGE.value.format(
-                    competition_schema.name,
-                    channel_username,
-                    custom_bot_username
-                ),
-                reply_markup=await get_competition_menu_keyboard(competition_id)
-            )
-        else:
-            competition_schema.name = message_text
-            await competition.update_competition(competition_schema)
-
-            await message.answer(
-                MessageTexts.BOT_COMPETITION_MENU_MESSAGE.value.format(
-                    competition_schema.name,
-                    channel_username,
-                    custom_bot_username
-                ),
-                reply_markup=await get_competition_menu_keyboard(competition_id)
-            )
-
-        await state.set_state(States.BOT_MENU)
-        await state.set_data({"bot_id": bot_id})
-    else:
-        await message.answer("Короткое название отображается только у Вас для удобной ориентации по созданным конкурсам\n"
-                             "Оно должно являться <b>текстом</b>, максимальная длина которого <b>40 символов</b>")
-
-
-@channel_menu_router.message(States.EDITING_COMPETITION_DESCRIPTION)
-async def editing_competition_description_handler(message: Message, state: FSMContext):
-    message_text = message.html_text
-
-    state_data = await state.get_data()
-
-    competition_id = state_data["competition_id"]
-    bot_id = state_data["bot_id"]
-    channel_id = state_data["channel_id"]
-
-    competition_schema = await competition.get_competition(competition_id)
-    custom_bot_tg = Bot((await bot_db.get_bot(bot_id)).token)
-    custom_bot_username = (await custom_bot_tg.get_me()).username
-    channel_username = (await custom_bot_tg.get_chat(channel_id)).username
-
-    if message_text:
-        if message_text == "🔙 Назад":
-            await message.answer(
-                "Возвращаемся в меню...",
-                reply_markup=get_reply_bot_menu_keyboard(
-                    bot_id=state_data["bot_id"])
-            )
-            await message.answer(
-                text=MessageTexts.BOT_COMPETITION_MENU_MESSAGE.value.format(
-                    competition_schema.name,
-                    channel_username,
-                    custom_bot_username
-                ),
-                reply_markup=await get_competition_menu_keyboard(competition_id)
-            )
-        else:
-            competition_schema.description = message.html_text
-            await competition.update_competition(competition_schema)
-
-            await message.answer(
-                "Предпросмотр конкурса 👇",
-                reply_markup=get_reply_bot_menu_keyboard(
-                    bot_id=state_data["bot_id"])
-            )
-            await send_demonstration(
-                competition_schema,
-                message,
-                is_demo=False
-            )
-            await message.answer(
-                MessageTexts.BOT_COMPETITION_MENU_MESSAGE.value.format(
-                    competition_schema.name,
-                    channel_username,
-                    custom_bot_username
-                ),
-                reply_markup=await get_competition_menu_keyboard(competition_id)
-            )
-
-        await state.set_state(States.BOT_MENU)
-        await state.set_data({"bot_id": bot_id})
-    else:
-        await message.answer("Описание должно содержать текст.\n"
-                             "Если есть необходимость прикрепить медиафайлы, то для этого есть пункт в меню")
-
-
-@channel_menu_router.message(States.EDITING_COMPETITION_MEDIA_FILES)
-async def editing_competition_media_files_handler(message: Message, state: FSMContext):
-    state_data = await state.get_data()
-
-    competition_id = state_data["competition_id"]
-    bot_id = state_data["bot_id"]
-    channel_id = state_data["channel_id"]
-
-    if (message.photo or message.video or message.audio or message.document) and "first" not in state_data:
-        await competition.delete_competition_media_files(competition_id)
-        state_data["first"] = True
-
-    competition_schema = await competition.get_competition(competition_id)
-    custom_bot_tg = Bot((await bot_db.get_bot(bot_id)).token)
-    custom_bot_username = (await custom_bot_tg.get_me()).username
-    channel_username = (await custom_bot_tg.get_chat(channel_id)).username
-
-    if message.text == "✅ Готово":
-        await message.answer(
-            "Возвращаемся в меню...",
-            reply_markup=get_reply_bot_menu_keyboard(
-                bot_id=state_data["bot_id"])
-        )
-        await message.answer(
-            text=MessageTexts.BOT_COMPETITION_MENU_MESSAGE.value.format(
-                competition_schema.name,
-                channel_username,
-                custom_bot_username
-            ),
-            reply_markup=await get_competition_menu_keyboard(competition_id)
-        )
-
-        await state.set_state(States.BOT_MENU)
-        await state.set_data({"bot_id": bot_id})
-    elif message.photo:
-        photo = message.photo[-1]
-        await competition.add_competition_media_file(competition_id, photo.file_id, "photo")
-
-        await message.answer(
-            f"Фото {photo.file_unique_id} добавлено"
-        )
-    elif message.video:
-        video = message.video
-        await competition.add_competition_media_file(competition_id, video.file_id, "video")
-
-        await message.answer(
-            f"Видео {video.file_name} добавлено"
-        )
-    elif message.audio:
-        audio = message.audio
-        await competition.add_competition_media_file(competition_id, audio.file_id, "audio")
-
-        await message.answer(
-            f"Аудио {audio.file_name} добавлено"
-        )
-    elif message.document:
-        document = message.document
-        await competition.add_competition_media_file(competition_id, document.file_id, "document")
-
-        await message.answer(
-            f"Документ {document.file_name} добавлен"
-        )
-
-    else:
-        await message.answer("Пришлите медиафайлы (фото, видео, аудио, документы), которые должны быть прикреплены к конкурсному сообщению")
-
-
-async def send_demonstration(
-        competition_schema: CompetitionSchema,
-        message: Message,
-        is_demo: bool = True
-) -> None:
-    competition_id = competition_schema.competition_id
-    media_files = await competition.get_competition_media_files(competition_id)
-
-    if media_files:
-        media_group = []
-        for media_file in media_files:
-            if media_file.media_type == "photo":
-                media_group.append(InputMediaPhoto(media=media_file.file_name))
-            elif media_file.media_type == "video":
-                media_group.append(InputMediaVideo(media=media_file.file_name))
-            elif media_file.media_type == "audio":
-                media_group.append(InputMediaAudio(media=media_file.file_name))
-            elif media_file.media_type == "document":
-                media_group.append(InputMediaDocument(
-                    media=media_file.file_name))
-
-        media_group[0].caption = competition_schema.description
-
-        await bot.send_media_group(
-            chat_id=message.chat.id,
-            media=media_group
-        )
-        await message.delete()
-    else:
-        if is_demo:
-            await message.edit_text(
-                text=competition_schema.description,
-                link_preview_options=LinkPreviewOptions(is_disabled=True),
-                reply_markup=None,
-            )
-        else:
-            await message.answer(
-                text=competition_schema.description,
-                link_preview_options=LinkPreviewOptions(is_disabled=True),
-            )
-
-
 @channel_menu_router.message(States.EDITING_POST_TEXT)
 async def editing_post_message_handler(message: Message, state: FSMContext):
     message_text = message.html_text
@@ -898,8 +1055,10 @@ async def editing_post_message_handler(message: Message, state: FSMContext):
 
     bot_id = state_data["bot_id"]
     channel_id = state_data["channel_id"]
-
-    channel_post = await channel_post_db.get_channel_post(channel_id=channel_id)
+    is_contest_flag = False
+    if state_data.get("channel_post_id", None) != None:
+        is_contest_flag = True
+    channel_post = await channel_post_db.get_channel_post(channel_id=channel_id, is_contest=is_contest_flag)
     custom_bot = Bot((await bot_db.get_bot(bot_id)).token)
     custom_bot_username = (await custom_bot.get_me()).username
     channel_username = (await custom_bot.get_chat(channel_id)).username
@@ -913,9 +1072,10 @@ async def editing_post_message_handler(message: Message, state: FSMContext):
             await message.answer(
                 MessageTexts.BOT_CHANNEL_POST_MENU_MESSAGE.value.format(
                     channel_username),
-                reply_markup=await get_inline_bot_channel_post_menu_keyboard(bot_id=bot_id, channel_id=channel_id)
+                reply_markup=await get_inline_bot_channel_post_menu_keyboard(bot_id=bot_id, channel_id=channel_id, is_contest=channel_post.is_contest)
             )
             await state.set_state(States.BOT_MENU)
+            await state.set_data(state_data)
         else:
             channel_post.description = message.html_text
             media_files = await channel_post_media_file_db.get_all_channel_post_media_files(channel_post_id=channel_post.channel_post_id)
@@ -936,15 +1096,18 @@ async def editing_post_message_handler(message: Message, state: FSMContext):
                 message.from_user.id,
                 message.message_id,
             )
-            await message.delete()
+            # await message.delete()
             await message.answer(
                 MessageTexts.BOT_CHANNEL_POST_MENU_MESSAGE.value.format(
                     channel_username),
-                reply_markup=await get_inline_bot_channel_post_menu_keyboard(bot_id=bot_id, channel_id=channel_id)
+                reply_markup=await get_inline_bot_channel_post_menu_keyboard(bot_id=bot_id, channel_id=channel_id, is_contest=channel_post.is_contest)
             )
 
         await state.set_state(States.BOT_MENU)
-        await state.set_data({"bot_id": bot_id})
+        if channel_post.is_contest:
+            await state.set_data({"bot_id": bot_id, "channel_id": channel_id, "channel_post_id": channel_post.channel_post_id})
+        else:
+            await state.set_data({"bot_id": bot_id, "channel_id": channel_id})
     else:
         await message.answer("Описание должно содержать текст.\n"
                              "Если есть необходимость прикрепить медиафайлы, то для этого есть пункт в меню")
@@ -966,6 +1129,11 @@ async def send_channel_post_message(  # TODO that's not funny
             button = InlineKeyboardButton(
                 text=channel_post_schema.button_text,
                 web_app=make_webapp_info(bot_id=channel_post_schema.bot_id)
+            )
+        elif channel_post_schema.is_contest:
+            button = InlineKeyboardButton(
+                text=channel_post_schema.button_text,
+                callback_data=channel_post_schema.button_query
             )
         else:
             button = InlineKeyboardButton(
@@ -1105,8 +1273,14 @@ async def send_channel_post_message(  # TODO that's not funny
     # channel_post_schema.is_running = False
     # await channel_post_db.update_channel_post(channel_post_schema)
     if mailing_message_type == MailingMessageType.RELEASE:
-        await channel_post_db.delete_channel_post(channel_post_id=channel_post_schema.channel_post_id)
+        if channel_post_schema.is_contest is False:
+            await channel_post_db.delete_channel_post(channel_post_id=channel_post_schema.channel_post_id)
         await bot.send_message(chat_id, "Пост отправлен в канал!")
+        # Scheduling contest result function
+        if channel_post_schema.is_contest:
+            job_id = await _scheduler.add_scheduled_job(
+                func=generate_contest_result, run_date=channel_post_schema.contest_end_date, args=[channel_post_schema.channel_id])
+            # await generate_contest_result(channel_post_schema.channel_id)
 
 
 @channel_menu_router.message(States.EDITING_POST_BUTTON_TEXT)
@@ -1117,8 +1291,10 @@ async def editing_channel_post_button_text_handler(message: Message, state: FSMC
 
     bot_id = state_data["bot_id"]
     channel_id = state_data["channel_id"]
+    if state_data.get("channel_post_id", None) != None:
+        is_contest_flag = True
 
-    channel_post = await channel_post_db.get_channel_post(channel_id=channel_id)
+    channel_post = await channel_post_db.get_channel_post(channel_id=channel_id, is_contest=is_contest_flag)
     custom_bot_tg = Bot((await bot_db.get_bot(bot_id)).token)
     custom_bot_username = (await custom_bot_tg.get_me()).username
 
@@ -1129,15 +1305,23 @@ async def editing_channel_post_button_text_handler(message: Message, state: FSMC
                 reply_markup=get_reply_bot_menu_keyboard(
                     bot_id=state_data["bot_id"])
             )
+            if channel_post.contest_type == ContestTypeValues.RANDOM:
+                menu_text = MessageTexts.BOT_CONTEST_MENU.value.format(
+                    "Рандомайзер 🎲", "Спонсорство 🤝")
+            else:
+                menu_text = MessageTexts.BOT_CONTEST_MENU.value.format(
+                    "Спонсорство 🤝", "Рандомайзер 🎲")
             await message.answer(
-                text=MessageTexts.BOT_MAILINGS_MENU_MESSAGE.value.format(
-                    custom_bot_username
-                ),
-                reply_markup=await get_inline_bot_channel_post_menu_keyboard(bot_id, channel_id)
+                text=menu_text,
+                reply_markup=await get_contest_menu_keyboard(bot_id, channel_id, is_contest=True)
             )
             await state.set_state(States.BOT_MENU)
+            await state.set_data(state_data)
         else:
-            channel_post.button_text = message.text
+            message_text = message.text
+            if channel_post.is_contest:
+                message_text += " (0)"
+            channel_post.button_text = message_text
             media_files = await channel_post_media_file_db.get_all_channel_post_media_files(channel_post_id=channel_post.channel_post_id)
             await channel_post_db.update_channel_post(channel_post)
 
@@ -1155,15 +1339,30 @@ async def editing_channel_post_button_text_handler(message: Message, state: FSMC
                 message.from_user.id,
                 message.message_id,
             )
-            await message.answer(
-                text=MessageTexts.BOT_MAILINGS_MENU_MESSAGE.value.format(
-                    custom_bot_username
-                ),
-                reply_markup=await get_inline_bot_channel_post_menu_keyboard(bot_id, channel_id)
-            )
+            if channel_post.is_contest is False:
+                await message.answer(
+                    text=MessageTexts.BOT_MAILINGS_MENU_MESSAGE.value.format(
+                        custom_bot_username
+                    ),
+                    reply_markup=await get_inline_bot_channel_post_menu_keyboard(bot_id, channel_id, channel_post.is_contest)
+                )
+            else:
+                if channel_post.contest_type == ContestTypeValues.RANDOM:
+                    menu_text = MessageTexts.BOT_CONTEST_MENU.value.format(
+                        "Рандомайзер 🎲", "Спонсорство 🤝")
+                else:
+                    menu_text = MessageTexts.BOT_CONTEST_MENU.value.format(
+                        "Спонсорство 🤝", "Рандомайзер 🎲")
+                await message.answer(
+                    text=menu_text,
+                    reply_markup=await get_contest_menu_keyboard(bot_id, channel_id, is_contest=True)
+                )
 
         await state.set_state(States.BOT_MENU)
-        await state.set_data({"bot_id": bot_id, "channel_id": channel_id})
+        if channel_post.is_contest:
+            await state.set_data({"bot_id": bot_id, "channel_id": channel_id, "channel_post_id": channel_post.channel_post_id})
+        else:
+            await state.set_data({"bot_id": bot_id, "channel_id": channel_id})
     else:
         await message.answer("Название кнопки должно содержать текст")
 
@@ -1177,7 +1376,7 @@ async def editing_channel_post_button_url_handler(message: Message, state: FSMCo
     bot_id = state_data["bot_id"]
     channel_id = state_data["channel_id"]
 
-    channel_post = await channel_post_db.get_channel_post(channel_id=channel_id)
+    channel_post = await channel_post_db.get_channel_post(channel_id=channel_id, is_contest=False)
     custom_bot_tg = Bot((await bot_db.get_bot(bot_id)).token)
     custom_bot_username = (await custom_bot_tg.get_me()).username
 
@@ -1192,9 +1391,10 @@ async def editing_channel_post_button_url_handler(message: Message, state: FSMCo
                 text=MessageTexts.BOT_MAILINGS_MENU_MESSAGE.value.format(
                     custom_bot_username
                 ),
-                reply_markup=await get_inline_bot_channel_post_menu_keyboard(bot_id, channel_id)
+                reply_markup=await get_inline_bot_channel_post_menu_keyboard(bot_id, channel_id, channel_post.is_contest)
             )
             await state.set_state(States.BOT_MENU)
+            await state.set_data(state_data)
         else:
             pattern = r"(?i)\b((?:https?://|www\d{0,3}[.]|[a-z0-9.\-]+[.][a-z]{2,4}/)(?:[^\s()<>]+|\(([^\s()<>]+|(\([^\s()<>]+\)))*\))+(?:\(([^\s()<>]+|(\([^\s()<>]+\)))*\)|[^\s`!()\[\]{};:'\".,<>?«»“”‘’]))"
             if not re.fullmatch(pattern, message.text):
@@ -1222,7 +1422,7 @@ async def editing_channel_post_button_url_handler(message: Message, state: FSMCo
                 text=MessageTexts.BOT_MAILINGS_MENU_MESSAGE.value.format(
                     custom_bot_username
                 ),
-                reply_markup=await get_inline_bot_channel_post_menu_keyboard(bot_id, channel_id)
+                reply_markup=await get_inline_bot_channel_post_menu_keyboard(bot_id, channel_id, channel_post.is_contest)
             )
 
         await state.set_state(States.BOT_MENU)

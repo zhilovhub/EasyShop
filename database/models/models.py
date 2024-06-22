@@ -11,15 +11,17 @@ from database.models.mailing_model import MailingDao
 from database.models.channel_model import ChannelDao
 from database.models.payment_model import PaymentDao
 from database.models.category_model import CategoryDao
+from database.models.custom_ad_model import CustomAdDao
 from database.models.randomizer_model import RandomizerDao
 from database.models.competition_model import CompetitionDao
+from database.models.channel_post_model import ChannelPostDao
+from database.models.channel_user_model import ChannelUserDao
+from database.models.contest_user_model import ContestUserDao
 from database.models.mailing_media_files import MailingMediaFileDao
 from database.models.custom_bot_user_model import CustomBotUserDao
+from database.models.contest_channel_model import ContestChannelDao
 from database.models.competition_media_files_model import CompetitionMediaFileDao
-from database.models.channel_post_model import ChannelPostDao
 from database.models.channel_post_media_files_model import ChannelPostMediaFileDao
-from database.models.channel_user_model import ChannelUserDao
-from database.models.custom_ad_model import CustomAdDao
 from database.models import Base
 
 from dotenv import load_dotenv
@@ -65,6 +67,8 @@ class Database:
             self.engine, self.logger)
         self.channel_user_dao = ChannelUserDao(self.engine, self.logger)
         self.custom_ad_dao = CustomAdDao(self.engine, self.logger)
+        self.contest_channel_dao = ContestChannelDao(self.engine, self.logger)
+        self.contest_user_dao = ContestUserDao(self.engine, self.logger)
 
         self.logger.debug("Database class is initialized")
 
@@ -127,3 +131,9 @@ class Database:
 
     def get_custom_ad_dao(self) -> CustomAdDao:
         return self.custom_ad_dao
+
+    def get_contest_channel_dao(self) -> ContestChannelDao:
+        return self.contest_channel_dao
+
+    def get_contest_user_dao(self) -> ContestUserDao:
+        return self.contest_user_dao

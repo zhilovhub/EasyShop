@@ -1,8 +1,10 @@
+from bot.main import contest_user_db
 from enum import Enum
 from typing import Optional
 
 from aiogram.utils.keyboard import InlineKeyboardMarkup, InlineKeyboardButton, ReplyKeyboardMarkup, KeyboardButton
 
+from database.models.channel_post_model import ContestTypeValues
 from bot.utils.keyboard_utils import *
 from bot.utils import MessageTexts, make_admin_panel_webapp_info
 
@@ -209,19 +211,26 @@ async def get_competitions_list_keyboard(bot_id: int, channel_id: int) -> Inline
 async def get_inline_channel_menu_keyboard(bot_id: int, channel_id: int) -> InlineKeyboardMarkup:
     callback_metadata = f":{bot_id}:{channel_id}"
     try:
-        await channel_post_db.get_channel_post(channel_id=channel_id)
+        await channel_post_db.get_channel_post(channel_id=channel_id, is_contest=False)
         channel_post_button = InlineKeyboardButton(
             text="Редактировать запись", callback_data="channel_menu:edit_post" + callback_metadata)
     except ChannelPostNotFound:
         channel_post_button = InlineKeyboardButton(
             text="Создать запись", callback_data="channel_menu:create_post" + callback_metadata)
+
+    try:
+        channel_post = await channel_post_db.get_channel_post(channel_id=channel_id, is_contest=True)
+        contest_button = InlineKeyboardButton(
+            text="Редактировать конкурс", callback_data="channel_menu:edit_post" + callback_metadata + f":{channel_post.channel_post_id}")
+    except ChannelPostNotFound:
+        contest_button = InlineKeyboardButton(
+            text="🆕 Создать конкурс", callback_data="channel_menu:create_contest" + callback_metadata)
     return InlineKeyboardMarkup(
         inline_keyboard=[
             [
-                InlineKeyboardButton(
-                    text="🎲 Созданные конкурсы", callback_data="channel_menu:competitions_list" + callback_metadata),
-                InlineKeyboardButton(
-                    text="🆕 Создать конкурс", callback_data="channel_menu:create_competition" + callback_metadata)
+                # InlineKeyboardButton(
+                #     text="🎲 Созданные конкурсы", callback_data="channel_menu:competitions_list" + callback_metadata),
+                contest_button
             ],
             [
                 channel_post_button,
@@ -560,9 +569,12 @@ def get_inline_delete_button(product_id: int) -> InlineKeyboardMarkup:
     ])
 
 
-async def get_inline_bot_channel_post_menu_keyboard(bot_id: int, channel_id: int) -> InlineKeyboardMarkup:
-    channel_post = await get_channel_post(channel_id=channel_id)
+async def get_inline_bot_channel_post_menu_keyboard(bot_id: int, channel_id: int, is_contest: bool = False) -> InlineKeyboardMarkup:
     callback_metadata = f":{bot_id}:{channel_id}"
+    channel_post = await channel_post_db.get_channel_post(channel_id=channel_id, is_contest=is_contest)
+    if is_contest:
+        callback_metadata += f":{channel_post.channel_post_id}"
+
     if channel_post.is_delayed:
         delay_btn = InlineKeyboardButton(
             text="Убрать откладывание", callback_data="channel_menu:cancel_delay" + callback_metadata)
@@ -576,30 +588,55 @@ async def get_inline_bot_channel_post_menu_keyboard(bot_id: int, channel_id: int
                     text="Отменить", callback_data="channel_menu:stop_post" + callback_metadata)]
             ]
         )
-    if channel_post.has_button:
-        inline_buttons = [
-            [
-                InlineKeyboardButton(
-                    text="Ссылка кнопки", callback_data="channel_menu:button_url" + callback_metadata
-                ),
-                InlineKeyboardButton(
-                    text="Текст на кнопке", callback_data="channel_menu:button_text" + callback_metadata
-                )
-            ],
-            [
-                InlineKeyboardButton(
-                    text="Удалить кнопку", callback_data="channel_menu:delete_button" + callback_metadata
-                )
+    inline_buttons = [
+        [
+            # InlineKeyboardButton(
+            #     text="Длительность конкурса", callback_data="channel_menu:get_contest_end_date" + callback_metadata
+            # ),
+            InlineKeyboardButton(
+                text="Условия выполнения", callback_data="channel_menu:pick_contest_type" + callback_metadata
+            )
+        ],
+        # [
+        #     InlineKeyboardButton(
+        #         text="Кол-во победителей", callback_data="channel_menu:get_contest_winner_amount" + callback_metadata),
+        #     InlineKeyboardButton(
+        #         text="Текст кнопки участия", callback_data="channel_menu:get_contest_button_text" + callback_metadata)
+        # ]
+    ]
+    # if channel_post.contest_type == ContestTypeValues.SPONSOR:
+    #     inline_buttons.append(
+    #         [
+    #             InlineKeyboardButton(
+    #                 text="Выбрать спонсоров", callback_data="channel_menu:get_sponsors" + callback_metadata
+    #             )
+    #         ]
+    #     )
+    if channel_post.is_contest is False:
+        if channel_post.has_button:
+            inline_buttons = [
+                [
+                    InlineKeyboardButton(
+                        text="Ссылка кнопки", callback_data="channel_menu:button_url" + callback_metadata
+                    ),
+                    InlineKeyboardButton(
+                        text="Текст на кнопке", callback_data="channel_menu:button_text" + callback_metadata
+                    )
+                ],
+                [
+                    InlineKeyboardButton(
+                        text="Удалить кнопку", callback_data="channel_menu:delete_button" + callback_metadata
+                    )
+                ]
             ]
-        ]
-    else:
-        inline_buttons = [
-            [
-                InlineKeyboardButton(
-                    text="Добавить кнопку", callback_data="channel_menu:add_button" + callback_metadata
-                ),
+        else:
+            inline_buttons = [
+                [
+                    InlineKeyboardButton(
+                        text="Добавить кнопку", callback_data="channel_menu:add_button" + callback_metadata
+                    ),
+                ]
             ]
-        ]
 
     return InlineKeyboardMarkup(inline_keyboard=[
         [
@@ -635,8 +672,11 @@ async def get_inline_bot_channel_post_menu_keyboard(bot_id: int, channel_id: int
     ])
 
 
-async def get_inline_bot_channel_post_start_confirm_keybaord(bot_id: int, channel_id: int) -> InlineKeyboardMarkup:
+async def get_inline_bot_channel_post_start_confirm_keybaord(bot_id: int, channel_id: int, is_contest: bool = False) -> InlineKeyboardMarkup:
     callback_metadata = f":{bot_id}:{channel_id}"
+    if is_contest:
+        channel_post = await channel_post_db.get_channel_post(channel_id, True)
+        callback_metadata += f":{channel_post.channel_post_id}"
 
     return InlineKeyboardMarkup(inline_keyboard=[
         [
@@ -653,8 +693,12 @@ async def get_inline_bot_channel_post_start_confirm_keybaord(bot_id: int, channe
 async def get_inline_bot_channel_post_menu_extra_settings_keyboard(bot_id: int,
                                                                    channel_id: int,
                                                                    is_notification_sound: bool,
-                                                                   is_link_preview: bool) -> InlineKeyboardMarkup:
+                                                                   is_link_preview: bool,
+                                                                   is_contest: bool = False) -> InlineKeyboardMarkup:
     callback_metadata = f":{bot_id}:{channel_id}"
+    if is_contest:
+        channel_post = await channel_post_db.get_channel_post(channel_id, True)
+        callback_metadata += f":{channel_post.channel_post_id}"
     notification_text = "Звуковое уведомление: "
     if is_notification_sound:
         notification_text += "вкл"
@@ -685,9 +729,11 @@ async def get_inline_bot_channel_post_menu_extra_settings_keyboard(bot_id: int,
     ])
 
 
-async def get_inline_bot_channel_post_menu_accept_deleting_keyboard(bot_id: int,
-                                                                    channel_id: int) -> InlineKeyboardMarkup:
+async def get_inline_bot_channel_post_menu_accept_deleting_keyboard(bot_id: int, channel_id: int, is_contest: bool = False) -> InlineKeyboardMarkup:
     callback_metadata = f":{bot_id}:{channel_id}"
+    if is_contest:
+        channel_post = await channel_post_db.get_channel_post(channel_id, True)
+        callback_metadata += f":{channel_post.channel_post_id}"
 
     return InlineKeyboardMarkup(inline_keyboard=[
         [
@@ -699,3 +745,69 @@ async def get_inline_bot_channel_post_menu_accept_deleting_keyboard(bot_id: int,
             )
         ]
     ])
+
+
+async def get_contest_menu_keyboard(bot_id: int, channel_id: int, is_contest: bool = True) -> InlineKeyboardMarkup:
+    callback_metadata = f":{bot_id}:{channel_id}"
+    if is_contest:
+        channel_post = await channel_post_db.get_channel_post(channel_id, True)
+        callback_metadata += f":{channel_post.channel_post_id}"
+    keyboard = [
+        [
+            InlineKeyboardButton(
+                text="Рандомайзер", callback_data="channel_menu:pick_random_contest" + callback_metadata
+            ),
+            InlineKeyboardButton(
+                text="Спонсорство", callback_data="channel_menu:pick_sponsor_contest" + callback_metadata
+            )
+        ],
+        [
+            InlineKeyboardButton(
+                text="Длительность конкурса", callback_data="channel_menu:get_contest_end_date" + callback_metadata
+            ),
+        ],
+        [
+            InlineKeyboardButton(
+                text="Кол-во победителей", callback_data="channel_menu:get_contest_winner_amount" + callback_metadata),
+            InlineKeyboardButton(
+                text="Текст кнопки участия", callback_data="channel_menu:get_contest_button_text" + callback_metadata)
+        ],
+    ]
+    if channel_post.contest_type == ContestTypeValues.SPONSOR:
+        keyboard.append([
+            InlineKeyboardButton(
+                text="Выбрать спонсоров", callback_data="channel_menu:get_sponsors" + callback_metadata
+            )
+        ])
+    keyboard.append([
+        InlineKeyboardButton(
+            text="🔙 Назад", callback_data="channel_menu:back_to_editing_channel_post" + callback_metadata
+        )
+    ],)
+
+    return InlineKeyboardMarkup(inline_keyboard=keyboard)
+
+
+async def get_contest_inline_join_button(channel_id: int):
+    try:
+        channel_post = await channel_post_db.get_channel_post(channel_id=channel_id, is_contest=True)
+        users = await contest_user_db.get_contest_users_by_contest_id(channel_post.channel_post_id)
+        return InlineKeyboardMarkup(
+            inline_keyboard=[
+                [
+                    InlineKeyboardButton(
+                        text=f"{channel_post.button_text.split()[0]} ({len(users)})", callback_data=f"{channel_post.button_query}"
+                    ),
+                ],
+            ]
+        )
+    except ChannelPostNotFound:
+        return InlineKeyboardMarkup(
+            inline_keyboard=[
+                [
+                    InlineKeyboardButton(
+                        text="Конкурс закончен", callback_data=f"{channel_post.button_query}"
+                    ),
+                ],
+            ]
+        )
