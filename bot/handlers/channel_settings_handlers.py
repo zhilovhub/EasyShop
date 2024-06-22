@@ -21,7 +21,7 @@ from database.models.channel_post_model import ChannelPostSchemaWithoutId, Conte
 from database.models.channel_post_media_files_model import ChannelPostMediaFileSchema
 from aiogram.utils.deep_linking import create_start_link
 from bot.keyboards import *
-from utils.contest_result import generate_contest_result
+from bot.utils.contest_result import generate_contest_result
 
 
 class MailingMessageType(Enum):
@@ -672,6 +672,7 @@ async def editing_contest_sponsor_url(message: Message, state: FSMContext):
                 reply_markup=await get_contest_menu_keyboard(bot_id, channel_id, is_contest=True)
             )
             await state.set_state(States.BOT_MENU)
+            await state.set_data(state_data)
         else:
             if message_text.startswith("https://t.me/addlist/") is False:
                 return await message.answer("Вы ввели не ту ссылку, попробуйте еще раз.")
@@ -719,6 +720,7 @@ async def editing_sponsor_channel_links(message: Message, state: FSMContext):
                 reply_markup=await get_contest_menu_keyboard(bot_id, channel_id, is_contest=True)
             )
             await state.set_state(States.BOT_MENU)
+            await state.set_data(state_data)
         else:
             ids_list = []
             links = [link.strip() for link in message_text.split("\n")]
@@ -790,6 +792,7 @@ async def editing_competition_winner_amount(message: Message, state: FSMContext)
                 reply_markup=await get_contest_menu_keyboard(bot_id, channel_id, is_contest=True)
             )
             await state.set_state(States.BOT_MENU)
+            await state.set_data(state_data)
         else:
             try:
                 winner_amount = int(message_text)
@@ -855,6 +858,7 @@ async def editing_competition_end_date(message: Message, state: FSMContext):
                 reply_markup=await get_contest_menu_keyboard(bot_id, channel_id, is_contest=True)
             )
             await state.set_state(States.BOT_MENU)
+            await state.set_data(state_data)
         else:
             try:
                 datetime_obj = datetime.strptime(
@@ -923,6 +927,7 @@ async def editing_channel_post_delay_date_handler(message: Message, state: FSMCo
                 reply_markup=await get_inline_bot_channel_post_menu_keyboard(bot_id=bot_id, channel_id=channel_id, is_contest=channel_post.is_contest)
             )
             await state.set_state(States.BOT_MENU)
+            await state.set_data(state_data)
         else:
             try:
                 datetime_obj = datetime.strptime(
@@ -1069,6 +1074,7 @@ async def editing_post_message_handler(message: Message, state: FSMContext):
                 reply_markup=await get_inline_bot_channel_post_menu_keyboard(bot_id=bot_id, channel_id=channel_id, is_contest=channel_post.is_contest)
             )
             await state.set_state(States.BOT_MENU)
+            await state.set_data(state_data)
         else:
             channel_post.description = message.html_text
             media_files = await channel_post_media_file_db.get_all_channel_post_media_files(channel_post_id=channel_post.channel_post_id)
@@ -1309,6 +1315,7 @@ async def editing_channel_post_button_text_handler(message: Message, state: FSMC
                 reply_markup=await get_contest_menu_keyboard(bot_id, channel_id, is_contest=True)
             )
             await state.set_state(States.BOT_MENU)
+            await state.set_data(state_data)
         else:
             message_text = message.text
             if channel_post.is_contest:
@@ -1386,6 +1393,7 @@ async def editing_channel_post_button_url_handler(message: Message, state: FSMCo
                 reply_markup=await get_inline_bot_channel_post_menu_keyboard(bot_id, channel_id, channel_post.is_contest)
             )
             await state.set_state(States.BOT_MENU)
+            await state.set_data(state_data)
         else:
             pattern = r"(?i)\b((?:https?://|www\d{0,3}[.]|[a-z0-9.\-]+[.][a-z]{2,4}/)(?:[^\s()<>]+|\(([^\s()<>]+|(\([^\s()<>]+\)))*\))+(?:\(([^\s()<>]+|(\([^\s()<>]+\)))*\)|[^\s`!()\[\]{};:'\".,<>?«»“”‘’]))"
             if not re.fullmatch(pattern, message.text):
