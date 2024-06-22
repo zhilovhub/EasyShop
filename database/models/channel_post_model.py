@@ -2,7 +2,7 @@ import datetime
 from typing import Optional
 
 from pydantic import BaseModel, Field, validate_call, ConfigDict
-from sqlalchemy import BigInteger, Column, ForeignKey, select, insert, delete, BOOLEAN, ForeignKeyConstraint, String, \
+from sqlalchemy import BigInteger, Column, Dialect, ForeignKey, TypeDecorator, Unicode, select, insert, delete, BOOLEAN, ForeignKeyConstraint, String, \
     DateTime, update
 from sqlalchemy.ext.asyncio import AsyncEngine
 
@@ -13,6 +13,29 @@ from database.models.dao import Dao
 from enum import Enum
 from database.models.channel_model import Channel
 from logs.config import extra_params
+
+
+class ContestTypeValues(Enum):
+    RANDOM = "random"
+    SPONSOR = "sponsor"
+    NONE = "none"
+
+
+class ContestType(TypeDecorator):
+    impl = Unicode
+    cache_ok = True
+
+    def process_bind_param(self, value: Optional[ContestTypeValues], dialect: Dialect) -> String:
+        return value.value
+
+    def process_result_value(self, value: Optional[String], dialect: Dialect) -> Optional[ContestTypeValues]:
+        match value:
+            case ContestTypeValues.RANDOM.value:
+                return ContestTypeValues.RANDOM
+            case ContestTypeValues.SPONSOR.value:
+                return ContestTypeValues.SPONSOR
+            case ContestTypeValues.NONE.value:
+                return ContestTypeValues.NONE
 
 
 class ChannelPostNotFound(Exception):
@@ -33,6 +56,7 @@ class ChannelPost(Base):
     has_button = Column(BOOLEAN, default=False)
     button_text = Column(String, default="Shop")
     button_url = Column(String)
+    button_query = Column(String, default="contest_join", nullable=False)
 
     created_at = Column(DateTime, nullable=False)
 
@@ -48,6 +72,14 @@ class ChannelPost(Base):
     send_date = Column(DateTime, nullable=True)
     job_id = Column(String, nullable=True)
 
+    # Contest fields
+    is_contest = Column(BOOLEAN, default=False)
+    contest_type = Column(ContestType, nullable=True)
+    contest_end_date = Column(DateTime, nullable=True)
+    contest_winner_amount = Column(BigInteger, nullable=True)
+
+    contest_sponsor_url = Column(String, nullable=True)
+
 
 class ChannelPostSchemaWithoutId(BaseModel):
     model_config = ConfigDict(from_attributes=True)
@@ -61,6 +93,7 @@ class ChannelPostSchemaWithoutId(BaseModel):
     has_button: bool = False
     button_text: Optional[str | None] = None
     button_url: Optional[str | None] = None
+    button_query: str = "contest_join"
 
     created_at: datetime.datetime = datetime.datetime.now().replace(tzinfo=None)
 
@@ -73,6 +106,12 @@ class ChannelPostSchemaWithoutId(BaseModel):
     send_date: Optional[datetime.datetime | None] = None
     job_id: Optional[str | None] = None
 
+    is_contest: bool = False
+    contest_type: Optional[ContestTypeValues | None] = None
+    contest_end_date: Optional[datetime.datetime | None] = None
+    contest_winner_amount: Optional[int | None] = None
+    contest_sponsor_url: Optional[str | None] = None
+
 
 class ChannelPostSchema(ChannelPostSchemaWithoutId):
     channel_post_id: int = Field(frozen=True)
@@ -82,10 +121,10 @@ class ChannelPostDao(Dao):  # TODO write tests
     def __init__(self, engine: AsyncEngine, logger) -> None:
         super().__init__(engine, logger)
 
-    @validate_call(validate_return=True)
-    async def get_channel_post(self, channel_id: int) -> ChannelPostSchema:
+    @ validate_call(validate_return=True)
+    async def get_channel_post(self, channel_id: int, is_contest: bool = False) -> ChannelPostSchema:
         async with self.engine.begin() as conn:
-            raw_res = await conn.execute(select(ChannelPost).where(ChannelPost.channel_id == channel_id, ChannelPost.is_sent == False))
+            raw_res = await conn.execute(select(ChannelPost).where(ChannelPost.channel_id == channel_id, ChannelPost.is_sent == False, ChannelPost.is_contest == is_contest))
         await self.engine.dispose()
 
         raw_res = raw_res.fetchone()

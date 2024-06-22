@@ -1,7 +1,7 @@
 name: ci
 on:
   push:
-    branches: [ chanel ]
+    branches: [ channel_contest ]
 
 jobs:
 
