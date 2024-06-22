@@ -19,6 +19,7 @@ from database.models.bot_model import BotNotFound
 from database.models.custom_bot_user_model import CustomBotUserNotFound
 from database.models.order_model import OrderSchema, OrderStatusValues, OrderNotFound, OrderItem
 from database.models.custom_ad_model import CustomAdSchemaWithoutId, CustomAdSchema
+from database.models.product_model import NotEnoughProductsInStockToReduce
 
 from logs.config import custom_bot_logger, extra_params
 
@@ -34,6 +35,7 @@ async def process_web_app_request(event: Message):
         data = json.loads(event.web_app_data.data)
 
         bot_id = data["bot_id"]
+        bot_data = await bot_db.get_bot(int(bot_id))
 
         custom_bot_logger.info(
             f"user_id={user_id}: received web app data: {data}",
@@ -46,6 +48,8 @@ async def process_web_app_request(event: Message):
 
         items: dict[int, OrderItem] = {}
 
+        zero_products = []
+
         for item_id, item in data['raw_items'].items():
             product = await product_db.get_product(item_id)
             chosen_options = {}
@@ -56,6 +60,18 @@ async def process_web_app_request(event: Message):
                 chosen_options[option_title] = item['chosen_option']
             items[item_id] = OrderItem(amount=item['amount'], used_extra_option=used_options,
                                        extra_options=chosen_options)
+            if bot_data.settings and "auto_reduce" in bot_data.settings and bot_data.settings["auto_reduce"] == True:
+                if product.count < item['amount']:
+                    raise NotEnoughProductsInStockToReduce(product, item['amount'])
+                product.count -= item['amount']
+                if product.count == 0:
+                    zero_products.append(product)
+                await product_db.update_product(product)
+
+        if zero_products:
+            msg = await main_bot.send_message(bot_data.created_by,
+                                              "⚠️ Внимание, после этого заказа кол-во следующих товаров будет равно 0.")
+            await msg.reply("\n".join([f"{p.name} [{p.id}]" for p in zero_products]))
 
         data['items'] = items
 
@@ -75,6 +91,9 @@ async def process_web_app_request(event: Message):
                 user_id=user_id, bot_id=bot_id, order_id=order.id)
         )
     except Exception as e:
+        if isinstance(e, NotEnoughProductsInStockToReduce):
+            await event.answer(
+                f":(\nК сожалению на складе недостаточно <b>{product.name}</b> для выполнения Вашего заказа.")
         await event.answer("Произошла ошибка при создании заказа, администраторы уведомлены.")
 
         try:

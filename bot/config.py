@@ -37,3 +37,5 @@ TIMEZONE = os.getenv("TIMEZONE")
 BOT_DEBUG_MODE = bool(int(os.getenv("BOT_DEBUG_MODE")))
 
 LOGS_PATH = os.getenv("PROJECT_ROOT") + "logs/"
+
+FILES_PATH = os.getenv("FILES_PATH")

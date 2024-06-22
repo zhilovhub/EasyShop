@@ -36,6 +36,15 @@ channel_menu_router.callback_query.middleware(CheckSubscriptionMiddleware())
 channel_menu_router.message.middleware(ErrorMiddleware())
 channel_menu_router.callback_query.middleware(ErrorMiddleware())
 
+stock_menu_router = Router(name="stock_menu")  # only for SUBSCRIBERS
+stock_menu_router.message.filter(ChatTypeFilter(chat_type="private"))
+stock_menu_router.message.middleware(CheckSubscriptionMiddleware())
+stock_menu_router.callback_query.middleware(CheckSubscriptionMiddleware())
+stock_menu_router.message.middleware(ErrorMiddleware())
+stock_menu_router.callback_query.middleware(ErrorMiddleware())
+stock_menu_router.message.outer_middleware(log_middleware)
+stock_menu_router.callback_query.outer_middleware(log_middleware)
+
 subscribe_router = Router(name="subscribe_router")
 subscribe_router.message.filter(ChatTypeFilter(chat_type="private"))
 subscribe_router.message.outer_middleware(log_middleware)

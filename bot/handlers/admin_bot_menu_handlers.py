@@ -15,7 +15,7 @@ from aiogram.utils.token import validate_token, TokenValidationError
 from aiogram.types import Message, FSInputFile, CallbackQuery
 from aiogram.fsm.context import FSMContext
 
-from bot.main import bot, user_db, bot_db, product_db, order_db, custom_bot_user_db, QUESTION_MESSAGES
+from bot.main import bot, user_db, bot_db, product_db, order_db, custom_bot_user_db, QUESTION_MESSAGES, stock_manager
 from bot.keyboards import *
 from bot.exceptions import InstanceAlreadyExists
 from bot.states.states import States
@@ -30,7 +30,7 @@ from custom_bots.multibot import storage as custom_bot_storage
 from database.models.bot_model import BotSchemaWithoutId
 from database.models.mailing_model import MailingSchemaWithoutId
 from database.models.order_model import OrderSchema, OrderNotFound, OrderItem
-from database.models.product_model import ProductWithoutId
+from database.models.product_model import ProductWithoutId, NotEnoughProductsInStockToReduce
 
 import random
 
@@ -49,11 +49,16 @@ async def process_web_app_request(event: Message):
         data = json.loads(event.web_app_data.data)
         logger.info(f"receive web app data: {data}")
 
+        bot_id = data["bot_id"]
+        bot_data = await bot_db.get_bot(int(bot_id))
+
         data["from_user"] = user_id
         data["payment_method"] = "Картой Онлайн"
         data["status"] = "backlog"
 
         items: dict[int, OrderItem] = {}
+
+        zero_products = []
 
         for item_id, item in data['raw_items'].items():
             product = await product_db.get_product(item_id)
@@ -64,7 +69,18 @@ async def process_web_app_request(event: Message):
                 option_title = list(product.extra_options.items())[0][0]
                 chosen_options[option_title] = item['chosen_option']
             items[item_id] = OrderItem(amount=item['amount'], used_extra_option=used_options,
-                                      extra_options=chosen_options)
+                                       extra_options=chosen_options)
+            if bot_data.settings and "auto_reduce" in bot_data.settings and bot_data.settings["auto_reduce"] == True:
+                if product.count < item['amount']:
+                    raise NotEnoughProductsInStockToReduce(product, item['amount'])
+                product.count -= item['amount']
+                if product.count == 0:
+                    zero_products.append(product)
+                await product_db.update_product(product)
+
+        if zero_products:
+            msg = await event.answer("⚠️ Внимание, после этого заказа кол-во следующих товаров будет равно 0.")
+            await msg.reply("\n".join([f"{p.name} [{p.id}]" for p in zero_products]))
 
         data['items'] = items
 
@@ -75,13 +91,15 @@ async def process_web_app_request(event: Message):
         order = OrderSchema(**data)
 
         logger.info(f"order with id #{order.id} created")
-    except Exception:
+    except Exception as e:
+        if isinstance(e, NotEnoughProductsInStockToReduce):
+            await event.answer(
+                f":(\nК сожалению на складе недостаточно <b>{product.name}</b> для выполнения Вашего заказа.")
         logger.warning("error while creating order", exc_info=True)
         return await event.answer("Произошла ошибка при создании заказа, попробуйте еще раз.")
-
     try:
         await send_new_order_notify(order, user_id)
-    except Exception as ex:
+    except Exception:
         logger.warning("error while sending test order notification", exc_info=True)
 
 
@@ -127,7 +145,8 @@ async def handle_reply_to_question(message: Message, state: FSMContext):
 async def handle_callback(query: CallbackQuery, state: FSMContext):
     state_data = await state.get_data()
     data = query.data.split(":")
-    bot_token = (await bot_db.get_bot(state_data['bot_id'])).token
+    bot_data = await bot_db.get_bot(state_data['bot_id'])
+    bot_token = bot_data.token
 
     try:
         order = await order_db.get_order(data[1])
@@ -175,6 +194,24 @@ async def handle_callback(query: CallbackQuery, state: FSMContext):
                     is_admin=True
                 ), reply_markup=None if data[0] in ("order_finish", "order_cancel") else
                 create_change_order_status_kb(order.id, int(data[2]), int(data[3]), order.status))
+
+            if data[0] in ("order_finish",):
+                if bot_data.settings and "auto_reduce" in bot_data.settings and bot_data.settings[
+                    'auto_reduce'] == True:
+                    zero_products = []
+                    for item_id, item in order.items.items():
+                        product = await product_db.get_product(item_id)
+                        if product.count == 0:
+                            zero_products.append(product)
+                    if zero_products:
+                        msg = await query.message.answer(
+                            "⚠️ Внимание, кол-во следующих товаров на складе равно 0.")
+                        await msg.reply("\n".join([f"{p.name} [{p.id}]" for p in zero_products]))
+            if data[0] in ("order_cancel",):
+                for item_id, item in order.items.items():
+                    product = await product_db.get_product(item_id)
+                    product.count += item.amount
+                    await product_db.update_product(product)
 
             await Bot(bot_token, parse_mode=ParseMode.HTML).send_message(
                 chat_id=data[3],
@@ -333,7 +370,13 @@ async def bot_menu_callback_handler(query: CallbackQuery, state: FSMContext):
                 reply_markup=await get_inline_bot_mailing_menu_keyboard(bot_id=extra_id)
             )
         case "goods":
-            await query.message.edit_text("Меню склада:", reply_markup=get_inline_bot_goods_menu_keyboard(extra_id))
+            bot_data = await bot_db.get_bot(extra_id)
+            if not bot_data.settings or "auto_reduce" not in bot_data.settings:
+                button_data = False
+            else:
+                button_data = True
+            await query.message.edit_text("Меню склада:",
+                                          reply_markup=get_inline_bot_goods_menu_keyboard(extra_id, button_data))
         case "goods_count":
             products = await product_db.get_all_products(extra_id)
             await query.message.answer(f"Количество товаров: {len(products)}")
@@ -374,9 +417,43 @@ async def bot_menu_callback_handler(query: CallbackQuery, state: FSMContext):
             channel_id = int(query.data.split(":")[-1])
             channel_username = (await custom_tg_bot.get_chat(channel_id)).username
             await query.message.edit_text(
-                MessageTexts.BOT_CHANNEL_MENU_MESSAGE.value.format(channel_username, (await custom_tg_bot.get_me()).username),
+                MessageTexts.BOT_CHANNEL_MENU_MESSAGE.value.format(channel_username,
+                                                                   (await custom_tg_bot.get_me()).username),
                 reply_markup=await get_inline_channel_menu_keyboard(custom_bot.bot_id, int(query.data.split(":")[-1]))
             )
+        case "stock_manage":
+            await query.message.edit_text(
+                MessageTexts.STOCK_STATE_MESSAGE.value,
+                reply_markup=None
+            )
+            await state.set_state(States.STOCK_MANAGE)
+            await state.set_data({'bot_id': extra_id})
+            xlsx_file_path, photo_path = await stock_manager.export_xlsx(bot_id=extra_id, with_pictures=False)
+            await query.message.answer_document(document=FSInputFile(xlsx_file_path),
+                                                caption="Список товаров на складе",
+                                                reply_markup=get_stock_back_keyboard())
+        case "auto_reduce":
+            bot_data = await bot_db.get_bot(extra_id)
+            if not bot_data.settings:
+                bot_data.settings = {}
+            if "auto_reduce" not in bot_data.settings:
+                bot_data.settings["auto_reduce"] = True
+            else:
+                bot_data.settings["auto_reduce"] = not bot_data.settings["auto_reduce"]
+            await bot_db.update_bot(bot_data)
+            if bot_data.settings["auto_reduce"]:
+                await query.message.answer("✅ Автоуменьшение кол-ва товаров после заказа <b>включено</b>.")
+            else:
+                await query.message.answer("❌ Автоуменьшение кол-ва товаров после заказа <b>выключено</b>.")
+            try:
+                await query.message.edit_text(query.message.text,
+                                              reply_markup=get_inline_bot_goods_menu_keyboard(extra_id,
+                                                                                              bot_data.settings[
+                                                                                                  "auto_reduce"]),
+                                              parse_mode=ParseMode.HTML)
+            except:
+                # handle telegram api error "message not modified"
+                pass
 
 
 @admin_bot_menu_router.message(States.BOT_MENU)

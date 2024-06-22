@@ -29,11 +29,15 @@ class ProductNotFound(Exception):
 class FilterNotFound(Exception):
     """Raised when filter name provided to ProductFilter class is not a valid filter name from filters list"""
 
-    def __init__(self, filter_name: str, message: str="Provided filter name ('{FILTER_NAME}') not found"):
+    def __init__(self, filter_name: str, message: str = "Provided filter name ('{FILTER_NAME}') not found"):
         self.filter_name = filter_name
         self.message = message.replace("{FILTER_NAME}", filter_name.lower())
         super().__init__(self.message)
 
+
+class NotEnoughProductsInStockToReduce(Exception):
+    """Raised when auto_reduce on order option is enabled and product reduce amount is more than product count"""
+    pass
 
 # class CategoryFilterNotFound(Exception):
 #     """Raised when category name provided to ProductFilter class is not exist in categories table"""
@@ -104,7 +108,7 @@ class ProductWithoutId(BaseModel):
     price: int
     count: int
     picture: Optional[list[str] | None] = None
-    extra_options: Optional[dict | None] = None
+    extra_options: Optional[dict | None] = {}
 
 
 class ProductSchema(ProductWithoutId):
@@ -119,6 +123,22 @@ class ProductSchema(ProductWithoutId):
         return f"<b>{self.name} {self.price}₽ x {count}шт</b>"
 
 
+class NotEnoughProductsInStockToReduce(Exception):
+    """Raised when auto_reduce on order option is enabled and product reduce amount is more than product count"""
+
+    def __init__(self, product: ProductSchema, amount: int,
+                 message: str = "Product with name ('{PRODUCT_NAME}') and id ({PRODUCT_ID}) has not enough items "
+                                "in stock (need: {ITEMS_NEED}, stock: {ITEMS_STOCK})"):
+        self.message = message.replace("{PRODUCT_NAME}", product.name.lower()).replace(
+            "{PRODUCT_ID}", str(product.id)
+        ).replace(
+            "{ITEMS_NEED}", str(amount)
+        ).replace(
+            "{ITEMS_STOCK}", str(product.count)
+        )
+        super().__init__(self.message)
+
+
 class ProductDao(Dao):
     def __init__(self, engine: AsyncEngine, logger) -> None:
         super().__init__(engine, logger)
@@ -127,10 +147,10 @@ class ProductDao(Dao):
     async def get_all_products(self, bot_id: int, price_min: int = 0, price_max: int = 2147483647,
                                filters: list[ProductFilter] | None = None) -> list[ProductSchema]:
         sql_select = select(Product).where(and_(
-                    and_(
-                        Product.bot_id == bot_id, Product.price >= price_min)
-                    , Product.price <= price_max)
-                )
+            and_(
+                Product.bot_id == bot_id, Product.price >= price_min)
+            , Product.price <= price_max)
+        )
 
         if filters:
             for product_filter in filters:
@@ -144,7 +164,8 @@ class ProductDao(Dao):
                             else:
                                 sql_select = sql_select.order_by(asc(Product.price))
                         case "search":
-                            sql_select = sql_select.filter(Product.name.ilike('%' + product_filter.search_word.lower() + '%'))
+                            sql_select = sql_select.filter(
+                                Product.name.ilike('%' + product_filter.search_word.lower() + '%'))
                         case "rating":
                             pass
                         case "popular":
@@ -201,22 +222,28 @@ class ProductDao(Dao):
         return product_id
 
     @validate_call
-    async def upsert_product(self, new_product: ProductWithoutId) -> int:  # TODO write tests for it
+    async def upsert_product(self, new_product: ProductWithoutId,
+                             replace_duplicates: bool = False) -> int:  # TODO write tests for it
         if type(new_product) not in (ProductWithoutId, ProductSchema):
             raise InvalidParameterFormat("new_product must be a subclass of ProductWithoutId")
 
         new_product_dict = new_product.model_dump(exclude={"id"})
         async with self.engine.begin() as conn:
-            upsert_query = upsert(Product).values(new_product_dict).on_conflict_do_update(
-                constraint=f"products_name_key",
-                set_=new_product_dict
-            )
-            product_id = (await conn.execute(upsert_query)).inserted_primary_key[0]
-
-        self.logger.debug(
-            f"bot_id={new_product.bot_id}: product {product_id} is upserted",
-            extra=extra_params(product_id=product_id, bot_id=new_product.bot_id)
-        )
+            if replace_duplicates:
+                upsert_query = upsert(Product).values(new_product_dict).on_conflict_do_update(
+                    constraint=f"products_name_key",
+                    set_=new_product_dict
+                )
+                product_id = (await conn.execute(upsert_query)).inserted_primary_key[0]
+                self.logger.debug(
+                    f"bot_id={new_product.bot_id}: product {product_id} is upserted",
+                    extra=extra_params(product_id=product_id, bot_id=new_product.bot_id)
+                )
+            else:
+                upsert_query = upsert(Product).values(new_product_dict).on_conflict_do_nothing(
+                    constraint=f"products_name_key",
+                )
+                product_id = -1
 
         return product_id
 
