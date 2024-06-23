@@ -7,8 +7,8 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator, ValidationEr
 class ExampleKeyboard:
     class Callback(BaseModel):
         class ActionEnum(Enum):
-            EXAMPLE = ("button_text", "example_action")
-            EXAMPLE2 = ("button_text2", "example_action2")
+            EXAMPLE = "example_action"
+            EXAMPLE2 = "example_action2"
 
         model_config = ConfigDict(from_attributes=True)
 
@@ -19,19 +19,19 @@ class ExampleKeyboard:
         # bot_id: int
         # some_extra_parameter: str
 
-        @staticmethod
-        def callback_validator(json_string: str) -> bool:
-            try:
-                ExampleKeyboard.Callback.model_validate_json(json_string)
-                return True
-            except ValidationError:
-                return False
-
     @staticmethod
-    def callback_json(action: str, some_arg: str) -> str:  # add more arguments here if you need
+    def callback_json(action: Callback.ActionEnum, some_arg: str) -> str:  # add more arguments here if you need
         return ExampleKeyboard.Callback(
             a=action, some_arg=some_arg
         ).model_dump_json()
+
+    @staticmethod
+    def callback_validator(json_string: str) -> bool:
+        try:
+            ExampleKeyboard.Callback.model_validate_json(json_string)
+            return True
+        except ValidationError:
+            return False
 
     @staticmethod
     async def get_example_keyboard(some_arg: str) -> InlineKeyboardMarkup:
@@ -41,9 +41,9 @@ class ExampleKeyboard:
             inline_keyboard=[
                 [
                     InlineKeyboardButton(
-                        text=actions.EXAMPLE.value[0],
+                        text="Some text",
                         callback_data=ExampleKeyboard.callback_json(
-                            actions.EXAMPLE.value, some_arg
+                            actions.EXAMPLE, some_arg
                         )
                     )
                 ]
