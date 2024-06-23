@@ -4,6 +4,7 @@ from aiogram.fsm.context import FSMContext
 from aiogram.utils.media_group import MediaGroupBuilder
 from bot.states import States
 from bot.keyboards import *
+from bot.keyboards.main_menu_keyboards import ReplyBotMenuKeyboard, InlineBotMenuKeyboard
 from bot.main import stock_manager, bot, bot_db
 from config import FILES_PATH
 from datetime import datetime
@@ -15,11 +16,11 @@ async def back_to_menu(message: Message, state: FSMContext):
     user_bot_db = await bot_db.get_bot(int(bot_id))
     user_bot = Bot(user_bot_db.token)
     user_bot_data = await user_bot.get_me()
-    msg = await message.answer("Возвращаюсь в меню...", reply_markup=get_reply_bot_menu_keyboard(bot_id))
+    msg = await message.answer("Возвращаюсь в меню...", reply_markup=ReplyBotMenuKeyboard.get_reply_bot_menu_keyboard(bot_id))
     # await msg.delete()
     await message.answer(
         MessageTexts.BOT_MENU_MESSAGE.value.format(user_bot_data.username),
-        reply_markup=await get_inline_bot_menu_keyboard(bot_id)
+        reply_markup=await InlineBotMenuKeyboard.get_inline_bot_menu_keyboard(bot_id)
     )
     await state.set_state(States.BOT_MENU)
     await state.set_data({'bot_id': bot_id})

@@ -7,6 +7,7 @@ from aiogram.fsm.context import FSMContext
 
 from bot.main import bot, cache_resources_file_id_store, user_db, bot_db, adv_db
 from bot.keyboards import *
+from bot.keyboards.main_menu_keyboards import InlineBotMenuKeyboard
 from bot.states.states import States
 from bot.handlers.routers import commands_router
 from bot.utils.admin_group import send_event, EventTypes
@@ -96,7 +97,7 @@ async def start_command_handler(message: Message, state: FSMContext):
         user_bot_data = await user_bot.get_me()
         await message.answer(
             MessageTexts.BOT_MENU_MESSAGE.value.format(user_bot_data.username),
-            reply_markup=await get_inline_bot_menu_keyboard(user_bots[0].bot_id)
+            reply_markup=await InlineBotMenuKeyboard.get_inline_bot_menu_keyboard(user_bots[0].bot_id)
         )
         await state.set_state(States.BOT_MENU)
         await state.set_data({'bot_id': bot_id})

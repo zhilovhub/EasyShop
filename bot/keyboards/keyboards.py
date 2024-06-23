@@ -1,5 +1,4 @@
 from bot.main import contest_user_db
-from enum import Enum
 from typing import Optional
 
 from aiogram.utils.keyboard import InlineKeyboardMarkup, InlineKeyboardButton, ReplyKeyboardMarkup, KeyboardButton
@@ -99,28 +98,6 @@ def get_confirm_media_upload_keyboard() -> ReplyKeyboardMarkup:
     return ReplyKeyboardMarkup(keyboard=[
         [KeyboardButton(text="✅ Готово"), KeyboardButton(text="Очистить")],
     ], resize_keyboard=True)
-
-
-class ReplyBotMenuButtons(Enum):
-    SETTINGS = "⚙ Настройки бота"
-    CONTACTS = "☎ Контакты"
-    SHOP = "🛍 Мой магазин"
-
-
-def get_reply_bot_menu_keyboard(bot_id: int) -> ReplyKeyboardMarkup:
-    return ReplyKeyboardMarkup(
-        keyboard=[
-            [
-                KeyboardButton(text=ReplyBotMenuButtons.SETTINGS.value),
-                KeyboardButton(text=ReplyBotMenuButtons.CONTACTS.value)
-            ],
-            [
-                KeyboardButton(text=ReplyBotMenuButtons.SHOP.value,
-                               web_app=make_webapp_info(bot_id=bot_id))
-            ]
-        ],
-        resize_keyboard=True
-    )
 
 
 def get_inline_bot_goods_menu_keyboard(bot_id: int, autoreduce: bool = False) -> InlineKeyboardMarkup:
@@ -478,62 +455,6 @@ async def get_inline_bot_mailing_menu_keyboard(bot_id: int) -> InlineKeyboardMar
             ),
         ]
     ])
-
-
-async def get_inline_bot_menu_keyboard(bot_id: int) -> InlineKeyboardMarkup:
-    callback_metadata = f":{bot_id}"
-
-    channel_inline_button = InlineKeyboardButton(
-        text="📢 Добавить в канал",
-        callback_data="bot_menu:add_to_channel",
-        url=f"https://t.me/{await get_bot_username(bot_id)}?startchannel"
-    ) if not await get_bot_channels(bot_id=bot_id) else \
-        InlineKeyboardButton(
-            text="📢 Каналы бота",
-            callback_data="bot_menu:channels" + callback_metadata
-        )
-
-    mailing_inline_button = InlineKeyboardButton(
-        text="💌 Создать рассылку в ЛС",
-        callback_data="bot_menu:mailing_create" + callback_metadata,
-    ) if not await get_bot_mailing(bot_id=bot_id) else \
-        InlineKeyboardButton(
-            text="💌 Рассылка в ЛС",
-            callback_data="bot_menu:mailing_menu" + callback_metadata
-        )
-
-    return InlineKeyboardMarkup(
-        inline_keyboard=[
-            [
-                InlineKeyboardButton(
-                    text="👋 Приветственный текст", callback_data="bot_menu:start_text" + callback_metadata),
-                InlineKeyboardButton(
-                    text="🗣 Текст объяснения", callback_data="bot_menu:explain_text" + callback_metadata)
-            ],
-            [
-                InlineKeyboardButton(
-                    text="⛔ Остановить бота", callback_data="bot_menu:stop_bot" + callback_metadata)
-                if await get_bot_status(bot_id) == "online" else InlineKeyboardButton(
-                    text="🚀 Запустить бота", callback_data="bot_menu:start_bot" + callback_metadata),
-            ],
-            [
-                InlineKeyboardButton(
-                    text="📊 Статистика", callback_data="bot_menu:statistic" + callback_metadata),
-                InlineKeyboardButton(
-                    text="📦 Мои товары", callback_data="bot_menu:goods" + callback_metadata)
-            ],
-            [
-                channel_inline_button
-            ],
-            [
-                mailing_inline_button,
-            ],
-            [
-                InlineKeyboardButton(
-                    text="🗑 Удалить бота", callback_data="bot_menu:delete_bot" + callback_metadata)
-            ]
-        ],
-    )
 
 
 CUSTOM_BOT_KEYBOARD_BUTTONS = {

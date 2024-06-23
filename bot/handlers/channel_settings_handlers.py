@@ -2,6 +2,7 @@ from aiogram.client.bot import DefaultBotProperties
 from datetime import timedelta
 import re
 from datetime import datetime
+from enum import Enum
 
 from aiogram.enums import ParseMode
 
@@ -22,6 +23,7 @@ from database.models.channel_post_model import ChannelPostSchemaWithoutId, Conte
 from database.models.channel_post_media_files_model import ChannelPostMediaFileSchema
 from aiogram.utils.deep_linking import create_start_link
 from bot.keyboards import *
+from bot.keyboards.main_menu_keyboards import InlineBotMenuKeyboard, ReplyBotMenuKeyboard
 from bot.utils.contest_result import generate_contest_result
 
 
@@ -72,13 +74,13 @@ async def channel_menu_callback_handler(query: CallbackQuery, state: FSMContext)
                 await query.message.answer(f"Вышел из канала {channel_username}.")
                 await query.message.answer(
                     MessageTexts.BOT_MENU_MESSAGE.value.format((await Bot(custom_bot.token).get_me()).username),
-                    reply_markup=await get_inline_bot_menu_keyboard(bot_id)
+                    reply_markup=await InlineBotMenuKeyboard.get_inline_bot_menu_keyboard(bot_id)
                 )
             else:
                 await query.message.answer(f"Произошла ошибка при выходе из канала {channel_username}")
                 await query.message.answer(
                     MessageTexts.BOT_MENU_MESSAGE.value.format((await Bot(custom_bot.token).get_me()).username),
-                    reply_markup=await get_inline_bot_menu_keyboard(bot_id)
+                    reply_markup=await InlineBotMenuKeyboard.get_inline_bot_menu_keyboard(bot_id)
                 )
     # TODO Fix with post_type parameter in state_data
     # Channel Post Validation:
@@ -122,7 +124,7 @@ async def channel_menu_callback_handler(query: CallbackQuery, state: FSMContext)
 
                 await query.message.answer(
                     MessageTexts.BOT_MENU_MESSAGE.value.format((await Bot(custom_bot.token).get_me()).username),
-                    reply_markup=await get_inline_bot_menu_keyboard(bot_id)
+                    reply_markup=await InlineBotMenuKeyboard.get_inline_bot_menu_keyboard(bot_id)
                 )
                 return await query.message.delete()
             case _:
@@ -630,7 +632,7 @@ async def channel_menu_callback_handler(query: CallbackQuery, state: FSMContext)
             await query.message.answer(
                 text=MessageTexts.BOT_MENU_MESSAGE.value.format(
                     custom_bot_username),
-                reply_markup=await get_inline_bot_menu_keyboard(
+                reply_markup=await InlineBotMenuKeyboard.get_inline_bot_menu_keyboard(
                     bot_id)
             )
             await query.message.delete()
@@ -660,7 +662,7 @@ async def editing_contest_sponsor_url(message: Message, state: FSMContext):
         if message_text == "🔙 Назад":
             await message.answer(
                 "Возвращаемся в меню...",
-                reply_markup=get_reply_bot_menu_keyboard(
+                reply_markup=ReplyBotMenuKeyboard.get_reply_bot_menu_keyboard(
                     bot_id=state_data["bot_id"])
             )
             if channel_post.contest_type == ContestTypeValues.RANDOM:
@@ -708,7 +710,7 @@ async def editing_sponsor_channel_links(message: Message, state: FSMContext):
         if message_text == "🔙 Назад":
             await message.answer(
                 "Возвращаемся в меню...",
-                reply_markup=get_reply_bot_menu_keyboard(
+                reply_markup=ReplyBotMenuKeyboard.get_reply_bot_menu_keyboard(
                     bot_id=state_data["bot_id"])
             )
             if channel_post.contest_type == ContestTypeValues.RANDOM:
@@ -780,7 +782,7 @@ async def editing_competition_winner_amount(message: Message, state: FSMContext)
         if message_text == "🔙 Назад":
             await message.answer(
                 "Возвращаемся в меню...",
-                reply_markup=get_reply_bot_menu_keyboard(
+                reply_markup=ReplyBotMenuKeyboard.get_reply_bot_menu_keyboard(
                     bot_id=state_data["bot_id"])
             )
             if channel_post.contest_type == ContestTypeValues.RANDOM:
@@ -846,7 +848,7 @@ async def editing_competition_end_date(message: Message, state: FSMContext):
         if message_text == "🔙 Назад":
             await message.answer(
                 "Возвращаемся в меню...",
-                reply_markup=get_reply_bot_menu_keyboard(
+                reply_markup=ReplyBotMenuKeyboard.get_reply_bot_menu_keyboard(
                     bot_id=state_data["bot_id"])
             )
             if channel_post.contest_type == ContestTypeValues.RANDOM:
@@ -920,7 +922,7 @@ async def editing_channel_post_delay_date_handler(message: Message, state: FSMCo
         if message_text == "🔙 Назад":
             await message.answer(
                 "Возвращаемся в меню...",
-                reply_markup=get_reply_bot_menu_keyboard(
+                reply_markup=ReplyBotMenuKeyboard.get_reply_bot_menu_keyboard(
                     bot_id=state_data["bot_id"])
             )
             await message.answer(
@@ -984,7 +986,7 @@ async def editing_channel_post_media_files_handler(message: Message, state: FSMC
 
         await message.answer(
             "Возвращаемся в меню...",
-            reply_markup=get_reply_bot_menu_keyboard(
+            reply_markup=ReplyBotMenuKeyboard.get_reply_bot_menu_keyboard(
                 bot_id=state_data["bot_id"]
             )
         )
@@ -1067,7 +1069,7 @@ async def editing_post_message_handler(message: Message, state: FSMContext):
         if message_text == "🔙 Назад":
             await message.answer(
                 "Возвращаемся в меню...",
-                reply_markup=get_reply_bot_menu_keyboard(
+                reply_markup=ReplyBotMenuKeyboard.get_reply_bot_menu_keyboard(
                     bot_id=state_data["bot_id"])
             )
             await message.answer(
@@ -1085,7 +1087,7 @@ async def editing_post_message_handler(message: Message, state: FSMContext):
 
             await message.answer(
                 "Предпросмотр поста 👇",
-                reply_markup=get_reply_bot_menu_keyboard(
+                reply_markup=ReplyBotMenuKeyboard.get_reply_bot_menu_keyboard(
                     bot_id=state_data["bot_id"])
             )
             await send_channel_post_message(
@@ -1352,7 +1354,7 @@ async def editing_channel_post_button_text_handler(message: Message, state: FSMC
         if message_text == "🔙 Назад":
             await message.answer(
                 "Возвращаемся в меню...",
-                reply_markup=get_reply_bot_menu_keyboard(
+                reply_markup=ReplyBotMenuKeyboard.get_reply_bot_menu_keyboard(
                     bot_id=state_data["bot_id"])
             )
             if channel_post.contest_type == ContestTypeValues.RANDOM:
@@ -1377,7 +1379,7 @@ async def editing_channel_post_button_text_handler(message: Message, state: FSMC
 
             await message.answer(
                 "Предпросмотр конкурса 👇",
-                reply_markup=get_reply_bot_menu_keyboard(
+                reply_markup=ReplyBotMenuKeyboard.get_reply_bot_menu_keyboard(
                     bot_id=state_data["bot_id"])
             )
             await send_channel_post_message(
@@ -1434,7 +1436,7 @@ async def editing_channel_post_button_url_handler(message: Message, state: FSMCo
         if message_text == "🔙 Назад":
             await message.answer(
                 "Возвращаемся в меню...",
-                reply_markup=get_reply_bot_menu_keyboard(
+                reply_markup=ReplyBotMenuKeyboard.get_reply_bot_menu_keyboard(
                     bot_id=state_data["bot_id"])
             )
             await message.answer(
@@ -1456,7 +1458,7 @@ async def editing_channel_post_button_url_handler(message: Message, state: FSMCo
 
             await message.answer(
                 "Предпросмотр конкурса 👇",
-                reply_markup=get_reply_bot_menu_keyboard(
+                reply_markup=ReplyBotMenuKeyboard.get_reply_bot_menu_keyboard(
                     bot_id=state_data["bot_id"])
             )
             await send_channel_post_message(

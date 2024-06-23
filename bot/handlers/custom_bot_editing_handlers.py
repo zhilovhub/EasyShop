@@ -4,6 +4,7 @@ from aiogram.fsm.context import FSMContext
 
 from bot.main import bot_db, product_db, bot, cache_resources_file_id_store
 from bot.keyboards import *
+from bot.keyboards.main_menu_keyboards import ReplyBotMenuKeyboard, InlineBotMenuKeyboard
 from bot.states.states import States
 from bot.handlers.routers import custom_bot_editing_router
 from bot.utils.send_instructions import send_instructions
@@ -20,11 +21,11 @@ async def editing_start_message_handler(message: Message, state: FSMContext):
         if message_text == "🔙 Назад":
             await message.answer(
                 "Возвращаемся в главное меню...",
-                reply_markup=get_reply_bot_menu_keyboard(bot_id=state_data["bot_id"])
+                reply_markup=ReplyBotMenuKeyboard.get_reply_bot_menu_keyboard(bot_id=state_data["bot_id"])
             )
             await message.answer(
                 MessageTexts.BOT_MENU_MESSAGE.value.format((await Bot(custom_bot.token).get_me()).username),
-                reply_markup=await get_inline_bot_menu_keyboard(custom_bot.bot_id)
+                reply_markup=await InlineBotMenuKeyboard.get_inline_bot_menu_keyboard(custom_bot.bot_id)
             )
             await state.set_state(States.BOT_MENU)
             await state.set_data(state_data)
@@ -37,11 +38,11 @@ async def editing_start_message_handler(message: Message, state: FSMContext):
 
             await message.answer(
                 "Стартовое сообщение изменено!",
-                reply_markup=get_reply_bot_menu_keyboard(bot_id=state_data["bot_id"])
+                reply_markup=ReplyBotMenuKeyboard.get_reply_bot_menu_keyboard(bot_id=state_data["bot_id"])
             )
             await message.answer(
                 MessageTexts.BOT_MENU_MESSAGE.value.format((await Bot(custom_bot.token).get_me()).username),
-                reply_markup=await get_inline_bot_menu_keyboard(custom_bot.bot_id)
+                reply_markup=await InlineBotMenuKeyboard.get_inline_bot_menu_keyboard(custom_bot.bot_id)
             )
 
             await state.set_state(States.BOT_MENU)
@@ -59,11 +60,11 @@ async def editing_default_message_handler(message: Message, state: FSMContext):
         if message_text == "🔙 Назад":
             await message.answer(
                 "Возвращаемся в главное меню...",
-                reply_markup=get_reply_bot_menu_keyboard(bot_id=state_data["bot_id"])
+                reply_markup=ReplyBotMenuKeyboard.get_reply_bot_menu_keyboard(bot_id=state_data["bot_id"])
             )
             await message.answer(
                 MessageTexts.BOT_MENU_MESSAGE.value.format((await Bot(custom_bot.token).get_me()).username),
-                reply_markup=await get_inline_bot_menu_keyboard(custom_bot.bot_id)
+                reply_markup=await InlineBotMenuKeyboard.get_inline_bot_menu_keyboard(custom_bot.bot_id)
             )
             await state.set_state(States.BOT_MENU)
             await state.set_data(state_data)
@@ -76,11 +77,11 @@ async def editing_default_message_handler(message: Message, state: FSMContext):
 
             await message.answer(
                 "Сообщение-затычка изменена!",
-                reply_markup=get_reply_bot_menu_keyboard(bot_id=state_data["bot_id"])
+                reply_markup=ReplyBotMenuKeyboard.get_reply_bot_menu_keyboard(bot_id=state_data["bot_id"])
             )
             await message.answer(
                 MessageTexts.BOT_MENU_MESSAGE.value.format((await Bot(custom_bot.token).get_me()).username),
-                reply_markup=await get_inline_bot_menu_keyboard(custom_bot.bot_id)
+                reply_markup=await InlineBotMenuKeyboard.get_inline_bot_menu_keyboard(custom_bot.bot_id)
             )
             await state.set_state(States.BOT_MENU)
             await state.set_data(state_data)
@@ -107,11 +108,11 @@ async def delete_bot_handler(message: Message, state: FSMContext):
     elif message_text == "🔙 Назад":
         await message.answer(
             "Возвращаемся в главное меню...",
-            reply_markup=get_reply_bot_menu_keyboard(bot_id=state_data["bot_id"])
+            reply_markup=ReplyBotMenuKeyboard.get_reply_bot_menu_keyboard(bot_id=state_data["bot_id"])
         )
         await message.answer(
             MessageTexts.BOT_MENU_MESSAGE.value.format((await Bot(custom_bot.token).get_me()).username),
-            reply_markup=await get_inline_bot_menu_keyboard(custom_bot.bot_id)
+            reply_markup=await InlineBotMenuKeyboard.get_inline_bot_menu_keyboard(custom_bot.bot_id)
         )
         await state.set_state(States.BOT_MENU)
         await state.set_data(state_data)

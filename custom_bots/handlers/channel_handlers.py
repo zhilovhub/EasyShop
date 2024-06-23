@@ -4,7 +4,8 @@ from aiogram.types import ChatMemberUpdated, ChatMemberLeft, ChatMemberAdministr
     Message
 
 from bot.exceptions.exceptions import InstanceAlreadyExists
-from bot.keyboards import get_inline_bot_menu_keyboard, get_contest_inline_join_button
+from bot.keyboards import get_contest_inline_join_button
+from bot.keyboards.main_menu_keyboards import InlineBotMenuKeyboard
 from bot.utils import MessageTexts
 from custom_bots.handlers.routers import multi_bot_channel_router
 from custom_bots.multibot import bot_db, channel_db, main_bot, channel_user_db, custom_ad_db, scheduler, \
@@ -144,7 +145,7 @@ async def my_chat_member_handler(my_chat_member: ChatMemberUpdated) -> Any:
             chat_id=custom_bot.created_by,
             text=MessageTexts.BOT_ADDED_TO_CHANNEL_MESSAGE.value.format(
                 custom_bot_username, channel_username),
-            reply_markup=await get_inline_bot_menu_keyboard(custom_bot.bot_id)
+            reply_markup=await InlineBotMenuKeyboard.get_inline_bot_menu_keyboard(custom_bot.bot_id)
         )
     # Bot removed
     elif isinstance(my_chat_member.new_chat_member, (ChatMemberLeft, ChatMemberBanned)):
@@ -156,7 +157,7 @@ async def my_chat_member_handler(my_chat_member: ChatMemberUpdated) -> Any:
             chat_id=custom_bot.created_by,
             text=MessageTexts.BOT_REMOVED_FROM_CHANNEL_MESSAGE.value.format(
                 custom_bot_username, channel_username),
-            reply_markup=await get_inline_bot_menu_keyboard(custom_bot.bot_id)
+            reply_markup=await InlineBotMenuKeyboard.get_inline_bot_menu_keyboard(custom_bot.bot_id)
         )
     elif isinstance(my_chat_member.new_chat_member, ChatMemberAdministrator):
         old_user = my_chat_member.old_chat_member
@@ -177,7 +178,7 @@ async def my_chat_member_handler(my_chat_member: ChatMemberUpdated) -> Any:
         await main_bot.send_message(
             chat_id=custom_bot.created_by,
             text=final_message_text,
-            reply_markup=await get_inline_bot_menu_keyboard(custom_bot.bot_id)
+            reply_markup=await InlineBotMenuKeyboard.get_inline_bot_menu_keyboard(custom_bot.bot_id)
         )
 
 
