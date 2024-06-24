@@ -32,9 +32,11 @@ class CheckSubscriptionMiddleware(BaseMiddleware):
             await send_event(event.from_user, EventTypes.NEW_USER)
             await user_db.add_user(UserSchema(
                 user_id=user_id, username=event.from_user.username, registered_at=datetime.utcnow(),
-                status=UserStatusValues.NEW, locale="default", subscribed_until=None)
+                status=UserStatusValues.TRIAL, locale="default", subscribed_until=None)
             )
-            await message.answer(MessageTexts.ABOUT_MESSAGE.value)
+            logger.error(
+                f"user_id={user_id}: DANGER! This place in middleware should not be called"
+            )
 
         if user_id not in ADMINS and \
                 not (await subscription.is_user_subscribed(user_id)) and \

@@ -11,7 +11,7 @@ from bot import config
 from bot.main import subscription, bot, dp, cache_resources_file_id_store, user_db, bot_db
 from bot.utils import MessageTexts
 from bot.states import States
-from bot.keyboards import create_continue_subscription_kb, get_back_keyboard, free_trial_start_kb
+from bot.keyboards import create_continue_subscription_kb, get_back_keyboard
 from bot.keyboards.main_menu_keyboards import ReplyBotMenuKeyboard, InlineBotMenuKeyboard
 from bot.handlers.routers import subscribe_router
 from bot.utils.admin_group import EventTypes, send_event, success_event
@@ -21,42 +21,6 @@ from bot.utils.send_instructions import send_instructions
 from bot.utils.custom_bot_api import stop_custom_bot
 
 from logs.config import logger
-
-
-@subscribe_router.callback_query(lambda q: q.data == "start_trial")
-async def start_trial_callback(query: CallbackQuery, state: FSMContext):
-    admin_message = await send_event(query.from_user, EventTypes.STARTED_TRIAL)
-    await query.message.edit_text(MessageTexts.FREE_TRIAL_MESSAGE.value, reply_markup=None)
-    user_id = query.from_user.id
-    # logger.info(f"starting trial subscription for user with id ({user_id} until date {subscribe_until}")
-    # TODO move logger into to subscription module
-    logger.info(
-        f"starting trial subscription for user with id ({user_id} until date ТУТ нужно выполнить TODO"
-    )
-
-    try:
-        subscribed_until = await subscription.start_trial(query.from_user.id)
-    except UserHasAlreadyStartedTrial:
-        # TODO выставлять счет на оплату если триал уже был но пользователь все равно как то сюда попал
-        return await query.answer("Вы уже оформляли пробную подписку", show_alert=True)
-
-    logger.info(f"adding scheduled subscription notifies for user {user_id}")
-    await subscription.add_notifications(
-        user_id,
-        on_expiring_notification=send_subscription_expire_notify,
-        on_end_notification=send_subscription_end_notify,
-        subscribed_until=subscribed_until,
-    )
-
-    await state.set_state(States.WAITING_FOR_TOKEN)
-
-    await send_instructions(bot, None, query.from_user.id, cache_resources_file_id_store)
-    await query.message.answer(
-        "Ваша пробная подписка активирована!\n"
-        "Чтобы получить бота с магазином, воспользуйтесь инструкцией выше 👆",
-        reply_markup=ReplyKeyboardRemove()
-    )
-    await success_event(query.from_user, admin_message, EventTypes.STARTED_TRIAL)
 
 
 @subscribe_router.callback_query(lambda q: q.data.startswith("continue_subscription"))
@@ -97,11 +61,6 @@ async def send_subscription_expire_notify(user: UserSchema) -> None:
     else:
         user_bot_id = None
     await bot.send_message(actual_user.id, text, reply_markup=create_continue_subscription_kb(bot_id=user_bot_id))
-
-
-@subscribe_router.message(States.WAITING_FREE_TRIAL_APPROVE)
-async def waiting_free_trial_handler(message: Message) -> None:
-    await message.answer(MessageTexts.FREE_TRIAL_MESSAGE.value, reply_markup=free_trial_start_kb)
 
 
 @subscribe_router.message(States.WAITING_PAYMENT_PAY)

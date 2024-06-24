@@ -1,16 +1,17 @@
 from datetime import datetime
 
 from aiogram import Bot, F
-from aiogram.types import Message
+from aiogram.types import Message, ReplyKeyboardRemove
 from aiogram.filters import CommandStart
 from aiogram.fsm.context import FSMContext
 
-from bot.main import bot, cache_resources_file_id_store, user_db, bot_db, adv_db
+from bot.handlers.subscription_handlers import send_subscription_expire_notify, send_subscription_end_notify
+from bot.main import bot, cache_resources_file_id_store, user_db, bot_db, adv_db, subscription
 from bot.keyboards import *
 from bot.keyboards.main_menu_keyboards import InlineBotMenuKeyboard
 from bot.states.states import States
 from bot.handlers.routers import commands_router
-from bot.utils.admin_group import send_event, EventTypes
+from bot.utils.admin_group import send_event, EventTypes, success_event
 from bot.exceptions.exceptions import *
 from bot.utils.send_instructions import send_instructions
 from bot.utils.check_subscription import check_subscription
@@ -20,6 +21,7 @@ from database.models.adv_model import EmptyAdvTable, AdvSchema, AdvSchemaWithout
 from logs.config import logger, adv_logger, extra_params
 
 from database.models.user_model import UserSchema, UserStatusValues
+from subscription.subscription import UserHasAlreadyStartedTrial
 
 
 @commands_router.message(CommandStart())
@@ -73,6 +75,8 @@ async def start_command_handler(message: Message, state: FSMContext):
             status=UserStatusValues.NEW, locale="default", subscribed_until=None)
         )
 
+        await _start_trial(message, state)
+
     user_bots = await bot_db.get_bots(user_id)
     await send_instructions(bot, user_bots[0].bot_id if user_bots else None, user_id, cache_resources_file_id_store)
 
@@ -86,11 +90,7 @@ async def start_command_handler(message: Message, state: FSMContext):
         return await state.set_state(States.SUBSCRIBE_ENDED)
 
     if not user_bots:
-        if user_status == UserStatusValues.NEW:
-            await message.answer(MessageTexts.FREE_TRIAL_MESSAGE.value, reply_markup=free_trial_start_kb)
-            await state.set_state(States.WAITING_FREE_TRIAL_APPROVE)
-        else:
-            await state.set_state(States.WAITING_FOR_TOKEN)
+        await state.set_state(States.WAITING_FOR_TOKEN)
     else:
         bot_id = user_bots[0].bot_id
         user_bot = Bot(user_bots[0].token)
@@ -113,3 +113,36 @@ async def clear_command_handler(message: Message, state: FSMContext) -> None:
 @commands_router.message(F.text == "/check_subscription")
 async def check_subscription_command_handler(message: Message, state: FSMContext):
     await check_subscription(message, state)
+
+
+async def _start_trial(message: Message, state: FSMContext):
+    admin_message = await send_event(message.from_user, EventTypes.STARTED_TRIAL)
+
+    user_id = message.from_user.id
+    # logger.info(f"starting trial subscription for user with id ({user_id} until date {subscribe_until}")
+    # TODO move logger into to subscription module
+    logger.info(
+        f"starting trial subscription for user with id ({user_id} until date ТУТ нужно выполнить TODO"
+    )
+
+    try:
+        subscribed_until = await subscription.start_trial(user_id)
+    except UserHasAlreadyStartedTrial:
+        # TODO выставлять счет на оплату если триал уже был но пользователь все равно как то сюда попал
+        return await message.answer("Вы уже оформляли пробную подписку")
+
+    logger.info(f"adding scheduled subscription notifies for user {user_id}")
+    await subscription.add_notifications(
+        user_id,
+        on_expiring_notification=send_subscription_expire_notify,
+        on_end_notification=send_subscription_end_notify,
+        subscribed_until=subscribed_until,
+    )
+
+    await state.set_state(States.WAITING_FOR_TOKEN)
+
+    await message.answer(
+        MessageTexts.FREE_TRIAL_MESSAGE.value,
+        reply_markup=ReplyKeyboardRemove()
+    )
+    await success_event(message.from_user, admin_message, EventTypes.STARTED_TRIAL)

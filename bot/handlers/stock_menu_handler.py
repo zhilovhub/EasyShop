@@ -154,8 +154,10 @@ async def import_menu_handler(query: CallbackQuery, state: FSMContext):
             reply_markup=await InlineStockMenuKeyboard.get_keyboard(bot_id, auto_reduce),
             parse_mode=ParseMode.HTML
         )
-    await query.message.answer("Теперь отправьте боту xlsx / csv / json файл с товарами в таком же формате, "
-                               "как файлы из экспорта товаров.", reply_markup=ReplyBackStockMenuKeyboard.get_keyboard())
+    await query.message.answer(
+        "Теперь отправьте боту xlsx / csv / json файл с товарами в таком же формате, "
+        "как файлы из экспорта товаров.",
+        reply_markup=ReplyBackStockMenuKeyboard.get_keyboard())
     await query.answer()
 
     await state.set_state(States.IMPORT_PRODUCTS)
@@ -188,6 +190,10 @@ async def handle_stock_manage_input(message: Message, state: FSMContext):
 
 @stock_menu_router.message(States.IMPORT_PRODUCTS)
 async def handle_stock_import_input(message: Message, state: FSMContext):
+    if message.text == ReplyBackStockMenuKeyboard.Callback.ActionEnum.BACK_TO_STOCK_MENU.value:
+        await _back_to_stock_menu(message, state)
+        return
+
     state_data = await state.get_data()
     if message.content_type != "document":
         return await message.answer("Необходимо отправить файл с товарами.",

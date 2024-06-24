@@ -9,8 +9,6 @@ from aiogram.fsm.state import State, StatesGroup
 #     input = State()
 
 class States(StatesGroup):
-    WAITING_FREE_TRIAL_APPROVE = State()
-
     WAITING_PAYMENT_PAY = State()
     WAITING_PAYMENT_APPROVE = State()
     SUBSCRIBE_ENDED = State()

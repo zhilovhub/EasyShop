@@ -9,13 +9,6 @@ from bot.utils import MessageTexts, make_admin_panel_webapp_info
 
 from database.models.order_model import OrderStatusValues
 
-free_trial_start_kb = InlineKeyboardMarkup(inline_keyboard=[
-    [
-        InlineKeyboardButton(text="Начать пробный период",
-                             callback_data="start_trial")
-    ]
-])
-
 
 def create_continue_subscription_kb(bot_id: Optional[int | None]) -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(inline_keyboard=[
