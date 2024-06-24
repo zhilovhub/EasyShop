@@ -135,3 +135,75 @@ class InlineStockMenuKeyboard:
                 ],
             ],
         )
+
+
+class InlineStockImportMenuKeyboard:
+    class Callback(BaseModel):
+        class ActionEnum(Enum):
+            REPLACE_ALL = "replace_all"
+            REPLACE_DUPLICATES = "replace_duplicates"
+            NOT_REPLACE_DUPLICATES = "not_replace_duplicates"
+
+            BACK_TO_STOCK_MENU = "back_to_stock_menu"
+
+        model_config = ConfigDict(from_attributes=True)
+
+        n: str = Field(default="import_menu", frozen=True)
+        a: ActionEnum
+
+        bot_id: int
+
+    @staticmethod
+    def callback_json(action: Callback.ActionEnum, bot_id: int) -> str:
+        return InlineStockImportMenuKeyboard.Callback(
+            a=action, bot_id=bot_id
+        ).model_dump_json()
+
+    @staticmethod
+    def callback_validator(json_string: str) -> bool:
+        try:
+            InlineStockImportMenuKeyboard.Callback.model_validate_json(json_string)
+            return True
+        except ValidationError:
+            return False
+
+    @staticmethod
+    def get_keyboard(bot_id: int) -> InlineKeyboardMarkup:
+        actions = InlineStockImportMenuKeyboard.Callback.ActionEnum
+
+        return InlineKeyboardMarkup(
+            inline_keyboard=[
+                [
+                    InlineKeyboardButton(
+                        text="1",
+                        callback_data=InlineStockImportMenuKeyboard.callback_json(
+                            actions.REPLACE_ALL, bot_id
+                        )
+                    ),
+                ],
+                [
+                    InlineKeyboardButton(
+                        text="2",
+                        callback_data=InlineStockImportMenuKeyboard.callback_json(
+                            actions.REPLACE_DUPLICATES, bot_id
+                        )
+                    ),
+                ],
+                [
+                    InlineKeyboardButton(
+                        text="3",
+                        callback_data=InlineStockImportMenuKeyboard.callback_json(
+                            actions.NOT_REPLACE_DUPLICATES, bot_id
+                        )
+                    ),
+                ],
+                [
+                    InlineKeyboardButton(
+                        text="🔙 Назад",
+                        callback_data=InlineStockImportMenuKeyboard.callback_json(
+                            actions.BACK_TO_STOCK_MENU, bot_id
+                        )
+                    ),
+                ],
+            ],
+        )

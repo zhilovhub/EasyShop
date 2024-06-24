@@ -100,18 +100,6 @@ def get_confirm_media_upload_keyboard() -> ReplyKeyboardMarkup:
     ], resize_keyboard=True)
 
 
-def get_stock_import_options_keyboard(bot_id: int) -> InlineKeyboardMarkup:
-    callback_data = f":{bot_id}"
-
-    return InlineKeyboardMarkup(inline_keyboard=[
-        [
-            InlineKeyboardButton(text="1", callback_data="import_menu:replace_all" + callback_data),
-            InlineKeyboardButton(text="2", callback_data="import_menu:replace_duplicates" + callback_data),
-            InlineKeyboardButton(text="3", callback_data="import_menu:dont_replace_duplicates" + callback_data),
-        ]
-    ])
-
-
 async def get_competition_menu_keyboard(competition_id: int) -> InlineKeyboardMarkup:
     callback_metadata = str(competition_id)
     return InlineKeyboardMarkup(
