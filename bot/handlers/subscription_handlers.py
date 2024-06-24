@@ -124,11 +124,11 @@ async def waiting_payment_pay_handler(message: Message, state: FSMContext):
 
             await message.answer(
                 "Возвращаемся в главное меню...",
-                reply_markup=ReplyBotMenuKeyboard.get_reply_bot_menu_keyboard(bot_id=state_data["bot_id"])
+                reply_markup=ReplyBotMenuKeyboard.get_keyboard(bot_id=state_data["bot_id"])
             )
             await message.answer(
                 MessageTexts.BOT_MENU_MESSAGE.value.format((await Bot(custom_bot.token).get_me()).username),
-                reply_markup=await InlineBotMenuKeyboard.get_inline_bot_menu_keyboard(custom_bot.bot_id)
+                reply_markup=await InlineBotMenuKeyboard.get_keyboard(custom_bot.bot_id)
             )
         else:
             await state.set_state(States.WAITING_FOR_TOKEN)
@@ -187,11 +187,11 @@ async def waiting_payment_approve_handler(message: Message, state: FSMContext):
 
             await message.answer(
                 "Возвращаемся в главное меню (мы Вас оповестим, когда оплата пройдет модерацию)...",
-                reply_markup=ReplyBotMenuKeyboard.get_reply_bot_menu_keyboard(bot_id=state_data["bot_id"])
+                reply_markup=ReplyBotMenuKeyboard.get_keyboard(bot_id=state_data["bot_id"])
             )
             await message.answer(
                 MessageTexts.BOT_MENU_MESSAGE.value.format((await Bot(custom_bot.token).get_me()).username),
-                reply_markup=await InlineBotMenuKeyboard.get_inline_bot_menu_keyboard(custom_bot.bot_id)
+                reply_markup=await InlineBotMenuKeyboard.get_keyboard(custom_bot.bot_id)
             )
         else:
             await state.set_state(States.WAITING_FOR_TOKEN)
@@ -246,12 +246,12 @@ async def approve_pay_callback(query: CallbackQuery):
         await bot.send_message(
             user_id,
             "Оплата подписки подтверждена ✅",
-            reply_markup=ReplyBotMenuKeyboard.get_reply_bot_menu_keyboard(bot_id)
+            reply_markup=ReplyBotMenuKeyboard.get_keyboard(bot_id)
         )
         await bot.send_message(
             user_id,
             MessageTexts.BOT_MENU_MESSAGE.value.format(user_bot_data.username),
-            reply_markup=await InlineBotMenuKeyboard.get_inline_bot_menu_keyboard(user_bots[0].bot_id)
+            reply_markup=await InlineBotMenuKeyboard.get_keyboard(user_bots[0].bot_id)
         )
         await user_state.set_state(States.BOT_MENU)
         await user_state.set_data({'bot_id': bot_id})

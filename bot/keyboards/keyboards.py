@@ -100,41 +100,6 @@ def get_confirm_media_upload_keyboard() -> ReplyKeyboardMarkup:
     ], resize_keyboard=True)
 
 
-def get_inline_bot_goods_menu_keyboard(bot_id: int, autoreduce: bool = False) -> InlineKeyboardMarkup:
-    callback_data = f":{bot_id}"
-
-    return InlineKeyboardMarkup(
-        inline_keyboard=[
-            [
-                InlineKeyboardButton(
-                    text="🧮 Количество товаров", callback_data="bot_menu:goods_count" + callback_data),
-                InlineKeyboardButton(
-                    text="📋 Список товаров", web_app=make_admin_panel_webapp_info(bot_id))
-            ],
-            [
-                InlineKeyboardButton(
-                    text="🆕 Добавить товар", callback_data="bot_menu:add_new_good" + callback_data),
-            ],
-            [
-                InlineKeyboardButton(
-                    text="📦 Управление остатками", callback_data="bot_menu:stock_manage" + callback_data),
-            ],
-            [
-                InlineKeyboardButton(text="⬇️ Импорт товаров", callback_data="stock_menu:import" + callback_data),
-                InlineKeyboardButton(text="⬆️ Экспорт товаров", callback_data="stock_menu:export" + callback_data),
-            ],
-            [
-                InlineKeyboardButton(text=f"{'✅' if autoreduce else '❌'} Автоуменьшение на складе",
-                                     callback_data="bot_menu:auto_reduce" + callback_data),
-            ],
-            [
-                InlineKeyboardButton(
-                    text="🔙 Назад", callback_data="bot_menu:back_to_menu" + callback_data),
-            ],
-        ],
-    )
-
-
 def get_stock_import_options_keyboard(bot_id: int) -> InlineKeyboardMarkup:
     callback_data = f":{bot_id}"
 

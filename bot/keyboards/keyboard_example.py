@@ -34,7 +34,7 @@ class ExampleKeyboard:
             return False
 
     @staticmethod
-    async def get_example_keyboard(some_arg: str) -> InlineKeyboardMarkup:
+    async def get_keyboard(some_arg: str) -> InlineKeyboardMarkup:
         actions = ExampleKeyboard.Callback.ActionEnum
 
         return InlineKeyboardMarkup(

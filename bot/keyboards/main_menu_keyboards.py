@@ -20,7 +20,7 @@ class ReplyBotMenuKeyboard:
         a: ActionEnum
 
     @staticmethod
-    def get_reply_bot_menu_keyboard(bot_id: int) -> ReplyKeyboardMarkup:
+    def get_keyboard(bot_id: int) -> ReplyKeyboardMarkup:
         actions = ReplyBotMenuKeyboard.Callback.ActionEnum
 
         return ReplyKeyboardMarkup(
@@ -80,7 +80,7 @@ class InlineBotMenuKeyboard:
             return False
 
     @staticmethod
-    async def get_inline_bot_menu_keyboard(bot_id: int) -> InlineKeyboardMarkup:
+    async def get_keyboard(bot_id: int) -> InlineKeyboardMarkup:
         actions = InlineBotMenuKeyboard.Callback.ActionEnum
 
         channel_inline_button = InlineKeyboardButton(

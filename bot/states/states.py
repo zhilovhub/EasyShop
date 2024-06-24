@@ -46,4 +46,4 @@ class States(StatesGroup):
 
     IMPORT_PRODUCTS = State()
 
-    STOCK_MANAGE = State()
+    GOODS_COUNT_MANAGE = State()

@@ -15,6 +15,7 @@ from aiogram.utils.token import validate_token, TokenValidationError
 from aiogram.types import Message, FSInputFile, CallbackQuery
 from aiogram.fsm.context import FSMContext
 
+from bot.keyboards.stock_menu_keyboards import InlineStockMenuKeyboard
 from bot.main import bot, user_db, bot_db, product_db, order_db, custom_bot_user_db, QUESTION_MESSAGES, stock_manager
 from bot.keyboards import *
 from bot.keyboards.main_menu_keyboards import ReplyBotMenuKeyboard, InlineBotMenuKeyboard
@@ -261,11 +262,11 @@ async def waiting_for_the_token_handler(message: Message, state: FSMContext):
     user_bot = await bot_db.get_bot(bot_id)
     await message.answer(
         MessageTexts.BOT_INITIALIZING_MESSAGE.value.format(bot_fullname, bot_username),
-        reply_markup=ReplyBotMenuKeyboard.get_reply_bot_menu_keyboard(bot_id)
+        reply_markup=ReplyBotMenuKeyboard.get_keyboard(bot_id)
     )
     await message.answer(
         MessageTexts.BOT_MENU_MESSAGE.value.format(bot_username),
-        reply_markup=await InlineBotMenuKeyboard.get_inline_bot_menu_keyboard(user_bot.bot_id)
+        reply_markup=await InlineBotMenuKeyboard.get_keyboard(user_bot.bot_id)
     )
     await state.set_state(States.BOT_MENU)
     await state.set_data({"bot_id": bot_id})
@@ -312,44 +313,41 @@ async def bot_menu_photo_handler(message: Message, state: FSMContext):
 @admin_bot_menu_router.callback_query(lambda query: InlineBotMenuKeyboard.callback_validator(query.data))
 async def bot_menu_callback_handler(query: CallbackQuery, state: FSMContext):
     state_data = await state.get_data()
-
     callback_data = InlineBotMenuKeyboard.Callback.model_validate_json(query.data)
-    if True:
-        extra_id = None  # TODO temp
-    else:
-        extra_id = int(query.data.split(":")[2])
+
+    bot_id = callback_data.bot_id
 
     match callback_data.a:
-        case InlineBotMenuKeyboard.Callback.ActionEnum.BOT_EDIT_HELLO_TEXT:
+        case callback_data.ActionEnum.BOT_EDIT_HELLO_TEXT:
             await query.message.answer("Введите текст, который будет отображаться у пользователей Вашего бота "
                                        "при <b>первом обращении</b> и команде <b>/start</b>:",
                                        reply_markup=get_back_keyboard())
             await query.answer()
             await state.set_state(States.EDITING_START_MESSAGE)
             await state.set_data(state_data)
-        case InlineBotMenuKeyboard.Callback.ActionEnum.BOT_EDIT_EXPLANATION_TEXT:
+        case callback_data.ActionEnum.BOT_EDIT_EXPLANATION_TEXT:
             await query.message.answer("Введите текст, который будет отображаться у пользователей Вашего бота "
                                        "при <b>любом</b> их сообщении: ", reply_markup=get_back_keyboard())
             await query.answer()
             await state.set_state(States.EDITING_DEFAULT_MESSAGE)
             await state.set_data(state_data)
-        case InlineBotMenuKeyboard.Callback.ActionEnum.BOT_START:
-            await start_custom_bot(extra_id)
+        case callback_data.ActionEnum.BOT_START:
+            await start_custom_bot(bot_id)
             await query.message.edit_text(
                 query.message.text,
                 parse_mode=ParseMode.HTML,
-                reply_markup=await InlineBotMenuKeyboard.get_inline_bot_menu_keyboard(extra_id)
+                reply_markup=await InlineBotMenuKeyboard.get_keyboard(bot_id)
             )
             await query.answer("Ваш бот запущен ✅", show_alert=True)
-        case InlineBotMenuKeyboard.Callback.ActionEnum.BOT_STOP:
-            await stop_custom_bot(extra_id)
+        case callback_data.ActionEnum.BOT_STOP:
+            await stop_custom_bot(bot_id)
             await query.message.edit_text(
                 query.message.text,
                 parse_mode=ParseMode.HTML,
-                reply_markup=await InlineBotMenuKeyboard.get_inline_bot_menu_keyboard(extra_id)
+                reply_markup=await InlineBotMenuKeyboard.get_keyboard(bot_id)
             )
             await query.answer("Ваш бот приостановлен ❌", show_alert=True)
-        case InlineBotMenuKeyboard.Callback.ActionEnum.BOT_DELETE:
+        case callback_data.ActionEnum.BOT_DELETE:
             await query.message.answer("Бот удалится вместе со всей базой продуктов безвозвратно.\n"
                                        "Напишите ПОДТВЕРДИТЬ для подтверждения удаления",
                                        reply_markup=get_back_keyboard())
@@ -357,109 +355,34 @@ async def bot_menu_callback_handler(query: CallbackQuery, state: FSMContext):
 
             await state.set_state(States.DELETE_BOT)
             await state.set_data(state_data)
-        case InlineBotMenuKeyboard.Callback.ActionEnum.BOT_STATISTICS:
-            users = await custom_bot_user_db.get_custom_bot_users(bot_id=extra_id)
+        case callback_data.ActionEnum.BOT_STATISTICS:
+            users = await custom_bot_user_db.get_custom_bot_users(bot_id=bot_id)
             await query.message.answer(
                 f"Статистика:\n\n"
                 f"👨🏻‍🦱 Всего пользователей: {len(users)}"
             )
             await query.answer()
-        case InlineBotMenuKeyboard.Callback.ActionEnum.MAILING_ADD \
+        case callback_data.ActionEnum.MAILING_ADD \
              | InlineBotMenuKeyboard.Callback.ActionEnum.MAILING_OPEN:
             if callback_data.a == InlineBotMenuKeyboard.Callback.ActionEnum.MAILING_ADD:
                 await mailing_db.add_mailing(MailingSchemaWithoutId.model_validate(
-                    {"bot_id": extra_id, "created_at": datetime.now().replace(tzinfo=None)}
+                    {"bot_id": bot_id, "created_at": datetime.now().replace(tzinfo=None)}
                 ))
-            custom_bot = await bot_db.get_bot(bot_id=extra_id)
+            custom_bot = await bot_db.get_bot(bot_id=bot_id)
             await query.message.edit_text(
                 MessageTexts.BOT_MAILINGS_MENU_MESSAGE.value.format((await Bot(custom_bot.token).get_me()).username),
-                reply_markup=await get_inline_bot_mailing_menu_keyboard(bot_id=extra_id)
+                reply_markup=await get_inline_bot_mailing_menu_keyboard(bot_id=bot_id)
             )
-        case InlineBotMenuKeyboard.Callback.ActionEnum.BOT_GOODS_OPEN:
-            bot_data = await bot_db.get_bot(extra_id)
+        case callback_data.ActionEnum.BOT_GOODS_OPEN:
+            bot_data = await bot_db.get_bot(bot_id)
             if not bot_data.settings or "auto_reduce" not in bot_data.settings:
-                button_data = False
+                auto_reduce = False
             else:
-                button_data = True
-            await query.message.edit_text("Меню склада:",
-                                          reply_markup=get_inline_bot_goods_menu_keyboard(extra_id, button_data))
-        case "goods_count":  # TODO should not be here
-            products = await product_db.get_all_products(extra_id)
-            await query.message.answer(f"Количество товаров: {len(products)}")
-            await query.answer()
-        # case "goods_list":
-        #     products = await product_db.get_all_products(state_data["bot_id"])
-        #     if not products:
-        #         await query.message.answer("Список товаров Вашего магазина пуст")
-        #     else:
-        #         await query.message.answer(
-        #             "Список товаров Вашего магазина 👇\nЧтобы удалить товар, нажмите на тег рядом с ним")
-        #         for product in products:
-        #             await query.message.answer_photo(
-        #                 photo=FSInputFile(os.getenv('FILES_PATH') + product.picture),
-        #                 caption=f"<b>{product.name}</b>\n\n"
-        #                         f"Цена: <b>{float(product.price)}₽</b>",
-        #                 reply_markup=get_inline_delete_button(product.id))
-        #     await query.answer()
-        case "add_new_good":  # TODO should not be here
-            await query.message.answer("Чтобы добавить товар, прикрепите его картинку и отправьте сообщение в виде:"
-                                       "\n\nНазвание\nЦена в рублях")
-            await query.answer()
-        case "back_to_menu":  # TODO should not be here
-            custom_bot = await bot_db.get_bot(extra_id)
+                auto_reduce = True
             await query.message.edit_text(
-                MessageTexts.BOT_MENU_MESSAGE.value.format((await Bot(custom_bot.token).get_me()).username),
-                reply_markup=await InlineBotMenuKeyboard.get_inline_bot_menu_keyboard(custom_bot.bot_id)
+                "Меню склада:",
+                reply_markup=await InlineStockMenuKeyboard.get_keyboard(bot_id, auto_reduce)
             )
-        case "channels":  # TODO should not be here
-            custom_bot = await bot_db.get_bot(state_data["bot_id"])
-            await query.message.edit_text(
-                MessageTexts.BOT_CHANNELS_LIST_MESSAGE.value.format((await Bot(custom_bot.token).get_me()).username),
-                reply_markup=await get_inline_bot_channels_list_keyboard(custom_bot.bot_id)
-            )
-        case "channel":  # TODO should not be here
-            custom_bot = await bot_db.get_bot(state_data["bot_id"])
-            custom_tg_bot = Bot(custom_bot.token)
-            channel_id = int(query.data.split(":")[-1])
-            channel_username = (await custom_tg_bot.get_chat(channel_id)).username
-            await query.message.edit_text(
-                MessageTexts.BOT_CHANNEL_MENU_MESSAGE.value.format(channel_username,
-                                                                   (await custom_tg_bot.get_me()).username),
-                reply_markup=await get_inline_channel_menu_keyboard(custom_bot.bot_id, int(query.data.split(":")[-1]))
-            )
-        case "stock_manage":  # TODO should not be here
-            await query.message.edit_text(
-                MessageTexts.STOCK_STATE_MESSAGE.value,
-                reply_markup=None
-            )
-            await state.set_state(States.STOCK_MANAGE)
-            await state.set_data({'bot_id': extra_id})
-            xlsx_file_path, photo_path = await stock_manager.export_xlsx(bot_id=extra_id, with_pictures=False)
-            await query.message.answer_document(document=FSInputFile(xlsx_file_path),
-                                                caption="Список товаров на складе",
-                                                reply_markup=get_stock_back_keyboard())
-        case "auto_reduce":  # TODO should not be here
-            bot_data = await bot_db.get_bot(extra_id)
-            if not bot_data.settings:
-                bot_data.settings = {}
-            if "auto_reduce" not in bot_data.settings:
-                bot_data.settings["auto_reduce"] = True
-            else:
-                bot_data.settings["auto_reduce"] = not bot_data.settings["auto_reduce"]
-            await bot_db.update_bot(bot_data)
-            if bot_data.settings["auto_reduce"]:
-                await query.message.answer("✅ Автоуменьшение кол-ва товаров после заказа <b>включено</b>.")
-            else:
-                await query.message.answer("❌ Автоуменьшение кол-ва товаров после заказа <b>выключено</b>.")
-            try:
-                await query.message.edit_text(query.message.text,
-                                              reply_markup=get_inline_bot_goods_menu_keyboard(extra_id,
-                                                                                              bot_data.settings[
-                                                                                                  "auto_reduce"]),
-                                              parse_mode=ParseMode.HTML)
-            except:
-                # handle telegram api error "message not modified"
-                pass
 
 
 @admin_bot_menu_router.message(States.BOT_MENU)
@@ -471,7 +394,7 @@ async def bot_menu_handler(message: Message, state: FSMContext):
         case ReplyBotMenuKeyboard.Callback.ActionEnum.SHOP.value:
             await message.answer(
                 MessageTexts.BOT_MENU_MESSAGE.value.format((await Bot(custom_bot.token).get_me()).username),
-                reply_markup=await InlineBotMenuKeyboard.get_inline_bot_menu_keyboard(custom_bot.bot_id)
+                reply_markup=await InlineBotMenuKeyboard.get_keyboard(custom_bot.bot_id)
             )
 
         case ReplyBotMenuKeyboard.Callback.ActionEnum.CONTACTS.value:
@@ -481,11 +404,11 @@ async def bot_menu_handler(message: Message, state: FSMContext):
         case _:
             await message.answer(
                 "Для навигации используйте кнопки 👇",
-                reply_markup=ReplyBotMenuKeyboard.get_reply_bot_menu_keyboard(bot_id=state_data["bot_id"])
+                reply_markup=ReplyBotMenuKeyboard.get_keyboard(bot_id=state_data["bot_id"])
             )
             await message.answer(
                 MessageTexts.BOT_MENU_MESSAGE.value.format((await Bot(custom_bot.token).get_me()).username),
-                reply_markup=await InlineBotMenuKeyboard.get_inline_bot_menu_keyboard(custom_bot.bot_id)
+                reply_markup=await InlineBotMenuKeyboard.get_keyboard(custom_bot.bot_id)
             )
 
 

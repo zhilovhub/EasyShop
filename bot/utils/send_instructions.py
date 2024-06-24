@@ -16,7 +16,7 @@ async def send_instructions(bot: Bot, custom_bot_id: int | None, chat_id: int, c
             chat_id=chat_id,
             video=file_ids["botfather.mp4"],
             caption=MessageTexts.INSTRUCTION_MESSAGE.value,
-            reply_markup=ReplyBotMenuKeyboard.get_reply_bot_menu_keyboard(bot_id=custom_bot_id) if custom_bot_id else ReplyKeyboardRemove()
+            reply_markup=ReplyBotMenuKeyboard.get_keyboard(bot_id=custom_bot_id) if custom_bot_id else ReplyKeyboardRemove()
         )
     except (TelegramBadRequest, KeyError) as e:
         logger.info(f"error while sending instructions.... cache is empty, sending raw files {e}")
