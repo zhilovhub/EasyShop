@@ -10,15 +10,6 @@ from bot.utils import MessageTexts, make_admin_panel_webapp_info
 from database.models.order_model import OrderStatusValues
 
 
-def create_continue_subscription_kb(bot_id: Optional[int | None]) -> InlineKeyboardMarkup:
-    return InlineKeyboardMarkup(inline_keyboard=[
-        [
-            InlineKeyboardButton(text="Продлить подписку",
-                                 callback_data=f"continue_subscription_{bot_id}")
-        ]
-    ])
-
-
 def create_change_order_status_kb(order_id: str, msg_id: int = 0, chat_id: int = 0,
                                   current_status: OrderStatusValues = OrderStatusValues.BACKLOG) \
         -> InlineKeyboardMarkup:

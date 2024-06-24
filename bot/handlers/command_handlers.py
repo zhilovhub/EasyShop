@@ -6,6 +6,7 @@ from aiogram.filters import CommandStart
 from aiogram.fsm.context import FSMContext
 
 from bot.handlers.subscription_handlers import send_subscription_expire_notify, send_subscription_end_notify
+from bot.keyboards.subscription_keyboards import InlineSubscriptionContinueKeyboard
 from bot.main import bot, cache_resources_file_id_store, user_db, bot_db, adv_db, subscription
 from bot.keyboards import *
 from bot.keyboards.main_menu_keyboards import InlineBotMenuKeyboard
@@ -85,7 +86,7 @@ async def start_command_handler(message: Message, state: FSMContext):
     if user_status == UserStatusValues.SUBSCRIPTION_ENDED:  # TODO do not send it from States.WAITING_PAYMENT_APPROVE
         await message.answer(
             MessageTexts.SUBSCRIBE_END_NOTIFY.value,
-            reply_markup=create_continue_subscription_kb(bot_id=None)
+            reply_markup=InlineSubscriptionContinueKeyboard.get_keyboard(bot_id=None)
         )
         return await state.set_state(States.SUBSCRIBE_ENDED)
 

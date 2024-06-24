@@ -8,10 +8,11 @@ from aiogram.fsm.context import FSMContext
 from aiogram.fsm.storage.base import StorageKey
 
 from bot import config
+from bot.keyboards.subscription_keyboards import InlineSubscriptionContinueKeyboard
 from bot.main import subscription, bot, dp, cache_resources_file_id_store, user_db, bot_db
 from bot.utils import MessageTexts
 from bot.states import States
-from bot.keyboards import create_continue_subscription_kb, get_back_keyboard
+from bot.keyboards import get_back_keyboard
 from bot.keyboards.main_menu_keyboards import ReplyBotMenuKeyboard, InlineBotMenuKeyboard
 from bot.handlers.routers import subscribe_router
 from bot.utils.admin_group import EventTypes, send_event, success_event
@@ -23,12 +24,12 @@ from bot.utils.custom_bot_api import stop_custom_bot
 from logs.config import logger
 
 
-@subscribe_router.callback_query(lambda q: q.data.startswith("continue_subscription"))
+@subscribe_router.callback_query(lambda query: InlineSubscriptionContinueKeyboard.callback_validator(query.data))
 async def continue_subscription_callback(query: CallbackQuery, state: FSMContext):
-    await state.set_state(States.WAITING_PAYMENT_PAY)
-    if query.data.split("_")[-1].isdigit():
-        bot_id = int(query.data.split("_")[-1])
-        await state.set_data({"bot_id": bot_id})
+    callback_data = InlineSubscriptionContinueKeyboard.Callback.model_validate_json(query.data)
+
+    if callback_data.bot_id is not None:
+        await state.set_data({"bot_id": callback_data.bot_id})
 
     photo_name, instruction = subscription.get_subscribe_instructions()
     await query.message.answer_photo(
@@ -40,6 +41,7 @@ async def continue_subscription_callback(query: CallbackQuery, state: FSMContext
             ]
         ]))
     await query.message.answer(f"По возникновению каких-либо вопросов пишите @maxzim398", reply_markup=get_back_keyboard())
+    await state.set_state(States.WAITING_PAYMENT_PAY)
 
 
 async def send_subscription_expire_notify(user: UserSchema) -> None:
@@ -60,7 +62,11 @@ async def send_subscription_expire_notify(user: UserSchema) -> None:
         user_bot_id = user_bots[0].bot_id
     else:
         user_bot_id = None
-    await bot.send_message(actual_user.id, text, reply_markup=create_continue_subscription_kb(bot_id=user_bot_id))
+    await bot.send_message(
+        actual_user.id,
+        text,
+        reply_markup=InlineSubscriptionContinueKeyboard.get_keyboard(bot_id=user_bot_id)
+    )
 
 
 @subscribe_router.message(States.WAITING_PAYMENT_PAY)
@@ -74,7 +80,7 @@ async def waiting_payment_pay_handler(message: Message, state: FSMContext):
             await state.set_state(States.SUBSCRIBE_ENDED)
             await message.answer(
                 MessageTexts.SUBSCRIBE_END_NOTIFY.value,
-                reply_markup=create_continue_subscription_kb(bot_id=None)
+                reply_markup=InlineSubscriptionContinueKeyboard.get_keyboard(bot_id=None)
             )  # TODO change to keyboard markup
         elif state_data and "bot_id" in state_data:
             await state.set_state(States.BOT_MENU)
@@ -164,7 +170,7 @@ async def waiting_payment_approve_handler(message: Message, state: FSMContext):
 async def subscribe_ended_handler(message: Message) -> None:
     await message.answer(
         MessageTexts.SUBSCRIBE_END_NOTIFY.value,
-        reply_markup=create_continue_subscription_kb(bot_id=None)
+        reply_markup=InlineSubscriptionContinueKeyboard.get_keyboard(bot_id=None)
     )
 
 
@@ -271,7 +277,7 @@ async def send_subscription_end_notify(user: UserSchema) -> None:
     await bot.send_message(
         actual_user.id,
         MessageTexts.SUBSCRIBE_END_NOTIFY.value,
-        reply_markup=create_continue_subscription_kb(bot_id=user_bot_id)
+        reply_markup=InlineSubscriptionContinueKeyboard.get_keyboard(bot_id=user_bot_id)
     )
     user_state = FSMContext(storage=dp.storage, key=StorageKey(
         chat_id=actual_user.id,

@@ -1,7 +1,7 @@
 from aiogram.fsm.context import FSMContext
 from aiogram.types import Message
 
-from bot.keyboards import create_continue_subscription_kb
+from bot.keyboards.subscription_keyboards import InlineSubscriptionContinueKeyboard
 from bot.main import subscription
 from database.models.user_model import UserStatusValues
 
@@ -16,7 +16,7 @@ async def check_subscription(message: Message, state: FSMContext = None):
     except (KeyError, AttributeError):
         logger.warning(f"check_sub_cmd: bot_id of user {user_id} not found, setting it to None")
         bot_id = None
-    kb = create_continue_subscription_kb(bot_id=bot_id)
+    kb = InlineSubscriptionContinueKeyboard.get_keyboard(bot_id=bot_id)
 
     user_status = await subscription.get_user_status(user_id)
     match user_status:
