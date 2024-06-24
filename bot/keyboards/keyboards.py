@@ -7,33 +7,6 @@ from database.models.channel_post_model import ContestTypeValues
 from bot.utils.keyboard_utils import *
 from bot.utils import MessageTexts, make_admin_panel_webapp_info
 
-from database.models.order_model import OrderStatusValues
-
-
-def create_change_order_status_kb(order_id: str, msg_id: int = 0, chat_id: int = 0,
-                                  current_status: OrderStatusValues = OrderStatusValues.BACKLOG) \
-        -> InlineKeyboardMarkup:
-    return InlineKeyboardMarkup(inline_keyboard=[
-        [
-            InlineKeyboardButton(text=("🔸 " if current_status == OrderStatusValues.BACKLOG else "") + "Ожидание",
-                                 callback_data=f"order_backlog:{order_id}:{msg_id}:{chat_id}"),
-            InlineKeyboardButton(
-                text=("🔸 " if current_status ==
-                              OrderStatusValues.WAITING_PAYMENT else "") + "Ждет оплаты",
-                callback_data=f"order_waiting_payment:{order_id}:{msg_id}:{chat_id}"),
-        ],
-        [
-            InlineKeyboardButton(text=("🔸 " if current_status == OrderStatusValues.PROCESSING else "") + "Выполнять",
-                                 callback_data=f"order_process:{order_id}:{msg_id}:{chat_id}"),
-        ],
-        [
-            InlineKeyboardButton(
-                text="Отменить ❌", callback_data=f"order_pre_cancel:{order_id}:{msg_id}:{chat_id}"),
-            InlineKeyboardButton(
-                text="Завершить ✅", callback_data=f"order_finish:{order_id}:{msg_id}:{chat_id}")
-        ]
-    ])
-
 
 def create_user_order_kb(order_id: str, msg_id: int = 0, chat_id: int = 0) -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(inline_keyboard=[

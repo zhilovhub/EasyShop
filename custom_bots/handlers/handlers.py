@@ -12,6 +12,7 @@ from aiogram.fsm.context import FSMContext
 from aiogram.types import Message, CallbackQuery, FSInputFile
 
 from bot.keyboards import keyboards
+from bot.keyboards.order_manage_keyboards import InlineOrderStatusesKeyboard
 from custom_bots.handlers.routers import multi_bot_router
 from custom_bots.multibot import order_db, product_db, bot_db, main_bot, PREV_ORDER_MSGS, custom_bot_user_db, \
     CustomUserStates, QUESTION_MESSAGES, format_locales, channel_db, custom_ad_db, scheduler, user_db
@@ -132,8 +133,9 @@ async def process_web_app_request(event: Message):
     await main_bot.edit_message_reply_markup(
         main_msg.chat.id,
         main_msg.message_id,
-        reply_markup=keyboards.create_change_order_status_kb(order.id, msg.message_id, msg.chat.id,
-                                                             current_status=order.status)
+        reply_markup=InlineOrderStatusesKeyboard.get_keyboard(
+            order.id, msg.message_id, msg.chat.id, current_status=order.status
+        )
     )
 
 

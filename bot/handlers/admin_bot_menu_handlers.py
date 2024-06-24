@@ -15,6 +15,7 @@ from aiogram.utils.token import validate_token, TokenValidationError
 from aiogram.types import Message, FSInputFile, CallbackQuery
 from aiogram.fsm.context import FSMContext
 
+from bot.keyboards.order_manage_keyboards import InlineOrderStatusesKeyboard
 from bot.keyboards.stock_menu_keyboards import InlineStockMenuKeyboard
 from bot.main import bot, user_db, bot_db, product_db, order_db, custom_bot_user_db, QUESTION_MESSAGES, stock_manager
 from bot.keyboards import *
@@ -31,7 +32,7 @@ from custom_bots.multibot import storage as custom_bot_storage
 
 from database.models.bot_model import BotSchemaWithoutId
 from database.models.mailing_model import MailingSchemaWithoutId
-from database.models.order_model import OrderSchema, OrderNotFound, OrderItem
+from database.models.order_model import OrderSchema, OrderNotFound, OrderItem, OrderStatusValues
 from database.models.product_model import ProductWithoutId, NotEnoughProductsInStockToReduce
 
 import random
@@ -161,8 +162,10 @@ async def handle_callback(query: CallbackQuery, state: FSMContext):
             await query.message.edit_reply_markup(reply_markup=create_cancel_confirm_kb(
                 data[1], int(data[2]), int(data[3])))
         case "order_back_to_order":
-            await query.message.edit_reply_markup(reply_markup=create_change_order_status_kb(
-                data[1], int(data[2]), int(data[3]), current_status=order.status))
+            await query.message.edit_reply_markup(
+                reply_markup=InlineOrderStatusesKeyboard.get_keyboard(
+                    data[1], int(data[2]), int(data[3]), current_status=order.status)
+            )
         case "order_finish" | "order_cancel" | "order_process" | "order_backlog" | "order_waiting_payment":
             new_status = {
                 "order_cancel": OrderStatusValues.CANCELLED,
@@ -195,7 +198,7 @@ async def handle_callback(query: CallbackQuery, state: FSMContext):
                     username=username,
                     is_admin=True
                 ), reply_markup=None if data[0] in ("order_finish", "order_cancel") else
-                create_change_order_status_kb(order.id, int(data[2]), int(data[3]), order.status))
+                InlineOrderStatusesKeyboard.get_keyboard(order.id, int(data[2]), int(data[3]), order.status))
 
             if data[0] in ("order_finish",):
                 if bot_data.settings and "auto_reduce" in bot_data.settings and bot_data.settings[
