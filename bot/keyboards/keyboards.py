@@ -112,17 +112,6 @@ def get_stock_import_options_keyboard(bot_id: int) -> InlineKeyboardMarkup:
     ])
 
 
-STOCK_STATE_BACK_BUTTON = "🔙 Назад"
-
-
-def get_stock_back_keyboard():
-    return ReplyKeyboardMarkup(keyboard=[
-        [
-            KeyboardButton(text=STOCK_STATE_BACK_BUTTON)
-        ]
-    ], resize_keyboard=True)
-
-
 async def get_competition_menu_keyboard(competition_id: int) -> InlineKeyboardMarkup:
     callback_metadata = str(competition_id)
     return InlineKeyboardMarkup(

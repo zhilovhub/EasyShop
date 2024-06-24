@@ -1,9 +1,36 @@
 from enum import Enum
 
-from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
+from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton, ReplyKeyboardMarkup, KeyboardButton
 from pydantic import BaseModel, ValidationError, ConfigDict, Field
 
 from bot.utils import make_admin_panel_webapp_info
+
+
+class ReplyBackStockMenuKeyboard:
+    class Callback(BaseModel):
+        class ActionEnum(Enum):
+            BACK_TO_STOCK_MENU = "🔙 Назад"
+
+        model_config = ConfigDict(from_attributes=True)
+
+        n: str = Field(default="stock_menu", frozen=True)
+        a: ActionEnum
+
+        bot_id: int
+
+    @staticmethod
+    def get_keyboard() -> ReplyKeyboardMarkup:
+        actions = ReplyBackStockMenuKeyboard.Callback.ActionEnum
+
+        return ReplyKeyboardMarkup(
+            keyboard=[
+                [
+                    KeyboardButton(
+                        text=actions.BACK_TO_STOCK_MENU.value
+                    )
+                ]
+            ], resize_keyboard=True
+        )
 
 
 class InlineStockMenuKeyboard:

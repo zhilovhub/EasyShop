@@ -6,27 +6,11 @@ from aiogram.fsm.context import FSMContext
 from aiogram.utils.media_group import MediaGroupBuilder
 from bot.states import States
 from bot.keyboards import *
-from bot.keyboards.main_menu_keyboards import ReplyBotMenuKeyboard, InlineBotMenuKeyboard
-from bot.keyboards.stock_menu_keyboards import InlineStockMenuKeyboard
+from bot.keyboards.main_menu_keyboards import InlineBotMenuKeyboard, ReplyBotMenuKeyboard
+from bot.keyboards.stock_menu_keyboards import InlineStockMenuKeyboard, ReplyBackStockMenuKeyboard
 from bot.main import stock_manager, bot, bot_db, product_db
 from bot.config import FILES_PATH
 from datetime import datetime
-
-
-@stock_menu_router.message(lambda m: m.text and m.text == STOCK_STATE_BACK_BUTTON)
-async def back_to_menu(message: Message, state: FSMContext):
-    bot_id = (await state.get_data())['bot_id']
-    user_bot_db = await bot_db.get_bot(int(bot_id))
-    user_bot = Bot(user_bot_db.token)
-    user_bot_data = await user_bot.get_me()
-    msg = await message.answer("Возвращаюсь в меню...", reply_markup=ReplyBotMenuKeyboard.get_keyboard(bot_id))
-    # await msg.delete()
-    await message.answer(
-        MessageTexts.BOT_MENU_MESSAGE.value.format(user_bot_data.username),
-        reply_markup=await InlineBotMenuKeyboard.get_keyboard(bot_id)
-    )
-    await state.set_state(States.BOT_MENU)
-    await state.set_data({'bot_id': bot_id})
 
 
 @stock_menu_router.callback_query(lambda query: InlineStockMenuKeyboard.callback_validator(query.data))
@@ -87,7 +71,7 @@ async def stock_menu_handler(query: CallbackQuery, state: FSMContext):
             xlsx_file_path, photo_path = await stock_manager.export_xlsx(bot_id=bot_id, with_pictures=False)
             await query.message.answer_document(document=FSInputFile(xlsx_file_path),
                                                 caption="Список товаров на складе",
-                                                reply_markup=get_stock_back_keyboard())
+                                                reply_markup=ReplyBackStockMenuKeyboard.get_keyboard())
 
             await state.set_state(States.GOODS_COUNT_MANAGE)
             await state.set_data({'bot_id': bot_id})
@@ -156,18 +140,40 @@ async def import_menu_handler(query: CallbackQuery, state: FSMContext):
     await state.set_state(States.IMPORT_PRODUCTS)
     await state.set_data({"bot_id": bot_id, "action": action})
     await query.message.answer("Теперь отправьте боту xlsx / csv / json файл с товарами в таком же формате, "
-                               "как файлы из экспорта товаров.", reply_markup=get_stock_back_keyboard())
+                               "как файлы из экспорта товаров.", reply_markup=ReplyBackStockMenuKeyboard.get_keyboard())
 
 
 @stock_menu_router.message(States.GOODS_COUNT_MANAGE)
 async def handle_stock_manage_input(message: Message, state: FSMContext):
+    if message.text == ReplyBackStockMenuKeyboard.Callback.ActionEnum.BACK_TO_STOCK_MENU.value:
+        bot_id = (await state.get_data())['bot_id']
+        bot_data = await bot_db.get_bot(bot_id)
+
+        if not bot_data.settings or "auto_reduce" not in bot_data.settings:
+            auto_reduce = False
+        else:
+            auto_reduce = True
+
+        await message.answer(
+            "Возвращаемся в меню склада...",
+            reply_markup=ReplyBotMenuKeyboard.get_keyboard(bot_id)
+        )
+        await message.answer(
+            "Меню склада:",
+            reply_markup=await InlineStockMenuKeyboard.get_keyboard(bot_id, auto_reduce)
+        )
+        await state.set_state(States.BOT_MENU)
+        await state.set_data({'bot_id': bot_id})
+
+        return
+
     if message.content_type != "document":
         return await message.answer("Необходимо отправить xlsx файл с товарами.",
-                                    reply_markup=get_stock_back_keyboard())
+                                    reply_markup=ReplyBackStockMenuKeyboard.get_keyboard())
     file_extension = message.document.file_name.split('.')[-1].lower()
     if file_extension not in ("xlsx",):
         return await message.answer("Файл должен быть в формате xlsx товарами.",
-                                    reply_markup=get_stock_back_keyboard())
+                                    reply_markup=ReplyBackStockMenuKeyboard.get_keyboard())
     try:
         bot_id = (await state.get_data())['bot_id']
         file_path = f"{FILES_PATH}docs/{datetime.now().strftime('%d$m%Y_%H%M%S')}.{file_extension}"
@@ -184,11 +190,11 @@ async def handle_stock_import_input(message: Message, state: FSMContext):
     state_data = await state.get_data()
     if message.content_type != "document":
         return await message.answer("Необходимо отправить файл с товарами.",
-                                    reply_markup=get_stock_back_keyboard())
+                                    reply_markup=ReplyBackStockMenuKeyboard.get_keyboard())
     file_extension = message.document.file_name.split('.')[-1].lower()
     if file_extension not in ("xlsx", "json", "csv"):
         return await message.answer("Файл должен быть в формате xlsx / json / csv",
-                                    reply_markup=get_stock_back_keyboard())
+                                    reply_markup=ReplyBackStockMenuKeyboard.get_keyboard())
     try:
         bot_id = state_data['bot_id']
         file_path = f"{FILES_PATH}docs/{datetime.now().strftime('%d$m%Y_%H%M%S')}.{file_extension}"
