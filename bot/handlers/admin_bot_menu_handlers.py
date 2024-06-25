@@ -176,8 +176,7 @@ async def handler_order_cancel_callback(query: CallbackQuery, state: FSMContext)
                         for product_id, product_item in order.items.items()]
             await Bot(bot_token, parse_mode=ParseMode.HTML).edit_message_text(
                 order.convert_to_notification_text(products=products),
-                reply_markup=None if callback_data.a in (callback_data.ActionEnum.FINISH, "order_cancel") else
-                create_user_order_kb(order.id, callback_data.msg_id, callback_data.chat_id),
+                reply_markup=None,
                 chat_id=callback_data.chat_id,
                 message_id=callback_data.msg_id
             )
@@ -247,7 +246,7 @@ async def handle_callback(query: CallbackQuery, state: FSMContext):
                         for product_id, product_item in order.items.items()]
             await Bot(bot_token, parse_mode=ParseMode.HTML).edit_message_text(
                 order.convert_to_notification_text(products=products),
-                reply_markup=None if callback_data.a in (callback_data.ActionEnum.FINISH, "order_cancel") else
+                reply_markup=None if callback_data.a in (callback_data.ActionEnum.FINISH) else
                 create_user_order_kb(order.id, callback_data.msg_id, callback_data.chat_id),
                 chat_id=callback_data.chat_id,
                 message_id=callback_data.msg_id
