@@ -1,42 +1,39 @@
 import json
 import os
+import random
 import string
 from random import sample
 from datetime import datetime
 
-from aiogram.fsm.storage.base import StorageKey
+from aiogram import F
 from aiohttp import ClientConnectorError
-
-from aiogram import Bot, F
 from aiogram.enums import ParseMode
+from aiogram.types import Message, CallbackQuery
+from sqlalchemy.exc import IntegrityError
 from aiogram.exceptions import TelegramUnauthorizedError
-from aiogram.utils.token import validate_token, TokenValidationError
-
-from aiogram.types import Message, FSInputFile, CallbackQuery
 from aiogram.fsm.context import FSMContext
+from aiogram.utils.token import validate_token, TokenValidationError
+from aiogram.fsm.storage.base import StorageKey
 
-from bot.keyboards.order_manage_keyboards import InlineOrderStatusesKeyboard, InlineOrderCancelKeyboard, \
-    InlineOrderCustomBotKeyboard
-from bot.keyboards.stock_menu_keyboards import InlineStockMenuKeyboard
-from bot.main import bot, user_db, bot_db, product_db, order_db, custom_bot_user_db, QUESTION_MESSAGES, stock_manager
+from bot.main import bot, user_db, product_db, order_db, custom_bot_user_db, QUESTION_MESSAGES
 from bot.keyboards import *
-from bot.keyboards.main_menu_keyboards import ReplyBotMenuKeyboard, InlineBotMenuKeyboard, ReplyBackBotMenuKeyboard
 from bot.exceptions import InstanceAlreadyExists
 from bot.states.states import States
 from bot.handlers.routers import admin_bot_menu_router
 from bot.utils.custom_bot_api import start_custom_bot, stop_custom_bot
-from sqlalchemy.exc import IntegrityError
-
-from logs.config import logger
+from bot.keyboards.main_menu_keyboards import ReplyBotMenuKeyboard, InlineBotMenuKeyboard, ReplyBackBotMenuKeyboard
+from bot.keyboards.stock_menu_keyboards import InlineStockMenuKeyboard
+from bot.keyboards.order_manage_keyboards import InlineOrderStatusesKeyboard, InlineOrderCancelKeyboard, \
+    InlineOrderCustomBotKeyboard
 
 from custom_bots.multibot import storage as custom_bot_storage
 
 from database.models.bot_model import BotSchemaWithoutId
-from database.models.mailing_model import MailingSchemaWithoutId
 from database.models.order_model import OrderSchema, OrderNotFound, OrderItem, OrderStatusValues
+from database.models.mailing_model import MailingSchemaWithoutId
 from database.models.product_model import ProductWithoutId, NotEnoughProductsInStockToReduce
 
-import random
+from logs.config import logger
 
 
 @admin_bot_menu_router.message(F.web_app_data)
@@ -74,7 +71,7 @@ async def process_web_app_request(event: Message):
                 chosen_options[option_title] = item['chosen_option']
             items[item_id] = OrderItem(amount=item['amount'], used_extra_option=used_options,
                                        extra_options=chosen_options)
-            if bot_data.settings and "auto_reduce" in bot_data.settings and bot_data.settings["auto_reduce"] == True:
+            if bot_data.settings and "auto_reduce" in bot_data.settings and bot_data.settings["auto_reduce"] is True:
                 if product.count < item['amount']:
                     raise NotEnoughProductsInStockToReduce(product, item['amount'])
                 product.count -= item['amount']
@@ -98,22 +95,23 @@ async def process_web_app_request(event: Message):
     except Exception as e:
         if isinstance(e, NotEnoughProductsInStockToReduce):
             await event.answer(
-                f":(\nК сожалению на складе недостаточно <b>{product.name}</b> для выполнения Вашего заказа.")
+                f":(\nК сожалению на складе недостаточно <b>{e.product.name}</b> для выполнения Вашего заказа.")
         logger.warning("error while creating order", exc_info=True)
         return await event.answer("Произошла ошибка при создании заказа, попробуйте еще раз.")
     try:
         await send_new_order_notify(order, user_id)
-    except Exception:
-        logger.warning("error while sending test order notification", exc_info=True)
+    except Exception as e:
+        logger.error("error while sending test order notification", exc_info=e)
 
 
 @admin_bot_menu_router.message(F.reply_to_message)
 async def handle_reply_to_question(message: Message, state: FSMContext):
     question_messages_data = QUESTION_MESSAGES.get_data()
     question_message_id = str(message.reply_to_message.message_id)
-    if not question_message_id in question_messages_data:
+    if question_message_id not in question_messages_data:
         logger.info(
-            f"{message.from_user.id}: replied message with message_id {question_message_id} not found in question_messages_data"
+            f"{message.from_user.id}: "
+            f"replied message with message_id {question_message_id} not found in question_messages_data"
         )
         return await bot_menu_handler(message, state)
 
@@ -124,13 +122,15 @@ async def handle_reply_to_question(message: Message, state: FSMContext):
         return await message.answer(f"Заказ с номером №{order_id} не найден")
 
     custom_bot = await bot_db.get_bot_by_created_by(created_by=message.from_user.id)
-    await Bot(token=custom_bot.token, parse_mode=ParseMode.HTML).send_message(chat_id=order.from_user,
-                                                                              text=f"Поступил ответ на вопрос по заказу <b>#{order.id}</b> 👇\n\n"
-                                                                                   f"<i>{message.text}</i>",
-                                                                              reply_to_message_id=
-                                                                              question_messages_data[
-                                                                                  question_message_id][
-                                                                                  "question_from_custom_bot_message_id"])
+    await Bot(
+        token=custom_bot.token,
+        parse_mode=ParseMode.HTML
+    ).send_message(
+        chat_id=order.from_user,
+        text=f"Поступил ответ на вопрос по заказу <b>#{order.id}</b> 👇\n\n"
+             f"<i>{message.text}</i>",
+        reply_to_message_id=question_messages_data[question_message_id]["question_from_custom_bot_message_id"]
+    )
     await message.answer("Ответ отправлен")
 
     del question_messages_data[question_message_id]
@@ -224,10 +224,10 @@ async def handle_callback(query: CallbackQuery, state: FSMContext):
                     callback_data.order_id, callback_data.msg_id, callback_data.chat_id
                 )
             )
-        case callback_data.ActionEnum.FINISH | \
-             callback_data.ActionEnum.PROCESS | \
-             callback_data.ActionEnum.BACKLOG | \
-             callback_data.ActionEnum.WAITING_PAYMENT:  # TODO remove cancel here
+        case callback_data.ActionEnum.FINISH \
+             | callback_data.ActionEnum.PROCESS \
+             | callback_data.ActionEnum.BACKLOG \
+             | callback_data.ActionEnum.WAITING_PAYMENT:  # noqa TODO remove cancel here
             new_status = {
                 callback_data.ActionEnum.FINISH: OrderStatusValues.FINISHED,
                 callback_data.ActionEnum.PROCESS: OrderStatusValues.PROCESSING,
@@ -264,8 +264,8 @@ async def handle_callback(query: CallbackQuery, state: FSMContext):
             )
 
             if callback_data.a == callback_data.ActionEnum.FINISH:
-                if bot_data.settings and "auto_reduce" in bot_data.settings and bot_data.settings[
-                    'auto_reduce'] == True:
+                if bot_data.settings and "auto_reduce" in bot_data.settings and \
+                        bot_data.settings['auto_reduce'] is True:
                     zero_products = []
                     for item_id, item in order.items.items():
                         product = await product_db.get_product(item_id)
@@ -293,15 +293,17 @@ async def waiting_for_the_token_handler(message: Message, state: FSMContext):
         found_bot_data = await found_bot.get_me()
         bot_fullname, bot_username = found_bot_data.full_name, found_bot_data.username
 
-        new_bot = BotSchemaWithoutId(bot_token=token,
-                                     status="new",
-                                     created_at=datetime.utcnow(),
-                                     created_by=message.from_user.id,
-                                     settings={"start_msg": MessageTexts.DEFAULT_START_MESSAGE.value,
-                                               "default_msg":
-                                                   f"Приветствую, этот бот создан с помощью @{(await bot.get_me()).username}",
-                                               "web_app_button": MessageTexts.OPEN_WEB_APP_BUTTON_TEXT.value},
-                                     locale=lang)
+        new_bot = BotSchemaWithoutId(
+            bot_token=token,
+            status="new",
+            created_at=datetime.utcnow(),
+            created_by=message.from_user.id,
+            settings={"start_msg": MessageTexts.DEFAULT_START_MESSAGE.value,
+                      "default_msg":
+                          f"Приветствую, этот бот создан с помощью @{(await bot.get_me()).username}",
+                      "web_app_button": MessageTexts.OPEN_WEB_APP_BUTTON_TEXT.value},
+            locale=lang
+        )
 
         bot_id = await bot_db.add_bot(new_bot)
         await start_custom_bot(bot_id)
@@ -315,9 +317,9 @@ async def waiting_for_the_token_handler(message: Message, state: FSMContext):
     except ClientConnectorError:
         logger.error("Cant connect to local api host (maybe service is offline)")
         return await message.answer("Сервис в данный момент недоступен, попробуйте еще раз позже")
-    except Exception:
+    except Exception as e:
         logger.error(
-            f"Unexpected error while adding new bot with token {token} from user {message.from_user.id}", exc_info=True
+            f"Unexpected error while adding new bot with token {token} from user {message.from_user.id}", exc_info=e
         )
         return await message.answer(":( Произошла ошибка при добавлении бота, попробуйте еще раз позже")
     user_bot = await bot_db.get_bot(bot_id)
@@ -427,8 +429,7 @@ async def bot_menu_callback_handler(query: CallbackQuery, state: FSMContext):
                 f"👨🏻‍🦱 Всего пользователей: {len(users)}"
             )
             await query.answer()
-        case callback_data.ActionEnum.MAILING_ADD \
-             | InlineBotMenuKeyboard.Callback.ActionEnum.MAILING_OPEN:
+        case callback_data.ActionEnum.MAILING_ADD | InlineBotMenuKeyboard.Callback.ActionEnum.MAILING_OPEN:
             if callback_data.a == InlineBotMenuKeyboard.Callback.ActionEnum.MAILING_ADD:
                 await mailing_db.add_mailing(MailingSchemaWithoutId.model_validate(
                     {"bot_id": bot_id, "created_at": datetime.now().replace(tzinfo=None)}

@@ -1,24 +1,24 @@
 from datetime import timedelta, datetime
 
 from aiogram import Bot
+from aiogram.enums import ContentType
 from aiogram.types import CallbackQuery, FSInputFile, User, Message
 from aiogram.types import ReplyKeyboardRemove, InlineKeyboardMarkup, InlineKeyboardButton
-from aiogram.enums import ContentType
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.storage.base import StorageKey
 
 from bot import config
-from bot.keyboards.subscription_keyboards import InlineSubscriptionContinueKeyboard
 from bot.main import subscription, bot, dp, cache_resources_file_id_store, user_db, bot_db
 from bot.utils import MessageTexts
 from bot.states import States
-from bot.keyboards.main_menu_keyboards import ReplyBotMenuKeyboard, InlineBotMenuKeyboard, ReplyBackBotMenuKeyboard
 from bot.handlers.routers import subscribe_router
 from bot.utils.admin_group import EventTypes, send_event, success_event
-from subscription.subscription import UserHasAlreadyStartedTrial
-from database.models.user_model import UserSchema, UserStatusValues
-from bot.utils.send_instructions import send_instructions
 from bot.utils.custom_bot_api import stop_custom_bot
+from bot.utils.send_instructions import send_instructions
+from bot.keyboards.main_menu_keyboards import ReplyBotMenuKeyboard, InlineBotMenuKeyboard, ReplyBackBotMenuKeyboard
+from bot.keyboards.subscription_keyboards import InlineSubscriptionContinueKeyboard
+
+from database.models.user_model import UserSchema, UserStatusValues
 
 from logs.config import logger
 
@@ -115,21 +115,25 @@ async def waiting_payment_pay_handler(message: Message, state: FSMContext):
     for admin in config.ADMINS:
         try:
             msg: Message = await message.send_copy(admin)
-            await bot.send_message(admin, f"💳 Оплата подписки от пользователя <b>"
-                                          f"{'@' + message.from_user.username if message.from_user.username else message.from_user.full_name}</b>",
-                                   reply_to_message_id=msg.message_id,
-                                   reply_markup=InlineKeyboardMarkup(inline_keyboard=[
-                                       [
-                                           InlineKeyboardButton(text="Подтвердить оплату",
-                                                                callback_data=f"approve_pay:{message.from_user.id}")
-                                       ],
-                                       [
-                                           InlineKeyboardButton(text="Отклонить оплату",
-                                                                callback_data=f"cancel_pay:{message.from_user.id}")
-                                       ]
-                                   ]))
-        except:
-            logger.warning("error while notify admin", exc_info=True)
+            await bot.send_message(
+                admin,
+                f"💳 Оплата подписки от пользователя <b>"
+                f"{'@' + message.from_user.username if message.from_user.username else message.from_user.full_name}"
+                f"</b>",
+                reply_to_message_id=msg.message_id,
+                reply_markup=InlineKeyboardMarkup(inline_keyboard=[
+                    [
+                        InlineKeyboardButton(text="Подтвердить оплату",
+                                             callback_data=f"approve_pay:{message.from_user.id}")
+                    ],
+                    [
+                        InlineKeyboardButton(text="Отклонить оплату",
+                                             callback_data=f"cancel_pay:{message.from_user.id}")
+                    ]
+                ])
+            )
+        except Exception as e:
+            logger.warning("error while notify admin", exc_info=e)
 
     await message.reply(
         "Ваши данные отправлены на модерацию, ожидайте изменения статуса оплаты",
@@ -145,7 +149,9 @@ async def waiting_payment_approve_handler(message: Message, state: FSMContext):
     user_id = message.from_user.id
     user_status = (await user_db.get_user(user_id)).status
 
-    if user_status in (UserStatusValues.SUBSCRIBED, UserStatusValues.TRIAL) and message.text == ReplyBackBotMenuKeyboard.Callback.ActionEnum.BACK_TO_BOT_MENU.value:
+    if user_status in (UserStatusValues.SUBSCRIBED,
+                       UserStatusValues.TRIAL) \
+            and message.text == ReplyBackBotMenuKeyboard.Callback.ActionEnum.BACK_TO_BOT_MENU.value:
         state_data = await state.get_data()
         custom_bot = await bot_db.get_bot(state_data['bot_id'])
         if state_data and "bot_id" in state_data:

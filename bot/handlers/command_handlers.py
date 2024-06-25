@@ -1,28 +1,29 @@
 from datetime import datetime
 
-from aiogram import Bot, F
+from aiogram import F
 from aiogram.types import Message, ReplyKeyboardRemove
 from aiogram.filters import CommandStart
 from aiogram.fsm.context import FSMContext
 
-from bot.handlers.subscription_handlers import send_subscription_expire_notify, send_subscription_end_notify
-from bot.keyboards.subscription_keyboards import InlineSubscriptionContinueKeyboard
-from bot.main import bot, cache_resources_file_id_store, user_db, bot_db, adv_db, subscription
+from bot.main import bot, cache_resources_file_id_store, user_db, adv_db, subscription
 from bot.keyboards import *
-from bot.keyboards.main_menu_keyboards import InlineBotMenuKeyboard
 from bot.states.states import States
 from bot.handlers.routers import commands_router
 from bot.utils.admin_group import send_event, EventTypes, success_event
 from bot.exceptions.exceptions import *
 from bot.utils.send_instructions import send_instructions
 from bot.utils.check_subscription import check_subscription
+from bot.keyboards.main_menu_keyboards import InlineBotMenuKeyboard
+from bot.handlers.subscription_handlers import send_subscription_expire_notify, send_subscription_end_notify
+from bot.keyboards.subscription_keyboards import InlineSubscriptionContinueKeyboard
 from bot.middlewaries.subscription_middleware import CheckSubscriptionMiddleware
-from database.models.adv_model import EmptyAdvTable, AdvSchema, AdvSchemaWithoutId
+
+from database.models.adv_model import EmptyAdvTable, AdvSchemaWithoutId
+from database.models.user_model import UserSchema, UserStatusValues
+
+from subscription.subscription import UserHasAlreadyStartedTrial
 
 from logs.config import logger, adv_logger, extra_params
-
-from database.models.user_model import UserSchema, UserStatusValues
-from subscription.subscription import UserHasAlreadyStartedTrial
 
 
 @commands_router.message(CommandStart())
@@ -47,7 +48,6 @@ async def start_command_handler(message: Message, state: FSMContext):
                     e.__str__(),
                     extra=extra_params(user_id=user_id)
                 )
-
 
     except UserNotFound:
         if message.text == "/start from_adv":
@@ -108,7 +108,7 @@ async def start_command_handler(message: Message, state: FSMContext):
 async def clear_command_handler(message: Message, state: FSMContext) -> None:
     """ONLY FOR DEBUG BOT"""
     await user_db.del_user(user_id=message.from_user.id)
-    await CheckSubscriptionMiddleware().__call__(start_command_handler, message, state)
+    await CheckSubscriptionMiddleware().__call__(start_command_handler, message, state)  # noqa
 
 
 @commands_router.message(F.text == "/check_subscription")

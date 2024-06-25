@@ -1,13 +1,12 @@
-from aiogram import Bot
 from aiogram.types import Message, ReplyKeyboardRemove, CallbackQuery
 from aiogram.fsm.context import FSMContext
 
-from bot.main import bot_db, product_db, bot, cache_resources_file_id_store
+from bot.main import product_db, bot, cache_resources_file_id_store
 from bot.keyboards import *
-from bot.keyboards.main_menu_keyboards import ReplyBotMenuKeyboard, InlineBotMenuKeyboard, ReplyBackBotMenuKeyboard
 from bot.states.states import States
 from bot.handlers.routers import custom_bot_editing_router
 from bot.utils.send_instructions import send_instructions
+from bot.keyboards.main_menu_keyboards import ReplyBotMenuKeyboard, InlineBotMenuKeyboard, ReplyBackBotMenuKeyboard
 
 from logs.config import logger
 

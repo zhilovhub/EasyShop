@@ -42,7 +42,7 @@ ROOT_PATH = "/api/"
 
 origins = ["*"]
 app.add_middleware(
-    CORSMiddleware,
+    CORSMiddleware,  # noqa
     allow_origins=origins,
     allow_credentials=True,
     allow_methods=["*"],
@@ -62,7 +62,7 @@ if __name__ == "__main__":
 
     try:
         os.system("mkdir logs")
-    except Exception as e:
+    except Exception as e:  # noqa
         pass
 
     for log_file in ('all.log', 'err.log'):
@@ -83,6 +83,6 @@ if __name__ == "__main__":
 
 # Start uvicorn from cli (no logs)
 if __name__ == "api.main":
-    import api.products
-    import api.orders
-    import api.files
+    import api.products  # noqa
+    import api.orders  # noqa
+    import api.files  # noqa

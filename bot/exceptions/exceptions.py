@@ -1,5 +1,5 @@
 class ChannelUserNotFound(Exception):
-    "Raised when provided channel_user not found in database"
+    """Raised when provided channel_user not found in database"""
     pass
 
 

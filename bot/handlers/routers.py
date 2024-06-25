@@ -1,9 +1,9 @@
 from aiogram import Router
 
 from bot.filters import ChatTypeFilter
-from bot.middlewaries.subscription_middleware import CheckSubscriptionMiddleware
-from bot.middlewaries.errors_middleware import ErrorMiddleware
 from bot.middlewaries.log_middleware import LogMiddleware
+from bot.middlewaries.errors_middleware import ErrorMiddleware
+from bot.middlewaries.subscription_middleware import CheckSubscriptionMiddleware
 
 from logs.config import logger
 

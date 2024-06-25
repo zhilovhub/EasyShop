@@ -35,10 +35,6 @@ class FilterNotFound(Exception):
         super().__init__(self.message)
 
 
-class NotEnoughProductsInStockToReduce(Exception):
-    """Raised when auto_reduce on order option is enabled and product reduce amount is more than product count"""
-    pass
-
 # class CategoryFilterNotFound(Exception):
 #     """Raised when category name provided to ProductFilter class is not exist in categories table"""
 #
@@ -129,6 +125,8 @@ class NotEnoughProductsInStockToReduce(Exception):
     def __init__(self, product: ProductSchema, amount: int,
                  message: str = "Product with name ('{PRODUCT_NAME}') and id ({PRODUCT_ID}) has not enough items "
                                 "in stock (need: {ITEMS_NEED}, stock: {ITEMS_STOCK})"):
+
+        self.product = product
         self.message = message.replace("{PRODUCT_NAME}", product.name.lower()).replace(
             "{PRODUCT_ID}", str(product.id)
         ).replace(
