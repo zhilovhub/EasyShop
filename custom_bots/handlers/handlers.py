@@ -12,7 +12,7 @@ from aiogram.fsm.context import FSMContext
 from aiogram.types import Message, CallbackQuery, FSInputFile
 
 from bot.keyboards import keyboards
-from bot.keyboards.order_manage_keyboards import InlineOrderStatusesKeyboard
+from bot.keyboards.order_manage_keyboards import InlineOrderStatusesKeyboard, InlineOrderCancelKeyboard
 from custom_bots.handlers.routers import multi_bot_router
 from custom_bots.multibot import order_db, product_db, bot_db, main_bot, PREV_ORDER_MSGS, custom_bot_user_db, \
     CustomUserStates, QUESTION_MESSAGES, format_locales, channel_db, custom_ad_db, scheduler, user_db
@@ -363,7 +363,7 @@ async def handle_order_callback(query: CallbackQuery):
                 f"user_id={user_id}: tapped to pre_cancel in order_id={data[1]}",
                 extra=extra_params(user_id=user_id, order_id=data[1])
             )
-            await query.message.edit_reply_markup(reply_markup=keyboards.create_cancel_confirm_kb(data[1]))
+            await query.message.edit_reply_markup(reply_markup=InlineOrderCancelKeyboard.get_keyboard(data[1]))
         case "order_back_to_order":
             custom_bot_logger.info(
                 f"user_id={user_id}: backed to menu of order_id={data[1]}",

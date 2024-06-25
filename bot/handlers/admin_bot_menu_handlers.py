@@ -15,7 +15,7 @@ from aiogram.utils.token import validate_token, TokenValidationError
 from aiogram.types import Message, FSInputFile, CallbackQuery
 from aiogram.fsm.context import FSMContext
 
-from bot.keyboards.order_manage_keyboards import InlineOrderStatusesKeyboard
+from bot.keyboards.order_manage_keyboards import InlineOrderStatusesKeyboard, InlineOrderCancelKeyboard
 from bot.keyboards.stock_menu_keyboards import InlineStockMenuKeyboard
 from bot.main import bot, user_db, bot_db, product_db, order_db, custom_bot_user_db, QUESTION_MESSAGES, stock_manager
 from bot.keyboards import *
@@ -144,36 +144,98 @@ async def handle_reply_to_question(message: Message, state: FSMContext):
         await user_state.set_data(user_state_data)
 
 
-@admin_bot_menu_router.callback_query(lambda q: q.data.startswith("order_"))
-async def handle_callback(query: CallbackQuery, state: FSMContext):
+@admin_bot_menu_router.callback_query(lambda query: InlineOrderCancelKeyboard.callback_validator(query.data))
+async def handler_order_cancel_callback(query: CallbackQuery, state: FSMContext):
     state_data = await state.get_data()
-    data = query.data.split(":")
     bot_data = await bot_db.get_bot(state_data['bot_id'])
     bot_token = bot_data.token
 
+    callback_data = InlineOrderCancelKeyboard.Callback.model_validate_json(query.data)
+
     try:
-        order = await order_db.get_order(data[1])
+        order = await order_db.get_order(callback_data.order_id)
     except OrderNotFound:
         await query.answer("Ошибка при работе с заказом, возможно статус уже изменился.", show_alert=True)
         return await query.message.edit_reply_markup(None)
 
-    match data[0]:
-        case "order_pre_cancel":
-            await query.message.edit_reply_markup(reply_markup=create_cancel_confirm_kb(
-                data[1], int(data[2]), int(data[3])))
-        case "order_back_to_order":
+    match callback_data.a:
+        case callback_data.ActionEnum.BACK_TO_ORDER_STATUSES:
             await query.message.edit_reply_markup(
                 reply_markup=InlineOrderStatusesKeyboard.get_keyboard(
-                    data[1], int(data[2]), int(data[3]), current_status=order.status)
+                    callback_data.order_id, callback_data.msg_id, callback_data.chat_id, current_status=order.status
+                )
             )
-        case "order_finish" | "order_cancel" | "order_process" | "order_backlog" | "order_waiting_payment":
+        case callback_data.ActionEnum.CANCEL:
+            if order.status == OrderStatusValues.CANCELLED:
+                return await query.answer("Этот статус уже выставлен")
+            order.status = OrderStatusValues.CANCELLED
+
+            await order_db.update_order(order)
+
+            products = [(await product_db.get_product(int(product_id)), product_item.amount, product_item.extra_options)
+                        for product_id, product_item in order.items.items()]
+            await Bot(bot_token, parse_mode=ParseMode.HTML).edit_message_text(
+                order.convert_to_notification_text(products=products),
+                reply_markup=None if callback_data.a in (callback_data.ActionEnum.FINISH, "order_cancel") else
+                create_user_order_kb(order.id, callback_data.msg_id, callback_data.chat_id),
+                chat_id=callback_data.chat_id,
+                message_id=callback_data.msg_id
+            )
+
+            username = query.message.text[query.message.text.find("пользователя"):].split()[1].strip("\n")
+
+            await query.message.edit_text(
+                text=order.convert_to_notification_text(
+                    products=products,
+                    username=username,
+                    is_admin=True
+                ), reply_markup=None if callback_data.a in (callback_data.ActionEnum.FINISH, "order_cancel") else
+                InlineOrderStatusesKeyboard.get_keyboard(
+                    order.id, callback_data.msg_id, callback_data.chat_id, order.status)
+            )
+
+            for item_id, item in order.items.items():
+                product = await product_db.get_product(item_id)
+                product.count += item.amount
+                await product_db.update_product(product)
+
+            await Bot(bot_token, parse_mode=ParseMode.HTML).send_message(
+                chat_id=callback_data.chat_id,
+                text=f"Новый статус заказа <b>#{order.id}</b>\n<b>{order.translate_order_status()}</b>"
+            )
+
+
+@admin_bot_menu_router.callback_query(lambda query: InlineOrderStatusesKeyboard.callback_validator(query.data))
+async def handle_callback(query: CallbackQuery, state: FSMContext):
+    state_data = await state.get_data()
+    bot_data = await bot_db.get_bot(state_data['bot_id'])
+    bot_token = bot_data.token
+
+    callback_data = InlineOrderStatusesKeyboard.Callback.model_validate_json(query.data)
+
+    try:
+        order = await order_db.get_order(callback_data.order_id)
+    except OrderNotFound:
+        await query.answer("Ошибка при работе с заказом, возможно статус уже изменился.", show_alert=True)
+        return await query.message.edit_reply_markup(None)
+
+    match callback_data.a:
+        case callback_data.ActionEnum.PRE_CANCEL:
+            await query.message.edit_reply_markup(
+                reply_markup=InlineOrderCancelKeyboard.get_keyboard(
+                    callback_data.order_id, callback_data.msg_id, callback_data.chat_id
+                )
+            )
+        case callback_data.ActionEnum.FINISH | \
+             callback_data.ActionEnum.PROCESS | \
+             callback_data.ActionEnum.BACKLOG | \
+             callback_data.ActionEnum.WAITING_PAYMENT:  # TODO remove cancel here
             new_status = {
-                "order_cancel": OrderStatusValues.CANCELLED,
-                "order_finish": OrderStatusValues.FINISHED,
-                "order_process": OrderStatusValues.PROCESSING,
-                "order_backlog": OrderStatusValues.BACKLOG,
-                "order_waiting_payment": OrderStatusValues.WAITING_PAYMENT
-            }[data[0]]
+                callback_data.ActionEnum.FINISH: OrderStatusValues.FINISHED,
+                callback_data.ActionEnum.PROCESS: OrderStatusValues.PROCESSING,
+                callback_data.ActionEnum.BACKLOG: OrderStatusValues.BACKLOG,
+                callback_data.ActionEnum.WAITING_PAYMENT: OrderStatusValues.WAITING_PAYMENT
+            }[callback_data.a]
 
             if order.status == new_status:
                 return await query.answer("Этот статус уже выставлен")
@@ -185,10 +247,11 @@ async def handle_callback(query: CallbackQuery, state: FSMContext):
                         for product_id, product_item in order.items.items()]
             await Bot(bot_token, parse_mode=ParseMode.HTML).edit_message_text(
                 order.convert_to_notification_text(products=products),
-                reply_markup=None if data[0] in ("order_finish", "order_cancel") else
-                create_user_order_kb(order.id, int(data[2]), int(data[3])),
-                chat_id=data[3],
-                message_id=int(data[2]))
+                reply_markup=None if callback_data.a in (callback_data.ActionEnum.FINISH, "order_cancel") else
+                create_user_order_kb(order.id, callback_data.msg_id, callback_data.chat_id),
+                chat_id=callback_data.chat_id,
+                message_id=callback_data.msg_id
+            )
 
             username = query.message.text[query.message.text.find("пользователя"):].split()[1].strip("\n")
 
@@ -197,10 +260,12 @@ async def handle_callback(query: CallbackQuery, state: FSMContext):
                     products=products,
                     username=username,
                     is_admin=True
-                ), reply_markup=None if data[0] in ("order_finish", "order_cancel") else
-                InlineOrderStatusesKeyboard.get_keyboard(order.id, int(data[2]), int(data[3]), order.status))
+                ), reply_markup=None if callback_data.a in (callback_data.ActionEnum.FINISH, "order_cancel") else
+                InlineOrderStatusesKeyboard.get_keyboard(
+                    order.id, callback_data.msg_id, callback_data.chat_id, order.status)
+            )
 
-            if data[0] in ("order_finish",):
+            if callback_data.a in (callback_data.ActionEnum.FINISH,):
                 if bot_data.settings and "auto_reduce" in bot_data.settings and bot_data.settings[
                     'auto_reduce'] == True:
                     zero_products = []
@@ -212,14 +277,9 @@ async def handle_callback(query: CallbackQuery, state: FSMContext):
                         msg = await query.message.answer(
                             "⚠️ Внимание, кол-во следующих товаров на складе равно 0.")
                         await msg.reply("\n".join([f"{p.name} [{p.id}]" for p in zero_products]))
-            if data[0] in ("order_cancel",):
-                for item_id, item in order.items.items():
-                    product = await product_db.get_product(item_id)
-                    product.count += item.amount
-                    await product_db.update_product(product)
 
             await Bot(bot_token, parse_mode=ParseMode.HTML).send_message(
-                chat_id=data[3],
+                chat_id=callback_data.chat_id,
                 text=f"Новый статус заказа <b>#{order.id}</b>\n<b>{order.translate_order_status()}</b>")
 
 

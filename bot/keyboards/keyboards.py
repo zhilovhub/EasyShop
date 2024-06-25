@@ -32,19 +32,6 @@ def create_confirm_question_kb(order_id: str, msg_id: int, chat_id: int) -> Inli
     ])
 
 
-def create_cancel_confirm_kb(order_id: str, msg_id: int = 0, chat_id: int = 0) -> InlineKeyboardMarkup:
-    return InlineKeyboardMarkup(inline_keyboard=[
-        [
-            InlineKeyboardButton(
-                text="Точно отменить?", callback_data=f"order_cancel:{order_id}:{msg_id}:{chat_id}")
-        ],
-        [
-            InlineKeyboardButton(
-                text="Назад", callback_data=f"order_back_to_order:{order_id}:{msg_id}:{chat_id}")
-        ]
-    ])
-
-
 def get_back_keyboard(back_text: str = MessageTexts.BACK_BUTTON_TEXT.value) -> ReplyKeyboardMarkup:
     return ReplyKeyboardMarkup(keyboard=[
         [KeyboardButton(text=back_text)]
