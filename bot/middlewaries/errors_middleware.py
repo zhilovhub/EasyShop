@@ -3,14 +3,12 @@ from typing import Callable, Dict, Any, Awaitable
 
 from aiogram import BaseMiddleware
 from aiogram.types import CallbackQuery, Message, ChatMemberUpdated
+from aiogram.exceptions import TelegramAPIError, TelegramRetryAfter
 
 from bot.main import bot
 from bot.utils.admin_group import send_event, EventTypes
 
 from logs.config import logger
-
-from aiogram.exceptions import TelegramAPIError, TelegramRetryAfter
-
 
 
 async def notify_about_error(event: CallbackQuery | Message | ChatMemberUpdated, error_message: str):
