@@ -8,17 +8,6 @@ from bot.utils.keyboard_utils import *
 from bot.utils import MessageTexts, make_admin_panel_webapp_info
 
 
-def create_confirm_question_kb(order_id: str, msg_id: int, chat_id: int) -> InlineKeyboardMarkup:
-    return InlineKeyboardMarkup(inline_keyboard=[
-        [
-            InlineKeyboardButton(text="✅",
-                                 callback_data=f"approve_ask_question:{order_id}:{msg_id}:{chat_id}"),
-            InlineKeyboardButton(text="❌",
-                                 callback_data=f"cancel_ask_question")
-        ],
-    ])
-
-
 def get_back_keyboard(back_text: str = MessageTexts.BACK_BUTTON_TEXT.value) -> ReplyKeyboardMarkup:
     return ReplyKeyboardMarkup(keyboard=[
         [KeyboardButton(text=back_text)]
