@@ -142,42 +142,6 @@ async def process_web_app_request(event: Message):
     )
 
 
-@multi_bot_router.message(CommandStart())
-async def start_cmd(message: Message, state: FSMContext, command: CommandObject):
-    user_id = message.from_user.id
-
-    start_msg = await get_option("start_msg", message.bot.token)
-
-    try:
-        bot = await bot_db.get_bot_by_token(message.bot.token)
-        custom_bot_logger.info(
-            f"user_id={user_id}: user called /start at bot_id={bot.bot_id}",
-            extra=extra_params(user_id=user_id, bot_id=bot.bot_id)
-        )
-
-        try:
-            await custom_bot_user_db.get_custom_bot_user(bot.bot_id, user_id)
-        except CustomBotUserNotFound:
-            custom_bot_logger.info(
-                f"user_id={user_id}: user not found in database, trying to add to it",
-                extra=extra_params(user_id=user_id, bot_id=bot.bot_id)
-            )
-            await custom_bot_user_db.add_custom_bot_user(bot.bot_id, user_id)
-    except BotNotFound:
-        return await message.answer("Бот не инициализирован")
-
-    if command.args == "show_shop_inline":
-        return await message.answer("Наш магазин:", reply_markup=keyboards.get_show_inline_button(bot.bot_id))
-
-    await message.answer(
-        format_locales(start_msg, message.from_user, message.chat),
-        reply_markup=ReplyCustomBotMenuKeyboard.get_keyboard(
-            bot.bot_id
-        )
-    )
-    await state.set_state(CustomUserStates.MAIN_MENU)
-
-
 @multi_bot_router.callback_query(lambda q: q.data.startswith("request_ad"))
 async def request_ad_handler(query: CallbackQuery):
     bot_id = int(query.data.split(':')[-1])
@@ -299,31 +263,3 @@ async def main_menu_handler(message: Message):
                     bot.bot_id
                 )
             )
-
-
-async def get_option(param: str, token: str):
-    try:
-        bot_info = await bot_db.get_bot_by_token(token)
-    except BotNotFound:
-        custom_bot_logger.warning(
-            f"bot_token={token}: this bot is not in db. Deleting webhook...",
-            extra=extra_params(bot_token=token)
-        )
-        return await Bot(token).delete_webhook()
-
-    options = bot_info.settings
-    if options is None:
-        custom_bot_logger.warning(
-            f"bot_id={bot_info.bot_id}: bot has empty settings",
-            extra=extra_params(bot_id=bot_info.bot_id)
-        )
-        return None
-
-    if param in options:
-        return options[param]
-
-    custom_bot_logger.warning(
-        f"bot_id={bot_info.bot_id}: {param} not in settings",
-        extra=extra_params(bot_id=bot_info.bot_id)
-    )
-    return None

@@ -1,3 +1,4 @@
+import custom_bots.handlers.command_handlers
 import custom_bots.handlers.handlers
 import custom_bots.handlers.channel_handlers
 import custom_bots.handlers.order_handlers
