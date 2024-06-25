@@ -319,24 +319,6 @@ async def get_inline_bot_mailing_menu_keyboard(bot_id: int) -> InlineKeyboardMar
     ])
 
 
-CUSTOM_BOT_KEYBOARD_BUTTONS = {
-    "open_shop": "🛍 Открыть магазин",
-    "partnership": "🤝 Партнёрство",
-}
-
-
-def get_custom_bot_menu_keyboard(button_text: str | None, bot_id: int) -> ReplyKeyboardMarkup:
-    if not button_text:
-        button_text = CUSTOM_BOT_KEYBOARD_BUTTONS['open_shop']
-    return ReplyKeyboardMarkup(keyboard=[
-        [KeyboardButton(text=CUSTOM_BOT_KEYBOARD_BUTTONS['open_shop'],
-                        web_app=make_webapp_info(bot_id))],
-        [
-            KeyboardButton(text=CUSTOM_BOT_KEYBOARD_BUTTONS['partnership'])
-        ]
-    ], resize_keyboard=True, one_time_keyboard=False)
-
-
 def get_partnership_inline_kb(bot_id: int) -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(inline_keyboard=[
         [

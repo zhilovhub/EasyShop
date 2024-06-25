@@ -12,6 +12,7 @@ from aiogram.fsm.context import FSMContext
 from aiogram.types import Message, CallbackQuery, FSInputFile
 
 from bot.keyboards import keyboards
+from bot.keyboards.custom_bot_menu_keyboards import ReplyCustomBotMenuKeyboard
 from bot.keyboards.order_manage_keyboards import InlineOrderStatusesKeyboard, InlineOrderCancelKeyboard, \
     InlineOrderCustomBotKeyboard
 from bot.keyboards.question_keyboards import InlineOrderQuestionKeyboard
@@ -146,7 +147,6 @@ async def start_cmd(message: Message, state: FSMContext, command: CommandObject)
     user_id = message.from_user.id
 
     start_msg = await get_option("start_msg", message.bot.token)
-    web_app_button = await get_option("web_app_button", message.bot.token)
 
     try:
         bot = await bot_db.get_bot_by_token(message.bot.token)
@@ -171,21 +171,15 @@ async def start_cmd(message: Message, state: FSMContext, command: CommandObject)
 
     await message.answer(
         format_locales(start_msg, message.from_user, message.chat),
-        reply_markup=keyboards.get_custom_bot_menu_keyboard(
-            web_app_button, bot.bot_id)
+        reply_markup=ReplyCustomBotMenuKeyboard.get_keyboard(
+            bot.bot_id
+        )
     )
     await state.set_state(CustomUserStates.MAIN_MENU)
 
 
-@multi_bot_router.message(lambda m: m.text == keyboards.CUSTOM_BOT_KEYBOARD_BUTTONS['partnership'])
-async def partnership_handler(message: Message, state: FSMContext):
-    bot_id = (await bot_db.get_bot_by_token(message.bot.token)).bot_id
-    await message.answer(MessageTexts.CUSTOM_BOT_PARTNERSHIP.value,
-                         reply_markup=keyboards.get_partnership_inline_kb(bot_id))
-
-
 @multi_bot_router.callback_query(lambda q: q.data.startswith("request_ad"))
-async def request_ad_handler(query: CallbackQuery, state: FSMContext):
+async def request_ad_handler(query: CallbackQuery):
     bot_id = int(query.data.split(':')[-1])
     bot_data = await bot_db.get_bot(bot_id)
     admin_user = await query.bot.get_chat(bot_data.created_by)
@@ -194,7 +188,7 @@ async def request_ad_handler(query: CallbackQuery, state: FSMContext):
 
 
 @multi_bot_router.callback_query(lambda q: q.data.startswith("accept_ad"))
-async def accept_ad_handler(query: CallbackQuery, state: FSMContext):
+async def accept_ad_handler(query: CallbackQuery):
     bot_id = int(query.data.split(':')[-1])
     msg = await query.message.answer_photo(photo=FSInputFile("ad_example.jpg"),
                                            caption=MessageTexts.EXAMPLE_AD_POST_TEXT.value)
@@ -206,14 +200,14 @@ async def accept_ad_handler(query: CallbackQuery, state: FSMContext):
 
 
 @multi_bot_router.callback_query(lambda q: q.data.startswith("continue_ad_accept"))
-async def continue_ad_accept_handler(query: CallbackQuery, state: FSMContext):
+async def continue_ad_accept_handler(query: CallbackQuery):
     bot_id = int(query.data.split(':')[-1])
     await query.message.edit_text("Выберите канал для отправки рекламного сообщения.",
                                   reply_markup=await keyboards.get_custom_bot_ad_channels_list_keyboard(bot_id))
 
 
 @multi_bot_router.callback_query(lambda q: q.data.startswith("back_to_partnership"))
-async def back_to_partnership(query: CallbackQuery, state: FSMContext):
+async def back_to_partnership(query: CallbackQuery):
     bot_id = int(query.data.split(':')[-1])
     await query.message.edit_text(MessageTexts.CUSTOM_BOT_PARTNERSHIP.value,
                                   reply_markup=keyboards.get_partnership_inline_kb(bot_id))
@@ -243,7 +237,7 @@ async def complete_custom_ad_request(channel_id: int, bot_id: int):
 
 
 @multi_bot_router.callback_query(lambda q: q.data.startswith("ad_channel"))
-async def ad_channel_handler(query: CallbackQuery, state: FSMContext):
+async def ad_channel_handler(query: CallbackQuery):
     bot_id = int(query.data.split(':')[-2])
     channel_id = int(query.data.split(':')[-1])
     channel = await channel_db.get_channel(channel_id)
@@ -281,17 +275,10 @@ async def ad_channel_handler(query: CallbackQuery, state: FSMContext):
 
 
 @multi_bot_router.message(CustomUserStates.MAIN_MENU)
-async def default_cmd(message: Message):
-    web_app_button = await get_option("web_app_button", message.bot.token)
-
+async def main_menu_handler(message: Message):
     try:
         bot = await bot_db.get_bot_by_token(message.bot.token)
         user_id = message.from_user.id
-
-        custom_bot_logger.info(
-            f"user_id={user_id}: user wrote {message.text} to bot_id={bot.bot_id}",
-            extra=extra_params(user_id=user_id, bot_id=bot.bot_id)
-        )
     except BotNotFound:
         custom_bot_logger.warning(
             f"bot_token={message.bot.token}: this bot is not in db",
@@ -299,13 +286,20 @@ async def default_cmd(message: Message):
         )
         return await message.answer("Бот не инициализирован")
 
-    default_msg = await get_option("default_msg", message.bot.token)
+    match message.text:
+        case ReplyCustomBotMenuKeyboard.Callback.ActionEnum.PARTNER_SHIP.value:
+            bot_id = (await bot_db.get_bot_by_token(message.bot.token)).bot_id
+            await message.answer(MessageTexts.CUSTOM_BOT_PARTNERSHIP.value,
+                                 reply_markup=keyboards.get_partnership_inline_kb(bot_id))
+        case _:
+            default_msg = await get_option("default_msg", message.bot.token)
 
-    await message.answer(
-        format_locales(default_msg, message.from_user, message.chat),
-        reply_markup=keyboards.get_custom_bot_menu_keyboard(
-            web_app_button, bot.bot_id)
-    )
+            await message.answer(
+                format_locales(default_msg, message.from_user, message.chat),
+                reply_markup=ReplyCustomBotMenuKeyboard.get_keyboard(
+                    bot.bot_id
+                )
+            )
 
 
 @multi_bot_router.callback_query(lambda query: InlineOrderCancelKeyboard.callback_validator(query.data))
@@ -521,15 +515,13 @@ async def ask_question_callback(query: CallbackQuery, state: FSMContext):
             await state.set_data(state_data)
 
         case callback_data.a.CANCEL:
-            web_app_button = await get_option("web_app_button", query.message.bot.token)
-
             cancel_text = "Отправка вопроса администратору отменена"
             await query.answer(
                 cancel_text, show_alert=True
             )
             await query.message.answer(
                 cancel_text,
-                reply_markup=keyboards.get_custom_bot_menu_keyboard(web_app_button, bot_data.bot_id)
+                reply_markup=ReplyCustomBotMenuKeyboard.get_keyboard(bot_data.bot_id)
             )
             await query.message.edit_reply_markup(reply_markup=None)
 
