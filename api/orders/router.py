@@ -1,11 +1,11 @@
 from database.models.order_model import OrderNotFound, OrderSchema
 from pydantic import ValidationError
-from loader import db_engine
+from api.loader import db_engine
 from fastapi import APIRouter, HTTPException, Depends, Header
 from datetime import datetime
 import random
 import string
-from utils import check_admin_authorization
+from api.utils import check_admin_authorization
 
 from logs.config import api_logger, extra_params
 

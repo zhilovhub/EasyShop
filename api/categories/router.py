@@ -1,10 +1,11 @@
-from database.models.category_model import CategorySchema, CategoryDao, CategorySchemaWithoutId, SameCategoryNameAlreadyExists
-from database.models.product_model import ProductSchema, ProductNotFound, ProductWithoutId, ProductDao
-from loader import db_engine
-from fastapi import HTTPException, APIRouter, File, UploadFile, Header
-from typing import Annotated
-from pydantic import BaseModel
-from utils import check_admin_authorization
+from fastapi import HTTPException, APIRouter, Header
+
+from database.models.category_model import CategorySchema, CategoryDao, CategorySchemaWithoutId, \
+    SameCategoryNameAlreadyExists
+from database.models.product_model import ProductDao
+
+from api.loader import db_engine  # TODO check if absolute path are working
+from api.utils import check_admin_authorization
 
 from logs.config import api_logger, extra_params
 

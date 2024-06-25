@@ -1,6 +1,6 @@
 import os
 
-from loader import db_engine
+from api.loader import db_engine
 from fastapi import HTTPException, APIRouter
 from fastapi.responses import FileResponse
 

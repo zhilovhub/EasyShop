@@ -1,6 +1,6 @@
 import time
 from functools import wraps
-from loader import db_engine, DEBUG, MAIN_BOT_TOKEN
+from api.loader import db_engine, DEBUG, MAIN_BOT_TOKEN
 from database.models.bot_model import BotDao, BotNotFound
 from fastapi import HTTPException
 from aiogram.utils.web_app import WebAppInitData
