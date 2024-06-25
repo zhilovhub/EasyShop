@@ -5,7 +5,7 @@ from aiogram.fsm.context import FSMContext
 from aiogram.types import Message, CallbackQuery
 
 from bot.keyboards.custom_bot_menu_keyboards import ReplyCustomBotMenuKeyboard
-from bot.keyboards.question_keyboards import InlineOrderQuestionKeyboard
+from bot.keyboards.question_keyboards import InlineOrderQuestionKeyboard, ReplyBackQuestionMenuKeyboard
 
 from custom_bots.handlers.routers import multi_bot_router
 from custom_bots.multibot import order_db, bot_db, main_bot, CustomUserStates, QUESTION_MESSAGES
@@ -18,32 +18,43 @@ from logs.config import custom_bot_logger, extra_params
 @multi_bot_router.message(CustomUserStates.WAITING_FOR_QUESTION)
 async def handle_waiting_for_question_state(message: Message, state: FSMContext):
     state_data = await state.get_data()
+
     user_id = message.from_user.id
+    bot_data = await bot_db.get_bot_by_token(message.bot.token)
 
-    if not state_data or 'order_id' not in state_data:
-        custom_bot_logger.error(
-            f"user_id={user_id}: unable to accept a question due to lost order_id from state_data",
-            extra=extra_params(user_id=user_id)
-        )
+    match message.text:
+        case ReplyBackQuestionMenuKeyboard.Callback.ActionEnum.BACK_TO_MAIN_MENU.value:
+            await message.answer(
+                "Возвращаюсь в главное меню...",
+                reply_markup=ReplyCustomBotMenuKeyboard.get_keyboard(bot_data.bot_id)
+            )
+            await state.set_state(CustomUserStates.MAIN_MENU)
 
-        await state.set_state(CustomUserStates.MAIN_MENU)
-        return await message.answer("Произошла ошибка возвращаюсь в главное меню...")
+        case _:
+            if not state_data or 'order_id' not in state_data:
+                custom_bot_logger.error(
+                    f"user_id={user_id}: unable to accept a question due to lost order_id from state_data",
+                    extra=extra_params(user_id=user_id)
+                )
 
-    order_id = state_data['order_id']
-    custom_bot_logger.info(
-        f"user_id={user_id}: sent question regarded to order_id={order_id}",
-        extra=extra_params(user_id=user_id, order_id=order_id)
-    )
+                await message.answer(
+                    "Произошла ошибка возвращаюсь в главное меню...",
+                    reply_markup=ReplyCustomBotMenuKeyboard.get_keyboard(bot_data.bot_id)
+                )
+                return await state.set_state(CustomUserStates.MAIN_MENU)
 
-    await message.reply(f"Вы уверены что хотите отправить это сообщение вопросом к заказу "
-                        f"<b>#{order_id}</b>?"
-                        f"\n\nПосле отправки вопроса, Вы сможете отправить следующий <b>минимум через 1 час</b> или "
-                        f"<b>после ответа администратора</b>",
-                        reply_markup=InlineOrderQuestionKeyboard.get_keyboard(
-                            order_id=order_id,
-                            msg_id=message.message_id,
-                            chat_id=message.chat.id
-                        ))
+            order_id = state_data['order_id']
+
+            await message.reply(
+                f"Вы уверены что хотите отправить это сообщение вопросом к заказу "
+                f"<b>#{order_id}</b>?"
+                f"\n\nПосле отправки вопроса, Вы сможете отправить следующий <b>минимум через 1 час</b> или "
+                f"<b>после ответа администратора</b>",
+                reply_markup=InlineOrderQuestionKeyboard.get_keyboard(
+                    order_id=order_id,
+                    msg_id=message.message_id,
+                    chat_id=message.chat.id
+                ))
 
 
 @multi_bot_router.callback_query(lambda query: InlineOrderQuestionKeyboard.callback_validator(query.data))

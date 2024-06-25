@@ -1,9 +1,36 @@
 from enum import Enum
 
-from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
+from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup, ReplyKeyboardMarkup, KeyboardButton
 from pydantic import ValidationError, ConfigDict, Field, BaseModel
 
 from bot.keyboards.keyboard_utils import callback_json_validator
+
+
+class ReplyBackQuestionMenuKeyboard:
+    class Callback(BaseModel):
+        class ActionEnum(Enum):
+            BACK_TO_MAIN_MENU = "🔙 Назад"
+
+        model_config = ConfigDict(from_attributes=True, populate_by_name=True)
+
+        n: str = Field(default="question_menu", frozen=True)
+        a: ActionEnum
+
+        bot_id: int
+
+    @staticmethod
+    def get_keyboard() -> ReplyKeyboardMarkup:
+        actions = ReplyBackQuestionMenuKeyboard.Callback.ActionEnum
+
+        return ReplyKeyboardMarkup(
+            keyboard=[
+                [
+                    KeyboardButton(
+                        text=actions.BACK_TO_MAIN_MENU.value
+                    )
+                ]
+            ], resize_keyboard=True
+        )
 
 
 class InlineOrderQuestionKeyboard:
