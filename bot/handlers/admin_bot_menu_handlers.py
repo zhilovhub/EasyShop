@@ -188,9 +188,7 @@ async def handler_order_cancel_callback(query: CallbackQuery, state: FSMContext)
                     products=products,
                     username=username,
                     is_admin=True
-                ), reply_markup=None if callback_data.a in (callback_data.ActionEnum.FINISH, "order_cancel") else
-                InlineOrderStatusesKeyboard.get_keyboard(
-                    order.id, callback_data.msg_id, callback_data.chat_id, order.status)
+                ), reply_markup=None
             )
 
             for item_id, item in order.items.items():
@@ -259,12 +257,12 @@ async def handle_callback(query: CallbackQuery, state: FSMContext):
                     products=products,
                     username=username,
                     is_admin=True
-                ), reply_markup=None if callback_data.a in (callback_data.ActionEnum.FINISH, "order_cancel") else
+                ), reply_markup=None if callback_data.a == callback_data.ActionEnum.FINISH else
                 InlineOrderStatusesKeyboard.get_keyboard(
                     order.id, callback_data.msg_id, callback_data.chat_id, order.status)
             )
 
-            if callback_data.a in (callback_data.ActionEnum.FINISH,):
+            if callback_data.a == callback_data.ActionEnum.FINISH:
                 if bot_data.settings and "auto_reduce" in bot_data.settings and bot_data.settings[
                     'auto_reduce'] == True:
                     zero_products = []
