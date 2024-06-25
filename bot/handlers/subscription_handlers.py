@@ -12,8 +12,7 @@ from bot.keyboards.subscription_keyboards import InlineSubscriptionContinueKeybo
 from bot.main import subscription, bot, dp, cache_resources_file_id_store, user_db, bot_db
 from bot.utils import MessageTexts
 from bot.states import States
-from bot.keyboards import get_back_keyboard
-from bot.keyboards.main_menu_keyboards import ReplyBotMenuKeyboard, InlineBotMenuKeyboard
+from bot.keyboards.main_menu_keyboards import ReplyBotMenuKeyboard, InlineBotMenuKeyboard, ReplyBackBotMenuKeyboard
 from bot.handlers.routers import subscribe_router
 from bot.utils.admin_group import EventTypes, send_event, success_event
 from subscription.subscription import UserHasAlreadyStartedTrial
@@ -40,7 +39,10 @@ async def continue_subscription_callback(query: CallbackQuery, state: FSMContext
                 InlineKeyboardButton(text="Перейти на страницу оплаты", url=config.SBP_URL)
             ]
         ]))
-    await query.message.answer(f"По возникновению каких-либо вопросов пишите @maxzim398", reply_markup=get_back_keyboard())
+    await query.message.answer(
+        f"По возникновению каких-либо вопросов пишите @maxzim398",
+        reply_markup=ReplyBackBotMenuKeyboard.get_keyboard()
+    )
     await state.set_state(States.WAITING_PAYMENT_PAY)
 
 
@@ -75,7 +77,7 @@ async def waiting_payment_pay_handler(message: Message, state: FSMContext):
     user_status = (await user_db.get_user(user_id)).status
     state_data = await state.get_data()
 
-    if message.text == "🔙 Назад":
+    if message.text == ReplyBackBotMenuKeyboard.Callback.ActionEnum.BACK_TO_BOT_MENU.value:
         if user_status == UserStatusValues.SUBSCRIPTION_ENDED:
             await state.set_state(States.SUBSCRIBE_ENDED)
             await message.answer(
@@ -103,12 +105,12 @@ async def waiting_payment_pay_handler(message: Message, state: FSMContext):
     elif message.content_type not in (ContentType.PHOTO, ContentType.DOCUMENT):
         return await message.answer(
             "Необходимо прислать боту чек в виде скрина или пдф файла",
-            reply_markup=get_back_keyboard()
+            reply_markup=ReplyBackBotMenuKeyboard.get_keyboard()
         )
     elif not message.caption:
         return await message.answer(
             "В подписи к файлу или фото укажите Ваши контактные данные и отправьте чек повторно",
-            reply_markup=get_back_keyboard()
+            reply_markup=ReplyBackBotMenuKeyboard.get_keyboard()
         )
     for admin in config.ADMINS:
         try:
@@ -131,7 +133,7 @@ async def waiting_payment_pay_handler(message: Message, state: FSMContext):
 
     await message.reply(
         "Ваши данные отправлены на модерацию, ожидайте изменения статуса оплаты",
-        reply_markup=get_back_keyboard() if user_status in (
+        reply_markup=ReplyBackBotMenuKeyboard.get_keyboard() if user_status in (
             UserStatusValues.SUBSCRIBED, UserStatusValues.TRIAL) else ReplyKeyboardRemove()
     )
     await state.set_state(States.WAITING_PAYMENT_APPROVE)
@@ -143,7 +145,7 @@ async def waiting_payment_approve_handler(message: Message, state: FSMContext):
     user_id = message.from_user.id
     user_status = (await user_db.get_user(user_id)).status
 
-    if user_status in (UserStatusValues.SUBSCRIBED, UserStatusValues.TRIAL) and message.text == "🔙 Назад":
+    if user_status in (UserStatusValues.SUBSCRIBED, UserStatusValues.TRIAL) and message.text == ReplyBackBotMenuKeyboard.Callback.ActionEnum.BACK_TO_BOT_MENU.value:
         state_data = await state.get_data()
         custom_bot = await bot_db.get_bot(state_data['bot_id'])
         if state_data and "bot_id" in state_data:
@@ -251,7 +253,8 @@ async def cancel_pay_callback(query: CallbackQuery, state: FSMContext):
     await bot.send_message(user_id, "Оплата не была принята, перепроверьте корректность отправленных данный (чека) "
                                     "и отправьте его еще раз")
     await bot.send_message(
-        user_id, f"По возникновению каких-либо вопросов, пишите @maxzim398", reply_markup=get_back_keyboard()
+        user_id, f"По возникновению каких-либо вопросов, пишите @maxzim398",
+        reply_markup=ReplyBackBotMenuKeyboard.get_keyboard()
     )
 
     await query.answer("Оплата отклонена", show_alert=True)
