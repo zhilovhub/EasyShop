@@ -10,6 +10,7 @@ from aiogram.types import Message, CallbackQuery, LinkPreviewOptions, \
     InputMediaPhoto, InputMediaVideo, InputMediaAudio, InputMediaDocument, BufferedInputFile
 from aiogram.fsm.context import FSMContext
 
+from bot.keyboards.channel_keyboards import ReplyBackChannelMenuKeyboard
 from database.models.contest_channel_model import ContestChannelSchema, ContestChannelSchemaWithoutId
 from bot.main import bot, _scheduler, custom_bot_user_db, channel_post_media_file_db, channel_user_db, contest_channel_db, contest_user_db
 from bot.states.states import States
@@ -215,12 +216,12 @@ async def channel_menu_callback_handler(query: CallbackQuery, state: FSMContext)
                 await query.message.answer(
                     f"Отправьте ссылку на новую папку\n\n"
                     f"Текущая - {channel_post.contest_sponsor_url}",
-                    reply_markup=get_back_keyboard()
+                    reply_markup=ReplyBackChannelMenuKeyboard.get_keyboard()
                 )
             else:
                 await query.message.answer(
                     f"Отправьте ссылку на папку с каналами спонсоров\n\n",
-                    reply_markup=get_back_keyboard()
+                    reply_markup=ReplyBackChannelMenuKeyboard.get_keyboard()
                 )
             await query.answer()
             await state.set_state(States.EDITING_SPONSOR_LINK)
@@ -229,13 +230,13 @@ async def channel_menu_callback_handler(query: CallbackQuery, state: FSMContext)
             await query.message.answer(
                 f"Введите текст, который будет отображаться на кнопке\n\n"
                 "Справа будет отображаться счетчик участвующих",
-                reply_markup=get_back_keyboard()
+                reply_markup=ReplyBackChannelMenuKeyboard.get_keyboard()
             )
             await query.answer()
             await state.set_state(States.EDITING_POST_BUTTON_TEXT)
             await state.set_data({"bot_id": bot_id, "channel_id": channel_id, "channel_post_id": channel_post.channel_post_id})
         case "get_contest_winner_amount":
-            await query.message.answer(f"Введите количество победителей в конкурсе", reply_markup=get_back_keyboard())
+            await query.message.answer(f"Введите количество победителей в конкурсе", reply_markup=ReplyBackChannelMenuKeyboard.get_keyboard())
             await query.answer()
             await state.set_state(States.EDITING_COMPETITION_WINNER_AMOUNT)
             await state.set_data({"bot_id": bot_id, "channel_id": channel_id, "channel_post_id": channel_post.channel_post_id})
@@ -310,7 +311,7 @@ async def channel_menu_callback_handler(query: CallbackQuery, state: FSMContext)
             )
         case "get_contest_end_date":
             await query.message.answer(f"Введите дату окончания конкурса\n\n{MessageTexts.DATE_RULES.value}",
-                                       reply_markup=get_back_keyboard())
+                                       reply_markup=ReplyBackChannelMenuKeyboard.get_keyboard())
             await query.answer()
             await state.set_state(States.EDITING_COMPETITION_END_DATE)
             await state.set_data({"bot_id": bot_id, "channel_id": channel_id, "channel_post_id": channel_post.channel_post_id})
@@ -331,7 +332,7 @@ async def channel_menu_callback_handler(query: CallbackQuery, state: FSMContext)
         case "message":
 
             await query.message.answer("Введите текст, который будет отображаться в посте",
-                                       reply_markup=get_back_keyboard())
+                                       reply_markup=ReplyBackChannelMenuKeyboard.get_keyboard())
             await query.answer()
             await state.set_state(States.EDITING_POST_TEXT)
             if channel_post.is_contest:
@@ -397,7 +398,7 @@ async def channel_menu_callback_handler(query: CallbackQuery, state: FSMContext)
                 await query.message.delete()
             else:
                 await query.message.answer("Введите ссылку, которая будет открываться по нажатию на кнопку",
-                                           reply_markup=get_back_keyboard())
+                                           reply_markup=ReplyBackChannelMenuKeyboard.get_keyboard())
                 await query.answer()
                 await state.set_state(States.EDITING_POST_BUTTON_URL)
                 await state.set_data({"bot_id": bot_id, "channel_id": channel_id})
@@ -407,7 +408,7 @@ async def channel_menu_callback_handler(query: CallbackQuery, state: FSMContext)
                 await query.message.delete()
             else:
                 await query.message.answer("Введите текст, который будет отображаться на кнопке",
-                                           reply_markup=get_back_keyboard())
+                                           reply_markup=ReplyBackChannelMenuKeyboard.get_keyboard())
                 await query.answer()
                 await state.set_state(States.EDITING_POST_BUTTON_TEXT)
                 await state.set_data({"bot_id": bot_id, "channel_id": channel_id})
@@ -638,7 +639,7 @@ async def channel_menu_callback_handler(query: CallbackQuery, state: FSMContext)
             await query.message.delete()
         case "delay":
             await query.message.answer(f"Введите дату рассылки\n\n{MessageTexts.DATE_RULES.value}",
-                                       reply_markup=get_back_keyboard())
+                                       reply_markup=ReplyBackChannelMenuKeyboard.get_keyboard())
             await query.answer()
             await state.set_state(States.EDITING_POST_DELAY_DATE)
             if channel_post.is_contest:
@@ -707,7 +708,7 @@ async def editing_sponsor_channel_links(message: Message, state: FSMContext):
     channel_username = (await custom_bot_tg.get_chat(channel_id)).username
     channel_post = await channel_post_db.get_channel_post(channel_id=channel_id, is_contest=is_contest_flag)
     if message_text:
-        if message_text == "🔙 Назад":
+        if message_text == ReplyBackChannelMenuKeyboard.Callback.ActionEnum.BACK_TO_CHANNEL_MENU.value:
             await message.answer(
                 "Возвращаемся в меню...",
                 reply_markup=ReplyBotMenuKeyboard.get_keyboard(
@@ -779,7 +780,7 @@ async def editing_competition_winner_amount(message: Message, state: FSMContext)
     channel_username = (await custom_bot_tg.get_chat(channel_id)).username
     channel_post = await channel_post_db.get_channel_post(channel_id=channel_id, is_contest=is_contest_flag)
     if message_text:
-        if message_text == "🔙 Назад":
+        if message_text == ReplyBackChannelMenuKeyboard.Callback.ActionEnum.BACK_TO_CHANNEL_MENU.value:
             await message.answer(
                 "Возвращаемся в меню...",
                 reply_markup=ReplyBotMenuKeyboard.get_keyboard(
@@ -845,7 +846,7 @@ async def editing_competition_end_date(message: Message, state: FSMContext):
     channel_username = (await custom_bot_tg.get_chat(channel_id)).username
     channel_post = await channel_post_db.get_channel_post(channel_id=channel_id, is_contest=is_contest_flag)
     if message_text:
-        if message_text == "🔙 Назад":
+        if message_text == ReplyBackChannelMenuKeyboard.Callback.ActionEnum.BACK_TO_CHANNEL_MENU.value:
             await message.answer(
                 "Возвращаемся в меню...",
                 reply_markup=ReplyBotMenuKeyboard.get_keyboard(
@@ -919,7 +920,7 @@ async def editing_channel_post_delay_date_handler(message: Message, state: FSMCo
     custom_bot_username = (await custom_bot_tg.get_me()).username
     channel_username = (await custom_bot_tg.get_chat(channel_id)).username
     if message_text:
-        if message_text == "🔙 Назад":
+        if message_text == ReplyBackChannelMenuKeyboard.Callback.ActionEnum.BACK_TO_CHANNEL_MENU.value:
             await message.answer(
                 "Возвращаемся в меню...",
                 reply_markup=ReplyBotMenuKeyboard.get_keyboard(
@@ -1066,7 +1067,7 @@ async def editing_post_message_handler(message: Message, state: FSMContext):
     custom_bot_username = (await custom_bot.get_me()).username
     channel_username = (await custom_bot.get_chat(channel_id)).username
     if message_text:
-        if message_text == "🔙 Назад":
+        if message_text == ReplyBackChannelMenuKeyboard.Callback.ActionEnum.BACK_TO_CHANNEL_MENU.value:
             await message.answer(
                 "Возвращаемся в меню...",
                 reply_markup=ReplyBotMenuKeyboard.get_keyboard(
@@ -1351,7 +1352,7 @@ async def editing_channel_post_button_text_handler(message: Message, state: FSMC
     custom_bot_username = (await custom_bot_tg.get_me()).username
 
     if message_text:
-        if message_text == "🔙 Назад":
+        if message_text == ReplyBackChannelMenuKeyboard.Callback.ActionEnum.BACK_TO_CHANNEL_MENU.value:
             await message.answer(
                 "Возвращаемся в меню...",
                 reply_markup=ReplyBotMenuKeyboard.get_keyboard(
@@ -1433,7 +1434,7 @@ async def editing_channel_post_button_url_handler(message: Message, state: FSMCo
     custom_bot_username = (await custom_bot_tg.get_me()).username
 
     if message_text:
-        if message_text == "🔙 Назад":
+        if message_text == ReplyBackChannelMenuKeyboard.Callback.ActionEnum.BACK_TO_CHANNEL_MENU.value:
             await message.answer(
                 "Возвращаемся в меню...",
                 reply_markup=ReplyBotMenuKeyboard.get_keyboard(
