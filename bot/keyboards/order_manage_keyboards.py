@@ -15,12 +15,12 @@ class InlineOrderCancelKeyboard:
 
         model_config = ConfigDict(from_attributes=True, populate_by_name=True)
 
-        n: str = Field(default="order_accepting_cancel", frozen=True)
+        n: str = Field(default="order_c", frozen=True)
         a: ActionEnum
 
-        order_id: str
-        msg_id: int = 0
-        chat_id: int = 0
+        order_id: str = Field(alias="o")
+        msg_id: int = Field(default=0, alias="m")
+        chat_id: int = Field(default=0, alias="c")
 
     @staticmethod
     @callback_json_validator
@@ -85,7 +85,7 @@ class InlineOrderStatusesKeyboard:
 
         model_config = ConfigDict(from_attributes=True, populate_by_name=True)
 
-        n: str = Field(default="order_status", frozen=True)
+        n: str = Field(default="os", frozen=True)
         a: ActionEnum
 
         order_id: str = Field(alias="o")
