@@ -1,14 +1,12 @@
 from abc import ABC
 from typing import Optional, Dict, Any
 
-from aiogram.fsm.storage.base import BaseStorage, StorageKey, StateType
-
 from sqlalchemy import MetaData
 from sqlalchemy import Table, Column, String, JSON
 from sqlalchemy import select, insert, delete, update
 from sqlalchemy.ext.asyncio import create_async_engine
 
-from bot import config
+from aiogram.fsm.storage.base import BaseStorage, StorageKey, StateType
 
 from logs.config import logger
 
@@ -41,8 +39,10 @@ class AlchemyStorageAsync(BaseStorage, ABC):
         if await self.get_state(key):
             async with self.engine.begin() as conn:
                 await conn.execute(
-                    update(self.storage_table).where(self.storage_table.c.id == f"{key.user_id}#{abs(key.chat_id)}").
-                        values(state=state.state, data={}))
+                    update(self.storage_table).where(
+                        self.storage_table.c.id == f"{key.user_id}#{abs(key.chat_id)}"
+                    ).values(state=state.state, data={})
+                )
             await self.engine.dispose()
             logger.debug(f"updated state for user {key.user_id} in chat {key.chat_id} to state {state.state}.")
             return None
@@ -55,7 +55,8 @@ class AlchemyStorageAsync(BaseStorage, ABC):
     async def get_state(self, key: StorageKey) -> Optional[str]:
         async with self.engine.begin() as conn:
             raw_res = await conn.execute(
-                select(self.storage_table).where(self.storage_table.c.id == f"{key.user_id}#{abs(key.chat_id)}"))
+                select(self.storage_table).where(self.storage_table.c.id == f"{key.user_id}#{abs(key.chat_id)}")
+            )
         await self.engine.dispose()
         res = raw_res.fetchone()
         if res is None or res.state in ("None", None):
@@ -66,14 +67,17 @@ class AlchemyStorageAsync(BaseStorage, ABC):
     async def set_data(self, key: StorageKey, data: Dict[str, Any]) -> None:
         async with self.engine.begin() as conn:
             await conn.execute(
-                update(self.storage_table).where(self.storage_table.c.id == f"{key.user_id}#{abs(key.chat_id)}").
-                    values(data=data))
+                update(self.storage_table).where(
+                    self.storage_table.c.id == f"{key.user_id}#{abs(key.chat_id)}"
+                ).values(data=data)
+            )
         await self.engine.dispose()
 
     async def get_data(self, key: StorageKey) -> Dict[str, Any]:
         async with self.engine.begin() as conn:
             raw_res = await conn.execute(
-                select(self.storage_table).where(self.storage_table.c.id == f"{key.user_id}#{abs(key.chat_id)}"))
+                select(self.storage_table).where(self.storage_table.c.id == f"{key.user_id}#{abs(key.chat_id)}")
+            )
         await self.engine.dispose()
         res = raw_res.fetchone()
         if res is None or res.state == "None":
@@ -85,15 +89,18 @@ class AlchemyStorageAsync(BaseStorage, ABC):
         _data.update(data)
         async with self.engine.begin() as conn:
             await conn.execute(
-                update(self.storage_table).where(self.storage_table.c.id == f"{key.user_id}#{abs(key.chat_id)}").
-                    values(data=_data))
+                update(self.storage_table).where(
+                    self.storage_table.c.id == f"{key.user_id}#{abs(key.chat_id)}"
+                ).values(data=_data)
+            )
         await self.engine.dispose()
         return _data
 
     async def clear_state(self, key: StorageKey) -> None:
         async with self.engine.begin() as conn:
             await conn.execute(
-                delete(self.storage_table).where(self.storage_table.c.id == f"{key.user_id}#{abs(key.chat_id)}"))
+                delete(self.storage_table).where(self.storage_table.c.id == f"{key.user_id}#{abs(key.chat_id)}")
+            )
         await self.engine.dispose()
         logger.debug(f"cleared state for user {key.user_id} in chat {key.chat_id}.")
         return None

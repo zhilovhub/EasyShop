@@ -1,20 +1,21 @@
-from aiogram.exceptions import TelegramNotFound, TelegramBadRequest
-from aiogram.types import BufferedInputFile
-from aiogram.types import InputFile
-from typing import List
-from bot.exceptions.exceptions import BotNotFound
-from database.models.contest_channel_model import ContestChannelSchema
-from database.models.contest_user_model import ContestUser
-from bot.main import channel_post_db, contest_user_db, contest_channel_db, bot_db, custom_bot_user_db
 import random
-from database.models.channel_post_model import ContestTypeValues
-from custom_bots.multibot import main_bot
-from aiogram.types.chat_member import ChatMember
-from aiogram.types.chat_member_member import ChatMemberMember
-import openpyxl
-from openpyxl import Workbook
+
 from io import BytesIO
+from typing import List
+
+from openpyxl import Workbook
+
+from aiogram.types import BufferedInputFile
+from aiogram.exceptions import TelegramBadRequest
 from aiogram.enums.chat_member_status import ChatMemberStatus
+
+from bot.main import channel_post_db, contest_user_db, contest_channel_db, bot_db
+from bot.exceptions.exceptions import BotNotFound
+
+from custom_bots.multibot import main_bot
+
+from database.models.contest_user_model import ContestUser
+from database.models.channel_post_model import ContestTypeValues
 
 
 def create_excel(data, sheet_name):
@@ -66,7 +67,8 @@ async def generate_contest_result(channel_id: int):
                 except TelegramBadRequest:
                     user_in_channels = False
                     break
-                if status.status not in [ChatMemberStatus.CREATOR, ChatMemberStatus.ADMINISTRATOR, ChatMemberStatus.MEMBER]:
+                if status.status not in [ChatMemberStatus.CREATOR, ChatMemberStatus.ADMINISTRATOR,
+                                         ChatMemberStatus.MEMBER]:
                     user_in_channels = False
             if user_in_channels:
                 winners_list.append(random_user)

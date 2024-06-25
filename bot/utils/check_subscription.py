@@ -1,8 +1,9 @@
-from aiogram.fsm.context import FSMContext
 from aiogram.types import Message
+from aiogram.fsm.context import FSMContext
 
-from bot.keyboards.subscription_keyboards import InlineSubscriptionContinueKeyboard
 from bot.main import subscription
+from bot.keyboards.subscription_keyboards import InlineSubscriptionContinueKeyboard
+
 from database.models.user_model import UserStatusValues
 
 from logs.config import logger

@@ -1,12 +1,13 @@
 from aiogram import Bot
 from aiogram.types import WebAppInfo
 
-from database.models.channel_post_model import ChannelPostNotFound, ChannelPostSchema
 from bot.main import bot_db, channel_db, mailing_db, competition, channel_post_db
 from bot.config import WEB_APP_URL, WEB_APP_PORT
-from database.models.channel_model import ChannelNotFound, ChannelSchema
-from database.models.competition_model import CompetitionSchema
+
+from database.models.channel_model import ChannelSchema
 from database.models.mailing_model import MailingSchema, MailingNotFound
+from database.models.competition_model import CompetitionSchema
+from database.models.channel_post_model import ChannelPostNotFound, ChannelPostSchema
 
 
 def make_webapp_info(bot_id: int) -> WebAppInfo:
@@ -24,7 +25,8 @@ async def get_bot_status(bot_id: int) -> str:
 
 async def get_bot_channels(bot_id: int) -> list[tuple[ChannelSchema, str]]:
     custom_bot = Bot((await bot_db.get_bot(bot_id=bot_id)).token)
-    return [(i, (await custom_bot.get_chat(i.channel_id)).username) for i in (await channel_db.get_all_channels(bot_id=bot_id))]
+    return [(i, (await custom_bot.get_chat(i.channel_id)).username)
+            for i in (await channel_db.get_all_channels(bot_id=bot_id))]
 
 
 async def get_bot_mailing(bot_id: int) -> MailingSchema | None:
