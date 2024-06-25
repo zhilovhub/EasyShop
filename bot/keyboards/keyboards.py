@@ -8,19 +8,6 @@ from bot.utils.keyboard_utils import *
 from bot.utils import MessageTexts, make_admin_panel_webapp_info
 
 
-def create_user_order_kb(order_id: str, msg_id: int = 0, chat_id: int = 0) -> InlineKeyboardMarkup:
-    return InlineKeyboardMarkup(inline_keyboard=[
-        [
-            InlineKeyboardButton(
-                text="Задать вопрос", callback_data=f"ask_question:{order_id}:{msg_id}:{chat_id}")
-        ],
-        [
-            InlineKeyboardButton(
-                text="Отменить заказ", callback_data=f"order_pre_cancel:{order_id}:{msg_id}:{chat_id}")
-        ]
-    ])
-
-
 def create_confirm_question_kb(order_id: str, msg_id: int, chat_id: int) -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(inline_keyboard=[
         [

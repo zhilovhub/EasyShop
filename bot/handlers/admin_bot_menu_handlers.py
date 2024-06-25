@@ -15,7 +15,8 @@ from aiogram.utils.token import validate_token, TokenValidationError
 from aiogram.types import Message, FSInputFile, CallbackQuery
 from aiogram.fsm.context import FSMContext
 
-from bot.keyboards.order_manage_keyboards import InlineOrderStatusesKeyboard, InlineOrderCancelKeyboard
+from bot.keyboards.order_manage_keyboards import InlineOrderStatusesKeyboard, InlineOrderCancelKeyboard, \
+    InlineOrderCustomBotKeyboard
 from bot.keyboards.stock_menu_keyboards import InlineStockMenuKeyboard
 from bot.main import bot, user_db, bot_db, product_db, order_db, custom_bot_user_db, QUESTION_MESSAGES, stock_manager
 from bot.keyboards import *
@@ -245,7 +246,7 @@ async def handle_callback(query: CallbackQuery, state: FSMContext):
             await Bot(bot_token, parse_mode=ParseMode.HTML).edit_message_text(
                 order.convert_to_notification_text(products=products),
                 reply_markup=None if callback_data.a == callback_data.ActionEnum.FINISH else
-                create_user_order_kb(order.id, callback_data.msg_id, callback_data.chat_id),
+                InlineOrderCustomBotKeyboard.get_keyboard(order.id, callback_data.msg_id, callback_data.chat_id),
                 chat_id=callback_data.chat_id,
                 message_id=callback_data.msg_id
             )
