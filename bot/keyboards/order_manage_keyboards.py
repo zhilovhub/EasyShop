@@ -10,12 +10,12 @@ from database.models.order_model import OrderStatusValues
 class InlineOrderCancelKeyboard:
     class Callback(BaseModel):
         class ActionEnum(Enum):
-            CANCEL = "cancel"
-            BACK_TO_ORDER_STATUSES = "back_to_order"
+            CANCEL = "c"
+            BACK_TO_ORDER_STATUSES = "bto"
 
         model_config = ConfigDict(from_attributes=True, populate_by_name=True)
 
-        n: str = Field(default="order_c", frozen=True)
+        n: str = Field(default="oc", frozen=True)
         a: ActionEnum
 
         order_id: str = Field(alias="o")
