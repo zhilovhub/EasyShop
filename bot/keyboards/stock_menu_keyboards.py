@@ -3,6 +3,7 @@ from enum import Enum
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton, ReplyKeyboardMarkup, KeyboardButton
 from pydantic import BaseModel, ValidationError, ConfigDict, Field
 
+from bot.keyboards.keyboard_utils import callback_json_validator
 from bot.utils import make_admin_panel_webapp_info
 
 
@@ -11,7 +12,7 @@ class ReplyBackStockMenuKeyboard:
         class ActionEnum(Enum):
             BACK_TO_STOCK_MENU = "🔙 Назад"
 
-        model_config = ConfigDict(from_attributes=True)
+        model_config = ConfigDict(from_attributes=True, populate_by_name=True)
 
         n: str = Field(default="stock_menu", frozen=True)
         a: ActionEnum
@@ -48,7 +49,7 @@ class InlineStockMenuKeyboard:
 
             BACK_TO_BOT_MENU = "back_to_menu"
 
-        model_config = ConfigDict(from_attributes=True)
+        model_config = ConfigDict(from_attributes=True, populate_by_name=True)
 
         n: str = Field(default="stock_menu", frozen=True)
         a: ActionEnum
@@ -56,10 +57,11 @@ class InlineStockMenuKeyboard:
         bot_id: int
 
     @staticmethod
+    @callback_json_validator
     def callback_json(action: Callback.ActionEnum, bot_id: int) -> str:
         return InlineStockMenuKeyboard.Callback(
             a=action, bot_id=bot_id
-        ).model_dump_json()
+        ).model_dump_json(by_alias=True)
 
     @staticmethod
     def callback_validator(json_string: str) -> bool:
@@ -146,7 +148,7 @@ class InlineStockImportMenuKeyboard:
 
             BACK_TO_STOCK_MENU = "back_to_stock_menu"
 
-        model_config = ConfigDict(from_attributes=True)
+        model_config = ConfigDict(from_attributes=True, populate_by_name=True)
 
         n: str = Field(default="import_menu", frozen=True)
         a: ActionEnum
@@ -154,10 +156,11 @@ class InlineStockImportMenuKeyboard:
         bot_id: int
 
     @staticmethod
+    @callback_json_validator
     def callback_json(action: Callback.ActionEnum, bot_id: int) -> str:
         return InlineStockImportMenuKeyboard.Callback(
             a=action, bot_id=bot_id
-        ).model_dump_json()
+        ).model_dump_json(by_alias=True)
 
     @staticmethod
     def callback_validator(json_string: str) -> bool:

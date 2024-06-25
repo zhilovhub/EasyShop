@@ -3,6 +3,7 @@ from enum import Enum
 from aiogram.types import ReplyKeyboardMarkup, KeyboardButton, InlineKeyboardButton, InlineKeyboardMarkup
 from pydantic import BaseModel, ConfigDict, Field, ValidationError
 
+from bot.keyboards.keyboard_utils import callback_json_validator
 from bot.utils.keyboard_utils import make_webapp_info, get_bot_status, get_bot_mailing, get_bot_channels, \
     get_bot_username
 
@@ -14,7 +15,7 @@ class ReplyBotMenuKeyboard:
             CONTACTS = "☎ Контакты"
             SHOP = "🛍 Мой магазин"
 
-        model_config = ConfigDict(from_attributes=True)
+        model_config = ConfigDict(from_attributes=True, populate_by_name=True)
 
         n: str = Field(default="bot_menu", frozen=True)
         a: ActionEnum
@@ -58,7 +59,7 @@ class InlineBotMenuKeyboard:
 
             BOT_DELETE = "delete_bot"
 
-        model_config = ConfigDict(from_attributes=True)
+        model_config = ConfigDict(from_attributes=True, populate_by_name=True)
 
         n: str = Field(default="bot_menu", frozen=True)
         a: ActionEnum
@@ -66,10 +67,11 @@ class InlineBotMenuKeyboard:
         bot_id: int
 
     @staticmethod
+    @callback_json_validator
     def callback_json(action: Callback.ActionEnum, bot_id: int) -> str:
         return InlineBotMenuKeyboard.Callback(
             a=action, bot_id=bot_id
-        ).model_dump_json()
+        ).model_dump_json(by_alias=True)
 
     @staticmethod
     def callback_validator(json_string: str) -> bool:

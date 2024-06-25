@@ -4,13 +4,15 @@ from typing import Optional
 from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 from pydantic import ValidationError, ConfigDict, Field, BaseModel
 
+from bot.keyboards.keyboard_utils import callback_json_validator
+
 
 class InlineSubscriptionContinueKeyboard:
     class Callback(BaseModel):
         class ActionEnum(Enum):
             CONTINUE_SUBSCRIPTION = "continue_subscription"
 
-        model_config = ConfigDict(from_attributes=True)
+        model_config = ConfigDict(from_attributes=True, populate_by_name=True)
 
         n: str = Field(default="subscription", frozen=True)
         a: ActionEnum
@@ -18,10 +20,11 @@ class InlineSubscriptionContinueKeyboard:
         bot_id: Optional[int | None]
 
     @staticmethod
+    @callback_json_validator
     def callback_json(action: Callback.ActionEnum, bot_id: int | None) -> str:
         return InlineSubscriptionContinueKeyboard.Callback(
             a=action, bot_id=bot_id
-        ).model_dump_json()
+        ).model_dump_json(by_alias=True)
 
     @staticmethod
     def callback_validator(json_string: str) -> bool:

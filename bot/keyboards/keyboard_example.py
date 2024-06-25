@@ -3,6 +3,8 @@ from enum import Enum
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 from pydantic import BaseModel, ConfigDict, Field, field_validator, ValidationError
 
+from bot.keyboards.keyboard_utils import callback_json_validator
+
 
 class ExampleKeyboard:
     class Callback(BaseModel):
@@ -10,7 +12,7 @@ class ExampleKeyboard:
             EXAMPLE = "example_action"
             EXAMPLE2 = "example_action2"
 
-        model_config = ConfigDict(from_attributes=True)
+        model_config = ConfigDict(from_attributes=True, populate_by_name=True)
 
         n: str = Field(default="example", frozen=True)  # write callback_name into default
         a: ActionEnum
@@ -20,10 +22,11 @@ class ExampleKeyboard:
         # some_extra_parameter: str
 
     @staticmethod
+    @callback_json_validator
     def callback_json(action: Callback.ActionEnum, some_arg: str) -> str:  # add more arguments here if you need
         return ExampleKeyboard.Callback(
             a=action, some_arg=some_arg
-        ).model_dump_json()
+        ).model_dump_json(by_alias=True)
 
     @staticmethod
     def callback_validator(json_string: str) -> bool:

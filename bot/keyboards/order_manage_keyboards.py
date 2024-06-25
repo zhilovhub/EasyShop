@@ -3,6 +3,7 @@ from enum import Enum
 from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 from pydantic import ValidationError, ConfigDict, Field, BaseModel
 
+from bot.keyboards.keyboard_utils import callback_json_validator
 from database.models.order_model import OrderStatusValues
 
 
@@ -12,7 +13,7 @@ class InlineOrderCancelKeyboard:
             CANCEL = "cancel"
             BACK_TO_ORDER_STATUSES = "back_to_order"
 
-        model_config = ConfigDict(from_attributes=True)
+        model_config = ConfigDict(from_attributes=True, populate_by_name=True)
 
         n: str = Field(default="order_accepting_cancel", frozen=True)
         a: ActionEnum
@@ -22,6 +23,7 @@ class InlineOrderCancelKeyboard:
         chat_id: int = 0
 
     @staticmethod
+    @callback_json_validator
     def callback_json(
             action: Callback.ActionEnum,
             order_id: str,
@@ -33,7 +35,7 @@ class InlineOrderCancelKeyboard:
             order_id=order_id,
             msg_id=msg_id,
             chat_id=chat_id,
-        ).model_dump_json()
+        ).model_dump_json(by_alias=True)
 
     @staticmethod
     def callback_validator(json_string: str) -> bool:
@@ -74,23 +76,24 @@ class InlineOrderCancelKeyboard:
 class InlineOrderStatusesKeyboard:
     class Callback(BaseModel):
         class ActionEnum(Enum):
-            BACKLOG = "backlog"
-            WAITING_PAYMENT = "waiting_payment"
-            PROCESS = "process"
+            BACKLOG = "bl"
+            WAITING_PAYMENT = "wp"
+            PROCESS = "ps"
 
-            PRE_CANCEL = "pre_cancel"
-            FINISH = "finish"
+            PRE_CANCEL = "pl"
+            FINISH = "fh"
 
-        model_config = ConfigDict(from_attributes=True)
+        model_config = ConfigDict(from_attributes=True, populate_by_name=True)
 
         n: str = Field(default="order_status", frozen=True)
         a: ActionEnum
 
-        order_id: str
-        msg_id: int = 0
-        chat_id: int = 0
+        order_id: str = Field(alias="o")
+        msg_id: int = Field(default=0, alias="m")
+        chat_id: int = Field(default=0, alias="c")
 
     @staticmethod
+    @callback_json_validator
     def callback_json(
             action: Callback.ActionEnum,
             order_id: str,
@@ -102,7 +105,7 @@ class InlineOrderStatusesKeyboard:
             order_id=order_id,
             msg_id=msg_id,
             chat_id=chat_id,
-        ).model_dump_json()
+        ).model_dump_json(by_alias=True)
 
     @staticmethod
     def callback_validator(json_string: str) -> bool:
