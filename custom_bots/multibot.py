@@ -1,39 +1,39 @@
 import asyncio
 import ssl
-from datetime import datetime
+
 from os import getenv
 from typing import Any, Dict, Union
 
+from aiohttp import web
+from dotenv import load_dotenv
+
 from aiogram import Bot, Dispatcher, Router
+from aiogram.enums import ParseMode
+from aiogram.types import User, Chat
+from aiogram.fsm.state import State, StatesGroup
+from aiogram.exceptions import TelegramUnauthorizedError
+from aiogram.utils.token import TokenValidationError, validate_token
 from aiogram.client.default import DefaultBotProperties
 from aiogram.client.session.aiohttp import AiohttpSession
-from aiogram.enums import ParseMode
-from aiogram.exceptions import TelegramUnauthorizedError
-from aiogram.fsm.state import State, StatesGroup
-from aiogram.types import User, Chat
-from aiogram.utils.token import TokenValidationError, validate_token
 from aiogram.webhook.aiohttp_server import (
     TokenBasedRequestHandler,
     setup_application,
 )
-from aiohttp import web
-from dotenv import load_dotenv
 
 from bot import config
-from bot.utils import JsonStore
+from bot.utils import JsonStore, send_start_message_to_admins
 from bot.utils.storage import AlchemyStorageAsync
-from database.models.bot_model import BotNotFound
-from database.models.channel_model import ChannelDao
-from database.models.channel_user_model import ChannelUserDao
-from database.models.custom_ad_model import CustomAdDao
-from database.models.models import Database
-from database.models.user_model import UserDao
 
-from logs.config import custom_bot_logger, db_logger, extra_params
+from database.models.models import Database
+from database.models.bot_model import BotNotFound
+from database.models.user_model import UserDao
+from database.models.channel_model import ChannelDao
+from database.models.custom_ad_model import CustomAdDao
+from database.models.channel_user_model import ChannelUserDao
 
 from subscription.scheduler import Scheduler
 
-from bot.utils import send_start_message_to_admins
+from logs.config import custom_bot_logger, db_logger, extra_params
 
 app = web.Application()
 
@@ -235,14 +235,14 @@ async def main():
     await scheduler.start()
 
     await asyncio.gather(
-        web._run_app(
+        web._run_app(  # noqa
             local_app,
             host=LOCAL_API_SERVER_HOST,
             port=LOCAL_API_SERVER_PORT,
             access_log=custom_bot_logger,
             print=custom_bot_logger.debug
         ),
-        web._run_app(
+        web._run_app(  # noqa
             app,
             host=WEBHOOK_SERVER_HOST,
             port=WEBHOOK_SERVER_PORT,

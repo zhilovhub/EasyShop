@@ -1,10 +1,10 @@
-import logging
+import logging  # noqa
 import logging.config
-import logging_loki
+import logging_loki  # noqa
 
 from dotenv import load_dotenv
-import os
 from re import compile, sub, UNICODE
+import os
 
 from logging import LogRecord
 
@@ -87,9 +87,14 @@ class LokiFilter(logging.Filter):
             if hasattr(record, "custom_ad_id"):
                 record.tags["custom_ad_id"] = record.custom_ad_id
             if hasattr(record, "bot_token"):
-                record.msg = record.msg.replace(record.bot_token[5:-1], "*" * len(record.bot_token[5:-1]))  # hide the token from gr
+                # hide the token from gr
+                record.msg = record.msg.replace(record.bot_token[5:-1], "*" * len(record.bot_token[5:-1]))
             if "bot_token" in record.tags:
-                record.msg = record.msg.replace(record.tags["bot_token"][5:-1], "*" * len(record.tags["bot_token"][5:-1]))  # hide the token from gr
+                # hide the token from gr
+                record.msg = record.msg.replace(
+                    record.tags["bot_token"][5:-1],
+                    "*" * len(record.tags["bot_token"][5:-1])
+                )
 
         return LOG_TO_GRAFANA
 

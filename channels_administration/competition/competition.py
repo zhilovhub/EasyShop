@@ -1,7 +1,7 @@
-from database.models.competition_media_files_model import CompetitionMediaFile, CompetitionMediaFileDao, \
-    CompetitionMediaFileSchema
-from database.models.competition_model import CompetitionDao, CompetitionSchemaWithoutId, CompetitionSchema
 from database.models.models import Database
+from database.models.competition_model import CompetitionDao, CompetitionSchemaWithoutId, CompetitionSchema
+from database.models.competition_media_files_model import CompetitionMediaFileDao, \
+    CompetitionMediaFileSchema
 
 
 def singleton(class_):
