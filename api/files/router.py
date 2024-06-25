@@ -1,12 +1,11 @@
 import os
 
-from api.loader import db_engine
+from dotenv import load_dotenv
+
 from fastapi import HTTPException, APIRouter
 from fastapi.responses import FileResponse
 
-from logs.config import api_logger, extra_params
-
-from dotenv import load_dotenv
+from logs.config import api_logger
 
 load_dotenv()
 PATH = "/files"

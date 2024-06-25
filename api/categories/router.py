@@ -1,11 +1,11 @@
 from fastapi import HTTPException, APIRouter, Header
 
+from database.models.product_model import ProductDao
 from database.models.category_model import CategorySchema, CategoryDao, CategorySchemaWithoutId, \
     SameCategoryNameAlreadyExists
-from database.models.product_model import ProductDao
 
-from api.loader import db_engine  # TODO check if absolute path are working
 from api.utils import check_admin_authorization
+from api.loader import db_engine
 
 from logs.config import api_logger, extra_params
 

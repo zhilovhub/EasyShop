@@ -1,15 +1,18 @@
 import os
+import datetime
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+
 from dotenv import load_dotenv
-import datetime
-from api.orders.router import router as order_router
-from api.categories.router import router as category_router
-from api.products.router import router as product_router
+
+from api.loader import LOGS_PATH
 from api.files.router import router as files_router
+from api.orders.router import router as order_router
+from api.products.router import router as product_router
+from api.categories.router import router as category_router
 
 from logs.config import logger_configuration
-from api.loader import LOGS_PATH
 
 tags_metadata = [
     {
@@ -54,13 +57,12 @@ async def read_root():
     return "You can see all available methods in rest api docs"
 
 
-# Start uvicorn from python
 if __name__ == "__main__":
     import uvicorn
 
     try:
         os.system("mkdir logs")
-    except:
+    except Exception as e:
         pass
 
     for log_file in ('all.log', 'err.log'):
