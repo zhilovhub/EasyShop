@@ -141,42 +141,7 @@ async def process_web_app_request(event: Message):
 
 
 @multi_bot_router.message(CommandStart())
-async def start_cmd_no_link(message: Message, state: FSMContext, command: CommandObject):
-    user_id = message.from_user.id
-
-    start_msg = await get_option("start_msg", message.bot.token)
-    web_app_button = await get_option("web_app_button", message.bot.token)
-
-    try:
-        bot = await bot_db.get_bot_by_token(message.bot.token)
-        custom_bot_logger.info(
-            f"user_id={user_id}: user called /start at bot_id={bot.bot_id}",
-            extra=extra_params(user_id=user_id, bot_id=bot.bot_id)
-        )
-
-        try:
-            await custom_bot_user_db.get_custom_bot_user(bot.bot_id, user_id)
-        except CustomBotUserNotFound:
-            custom_bot_logger.info(
-                f"user_id={user_id}: user not found in database, trying to add to it",
-                extra=extra_params(user_id=user_id, bot_id=bot.bot_id)
-            )
-            await custom_bot_user_db.add_custom_bot_user(bot.bot_id, user_id)
-    except BotNotFound:
-        return await message.answer("Бот не инициализирован")
-
-    await state.set_state(CustomUserStates.MAIN_MENU)
-    await message.answer("Custom update works!")
-    return await message.answer(
-        format_locales(start_msg, message.from_user, message.chat),
-        reply_markup=keyboards.get_custom_bot_menu_keyboard(
-            web_app_button, bot.bot_id)
-    )
-
-
-@multi_bot_router.message(CommandStart(deep_link=True))
 async def start_cmd(message: Message, state: FSMContext, command: CommandObject):
-    args = command.args
     user_id = message.from_user.id
 
     start_msg = await get_option("start_msg", message.bot.token)
@@ -200,17 +165,15 @@ async def start_cmd(message: Message, state: FSMContext, command: CommandObject)
     except BotNotFound:
         return await message.answer("Бот не инициализирован")
 
-    await state.set_state(CustomUserStates.MAIN_MENU)
-    await state.set_data({"bot_id": bot.bot_id})
-    # await message.answer("Custom update works!")
-    if args == "show_shop_inline":
+    if command.args == "show_shop_inline":
         return await message.answer("Наш магазин:", reply_markup=keyboards.get_show_inline_button(bot.bot_id))
 
-    return await message.answer(
+    await message.answer(
         format_locales(start_msg, message.from_user, message.chat),
         reply_markup=keyboards.get_custom_bot_menu_keyboard(
             web_app_button, bot.bot_id)
     )
+    await state.set_state(CustomUserStates.MAIN_MENU)
 
 
 @multi_bot_router.message(lambda m: m.text == keyboards.CUSTOM_BOT_KEYBOARD_BUTTONS['partnership'])
@@ -565,8 +528,9 @@ async def cancel_ask_question_callback(query: CallbackQuery, state: FSMContext):
     )
 
     await query.answer("Отправка вопроса администратору отменена\nВозвращаемся в меню", show_alert=True)
-    await state.set_state(CustomUserStates.MAIN_MENU)
     await query.message.edit_reply_markup(reply_markup=None)
+
+    await state.set_state(CustomUserStates.MAIN_MENU)
 
 
 async def get_option(param: str, token: str):
