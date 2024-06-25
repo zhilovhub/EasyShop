@@ -3,8 +3,8 @@ from enum import Enum
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton, ReplyKeyboardMarkup, KeyboardButton
 from pydantic import BaseModel, ValidationError, ConfigDict, Field
 
-from bot.keyboards.keyboard_utils import callback_json_validator
 from bot.utils import make_admin_panel_webapp_info
+from bot.keyboards.keyboard_utils import callback_json_validator
 
 
 class ReplyBackStockMenuKeyboard:
