@@ -20,7 +20,7 @@ from bot.keyboards.order_manage_keyboards import InlineOrderStatusesKeyboard, In
 from bot.keyboards.stock_menu_keyboards import InlineStockMenuKeyboard
 from bot.main import bot, user_db, bot_db, product_db, order_db, custom_bot_user_db, QUESTION_MESSAGES, stock_manager
 from bot.keyboards import *
-from bot.keyboards.main_menu_keyboards import ReplyBotMenuKeyboard, InlineBotMenuKeyboard
+from bot.keyboards.main_menu_keyboards import ReplyBotMenuKeyboard, InlineBotMenuKeyboard, ReplyBackBotMenuKeyboard
 from bot.exceptions import InstanceAlreadyExists
 from bot.states.states import States
 from bot.handlers.routers import admin_bot_menu_router
@@ -380,15 +380,18 @@ async def bot_menu_callback_handler(query: CallbackQuery, state: FSMContext):
 
     match callback_data.a:
         case callback_data.ActionEnum.BOT_EDIT_HELLO_TEXT:
-            await query.message.answer("Введите текст, который будет отображаться у пользователей Вашего бота "
-                                       "при <b>первом обращении</b> и команде <b>/start</b>:",
-                                       reply_markup=get_back_keyboard())
+            await query.message.answer(
+                "Введите текст, который будет отображаться у пользователей Вашего бота "
+                "при <b>первом обращении</b> и команде <b>/start</b>:",
+                reply_markup=ReplyBackBotMenuKeyboard.get_keyboard())
             await query.answer()
             await state.set_state(States.EDITING_START_MESSAGE)
             await state.set_data(state_data)
         case callback_data.ActionEnum.BOT_EDIT_EXPLANATION_TEXT:
-            await query.message.answer("Введите текст, который будет отображаться у пользователей Вашего бота "
-                                       "при <b>любом</b> их сообщении: ", reply_markup=get_back_keyboard())
+            await query.message.answer(
+                "Введите текст, который будет отображаться у пользователей Вашего бота "
+                "при <b>любом</b> их сообщении: ",
+                reply_markup=ReplyBackBotMenuKeyboard.get_keyboard())
             await query.answer()
             await state.set_state(States.EDITING_DEFAULT_MESSAGE)
             await state.set_data(state_data)
@@ -409,9 +412,10 @@ async def bot_menu_callback_handler(query: CallbackQuery, state: FSMContext):
             )
             await query.answer("Ваш бот приостановлен ❌", show_alert=True)
         case callback_data.ActionEnum.BOT_DELETE:
-            await query.message.answer("Бот удалится вместе со всей базой продуктов безвозвратно.\n"
-                                       "Напишите ПОДТВЕРДИТЬ для подтверждения удаления",
-                                       reply_markup=get_back_keyboard())
+            await query.message.answer(
+                "Бот удалится вместе со всей базой продуктов безвозвратно.\n"
+                "Напишите ПОДТВЕРДИТЬ для подтверждения удаления",
+                reply_markup=ReplyBackBotMenuKeyboard.get_keyboard())
             await query.answer()
 
             await state.set_state(States.DELETE_BOT)

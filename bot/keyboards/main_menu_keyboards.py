@@ -8,6 +8,33 @@ from bot.utils.keyboard_utils import make_webapp_info, get_bot_status, get_bot_m
     get_bot_username
 
 
+class ReplyBackBotMenuKeyboard:
+    class Callback(BaseModel):
+        class ActionEnum(Enum):
+            BACK_TO_BOT_MENU = "🔙 Назад"
+
+        model_config = ConfigDict(from_attributes=True, populate_by_name=True)
+
+        n: str = Field(default="back_to_main_menu", frozen=True)
+        a: ActionEnum
+
+        bot_id: int
+
+    @staticmethod
+    def get_keyboard() -> ReplyKeyboardMarkup:
+        actions = ReplyBackBotMenuKeyboard.Callback.ActionEnum
+
+        return ReplyKeyboardMarkup(
+            keyboard=[
+                [
+                    KeyboardButton(
+                        text=actions.BACK_TO_BOT_MENU.value
+                    )
+                ]
+            ], resize_keyboard=True
+        )
+
+
 class ReplyBotMenuKeyboard:
     class Callback(BaseModel):
         class ActionEnum(Enum):
