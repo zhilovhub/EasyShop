@@ -86,7 +86,7 @@ class MailingDao(Dao):  # TODO write tests
     async def get_mailing(self, mailing_id: int) -> MailingSchema:
         async with self.engine.begin() as conn:
             raw_res = await conn.execute(
-                select(Mailing).where(Mailing.mailing_id == mailing_id, Mailing.is_sent is False)
+                select(Mailing).where(Mailing.mailing_id == mailing_id, Mailing.is_sent == False)  # noqa: E712
             )
         await self.engine.dispose()
 
@@ -107,7 +107,7 @@ class MailingDao(Dao):  # TODO write tests
     async def get_mailing_by_bot_id(self, bot_id: int) -> MailingSchema:
         async with self.engine.begin() as conn:
             raw_res = await conn.execute(
-                select(Mailing).where(Mailing.bot_id == bot_id, Mailing.is_sent is False)
+                select(Mailing).where(Mailing.bot_id == bot_id, Mailing.is_sent == False)  # noqa: E712
             )
         await self.engine.dispose()
 

@@ -256,7 +256,7 @@ async def get_inline_bot_channel_post_menu_keyboard(bot_id: int, channel_id: int
     #             )
     #         ]
     #     )
-    if channel_post.is_contest is False:
+    if not channel_post.is_contest:
         if channel_post.has_button:
             inline_buttons = [
                 [

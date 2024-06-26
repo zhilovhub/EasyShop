@@ -8,6 +8,7 @@ from database.models.channel_model import ChannelSchema
 from database.models.mailing_model import MailingSchema, MailingNotFound
 from database.models.competition_model import CompetitionSchema
 from database.models.channel_post_model import ChannelPostNotFound, ChannelPostSchema
+from logs.config import logger, extra_params
 
 
 def make_webapp_info(bot_id: int) -> WebAppInfo:
@@ -33,7 +34,12 @@ async def get_bot_mailing(bot_id: int) -> MailingSchema | None:
     try:
         mailing = await mailing_db.get_mailing_by_bot_id(bot_id=bot_id)
         return mailing
-    except MailingNotFound:
+    except MailingNotFound as e:
+        logger.error(
+            f"bot_id={bot_id}: there is no mailing",
+            extra=extra_params(bot_id=bot_id),
+            exc_info=e
+        )
         return None
 
 

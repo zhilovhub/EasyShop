@@ -45,7 +45,7 @@ async def send_mailing_messages(custom_bot, mailing, media_files, chat_id):
     for ind, user in enumerate(all_custom_bot_users, start=1):
         mailing = await mailing_db.get_mailing(mailing_id)
 
-        if mailing.is_running is False:
+        if not mailing.is_running:
             mailing.sent_mailing_amount = 0
             await mailing_db.update_mailing(mailing)
             return
@@ -608,7 +608,7 @@ async def editing_mailing_button_text_handler(message: Message, state: FSMContex
     custom_bot_username = (await custom_bot_tg.get_me()).username
 
     mailing = await mailing_db.get_mailing(mailing_id)
-    if mailing.has_button is False:
+    if not mailing.has_button:
         return await _reply_no_button(message, bot_id, custom_bot_username, state)
 
     if message_text:
@@ -655,7 +655,7 @@ async def editing_mailing_button_url_handler(message: Message, state: FSMContext
     custom_bot_username = (await custom_bot_tg.get_me()).username
 
     mailing = await mailing_db.get_mailing(mailing_id)
-    if mailing.has_button is False:
+    if not mailing.has_button:
         return await _reply_no_button(message, bot_id, custom_bot_username, state)
 
     if message_text:
