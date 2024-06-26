@@ -530,25 +530,16 @@ async def editing_mailing_button_text_handler(message: Message, state: FSMContex
     bot_id = state_data["bot_id"]
     mailing_id = state_data["mailing_id"]
 
-    mailing = await mailing_db.get_mailing(mailing_id)
     custom_bot_tg = Bot((await bot_db.get_bot(bot_id)).token)
     custom_bot_username = (await custom_bot_tg.get_me()).username
 
+    mailing = await mailing_db.get_mailing(mailing_id)
+    if mailing.has_button is False:
+        return await _reply_no_button(message, bot_id, custom_bot_username, state)
+
     if message_text:
-        if message_text == ReplyBackMailingMenuKeyboard.Callback.ActionEnum.BACK_TO_MAILING_MENU.value:
-            await message.answer(
-                "Возвращаемся в меню...",
-                reply_markup=ReplyBotMenuKeyboard.get_keyboard(
-                    bot_id=state_data["bot_id"])
-            )
-            await message.answer(
-                text=MessageTexts.BOT_MAILINGS_MENU_MESSAGE.value.format(
-                    custom_bot_username
-                ),
-                reply_markup=await get_inline_bot_mailing_menu_keyboard(bot_id)
-            )
-            await state.set_state(States.BOT_MENU)
-            await state.set_data(state_data)
+        if message_text == ReplyBackPostMessageMenuKeyboard.Callback.ActionEnum.BACK_TO_MAILING_MENU.value:
+            await _back_to_post_message_menu(message, bot_id, custom_bot_username)
         else:
             mailing.button_text = message.text
             media_files = await mailing_media_file_db.get_all_mailing_media_files(mailing_id)
@@ -556,8 +547,7 @@ async def editing_mailing_button_text_handler(message: Message, state: FSMContex
 
             await message.answer(
                 "Предпросмотр конкурса 👇",
-                reply_markup=ReplyBotMenuKeyboard.get_keyboard(
-                    bot_id=state_data["bot_id"])
+                reply_markup=ReplyBotMenuKeyboard.get_keyboard(bot_id)
             )
             await send_mailing_message(
                 bot,
@@ -568,10 +558,8 @@ async def editing_mailing_button_text_handler(message: Message, state: FSMContex
                 message
             )
             await message.answer(
-                MessageTexts.BOT_MAILINGS_MENU_MESSAGE.value.format(
-                    custom_bot_username
-                ),
-                reply_markup=await get_inline_bot_mailing_menu_keyboard(bot_id)
+                MessageTexts.BOT_MAILINGS_MENU_MESSAGE.value.format(custom_bot_username),
+                reply_markup=await InlinePostMessageMenuKeyboard.get_keyboard(bot_id)
             )
 
         await state.set_state(States.BOT_MENU)
@@ -614,9 +602,7 @@ async def editing_mailing_button_url_handler(message: Message, state: FSMContext
 
             await message.answer(
                 "Предпросмотр конкурса 👇",
-                reply_markup=ReplyBotMenuKeyboard.get_keyboard(
-                    bot_id=state_data["bot_id"]
-                )
+                reply_markup=ReplyBotMenuKeyboard.get_keyboard(bot_id)
             )
             await send_mailing_message(
                 bot,
