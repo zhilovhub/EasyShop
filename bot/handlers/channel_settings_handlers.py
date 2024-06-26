@@ -47,7 +47,7 @@ async def channels_list_callback_handler(query: CallbackQuery):
                     channel_username,
                     (await custom_tg_bot.get_me()).username
                 ),
-                reply_markup=await get_inline_channel_menu_keyboard(custom_bot.bot_id, int(query.data.split(":")[-1]))
+                reply_markup=await get_inline_channel_menu_keyboard(custom_bot.bot_id, channel_id)
             )
         case callback_data.ActionEnum.BACK_TO_MAIN_MENU:
             await query.message.edit_text(

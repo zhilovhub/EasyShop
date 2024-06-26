@@ -1,6 +1,6 @@
 import datetime
-from typing import Optional
 from enum import Enum
+from typing import Optional
 
 from pydantic import BaseModel, Field, validate_call, ConfigDict
 
@@ -124,13 +124,13 @@ class ChannelPostDao(Dao):  # TODO write tests
     def __init__(self, engine: AsyncEngine, logger) -> None:
         super().__init__(engine, logger)
 
-    @ validate_call(validate_return=True)
+    @validate_call(validate_return=True)
     async def get_channel_post(self, channel_id: int, is_contest: bool = False) -> ChannelPostSchema:
         async with self.engine.begin() as conn:
             raw_res = await conn.execute(
                 select(ChannelPost).where(
                     ChannelPost.channel_id == channel_id,
-                    ChannelPost.is_sent is False,
+                    ChannelPost.is_sent == False,  # noqa: E712
                     ChannelPost.is_contest == is_contest
                 )
             )

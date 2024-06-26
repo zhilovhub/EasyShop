@@ -42,11 +42,15 @@ async def get_bot_mailing(bot_id: int) -> MailingSchema | None:
         return None
 
 
-async def get_channel_post(channel_id: int) -> ChannelPostSchema | None:
+async def get_channel_post(channel_id: int, is_contest: bool) -> ChannelPostSchema | None:
     try:
-        channel_post = await channel_post_db.get_channel_post(channel_id=channel_id)
+        channel_post = await channel_post_db.get_channel_post(channel_id=channel_id, is_contest=is_contest)
         return channel_post
     except ChannelPostNotFound:
+        logger.debug(
+            f"channel_id={channel_id}: there is no channel_post with is_contest={is_contest}",
+            extra=extra_params(channel_id=channel_id),
+        )
         return None
 
 

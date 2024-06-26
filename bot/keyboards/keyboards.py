@@ -68,50 +68,6 @@ async def get_competitions_list_keyboard(bot_id: int, channel_id: int) -> Inline
     )
 
 
-async def get_inline_channel_menu_keyboard(bot_id: int, channel_id: int) -> InlineKeyboardMarkup:
-    callback_metadata = f":{bot_id}:{channel_id}"
-    try:
-        await channel_post_db.get_channel_post(channel_id=channel_id, is_contest=False)
-        channel_post_button = InlineKeyboardButton(
-            text="Редактировать запись", callback_data="channel_menu:edit_post" + callback_metadata)
-    except ChannelPostNotFound:
-        channel_post_button = InlineKeyboardButton(
-            text="Создать запись", callback_data="channel_menu:create_post" + callback_metadata)
-
-    try:
-        channel_post = await channel_post_db.get_channel_post(channel_id=channel_id, is_contest=True)
-        contest_button = InlineKeyboardButton(
-            text="Редактировать конкурс", callback_data="channel_menu:edit_post" + callback_metadata + f":{channel_post.channel_post_id}")
-    except ChannelPostNotFound:
-        contest_button = InlineKeyboardButton(
-            text="🆕 Создать конкурс", callback_data="channel_menu:create_contest" + callback_metadata)
-    return InlineKeyboardMarkup(
-        inline_keyboard=[
-            [
-                # InlineKeyboardButton(
-                #     text="🎲 Созданные конкурсы", callback_data="channel_menu:competitions_list" + callback_metadata),
-                contest_button
-            ],
-            [
-                channel_post_button,
-                InlineKeyboardButton(
-                    text="Аналитика", callback_data="channel_menu:analytics" + callback_metadata)
-            ],
-            [
-                InlineKeyboardButton(
-                    text="Права бота", callback_data="channel_menu:manage" + callback_metadata,
-                    url=f"https://t.me/{await get_bot_username(bot_id)}?startchannel")
-            ],
-            [
-                InlineKeyboardButton(
-                    text="🔙 Назад", callback_data="channel_menu:back_to_channels_list" + callback_metadata),
-                InlineKeyboardButton(
-                    text="🛑 Выйти из канала", callback_data="channel_menu:leave_channel" + callback_metadata)
-            ]
-        ],
-    )
-
-
 async def get_custom_bot_ad_channels_list_keyboard(bot_id: int) -> InlineKeyboardMarkup:
     callback_metadata = f":{bot_id}"
     all_channels = await get_bot_channels(bot_id=bot_id)

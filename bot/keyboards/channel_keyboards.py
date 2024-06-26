@@ -4,8 +4,8 @@ from pydantic import ValidationError, Field, ConfigDict, BaseModel
 
 from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup, ReplyKeyboardMarkup, KeyboardButton
 
+from bot.utils.keyboard_utils import get_bot_channels, get_bot_username, get_channel_post
 from bot.keyboards.keyboard_utils import callback_json_validator
-from bot.utils.keyboard_utils import get_bot_channels, get_bot_username
 
 
 class ReplyBackChannelMenuKeyboard:  # TODO should not be common for every channel's back
@@ -102,3 +102,129 @@ class InlineChannelsListKeyboard:
                 )
             ],
         ])
+
+
+class InlineChannelMenuKeyboard:
+    class Callback(BaseModel):
+        class ActionEnum(Enum):
+            EDIT_POST_MESSAGE = "epm"
+            CREATE_POST_MESSAGE = "cpm"
+            EDIT_CONTEST = "ec"
+            CREATE_CONTEST = "cc"
+
+            ANALYTICS = "an"
+            LEAVE_CHANNEL = "lc"
+
+            BACK_CHANNELS_LIST = "back_cc"
+
+        model_config = ConfigDict(from_attributes=True, populate_by_name=True)
+
+        n: str = Field(default="cm", frozen=True)
+        a: ActionEnum
+
+        bot_id: int
+        channel_id: int = Field(alias="ci")
+        channel_post_id: int | None = Field(alias="cp", default=None)
+
+    @staticmethod
+    @callback_json_validator
+    def callback_json(
+            action: Callback.ActionEnum,
+            bot_id: int,
+            channel_id: int,
+            channel_post_id: int | None
+    ) -> str:
+        to_exclude = set()
+        if channel_post_id is None:
+            to_exclude.add("channel_post_id")
+
+        return InlineChannelMenuKeyboard.Callback(
+            a=action,
+            bot_id=bot_id,
+            channel_id=channel_id,
+            channel_post_id=channel_post_id
+        ).model_dump_json(by_alias=True, exclude=to_exclude)
+
+    @staticmethod
+    def callback_validator(json_string: str) -> bool:
+        try:
+            InlineChannelMenuKeyboard.Callback.model_validate_json(json_string)
+            return True
+        except ValidationError:
+            return False
+
+    @staticmethod
+    async def get_keyboard(
+            bot_id: int,
+            channel_id: int
+    ) -> InlineKeyboardMarkup:
+        actions = InlineChannelMenuKeyboard.Callback.ActionEnum
+
+        channel_post_not_contest = await get_channel_post(channel_id=channel_id, is_contest=False)
+        if channel_post_not_contest:
+            channel_post_button = InlineKeyboardButton(
+                text="Редактировать запись",
+                callback_data=InlineChannelMenuKeyboard.callback_json(
+                    actions.EDIT_POST_MESSAGE, bot_id, channel_id, channel_post_not_contest.channel_post_id
+                )  # TODO keep in mind that there was no channel_post_id
+            )
+        else:
+            channel_post_button = InlineKeyboardButton(
+                text="Создать запись",
+                callback_data=InlineChannelMenuKeyboard.callback_json(
+                    actions.CREATE_POST_MESSAGE, bot_id, channel_id
+                )
+            )
+
+        channel_post_contest = await get_channel_post(channel_id=channel_id, is_contest=True)
+        if channel_post_contest:
+            contest_button = InlineKeyboardButton(
+                text="Редактировать конкурс",
+                callback_data=InlineChannelMenuKeyboard.callback_json(
+                    actions.EDIT_CONTEST, bot_id, channel_id, channel_post_contest.channel_post_id
+                )
+            )
+        else:
+            contest_button = InlineKeyboardButton(
+                text="🆕 Создать конкурс",
+                callback_data=InlineChannelMenuKeyboard.callback_json(
+                    actions.CREATE_CONTEST, bot_id, channel_id
+                )
+            )
+
+        return InlineKeyboardMarkup(
+            inline_keyboard=[
+                [
+                    contest_button
+                ],
+                [
+                    channel_post_button,
+                    InlineKeyboardButton(
+                        text="Аналитика",
+                        callback_data=InlineChannelMenuKeyboard.callback_json(
+                            actions.ANALYTICS, bot_id, channel_id
+                        )
+                    )
+                ],
+                [
+                    InlineKeyboardButton(
+                        text="Права бота",
+                        url=f"https://t.me/{await get_bot_username(bot_id)}?startchannel"
+                    )
+                ],
+                [
+                    InlineKeyboardButton(
+                        text="🔙 Назад",
+                        callback_data=InlineChannelMenuKeyboard.callback_json(
+                            actions.BACK_CHANNELS_LIST, bot_id, channel_id
+                        )
+                    ),
+                    InlineKeyboardButton(
+                        text="🛑 Выйти из канала",
+                        callback_data=InlineChannelMenuKeyboard.callback_json(
+                            actions.LEAVE_CHANNEL, bot_id, channel_id, channel_post_not_contest.channel_post_id
+                        )
+                    )
+                ]
+            ],
+        )
