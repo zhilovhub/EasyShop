@@ -172,8 +172,7 @@ async def mailing_menu_callback_handler(query: CallbackQuery, state: FSMContext)
                     "Эти два параметры Вы можете изменить в настройках рассылки"
                 )
                 await query.message.answer(
-                    text=MessageTexts.BOT_MAILINGS_MENU_MESSAGE.value.format(
-                        custom_bot_username),
+                    text=MessageTexts.BOT_MAILINGS_MENU_MESSAGE.value.format(custom_bot_username),
                     reply_markup=await InlinePostMessageMenuKeyboard.get_keyboard(bot_id)
                 )
         case callback_data.ActionEnum.BUTTON_URL:
@@ -198,16 +197,9 @@ async def mailing_menu_callback_handler(query: CallbackQuery, state: FSMContext)
                 await query.answer()
                 await state.set_state(States.EDITING_MAILING_BUTTON_TEXT)
                 await state.set_data({"bot_id": bot_id, "mailing_id": mailing_id})
-        case "delete_button":
+        case callback_data.ActionEnum.BUTTON_DELETE:
             if not mailing.has_button:
-                await query.answer(
-                    "В этом рассылочном сообщении кнопки нет", show_alert=True
-                )
-                await query.message.edit_text(
-                    text=MessageTexts.BOT_MAILINGS_MENU_MESSAGE.value.format(custom_bot_username),
-                    reply_markup=await InlinePostMessageMenuKeyboard.get_keyboard(bot_id),
-                    parse_mode=ParseMode.HTML
-                )
+                await _inline_no_button(query, bot_id, custom_bot_username)
             else:
                 mailing.button_text = None
                 mailing.button_url = None
@@ -221,18 +213,22 @@ async def mailing_menu_callback_handler(query: CallbackQuery, state: FSMContext)
                     text=MessageTexts.BOT_MAILINGS_MENU_MESSAGE.value.format(custom_bot_username),
                     reply_markup=await InlinePostMessageMenuKeyboard.get_keyboard(bot_id)
                 )
-
-        case "message":
-            await query.message.answer("Введите текст, который будет отображаться в рассылочном сообщении",
-                                       reply_markup=ReplyBackMailingMenuKeyboard.get_keyboard())
+        case callback_data.ActionEnum.POST_MESSAGE_TEXT:
+            await query.message.answer(
+                "Введите текст, который будет отображаться в рассылочном сообщении",
+                reply_markup=ReplyBackPostMessageMenuKeyboard.get_keyboard()
+            )
             await query.answer()
             await state.set_state(States.EDITING_MAILING_MESSAGE)
             await state.set_data({"bot_id": bot_id, "mailing_id": mailing_id})
-        case "media":
-            await query.message.answer("Отправьте одним сообщение медиафайлы для рассылочного сообщения\n\n"
-                                       "❗ Старые медиафайлы к этому рассылочному сообщению <b>перезапишутся</b>\n\n"
-                                       "❗❗ Обратите внимание, что к сообщению нельзя будет прикрепить кнопку, если медиафайлов <b>больше одного</b>",
-                                       reply_markup=get_confirm_media_upload_keyboard())
+        case callback_data.ActionEnum.POST_MESSAGE_MEDIA:
+            await query.message.answer(
+                "Отправьте одним сообщение медиафайлы для рассылочного сообщения\n\n"
+                "❗ Старые медиафайлы к этому рассылочному сообщению <b>перезапишутся</b>\n\n"
+                "❗❗ Обратите внимание, что к сообщению нельзя будет прикрепить кнопку, "
+                "если медиафайлов <b>больше одного</b>",
+                reply_markup=get_confirm_media_upload_keyboard()
+            )
             await query.answer()
             await state.set_state(States.EDITING_MAILING_MEDIA_FILES)
             await state.set_data({"bot_id": bot_id, "mailing_id": mailing_id})
@@ -474,20 +470,8 @@ async def editing_mailing_message_handler(message: Message, state: FSMContext):
     custom_bot_username = (await custom_bot_tg.get_me()).username
 
     if message_text:
-        if message_text == ReplyBackMailingMenuKeyboard.Callback.ActionEnum.BACK_TO_MAILING_MENU.value:
-            await message.answer(
-                "Возвращаемся в меню...",
-                reply_markup=ReplyBotMenuKeyboard.get_keyboard(
-                    bot_id=state_data["bot_id"])
-            )
-            await message.answer(
-                text=MessageTexts.BOT_MAILINGS_MENU_MESSAGE.value.format(
-                    custom_bot_username
-                ),
-                reply_markup=await get_inline_bot_mailing_menu_keyboard(bot_id)
-            )
-            await state.set_state(States.BOT_MENU)
-            await state.set_data(state_data)
+        if message_text == ReplyBackPostMessageMenuKeyboard.Callback.ActionEnum.BACK_TO_POST_MESSAGE_MENU.value:
+            await _back_to_post_message_menu(message, bot_id, custom_bot_username)
         else:
             mailing.description = message.html_text
             media_files = await mailing_media_file_db.get_all_mailing_media_files(mailing_id)
@@ -496,8 +480,7 @@ async def editing_mailing_message_handler(message: Message, state: FSMContext):
 
             await message.answer(
                 "Предпросмотр конкурса 👇",
-                reply_markup=ReplyBotMenuKeyboard.get_keyboard(
-                    bot_id=state_data["bot_id"])
+                reply_markup=ReplyBotMenuKeyboard.get_keyboard(bot_id)
             )
             await send_mailing_message(
                 bot,
@@ -508,17 +491,17 @@ async def editing_mailing_message_handler(message: Message, state: FSMContext):
                 message,
             )
             await message.answer(
-                MessageTexts.BOT_MAILINGS_MENU_MESSAGE.value.format(
-                    custom_bot_username
-                ),
-                reply_markup=await get_inline_bot_mailing_menu_keyboard(bot_id)
+                MessageTexts.BOT_MAILINGS_MENU_MESSAGE.value.format(custom_bot_username),
+                reply_markup=await InlinePostMessageMenuKeyboard.get_keyboard(bot_id)
             )
 
         await state.set_state(States.BOT_MENU)
         await state.set_data({"bot_id": bot_id})
     else:
-        await message.answer("Описание должно содержать текст.\n"
-                             "Если есть необходимость прикрепить медиафайлы, то для этого есть пункт в меню")
+        await message.answer(
+            "Описание должно содержать текст.\n"
+            "Если есть необходимость прикрепить медиафайлы, то для этого есть пункт в меню"
+        )
 
 
 @admin_bot_menu_router.message(States.EDITING_MAILING_BUTTON_TEXT)
@@ -538,7 +521,7 @@ async def editing_mailing_button_text_handler(message: Message, state: FSMContex
         return await _reply_no_button(message, bot_id, custom_bot_username, state)
 
     if message_text:
-        if message_text == ReplyBackPostMessageMenuKeyboard.Callback.ActionEnum.BACK_TO_MAILING_MENU.value:
+        if message_text == ReplyBackPostMessageMenuKeyboard.Callback.ActionEnum.BACK_TO_POST_MESSAGE_MENU.value:
             await _back_to_post_message_menu(message, bot_id, custom_bot_username)
         else:
             mailing.button_text = message.text
@@ -638,30 +621,17 @@ async def editing_mailing_media_files_handler(message: Message, state: FSMContex
     custom_bot_username = (await custom_bot_tg.get_me()).username
 
     if message.text == "✅ Готово":
-        await message.answer(
-            "Возвращаемся в меню...",
-            reply_markup=ReplyBotMenuKeyboard.get_keyboard(
-                bot_id=state_data["bot_id"])
-        )
-        await message.answer(
-            text=MessageTexts.BOT_MAILINGS_MENU_MESSAGE.value.format(
-                custom_bot_username
-            ),
-            reply_markup=await get_inline_bot_mailing_menu_keyboard(bot_id)
-        )
-
-        await state.set_state(States.BOT_MENU)
-        await state.set_data({"bot_id": bot_id})
-
-        return
+        return _back_to_post_message_menu(message, bot_id, custom_bot_username)
     elif message.text == "Очистить":
         await message.answer("Очищаем все файлы...")
         await mailing_media_file_db.delete_mailing_media_files(mailing_id=mailing_id)
-        await message.answer("Отправьте одним сообщение медиафайлы для рассылочного сообщения\n\n"
-                             "❗ Старые медиафайлы к этому рассылочному сообщению <b>перезапишутся</b>\n\n"
-                             "❗❗ Обратите внимание, что к сообщению нельзя будет прикрепить кнопку, если медиафайлов <b>больше одного</b>",
-                             reply_markup=get_confirm_media_upload_keyboard())
-        return
+        return await message.answer(
+            "Отправьте одним сообщение медиафайлы для рассылочного сообщения\n\n"
+            "❗ Старые медиафайлы к этому рассылочному сообщению <b>перезапишутся</b>\n\n"
+            "❗❗ Обратите внимание, что к сообщению нельзя будет прикрепить кнопку, "
+            "если медиафайлов <b>больше одного</b>",
+            reply_markup=get_confirm_media_upload_keyboard()
+        )
     elif message.photo:
         photo = message.photo[-1]
         file_id = photo.file_id
@@ -688,7 +658,8 @@ async def editing_mailing_media_files_handler(message: Message, state: FSMContex
         answer_text = f"Документ {document.file_name} добавлен"
     else:
         return await message.answer(
-            "Пришлите медиафайлы (фото, видео, аудио, документы), которые должны быть прикреплены к рассылочному сообщению",
+            "Пришлите медиафайлы (фото, видео, аудио, документы), "
+            "которые должны быть прикреплены к рассылочному сообщению",
             reply_markup=get_confirm_media_upload_keyboard()
         )
 
