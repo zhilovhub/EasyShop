@@ -8,12 +8,6 @@ from bot.utils.keyboard_utils import *
 from bot.utils import MessageTexts, make_admin_panel_webapp_info
 
 
-def get_confirm_media_upload_keyboard() -> ReplyKeyboardMarkup:
-    return ReplyKeyboardMarkup(keyboard=[
-        [KeyboardButton(text="✅ Готово"), KeyboardButton(text="Очистить")],
-    ], resize_keyboard=True)
-
-
 async def get_competition_menu_keyboard(competition_id: int) -> InlineKeyboardMarkup:
     callback_metadata = str(competition_id)
     return InlineKeyboardMarkup(
@@ -168,148 +162,6 @@ async def get_custom_bot_ad_channels_list_keyboard(bot_id: int) -> InlineKeyboar
                 url=f"https://t.me/{await get_bot_username(bot_id)}?startchannel&admin=post_messages"
             )
         ],
-    ])
-
-
-async def get_inline_bot_mailing_menu_extra_settings_keyboard(bot_id: int,
-                                                              mailing_id: int,
-                                                              is_notification_sound: bool,
-                                                              is_link_preview: bool) -> InlineKeyboardMarkup:
-    callback_metadata = f":{bot_id}:{mailing_id}"
-    notification_text = "Звуковое уведомление: "
-    if is_notification_sound:
-        notification_text += "вкл"
-    else:
-        notification_text += "выкл"
-    preview_text = "Предпросмотр ссылок: "
-    if is_link_preview:
-        preview_text += "вкл"
-    else:
-        preview_text += "выкл"
-    return InlineKeyboardMarkup(inline_keyboard=[
-        [
-            InlineKeyboardButton(
-                text=notification_text, callback_data="mailing_menu:toggle_notigication_sound" +
-                                                      callback_metadata
-            )
-        ],
-        [
-            InlineKeyboardButton(
-                text=preview_text, callback_data="mailing_menu:toggle_link_preview" + callback_metadata
-            )
-        ],
-        [
-            InlineKeyboardButton(
-                text="🔙 Назад", callback_data="bot_menu:mailing_menu" + callback_metadata
-            ),
-        ]
-    ])
-
-
-async def get_inline_bot_mailing_menu_accept_deleting_keyboard(bot_id: int, mailing_id: int) -> InlineKeyboardMarkup:
-    callback_metadata = f":{bot_id}:{mailing_id}"
-
-    return InlineKeyboardMarkup(inline_keyboard=[
-        [
-            InlineKeyboardButton(
-                text="Удалить", callback_data="mailing_menu:accept_delete" + callback_metadata
-            ),
-            InlineKeyboardButton(
-                text="🔙 Назад", callback_data="bot_menu:mailing_menu" + callback_metadata
-            )
-        ]
-    ])
-
-
-async def get_inline_bot_mailing_start_confirm_keybaord(bot_id: int, mailing_id: int) -> InlineKeyboardMarkup:
-    callback_metadata = f":{bot_id}:{mailing_id}"
-
-    return InlineKeyboardMarkup(inline_keyboard=[
-        [
-            InlineKeyboardButton(
-                text="Отправить", callback_data="mailing_menu:accept_start" + callback_metadata
-            ),
-            InlineKeyboardButton(
-                text="🔙 Назад", callback_data="bot_menu:mailing_menu" + callback_metadata
-            )
-        ]
-    ])
-
-
-async def get_inline_bot_mailing_menu_keyboard(bot_id: int) -> InlineKeyboardMarkup:
-    mailing = await get_bot_mailing(bot_id=bot_id)
-    callback_metadata = f":{bot_id}:{mailing.mailing_id}"
-    if mailing.is_delayed:
-        delay_btn = InlineKeyboardButton(
-            text="Убрать откладывание", callback_data="mailing_menu:cancel_delay" + callback_metadata)
-    else:
-        delay_btn = InlineKeyboardButton(
-            text="Отложить", callback_data="mailing_menu:delay" + callback_metadata)
-    if mailing.is_running == True:
-        return InlineKeyboardMarkup(
-            inline_keyboard=[
-                [InlineKeyboardButton(
-                    text="Статистика", callback_data="mailing_menu:check_mailing_stats" + callback_metadata)],
-                [InlineKeyboardButton(
-                    text="Отменить", callback_data="mailing_menu:stop_mailing" + callback_metadata)]
-            ]
-        )
-    if mailing.has_button:
-        inline_buttons = [
-            [
-                InlineKeyboardButton(
-                    text="Ссылка кнопки", callback_data="mailing_menu:button_url" + callback_metadata
-                ),
-                InlineKeyboardButton(
-                    text="Текст на кнопке", callback_data="mailing_menu:button_text" + callback_metadata
-                )
-            ],
-            [
-                InlineKeyboardButton(
-                    text="Удалить кнопку", callback_data="mailing_menu:delete_button" + callback_metadata
-                )
-            ]
-        ]
-    else:
-        inline_buttons = [
-            [
-                InlineKeyboardButton(
-                    text="Добавить кнопку", callback_data="mailing_menu:add_button" + callback_metadata
-                ),
-            ]
-        ]
-
-    return InlineKeyboardMarkup(inline_keyboard=[
-        [
-            InlineKeyboardButton(
-                text="Текст сообщения", callback_data="mailing_menu:message" + callback_metadata
-            ),
-            InlineKeyboardButton(
-                text="Медиафайлы", callback_data="mailing_menu:media" + callback_metadata
-            )
-        ],
-        *inline_buttons,
-        [
-            InlineKeyboardButton(
-                text="Запустить", callback_data="mailing_menu:start" + callback_metadata
-            ),
-            InlineKeyboardButton(
-                text="Проверить", callback_data="mailing_menu:demo" + callback_metadata
-            ),
-        ],
-        [
-            delay_btn,
-            InlineKeyboardButton(
-                text="Доп настройки", callback_data="mailing_menu:extra_settings" + callback_metadata
-            ),
-        ],
-        [
-            InlineKeyboardButton(
-                text="🔙 Назад", callback_data="bot_menu:back_to_menu" + callback_metadata),
-            InlineKeyboardButton(
-                text="Удалить рассылку", callback_data="mailing_menu:delete_mailing" + callback_metadata
-            ),
-        ]
     ])
 
 
@@ -605,3 +457,75 @@ async def get_contest_inline_join_button(channel_id: int):
                 ],
             ]
         )
+
+
+def get_confirm_media_upload_keyboard() -> ReplyKeyboardMarkup:
+    return ReplyKeyboardMarkup(keyboard=[
+        [KeyboardButton(text="✅ Готово"), KeyboardButton(text="Очистить")],
+    ], resize_keyboard=True)
+
+
+async def get_inline_bot_mailing_menu_extra_settings_keyboard(bot_id: int,
+                                                              mailing_id: int,
+                                                              is_notification_sound: bool,
+                                                              is_link_preview: bool) -> InlineKeyboardMarkup:
+    callback_metadata = f":{bot_id}:{mailing_id}"
+    notification_text = "Звуковое уведомление: "
+    if is_notification_sound:
+        notification_text += "вкл"
+    else:
+        notification_text += "выкл"
+    preview_text = "Предпросмотр ссылок: "
+    if is_link_preview:
+        preview_text += "вкл"
+    else:
+        preview_text += "выкл"
+    return InlineKeyboardMarkup(inline_keyboard=[
+        [
+            InlineKeyboardButton(
+                text=notification_text, callback_data="mailing_menu:toggle_notigication_sound" +
+                                                      callback_metadata
+            )
+        ],
+        [
+            InlineKeyboardButton(
+                text=preview_text, callback_data="mailing_menu:toggle_link_preview" + callback_metadata
+            )
+        ],
+        [
+            InlineKeyboardButton(
+                text="🔙 Назад", callback_data="bot_menu:mailing_menu" + callback_metadata
+            ),
+        ]
+    ])
+
+
+async def get_inline_bot_mailing_menu_accept_deleting_keyboard(bot_id: int, mailing_id: int) -> InlineKeyboardMarkup:
+    callback_metadata = f":{bot_id}:{mailing_id}"
+
+    return InlineKeyboardMarkup(inline_keyboard=[
+        [
+            InlineKeyboardButton(
+                text="Удалить", callback_data="mailing_menu:accept_delete" + callback_metadata
+            ),
+            InlineKeyboardButton(
+                text="🔙 Назад", callback_data="bot_menu:mailing_menu" + callback_metadata
+            )
+        ]
+    ])
+
+
+async def get_inline_bot_mailing_start_confirm_keybaord(bot_id: int, mailing_id: int) -> InlineKeyboardMarkup:
+    callback_metadata = f":{bot_id}:{mailing_id}"
+
+    return InlineKeyboardMarkup(inline_keyboard=[
+        [
+            InlineKeyboardButton(
+                text="Отправить", callback_data="mailing_menu:accept_start" + callback_metadata
+            ),
+            InlineKeyboardButton(
+                text="🔙 Назад", callback_data="bot_menu:mailing_menu" + callback_metadata
+            )
+        ]
+    ])
+
