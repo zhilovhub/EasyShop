@@ -34,11 +34,10 @@ async def get_bot_mailing(bot_id: int) -> MailingSchema | None:
     try:
         mailing = await mailing_db.get_mailing_by_bot_id(bot_id=bot_id)
         return mailing
-    except MailingNotFound as e:
-        logger.error(
+    except MailingNotFound:
+        logger.debug(
             f"bot_id={bot_id}: there is no mailing",
             extra=extra_params(bot_id=bot_id),
-            exc_info=e
         )
         return None
 

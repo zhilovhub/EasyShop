@@ -303,6 +303,12 @@ async def mailing_menu_callback_handler(query: CallbackQuery, state: FSMContext)
             await query.message.edit_reply_markup(
                 reply_markup=await InlinePostMessageMenuKeyboard.get_keyboard(bot_id)
             )
+        case callback_data.ActionEnum.BACK_TO_MAIN_MENU:
+            await query.message.edit_text(
+                MessageTexts.BOT_MENU_MESSAGE.value.format((await Bot(custom_bot.token).get_me()).username),
+                reply_markup=await InlineBotMenuKeyboard.get_keyboard(custom_bot.bot_id),
+                parse_mode=ParseMode.HTML
+            )
 
 
 @admin_bot_menu_router.callback_query(
