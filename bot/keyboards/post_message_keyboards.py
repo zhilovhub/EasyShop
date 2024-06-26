@@ -318,3 +318,90 @@ class InlinePostMessageMenuKeyboard:
                     ),
                 ]
             ])
+
+
+class InlinePostMessageExtraSettingsKeyboard:
+    class Callback(BaseModel):
+        class ActionEnum(Enum):
+            NOTIFICATION_SOUND = "ns"
+            LINK_PREVIEW = "lp"
+
+            BACK_TO_POST_MESSAGE_MENU = "back_pmm"
+
+        model_config = ConfigDict(from_attributes=True, populate_by_name=True)
+
+        n: str = Field(default="es", frozen=True)
+        a: ActionEnum
+
+        bot_id: int
+        mailing_id: int = Field(alias="mi")
+
+    @staticmethod
+    @callback_json_validator
+    def callback_json(
+            action: Callback.ActionEnum,
+            bot_id: int,
+            mailing_id: int,
+    ) -> str:
+        return InlinePostMessageExtraSettingsKeyboard.Callback(
+            a=action,
+            bot_id=bot_id,
+            mailing_id=mailing_id
+        ).model_dump_json(by_alias=True)
+
+    @staticmethod
+    def callback_validator(json_string: str) -> bool:
+        try:
+            InlinePostMessageExtraSettingsKeyboard.Callback.model_validate_json(json_string)
+            return True
+        except ValidationError:
+            return False
+
+    @staticmethod
+    def get_keyboard(
+            bot_id: int,
+            mailing_id: int,
+            is_notification_sound: bool,
+            is_link_preview: bool
+    ) -> InlineKeyboardMarkup:
+        actions = InlinePostMessageExtraSettingsKeyboard.Callback.ActionEnum
+
+        notification_text = "Звуковое уведомление: "
+
+        if is_notification_sound:
+            notification_text += "✅"
+        else:
+            notification_text += "❌"
+
+        preview_text = "Предпросмотр ссылок: "
+        if is_link_preview:
+            preview_text += "✅"
+        else:
+            preview_text += "❌"
+
+        return InlineKeyboardMarkup(inline_keyboard=[
+            [
+                InlineKeyboardButton(
+                    text=notification_text,
+                    callback_data=InlinePostMessageExtraSettingsKeyboard.callback_json(
+                        actions.NOTIFICATION_SOUND, bot_id, mailing_id
+                    )
+                )
+            ],
+            [
+                InlineKeyboardButton(
+                    text=preview_text,
+                    callback_data=InlinePostMessageExtraSettingsKeyboard.callback_json(
+                        actions.LINK_PREVIEW, bot_id, mailing_id
+                    )
+                )
+            ],
+            [
+                InlineKeyboardButton(
+                    text="🔙 Назад",
+                    callback_data=InlinePostMessageExtraSettingsKeyboard.callback_json(
+                        actions.BACK_TO_POST_MESSAGE_MENU, bot_id, mailing_id
+                    )
+                ),
+            ]
+        ])

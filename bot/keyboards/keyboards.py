@@ -459,41 +459,6 @@ async def get_contest_inline_join_button(channel_id: int):
         )
 
 
-async def get_inline_bot_mailing_menu_extra_settings_keyboard(bot_id: int,
-                                                              mailing_id: int,
-                                                              is_notification_sound: bool,
-                                                              is_link_preview: bool) -> InlineKeyboardMarkup:
-    callback_metadata = f":{bot_id}:{mailing_id}"
-    notification_text = "Звуковое уведомление: "
-    if is_notification_sound:
-        notification_text += "вкл"
-    else:
-        notification_text += "выкл"
-    preview_text = "Предпросмотр ссылок: "
-    if is_link_preview:
-        preview_text += "вкл"
-    else:
-        preview_text += "выкл"
-    return InlineKeyboardMarkup(inline_keyboard=[
-        [
-            InlineKeyboardButton(
-                text=notification_text, callback_data="mailing_menu:toggle_notigication_sound" +
-                                                      callback_metadata
-            )
-        ],
-        [
-            InlineKeyboardButton(
-                text=preview_text, callback_data="mailing_menu:toggle_link_preview" + callback_metadata
-            )
-        ],
-        [
-            InlineKeyboardButton(
-                text="🔙 Назад", callback_data="bot_menu:mailing_menu" + callback_metadata
-            ),
-        ]
-    ])
-
-
 async def get_inline_bot_mailing_start_confirm_keybaord(bot_id: int, mailing_id: int) -> InlineKeyboardMarkup:
     callback_metadata = f":{bot_id}:{mailing_id}"
 

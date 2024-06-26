@@ -16,7 +16,7 @@ from bot.states.states import States
 from bot.handlers.routers import admin_bot_menu_router
 from bot.keyboards.main_menu_keyboards import ReplyBotMenuKeyboard, InlineBotMenuKeyboard
 from bot.keyboards.post_message_keyboards import InlinePostMessageMenuKeyboard, ReplyBackPostMessageMenuKeyboard, \
-    InlinePostMessageAcceptDeletingKeyboard, ReplyConfirmMediaFilesKeyboard
+    InlinePostMessageAcceptDeletingKeyboard, ReplyConfirmMediaFilesKeyboard, InlinePostMessageExtraSettingsKeyboard
 
 from database.models.mailing_media_files import MailingMediaFileSchema
 
@@ -317,7 +317,7 @@ async def mailing_menu_callback_handler(query: CallbackQuery, state: FSMContext)
                                                "%2F%2Ftlgrm.ru%2Fblog%2Flink-preview.html&psig=AOvVaw27FhHb7fFrLDNGUX-u"
                                                "zG7y&ust=1717771529744000&source=images&cd=vfe&opi=89978449&ved=0CBIQjR"
                                                "xqFwoTCJj5puKbx4YDFQAAAAAdAAAAABAE\">предпросмотр ссылок</a>",
-                reply_markup=await get_inline_bot_mailing_menu_extra_settings_keyboard(
+                reply_markup=InlinePostMessageExtraSettingsKeyboard.get_keyboard(
                     bot_id,
                     mailing_id,
                     mailing.enable_notification_sound,
@@ -329,7 +329,7 @@ async def mailing_menu_callback_handler(query: CallbackQuery, state: FSMContext)
             mailing.enable_link_preview = False if mailing.enable_link_preview else True
             await mailing_db.update_mailing(mailing)
             await query.message.edit_reply_markup(
-                reply_markup=await get_inline_bot_mailing_menu_extra_settings_keyboard(
+                reply_markup=InlinePostMessageExtraSettingsKeyboard.get_keyboard(
                     bot_id,
                     mailing_id,
                     mailing.enable_notification_sound,
@@ -340,7 +340,7 @@ async def mailing_menu_callback_handler(query: CallbackQuery, state: FSMContext)
             mailing.enable_notification_sound = False if mailing.enable_notification_sound else True
             await mailing_db.update_mailing(mailing)
             await query.message.edit_reply_markup(
-                reply_markup=await get_inline_bot_mailing_menu_extra_settings_keyboard(
+                reply_markup=InlinePostMessageExtraSettingsKeyboard.get_keyboard(
                     bot_id,
                     mailing_id,
                     mailing.enable_notification_sound,
