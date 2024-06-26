@@ -719,7 +719,7 @@ async def editing_mailing_media_files_handler(message: Message, state: FSMContex
 
     match message.text:
         case ReplyConfirmMediaFilesKeyboard.Callback.ActionEnum.CONFIRM.value:
-            return _back_to_post_message_menu(message, bot_id, custom_bot_username)
+            return await _back_to_post_message_menu(message, bot_id, custom_bot_username)
         case ReplyConfirmMediaFilesKeyboard.Callback.ActionEnum.CLEAR.value:
             await message.answer("Очищаем все файлы...")
             await mailing_media_file_db.delete_mailing_media_files(mailing_id=mailing_id)
