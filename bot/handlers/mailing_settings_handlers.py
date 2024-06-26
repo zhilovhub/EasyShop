@@ -370,11 +370,15 @@ async def mailing_menu_callback_handler(query: CallbackQuery, state: FSMContext)
             await state.set_state(States.EDITING_DELAY_DATE)
             await state.set_data({"bot_id": bot_id, "mailing_id": mailing_id})
 
-        case "cancel_delay":
+        case callback_data.ActionEnum.REMOVE_DELAY:
             mailing.is_delayed = False
             mailing.send_date = None
+
             await mailing_db.update_mailing(mailing)
-            await query.message.edit_reply_markup(reply_markup=await get_inline_bot_mailing_menu_keyboard(bot_id))
+
+            await query.message.edit_reply_markup(
+                reply_markup=await InlinePostMessageMenuKeyboard.get_keyboard(bot_id)
+            )
 
 
 @admin_bot_menu_router.message(States.EDITING_DELAY_DATE)
