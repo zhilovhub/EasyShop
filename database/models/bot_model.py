@@ -11,9 +11,10 @@ from pydantic import BaseModel, Field, ConfigDict
 
 from database.models import Base
 from database.models.dao import Dao
+from database.models.user_model import User
 
 from bot.exceptions.exceptions import *
-from database.models.user_model import User
+
 from logs.config import extra_params
 
 
@@ -140,7 +141,9 @@ class BotDao(Dao):
 
         async with self.engine.begin() as conn:
             try:
-                bot_id = (await conn.execute(insert(Bot).values(**bot.model_dump(by_alias=True)))).inserted_primary_key[0]
+                bot_id = (await conn.execute(insert(Bot).values(
+                    **bot.model_dump(by_alias=True))
+                )).inserted_primary_key[0]
             except IntegrityError:
                 raise InstanceAlreadyExists(f"bot with {bot.token} already exists in db or user with "
                                             f"user_id = {bot.created_by} not exists")

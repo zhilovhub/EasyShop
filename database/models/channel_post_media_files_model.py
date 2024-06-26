@@ -1,12 +1,15 @@
 from pydantic import BaseModel, Field, validate_call, ConfigDict
-from sqlalchemy import BigInteger, Column, ForeignKey, select, insert, delete, BOOLEAN, ForeignKeyConstraint, String, \
-    DateTime, update
+
+from sqlalchemy import BigInteger, Column, ForeignKey, select, insert, delete, String, \
+    update
 from sqlalchemy.ext.asyncio import AsyncEngine
 
 from bot.exceptions import InvalidParameterFormat
+
 from database.models import Base
-from database.models.channel_post_model import ChannelPost
 from database.models.dao import Dao
+from database.models.channel_post_model import ChannelPost
+
 from logs.config import extra_params
 
 
@@ -75,7 +78,8 @@ class ChannelPostMediaFileDao(Dao):  # TODO write tests
             )
 
         self.logger.debug(
-            f"channel_post_id={new_channel_post_media_file.channel_post_id}: media file {new_channel_post_media_file.file_id_main_bot} is added",
+            f"channel_post_id={new_channel_post_media_file.channel_post_id}: "
+            f"media file {new_channel_post_media_file.file_id_main_bot} is added",
             extra=extra_params(
                 channel_post_id=new_channel_post_media_file.channel_post_id)
         )
@@ -94,7 +98,8 @@ class ChannelPostMediaFileDao(Dao):  # TODO write tests
             )
 
         self.logger.debug(
-            f"channel_post_id={new_channel_post_media_file.channel_post_id}: media file {new_channel_post_media_file.file_id_main_bot} is updated",
+            f"channel_post_id={new_channel_post_media_file.channel_post_id}: "
+            f"media file {new_channel_post_media_file.file_id_main_bot} is updated",
             extra=extra_params(
                 channel_post_id=new_channel_post_media_file.channel_post_id)
         )

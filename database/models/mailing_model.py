@@ -2,15 +2,15 @@ import datetime
 from typing import Optional
 
 from pydantic import BaseModel, Field, validate_call, ConfigDict
-from sqlalchemy import BigInteger, Column, ForeignKey, select, insert, delete, BOOLEAN, ForeignKeyConstraint, String, \
-    DateTime, update
+
+from sqlalchemy import BigInteger, Column, ForeignKey, select, insert, delete, BOOLEAN, String, DateTime, update
 from sqlalchemy.ext.asyncio import AsyncEngine
 
 from bot.exceptions import InvalidParameterFormat
+
 from database.models import Base
-from database.models.bot_model import Bot
 from database.models.dao import Dao
-from enum import Enum
+from database.models.bot_model import Bot
 
 from logs.config import extra_params
 
@@ -85,7 +85,9 @@ class MailingDao(Dao):  # TODO write tests
     @validate_call(validate_return=True)
     async def get_mailing(self, mailing_id: int) -> MailingSchema:
         async with self.engine.begin() as conn:
-            raw_res = await conn.execute(select(Mailing).where(Mailing.mailing_id == mailing_id, Mailing.is_sent == False))
+            raw_res = await conn.execute(
+                select(Mailing).where(Mailing.mailing_id == mailing_id, Mailing.is_sent is False)
+            )
         await self.engine.dispose()
 
         raw_res = raw_res.fetchone()
@@ -105,7 +107,8 @@ class MailingDao(Dao):  # TODO write tests
     async def get_mailing_by_bot_id(self, bot_id: int) -> MailingSchema:
         async with self.engine.begin() as conn:
             raw_res = await conn.execute(
-                select(Mailing).where(Mailing.bot_id == bot_id, Mailing.is_sent == False))
+                select(Mailing).where(Mailing.bot_id == bot_id, Mailing.is_sent is False)
+            )
         await self.engine.dispose()
 
         raw_res = raw_res.fetchone()

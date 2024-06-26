@@ -1,13 +1,17 @@
 import datetime
 
 from pydantic import BaseModel, Field, validate_call, ConfigDict
-from sqlalchemy import BigInteger, Column, ForeignKey, UniqueConstraint, select, insert, delete, BOOLEAN, DATETIME, update
+
+from sqlalchemy import BigInteger, Column, ForeignKey, UniqueConstraint, \
+    select, insert, delete, BOOLEAN, DATETIME, update
 from sqlalchemy.ext.asyncio import AsyncEngine
 
 from bot.exceptions import InvalidParameterFormat
+
 from database.models import Base
-from database.models.bot_model import Bot
 from database.models.dao import Dao
+from database.models.bot_model import Bot
+
 from logs.config import extra_params
 
 

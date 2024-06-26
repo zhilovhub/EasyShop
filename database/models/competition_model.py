@@ -2,15 +2,16 @@ import datetime
 from typing import Optional
 
 from pydantic import BaseModel, Field, validate_call, ConfigDict
-from sqlalchemy import BigInteger, Column, ForeignKey, select, insert, delete, BOOLEAN, ForeignKeyConstraint, String, \
-    DateTime, update
+
+from sqlalchemy import BigInteger, Column, select, insert, BOOLEAN, ForeignKeyConstraint, String, DateTime, update
 from sqlalchemy.ext.asyncio import AsyncEngine
 
 from bot.exceptions import InvalidParameterFormat
+
 from database.models import Base
-from database.models.bot_model import Bot
-from database.models.channel_model import Channel
 from database.models.dao import Dao
+from database.models.channel_model import Channel
+
 from logs.config import extra_params
 
 
@@ -44,7 +45,6 @@ class Competition(Base):
 
     # Randomizer will be as another table
     has_randomizer = Column(BOOLEAN, default=False)
-
 
     __table_args__ = (
         ForeignKeyConstraint(
@@ -127,11 +127,15 @@ class CompetitionDao(Dao):  # TODO write tests
             raise InvalidParameterFormat("new_competition must be type of CompetitionSchema")
 
         async with self.engine.begin() as conn:
-            competition_id = (await conn.execute(insert(Competition).values(new_competition.model_dump()))).inserted_primary_key[0]
+            competition_id = (
+                await conn.execute(insert(Competition).values(new_competition.model_dump()))
+            ).inserted_primary_key[0]
 
         self.logger.debug(
             f"bot_id={new_competition.bot_id}: competition {competition_id} is added",
-            extra=extra_params(competition_id=competition_id, channel_id=new_competition.channel_id, bot_id=new_competition.bot_id)
+            extra=extra_params(
+                competition_id=competition_id, channel_id=new_competition.channel_id, bot_id=new_competition.bot_id
+            )
         )
 
         return competition_id
@@ -147,6 +151,9 @@ class CompetitionDao(Dao):  # TODO write tests
 
         self.logger.debug(
             f"bot_id={updated_competition.bot_id}: competition {updated_competition.competition_id} is updated",
-            extra=extra_params(competition_id=updated_competition.competition_id, channel_id=updated_competition.channel_id,
-                               bot_id=updated_competition.bot_id)
+            extra=extra_params(
+                competition_id=updated_competition.competition_id,
+                channel_id=updated_competition.channel_id,
+                bot_id=updated_competition.bot_id
+            )
         )

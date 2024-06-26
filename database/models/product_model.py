@@ -1,24 +1,20 @@
-from typing import Optional
+from typing import Optional, Annotated
+
+from pydantic import BaseModel, Field, validate_call, ConfigDict, model_validator
 
 from sqlalchemy import BigInteger, Column, String, ForeignKey, Integer, JSON
 from sqlalchemy import select, insert, delete, update, and_, desc, asc
 from sqlalchemy.ext.asyncio import AsyncEngine
-from sqlalchemy.dialects.postgresql import insert as upsert
 from sqlalchemy.dialects.postgresql import ARRAY
-
-from sqlalchemy_filters import apply_filters
-
-from pydantic import BaseModel, Field, validate_call, ConfigDict, model_validator
-from typing import Annotated, List
+from sqlalchemy.dialects.postgresql import insert as upsert
 
 from bot.exceptions import InvalidParameterFormat
 
 from database.models import Base
 from database.models.dao import Dao
-from logs.config import extra_params
+from database.models.bot_model import Bot
 
-from .bot_model import Bot
-from .category_model import Category
+from logs.config import extra_params
 
 
 class ProductNotFound(Exception):
@@ -33,15 +29,6 @@ class FilterNotFound(Exception):
         self.filter_name = filter_name
         self.message = message.replace("{FILTER_NAME}", filter_name.lower())
         super().__init__(self.message)
-
-
-# class CategoryFilterNotFound(Exception):
-#     """Raised when category name provided to ProductFilter class is not exist in categories table"""
-#
-#     def __init__(self, category_name: str, message: str = "Provided category name ('{CAT_NAME}') for category filter not found"):
-#         self.category_name = category_name
-#         self.message = message.replace("{{CAT_NAME}}", category_name.lower())
-#         super().__init__(self.message)
 
 
 PRODUCT_FILTERS = {"rating": "По рейтингу",
@@ -110,7 +97,7 @@ class ProductWithoutId(BaseModel):
 class ProductSchema(ProductWithoutId):
     id: int
 
-    def convert_to_notification_text(self, count: int, extra_options: dict) -> str:
+    def convert_to_notification_text(self, count: int) -> str:
         # if extra_options is not None:
         #     options = "\n" + "".join([f"{title} : {opt}" for title, opt in extra_options.items()]) + "\n"
         # else:
@@ -142,12 +129,15 @@ class ProductDao(Dao):
         super().__init__(engine, logger)
 
     @validate_call(validate_return=True)
-    async def get_all_products(self, bot_id: int, price_min: int = 0, price_max: int = 2147483647,
-                               filters: list[ProductFilter] | None = None) -> list[ProductSchema]:
-        sql_select = select(Product).where(and_(
-            and_(
-                Product.bot_id == bot_id, Product.price >= price_min)
-            , Product.price <= price_max)
+    async def get_all_products(
+            self,
+            bot_id: int,
+            price_min: int = 0,
+            price_max: int = 2147483647,
+            filters: list[ProductFilter] | None = None
+    ) -> list[ProductSchema]:
+        sql_select = select(Product).where(
+            and_(and_(Product.bot_id == bot_id, Product.price >= price_min), Product.price <= price_max)
         )
 
         if filters:
@@ -238,9 +228,9 @@ class ProductDao(Dao):
                     extra=extra_params(product_id=product_id, bot_id=new_product.bot_id)
                 )
             else:
-                upsert_query = upsert(Product).values(new_product_dict).on_conflict_do_nothing(
+                upsert(Product).values(new_product_dict).on_conflict_do_nothing(
                     constraint=f"products_name_key",
-                )
+                )  # TODO что-то тут странное. Почему запрос есть, но не исполняется?
                 product_id = -1
 
         return product_id

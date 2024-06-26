@@ -1,12 +1,14 @@
 from pydantic import BaseModel, Field, validate_call, ConfigDict
-from sqlalchemy import BigInteger, Column, ForeignKey, select, insert, delete, BOOLEAN, ForeignKeyConstraint, String, \
-    DateTime, update
+
+from sqlalchemy import BigInteger, Column, ForeignKey, select, insert, delete, String, update
 from sqlalchemy.ext.asyncio import AsyncEngine
 
 from bot.exceptions import InvalidParameterFormat
+
 from database.models import Base
-from database.models.mailing_model import Mailing
 from database.models.dao import Dao
+from database.models.mailing_model import Mailing
+
 from logs.config import extra_params
 
 
@@ -70,7 +72,8 @@ class MailingMediaFileDao(Dao):  # TODO write tests
             )
 
         self.logger.debug(
-            f"mailing_id={new_mailing_media_file.mailing_id}: media file {new_mailing_media_file.file_id_main_bot} is added",
+            f"mailing_id={new_mailing_media_file.mailing_id}: "
+            f"media file {new_mailing_media_file.file_id_main_bot} is added",
             extra=extra_params(mailing_id=new_mailing_media_file.mailing_id)
         )
 
@@ -87,7 +90,8 @@ class MailingMediaFileDao(Dao):  # TODO write tests
             )
 
         self.logger.debug(
-            f"mailing_id={new_mailing_media_file.mailing_id}: media file {new_mailing_media_file.file_id_main_bot} is updated",
+            f"mailing_id={new_mailing_media_file.mailing_id}: "
+            f"media file {new_mailing_media_file.file_id_main_bot} is updated",
             extra=extra_params(mailing_id=new_mailing_media_file.mailing_id)
         )
 

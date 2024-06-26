@@ -1,14 +1,15 @@
 from pydantic import BaseModel, Field, validate_call, ConfigDict
-from sqlalchemy import BigInteger, Column, ForeignKey, UniqueConstraint, select, insert, delete, BOOLEAN
+
+from sqlalchemy import BigInteger, Column, ForeignKey, select, insert, delete
 from sqlalchemy.ext.asyncio import AsyncEngine
 
-from bot.exceptions.exceptions import InstanceAlreadyExists
-from bot.exceptions import InvalidParameterFormat
+from bot.exceptions.exceptions import InstanceAlreadyExists, InvalidParameterFormat
+
 from database.models import Base
-from database.models.bot_model import Bot
 from database.models.dao import Dao
-from logs.config import extra_params
 from database.models.channel_post_model import ChannelPost
+
+from logs.config import extra_params
 
 
 class ContestChannelNotFound(Exception):
@@ -89,13 +90,18 @@ class ContestChannelDao(Dao):  # TODO write tests
             raise InvalidParameterFormat(
                 "new_channel must be type of ContestChannelSchemaWithoutId")
         try:
-            await self.get_contest_channel_by_channel_id_and_contest_id(new_channel.contest_post_id, new_channel.channel_id)
+            await self.get_contest_channel_by_channel_id_and_contest_id(
+                new_channel.contest_post_id, new_channel.channel_id
+            )
             raise InstanceAlreadyExists(
-                f"ContestChannel with {new_channel.channel_id} already exists in contest {new_channel.contest_post_id}.")
+                f"ContestChannel with {new_channel.channel_id} already exists in contest {new_channel.contest_post_id}."
+            )
         except ContestChannelNotFound:
 
             async with self.engine.begin() as conn:
-                contest_channel_pk = (await conn.execute(insert(ContestChannel).values(new_channel.model_dump()))).inserted_primary_key[0]
+                contest_channel_pk = (
+                    await conn.execute(insert(ContestChannel).values(new_channel.model_dump()))
+                ).inserted_primary_key[0]
 
             self.logger.debug(
                 f"contest_id={new_channel.contest_post_id}: channel {new_channel.channel_id} is added",

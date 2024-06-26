@@ -1,12 +1,14 @@
 from pydantic import BaseModel, Field, validate_call, ConfigDict
-from sqlalchemy import BigInteger, Column, ForeignKey, select, insert, delete, BOOLEAN, ForeignKeyConstraint, String, \
-    DateTime
+
+from sqlalchemy import BigInteger, Column, ForeignKey, select, insert, delete, String
 from sqlalchemy.ext.asyncio import AsyncEngine
 
 from bot.exceptions import InvalidParameterFormat
+
 from database.models import Base
-from database.models.competition_model import Competition
 from database.models.dao import Dao
+from database.models.competition_model import Competition
+
 from logs.config import extra_params
 
 

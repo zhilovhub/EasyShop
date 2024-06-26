@@ -1,5 +1,3 @@
-import os
-
 from sqlalchemy.ext.asyncio import create_async_engine
 
 from database.models.bot_model import BotDao
@@ -22,7 +20,7 @@ from database.models.custom_bot_user_model import CustomBotUserDao
 from database.models.contest_channel_model import ContestChannelDao
 from database.models.competition_media_files_model import CompetitionMediaFileDao
 from database.models.channel_post_media_files_model import ChannelPostMediaFileDao
-from database.models import Base
+from database.models import Base  # should be the last import from database.models
 
 from dotenv import load_dotenv
 

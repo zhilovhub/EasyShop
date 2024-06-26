@@ -1,21 +1,17 @@
-from datetime import datetime, timedelta
-from enum import Enum
-from typing import Optional
 from datetime import datetime
-
-from sqlalchemy import BOOLEAN, BigInteger, Column, String, DateTime, JSON, TypeDecorator, Unicode, Dialect
-from sqlalchemy import select, update, delete, insert
-from sqlalchemy.ext.asyncio import AsyncEngine
 
 from pydantic import BaseModel, Field, ConfigDict
 
+from sqlalchemy import BigInteger, Column, DateTime, ForeignKey, select, insert
+from sqlalchemy.ext.asyncio import AsyncEngine
+
+from bot.exceptions.exceptions import *
+
 from database.models import Base
 from database.models.dao import Dao
-from sqlalchemy import ForeignKey
-from bot.exceptions.exceptions import *
-from logs.config import extra_params
-from database.models.channel_model import Channel
 from database.models.channel_post_model import ChannelPost
+
+from logs.config import extra_params
 
 
 class ContestUserNotFound(Exception):

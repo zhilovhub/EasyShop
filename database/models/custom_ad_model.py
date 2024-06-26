@@ -1,14 +1,16 @@
 from datetime import datetime
 
 from pydantic import BaseModel, Field, validate_call, ConfigDict
-from sqlalchemy import BigInteger, Column, ForeignKey, select, insert, delete, BOOLEAN, update, DateTime, desc, String
+
+from sqlalchemy import BigInteger, Column, ForeignKey, select, insert, delete, update, DateTime, desc, String
 from sqlalchemy.ext.asyncio import AsyncEngine
 
 from database.models import Base
 from database.models.dao import Dao
-from logs.config import extra_params
-from database.models.channel_model import Channel
 from database.models.user_model import User
+from database.models.channel_model import Channel
+
+from logs.config import extra_params
 
 
 class CustomAdsNotFound(Exception):

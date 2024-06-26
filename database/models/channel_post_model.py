@@ -1,17 +1,20 @@
 import datetime
 from typing import Optional
+from enum import Enum
 
 from pydantic import BaseModel, Field, validate_call, ConfigDict
-from sqlalchemy import BigInteger, Column, Dialect, ForeignKey, TypeDecorator, Unicode, select, insert, delete, BOOLEAN, ForeignKeyConstraint, String, \
-    DateTime, update
+
+from sqlalchemy import BigInteger, Column, Dialect, ForeignKey, TypeDecorator, Unicode, \
+    select, insert, delete, BOOLEAN, String, DateTime, update
 from sqlalchemy.ext.asyncio import AsyncEngine
 
 from bot.exceptions import InvalidParameterFormat
+
 from database.models import Base
-from database.models.bot_model import Bot
 from database.models.dao import Dao
-from enum import Enum
+from database.models.bot_model import Bot
 from database.models.channel_model import Channel
+
 from logs.config import extra_params
 
 
@@ -124,7 +127,13 @@ class ChannelPostDao(Dao):  # TODO write tests
     @ validate_call(validate_return=True)
     async def get_channel_post(self, channel_id: int, is_contest: bool = False) -> ChannelPostSchema:
         async with self.engine.begin() as conn:
-            raw_res = await conn.execute(select(ChannelPost).where(ChannelPost.channel_id == channel_id, ChannelPost.is_sent == False, ChannelPost.is_contest == is_contest))
+            raw_res = await conn.execute(
+                select(ChannelPost).where(
+                    ChannelPost.channel_id == channel_id,
+                    ChannelPost.is_sent is False,
+                    ChannelPost.is_contest == is_contest
+                )
+            )
         await self.engine.dispose()
 
         raw_res = raw_res.fetchone()
@@ -169,7 +178,9 @@ class ChannelPostDao(Dao):  # TODO write tests
                 "new_channel_post must be type of ChannelPostSchema")
 
         async with self.engine.begin() as conn:
-            channel_post_id = (await conn.execute(insert(ChannelPost).values(new_channel_post.model_dump()))).inserted_primary_key[0]
+            channel_post_id = (
+                await conn.execute(insert(ChannelPost).values(new_channel_post.model_dump()))
+            ).inserted_primary_key[0]
 
         self.logger.debug(
             f"bot_id={new_channel_post.bot_id}: channel_post_id {channel_post_id} is added",

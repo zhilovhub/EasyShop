@@ -1,14 +1,11 @@
-from pydantic import BaseModel, Field, validate_call, ConfigDict
-from sqlalchemy import BigInteger, Column, ForeignKey, select, insert, delete, BOOLEAN, ForeignKeyConstraint, String, \
-    DateTime
-from sqlalchemy.ext.asyncio import AsyncEngine
+from pydantic import BaseModel, Field, ConfigDict
 
-from bot.exceptions import InvalidParameterFormat
+from sqlalchemy.ext.asyncio import AsyncEngine
+from sqlalchemy import BigInteger, Column, ForeignKey, BOOLEAN
+
 from database.models import Base
-from database.models.bot_model import Bot
-from database.models.channel_model import Channel
-from database.models.competition_model import Competition
 from database.models.dao import Dao
+from database.models.competition_model import Competition
 
 
 class RandomizerNotFound(Exception):
@@ -34,7 +31,6 @@ class RandomizerSchema(BaseModel):
 
     winners_count: int = Field(default=1)
     only_with_usernames: bool = Field(default=False)
-
 
 
 class RandomizerDao(Dao):  # TODO write tests

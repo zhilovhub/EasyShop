@@ -1,6 +1,6 @@
-from datetime import datetime
 from enum import Enum
 from typing import Optional
+from datetime import datetime
 
 from sqlalchemy import BigInteger, Column, String, TypeDecorator, Unicode, Dialect, DateTime, JSON, ForeignKey
 from sqlalchemy import select, update, delete, insert
@@ -10,8 +10,9 @@ from pydantic import BaseModel, Field, validate_call, ConfigDict
 
 from database.models import Base
 from database.models.dao import Dao
-from database.models.product_model import ProductSchema
 from database.models.bot_model import Bot
+from database.models.product_model import ProductSchema
+
 from logs.config import extra_params
 
 
@@ -75,7 +76,11 @@ class OrderSchema(BaseModel):
 
     id: str = Field(max_length=12, frozen=True, alias="order_id")
     bot_id: int
-    items: dict[int, OrderItem] = Field(default={101: OrderItem(amount=5, used_extra_option=True, extra_options={"Размер": "42"})})
+    items: dict[int, OrderItem] = Field(
+        default={
+            101: OrderItem(amount=5, used_extra_option=True, extra_options={"Размер": "42"})
+        }
+    )
     from_user: int
     payment_method: str | None = None
     ordered_at: datetime
@@ -103,7 +108,9 @@ class OrderSchema(BaseModel):
         products_converted = []
         total_price = 0
         for ind, product_item in enumerate(products, start=1):
-            products_converted.append(f"{ind}. {product_item[0].convert_to_notification_text(product_item[1], product_item[2])}")
+            products_converted.append(
+                f"{ind}. {product_item[0].convert_to_notification_text(product_item[1])}"
+            )
             total_price += product_item[0].price * product_item[1]
 
         products_text = "\n".join(products_converted)
