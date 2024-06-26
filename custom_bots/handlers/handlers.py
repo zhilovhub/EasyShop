@@ -58,7 +58,7 @@ async def process_web_app_request(event: Message):
                 chosen_options[option_title] = item['chosen_option']
             items[item_id] = OrderItem(amount=item['amount'], used_extra_option=used_options,
                                        extra_options=chosen_options)
-            if bot_data.settings and "auto_reduce" in bot_data.settings and bot_data.settings["auto_reduce"] is True:
+            if bot_data.settings and "auto_reduce" in bot_data.settings and bot_data.settings["auto_reduce"]:
                 if product.count < item['amount']:
                     raise NotEnoughProductsInStockToReduce(product, item['amount'])
                 product.count -= item['amount']

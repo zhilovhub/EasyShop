@@ -106,7 +106,7 @@ async def mailing_menu_callback_handler(query: CallbackQuery, state: FSMContext)
             callback_data.ActionEnum.STATISTICS,
             callback_data.ActionEnum.CANCEL,
             callback_data.ActionEnum.BACK_TO_MAIN_MENU
-    ) and mailing.is_running is True:
+    ) and mailing.is_running:
         await query.answer("Рассылка уже запущена", show_alert=True)
         await query.message.edit_text(
             text=MessageTexts.BOT_MAILING_MENU_WHILE_RUNNING.value.format(custom_bot_username),
@@ -329,7 +329,7 @@ async def mailing_accept_deleting_callback_handler(query: CallbackQuery):
     custom_bot = await bot_db.get_bot(bot_id)
     custom_bot_username = (await Bot(custom_bot.token).get_me()).username
 
-    if callback_data.a != callback_data.ActionEnum.BACK_TO_POST_MESSAGE_MENU and mailing.is_running is True:
+    if callback_data.a != callback_data.ActionEnum.BACK_TO_POST_MESSAGE_MENU and mailing.is_running:
         await query.answer("Рассылка уже запущена", show_alert=True)
         await query.message.edit_text(
             text=MessageTexts.BOT_MAILING_MENU_WHILE_RUNNING.value.format(custom_bot_username),
@@ -385,7 +385,7 @@ async def mailing_extra_settings_callback_handler(query: CallbackQuery):
     custom_bot = await bot_db.get_bot(bot_id)
     custom_bot_username = (await Bot(custom_bot.token).get_me()).username
 
-    if callback_data.a != callback_data.ActionEnum.BACK_TO_POST_MESSAGE_MENU and mailing.is_running is True:
+    if callback_data.a != callback_data.ActionEnum.BACK_TO_POST_MESSAGE_MENU and mailing.is_running:
         await query.answer("Рассылка уже запущена", show_alert=True)
         await query.message.edit_text(
             text=MessageTexts.BOT_MAILING_MENU_WHILE_RUNNING.value.format(custom_bot_username),
@@ -447,7 +447,7 @@ async def mailing_confirm_start_callback_handler(query: CallbackQuery):
     custom_bot = await bot_db.get_bot(bot_id)
     custom_bot_username = (await Bot(custom_bot.token).get_me()).username
 
-    if callback_data.a != callback_data.ActionEnum.BACK_TO_POST_MESSAGE_MENU and mailing.is_running is True:
+    if callback_data.a != callback_data.ActionEnum.BACK_TO_POST_MESSAGE_MENU and mailing.is_running:
         await query.answer("Рассылка уже запущена", show_alert=True)
         await query.message.edit_text(
             text=MessageTexts.BOT_MAILING_MENU_WHILE_RUNNING.value.format(custom_bot_username),

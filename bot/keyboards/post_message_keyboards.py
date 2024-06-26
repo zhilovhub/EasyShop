@@ -205,7 +205,7 @@ class InlinePostMessageMenuKeyboard:
                 )
             )
 
-        if mailing.is_running is True:
+        if mailing.is_running:
             return InlineKeyboardMarkup(
                 inline_keyboard=[
                     [
