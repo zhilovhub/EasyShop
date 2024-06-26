@@ -8,6 +8,37 @@ from bot.utils.keyboard_utils import get_bot_mailing
 from bot.keyboards.keyboard_utils import callback_json_validator
 
 
+class ReplyConfirmMediaFilesKeyboard:
+    class Callback(BaseModel):
+        class ActionEnum(Enum):
+            CONFIRM = "✅ Готово"
+            CLEAR = "🧹 Очистить"
+
+        model_config = ConfigDict(from_attributes=True, populate_by_name=True)
+
+        n: str = Field(default="confirm_media_files", frozen=True)
+        a: ActionEnum
+
+        bot_id: int
+
+    @staticmethod
+    def get_keyboard() -> ReplyKeyboardMarkup:
+        actions = ReplyConfirmMediaFilesKeyboard.Callback.ActionEnum
+
+        return ReplyKeyboardMarkup(
+            keyboard=[
+                [
+                    KeyboardButton(
+                        text=actions.CONFIRM.value
+                    ),
+                    KeyboardButton(
+                        text=actions.CLEAR.value
+                    )
+                ]
+            ], resize_keyboard=True
+        )
+
+
 class ReplyBackPostMessageMenuKeyboard:  # TODO should not be common for every mailing's back
     class Callback(BaseModel):
         class ActionEnum(Enum):

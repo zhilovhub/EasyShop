@@ -16,7 +16,7 @@ from bot.states.states import States
 from bot.handlers.routers import admin_bot_menu_router
 from bot.keyboards.main_menu_keyboards import ReplyBotMenuKeyboard, InlineBotMenuKeyboard
 from bot.keyboards.post_message_keyboards import InlinePostMessageMenuKeyboard, ReplyBackPostMessageMenuKeyboard, \
-    InlinePostMessageAcceptDeletingKeyboard
+    InlinePostMessageAcceptDeletingKeyboard, ReplyConfirmMediaFilesKeyboard
 
 from database.models.mailing_media_files import MailingMediaFileSchema
 
@@ -228,7 +228,7 @@ async def mailing_menu_callback_handler(query: CallbackQuery, state: FSMContext)
                 "❗ Старые медиафайлы к этому рассылочному сообщению <b>перезапишутся</b>\n\n"
                 "❗❗ Обратите внимание, что к сообщению нельзя будет прикрепить кнопку, "
                 "если медиафайлов <b>больше одного</b>",
-                reply_markup=get_confirm_media_upload_keyboard()
+                reply_markup=ReplyConfirmMediaFilesKeyboard.get_keyboard()
             )
             await query.answer()
             await state.set_state(States.EDITING_MAILING_MEDIA_FILES)
@@ -635,48 +635,50 @@ async def editing_mailing_media_files_handler(message: Message, state: FSMContex
     custom_bot_tg = Bot((await bot_db.get_bot(bot_id)).token)
     custom_bot_username = (await custom_bot_tg.get_me()).username
 
-    if message.text == "✅ Готово":
-        return _back_to_post_message_menu(message, bot_id, custom_bot_username)
-    elif message.text == "Очистить":
-        await message.answer("Очищаем все файлы...")
-        await mailing_media_file_db.delete_mailing_media_files(mailing_id=mailing_id)
-        return await message.answer(
-            "Отправьте одним сообщение медиафайлы для рассылочного сообщения\n\n"
-            "❗ Старые медиафайлы к этому рассылочному сообщению <b>перезапишутся</b>\n\n"
-            "❗❗ Обратите внимание, что к сообщению нельзя будет прикрепить кнопку, "
-            "если медиафайлов <b>больше одного</b>",
-            reply_markup=get_confirm_media_upload_keyboard()
-        )
-    elif message.photo:
-        photo = message.photo[-1]
-        file_id = photo.file_id
-        file_path = (await bot.get_file(photo.file_id)).file_path
-        media_type = "photo"
-        answer_text = f"Фото {photo.file_unique_id} добавлено"
-    elif message.video:
-        video = message.video
-        file_id = video.file_id
-        file_path = (await bot.get_file(video.file_id)).file_path
-        media_type = "video"
-        answer_text = f"Видео {video.file_name} добавлено"
-    elif message.audio:
-        audio = message.audio
-        file_id = audio.file_id
-        file_path = (await bot.get_file(audio.file_id)).file_path
-        media_type = "audio"
-        answer_text = f"Аудио {audio.file_name} добавлено"
-    elif message.document:
-        document = message.document
-        file_id = document.file_id
-        file_path = (await bot.get_file(document.file_id)).file_path
-        media_type = "document"
-        answer_text = f"Документ {document.file_name} добавлен"
-    else:
-        return await message.answer(
-            "Пришлите медиафайлы (фото, видео, аудио, документы), "
-            "которые должны быть прикреплены к рассылочному сообщению",
-            reply_markup=get_confirm_media_upload_keyboard()
-        )
+    match message.text:
+        case ReplyConfirmMediaFilesKeyboard.Callback.ActionEnum.CONFIRM.value:
+            return _back_to_post_message_menu(message, bot_id, custom_bot_username)
+        case ReplyConfirmMediaFilesKeyboard.Callback.ActionEnum.CLEAR.value:
+            await message.answer("Очищаем все файлы...")
+            await mailing_media_file_db.delete_mailing_media_files(mailing_id=mailing_id)
+            return await message.answer(
+                "Отправьте одним сообщение медиафайлы для рассылочного сообщения\n\n"
+                "❗ Старые медиафайлы к этому рассылочному сообщению <b>перезапишутся</b>\n\n"
+                "❗❗ Обратите внимание, что к сообщению нельзя будет прикрепить кнопку, "
+                "если медиафайлов <b>больше одного</b>",
+                reply_markup=ReplyConfirmMediaFilesKeyboard.get_keyboard()
+            )
+        case _:
+            if message.photo:
+                photo = message.photo[-1]
+                file_id = photo.file_id
+                file_path = (await bot.get_file(photo.file_id)).file_path
+                media_type = "photo"
+                answer_text = f"Фото {photo.file_unique_id} добавлено"
+            elif message.video:
+                video = message.video
+                file_id = video.file_id
+                file_path = (await bot.get_file(video.file_id)).file_path
+                media_type = "video"
+                answer_text = f"Видео {video.file_name} добавлено"
+            elif message.audio:
+                audio = message.audio
+                file_id = audio.file_id
+                file_path = (await bot.get_file(audio.file_id)).file_path
+                media_type = "audio"
+                answer_text = f"Аудио {audio.file_name} добавлено"
+            elif message.document:
+                document = message.document
+                file_id = document.file_id
+                file_path = (await bot.get_file(document.file_id)).file_path
+                media_type = "document"
+                answer_text = f"Документ {document.file_name} добавлен"
+            else:
+                return await message.answer(
+                    "Пришлите медиафайлы (фото, видео, аудио, документы), "
+                    "которые должны быть прикреплены к рассылочному сообщению",
+                    reply_markup=ReplyConfirmMediaFilesKeyboard.get_keyboard()
+                )
 
     await mailing_media_file_db.add_mailing_media_file(MailingMediaFileSchema.model_validate(
         {"mailing_id": mailing_id, "file_id_main_bot": file_id,

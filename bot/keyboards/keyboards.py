@@ -459,12 +459,6 @@ async def get_contest_inline_join_button(channel_id: int):
         )
 
 
-def get_confirm_media_upload_keyboard() -> ReplyKeyboardMarkup:
-    return ReplyKeyboardMarkup(keyboard=[
-        [KeyboardButton(text="✅ Готово"), KeyboardButton(text="Очистить")],
-    ], resize_keyboard=True)
-
-
 async def get_inline_bot_mailing_menu_extra_settings_keyboard(bot_id: int,
                                                               mailing_id: int,
                                                               is_notification_sound: bool,
