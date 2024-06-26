@@ -69,7 +69,6 @@ class ReplyBotMenuKeyboard:
 class InlineBotMenuKeyboard:
     class Callback(BaseModel):
         class ActionEnum(Enum):
-            CHANNEL_ADD = "add_to_channel"
             CHANNEL_LIST = "channels"
 
             MAILING_ADD = "mailing_create"
@@ -114,9 +113,6 @@ class InlineBotMenuKeyboard:
 
         channel_inline_button = InlineKeyboardButton(
             text="📢 Добавить в канал",
-            callback_data=InlineBotMenuKeyboard.callback_json(
-                    actions.CHANNEL_ADD, bot_id
-                ),
             url=f"https://t.me/{await get_bot_username(bot_id)}?startchannel"
         ) if not await get_bot_channels(bot_id=bot_id) else \
             InlineKeyboardButton(

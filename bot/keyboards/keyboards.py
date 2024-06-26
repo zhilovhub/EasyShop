@@ -112,33 +112,6 @@ async def get_inline_channel_menu_keyboard(bot_id: int, channel_id: int) -> Inli
     )
 
 
-async def get_inline_bot_channels_list_keyboard(bot_id: int) -> InlineKeyboardMarkup:
-    callback_metadata = f":{bot_id}"
-
-    all_channels = await get_bot_channels(bot_id=bot_id)
-
-    channels_buttons = [
-        InlineKeyboardButton(text='@' + channel[1],
-                             callback_data=f"bot_menu:channel{callback_metadata}:{channel[0].channel_id}") for channel
-        in all_channels
-    ]
-    resized_channels_buttons = [channels_buttons[i:i + 4]
-                                for i in range(0, len(channels_buttons), 4)]
-
-    return InlineKeyboardMarkup(inline_keyboard=[
-        *resized_channels_buttons,
-        [
-            InlineKeyboardButton(
-                text="🔙 Назад", callback_data="bot_menu:back_to_menu" + callback_metadata),
-            InlineKeyboardButton(
-                text="📢 Добавить в канал",
-                callback_data="bot_menu:add_to_channel" + callback_metadata,
-                url=f"https://t.me/{await get_bot_username(bot_id)}?startchannel"
-            )
-        ],
-    ])
-
-
 async def get_custom_bot_ad_channels_list_keyboard(bot_id: int) -> InlineKeyboardMarkup:
     callback_metadata = f":{bot_id}"
     all_channels = await get_bot_channels(bot_id=bot_id)

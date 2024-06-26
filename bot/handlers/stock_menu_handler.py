@@ -26,13 +26,6 @@ async def stock_menu_handler(query: CallbackQuery, state: FSMContext):
     bot_id = callback_data.bot_id
 
     match callback_data.a:
-        case "channels":  # TODO should not be here
-            custom_bot = await bot_db.get_bot(state_data["bot_id"])
-            await query.message.edit_text(
-                MessageTexts.BOT_CHANNELS_LIST_MESSAGE.value.format((await Bot(custom_bot.token).get_me()).username),
-                reply_markup=await get_inline_bot_channels_list_keyboard(custom_bot.bot_id)
-            )
-
         case "channel":  # TODO should not be here
             custom_bot = await bot_db.get_bot(state_data["bot_id"])
             custom_tg_bot = Bot(custom_bot.token)

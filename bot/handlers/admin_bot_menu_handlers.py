@@ -15,6 +15,7 @@ from aiogram.fsm.context import FSMContext
 from aiogram.utils.token import validate_token, TokenValidationError
 from aiogram.fsm.storage.base import StorageKey
 
+from bot.keyboards.channel_keyboards import InlineChannelsListKeyboard
 from bot.main import bot, user_db, product_db, order_db, custom_bot_user_db, QUESTION_MESSAGES, bot_db, mailing_db
 from bot.utils import MessageTexts
 from bot.exceptions import InstanceAlreadyExists
@@ -228,7 +229,7 @@ async def handle_callback(query: CallbackQuery, state: FSMContext):
         case callback_data.ActionEnum.FINISH \
              | callback_data.ActionEnum.PROCESS \
              | callback_data.ActionEnum.BACKLOG \
-             | callback_data.ActionEnum.WAITING_PAYMENT:  # noqa TODO remove cancel here
+             | callback_data.ActionEnum.WAITING_PAYMENT:  # noqa
             new_status = {
                 callback_data.ActionEnum.FINISH: OrderStatusValues.FINISHED,
                 callback_data.ActionEnum.PROCESS: OrderStatusValues.PROCESSING,
@@ -449,6 +450,13 @@ async def bot_menu_callback_handler(query: CallbackQuery, state: FSMContext):
             await query.message.edit_text(
                 "Меню склада:",
                 reply_markup=await InlineStockMenuKeyboard.get_keyboard(bot_id, auto_reduce)
+            )
+        case callback_data.ActionEnum.CHANNEL_LIST:
+            custom_bot = await bot_db.get_bot(bot_id)
+
+            await query.message.edit_text(
+                MessageTexts.BOT_CHANNELS_LIST_MESSAGE.value.format((await Bot(custom_bot.token).get_me()).username),
+                reply_markup=await InlineChannelsListKeyboard.get_keyboard(custom_bot.bot_id)
             )
 
 
