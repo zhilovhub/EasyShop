@@ -59,7 +59,7 @@ class ReplyBackPostMessageMenuKeyboard:  # TODO should not be common for every m
             keyboard=[
                 [
                     KeyboardButton(
-                        text=actions.BACK_TO_MAILING_MENU.value
+                        text=actions.BACK_TO_POST_MESSAGE_MENU.value
                     )
                 ]
             ], resize_keyboard=True
