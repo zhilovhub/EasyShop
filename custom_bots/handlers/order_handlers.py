@@ -1,14 +1,14 @@
 import time
 
-from aiogram.fsm.context import FSMContext
 from aiogram.types import CallbackQuery
+from aiogram.fsm.context import FSMContext
 
-from bot.keyboards import keyboards
+from bot.keyboards.question_keyboards import ReplyBackQuestionMenuKeyboard
 from bot.keyboards.order_manage_keyboards import InlineOrderCancelKeyboard, \
     InlineOrderCustomBotKeyboard
 
-from custom_bots.handlers.routers import multi_bot_router
 from custom_bots.multibot import order_db, product_db, main_bot, PREV_ORDER_MSGS, CustomUserStates
+from custom_bots.handlers.routers import multi_bot_router
 
 from database.models.order_model import OrderStatusValues, OrderNotFound
 
@@ -116,7 +116,7 @@ async def handle_order_callback(query: CallbackQuery, state: FSMContext):
 
             await query.message.answer(
                 "Вы можете отправить свой вопрос по заказу, отправив любое сообщение боту",
-                reply_markup=keyboards.get_back_keyboard()
+                reply_markup=ReplyBackQuestionMenuKeyboard.get_keyboard()
             )
             await state.set_state(CustomUserStates.WAITING_FOR_QUESTION)
             await state.set_data(state_data)

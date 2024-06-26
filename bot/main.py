@@ -61,7 +61,7 @@ contest_user_db: ContestUserDao = db_engine.get_contest_user_dao()
 stock_manager = Stoke(db_engine)
 
 _scheduler = Scheduler(config.SCHEDULER_URL, 'postgres', config.TIMEZONE)
-subscription = Subscription(database=db_engine, scheduler=_scheduler)
+subscription = Subscription(database=db_engine, custom_scheduler=_scheduler)
 
 competition: CompetitionModule = CompetitionModule(db_engine)
 

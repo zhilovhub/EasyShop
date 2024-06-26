@@ -24,7 +24,7 @@ class UserStatusValues(Enum):
     SUBSCRIPTION_ENDED = "subscription_ended"
 
 
-class UserStatus(TypeDecorator):
+class UserStatus(TypeDecorator):  # noqa
     impl = Unicode
     cache_ok = True
 

@@ -24,7 +24,7 @@ class OrderStatusValues(Enum):
     FINISHED = "finished"
 
 
-class OrderStatus(TypeDecorator):
+class OrderStatus(TypeDecorator):  # noqa
     impl = Unicode
     cache_ok = True
 

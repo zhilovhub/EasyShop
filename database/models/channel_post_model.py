@@ -24,7 +24,7 @@ class ContestTypeValues(Enum):
     NONE = "none"
 
 
-class ContestType(TypeDecorator):
+class ContestType(TypeDecorator):  # noqa
     impl = Unicode
     cache_ok = True
 

@@ -1,34 +1,27 @@
-from aiogram.filters import CommandStart, CommandObject
 import json
 import random
 import string
-import time
 from datetime import datetime, timedelta
 
 from aiogram import F, Bot
-from aiogram.exceptions import TelegramAPIError
-from aiogram.filters import CommandStart
-from aiogram.fsm.context import FSMContext
 from aiogram.types import Message, CallbackQuery, FSInputFile
 
 from bot.keyboards import keyboards
+from bot.utils.message_texts import MessageTexts
+from bot.keyboards.order_manage_keyboards import InlineOrderStatusesKeyboard, InlineOrderCustomBotKeyboard
 from bot.keyboards.custom_bot_menu_keyboards import ReplyCustomBotMenuKeyboard
-from bot.keyboards.order_manage_keyboards import InlineOrderStatusesKeyboard, InlineOrderCancelKeyboard, \
-    InlineOrderCustomBotKeyboard
-from bot.keyboards.question_keyboards import InlineOrderQuestionKeyboard
-from custom_bots.handlers.routers import multi_bot_router
+
 from custom_bots.multibot import order_db, product_db, bot_db, main_bot, PREV_ORDER_MSGS, custom_bot_user_db, \
-    CustomUserStates, QUESTION_MESSAGES, format_locales, channel_db, custom_ad_db, scheduler, user_db
+    CustomUserStates, format_locales, channel_db, custom_ad_db, scheduler, user_db
+from custom_bots.handlers.routers import multi_bot_router
 from custom_bots.utils.custom_bot_options import get_option
+
 from database.models.bot_model import BotNotFound
-from database.models.custom_bot_user_model import CustomBotUserNotFound
-from database.models.order_model import OrderSchema, OrderStatusValues, OrderNotFound, OrderItem
-from database.models.custom_ad_model import CustomAdSchemaWithoutId, CustomAdSchema
+from database.models.order_model import OrderSchema, OrderItem
 from database.models.product_model import NotEnoughProductsInStockToReduce
+from database.models.custom_ad_model import CustomAdSchemaWithoutId
 
 from logs.config import custom_bot_logger, extra_params
-
-from bot.utils.message_texts import MessageTexts
 
 
 @multi_bot_router.message(F.web_app_data)
@@ -65,7 +58,7 @@ async def process_web_app_request(event: Message):
                 chosen_options[option_title] = item['chosen_option']
             items[item_id] = OrderItem(amount=item['amount'], used_extra_option=used_options,
                                        extra_options=chosen_options)
-            if bot_data.settings and "auto_reduce" in bot_data.settings and bot_data.settings["auto_reduce"] == True:
+            if bot_data.settings and "auto_reduce" in bot_data.settings and bot_data.settings["auto_reduce"] is True:
                 if product.count < item['amount']:
                     raise NotEnoughProductsInStockToReduce(product, item['amount'])
                 product.count -= item['amount']
@@ -90,57 +83,64 @@ async def process_web_app_request(event: Message):
 
         await order_db.add_order(order)
 
+        products = [(await product_db.get_product(product_id), product_item.amount, product_item.extra_options)
+                    for product_id, product_item in order.items.items()]
+        username = "@" + order_user_data.username if order_user_data.username else order_user_data.full_name
+        admin_id = (await bot_db.get_bot_by_token(event.bot.token)).created_by
+        main_msg = await main_bot.send_message(
+            admin_id, order.convert_to_notification_text(
+                products,
+                username,
+                True
+            ))
+
+        msg_id_data = PREV_ORDER_MSGS.get_data()
+        msg_id_data[order.id] = (main_msg.chat.id, main_msg.message_id)
+        PREV_ORDER_MSGS.update_data(msg_id_data)
+        msg = await event.bot.send_message(
+            user_id, order.convert_to_notification_text(
+                products,
+                username,
+                False
+            ), reply_markup=InlineOrderCustomBotKeyboard.get_keyboard(order.id)
+        )
+        await main_bot.edit_message_reply_markup(
+            main_msg.chat.id,
+            main_msg.message_id,
+            reply_markup=InlineOrderStatusesKeyboard.get_keyboard(
+                order.id, msg.message_id, msg.chat.id, current_status=order.status
+            )
+        )
+
         custom_bot_logger.info(
             f"user_id={user_id}: order with order_id {order.id} is created",
             extra=extra_params(
                 user_id=user_id, bot_id=bot_id, order_id=order.id)
         )
+    except NotEnoughProductsInStockToReduce as e:
+        await event.answer(
+            f":(\nК сожалению на складе недостаточно <b>{e.product.name}</b> для выполнения Вашего заказа."
+        )
     except Exception as e:
-        if isinstance(e, NotEnoughProductsInStockToReduce):
-            await event.answer(
-                f":(\nК сожалению на складе недостаточно <b>{product.name}</b> для выполнения Вашего заказа.")
         await event.answer("Произошла ошибка при создании заказа, администраторы уведомлены.")
 
         try:
             data = json.loads(event.web_app_data.data)
             bot_id = data["bot_id"]
-        except Exception:
+        except Exception as another_e:
             bot_id = -1
+            custom_bot_logger.error(
+                f"user_id={user_id}: Unable to find bot_id from event.web_app_data.data",
+                extra=extra_params(user_id=user_id),
+                exc_info=another_e
+            )
 
         custom_bot_logger.error(
             f"user_id={user_id}: Unable to create an order in bot_id={bot_id}",
-            extra=extra_params(user_id=user_id, bot_id=bot_id)
+            extra=extra_params(user_id=user_id, bot_id=bot_id),
+            exc_info=e
         )
         raise e
-
-    products = [(await product_db.get_product(product_id), product_item.amount, product_item.extra_options)
-                for product_id, product_item in order.items.items()]
-    username = "@" + order_user_data.username if order_user_data.username else order_user_data.full_name
-    admin_id = (await bot_db.get_bot_by_token(event.bot.token)).created_by
-    main_msg = await main_bot.send_message(
-        admin_id, order.convert_to_notification_text(
-            products,
-            username,
-            True
-        ))
-
-    msg_id_data = PREV_ORDER_MSGS.get_data()
-    msg_id_data[order.id] = (main_msg.chat.id, main_msg.message_id)
-    PREV_ORDER_MSGS.update_data(msg_id_data)
-    msg = await event.bot.send_message(
-        user_id, order.convert_to_notification_text(
-            products,
-            username,
-            False
-        ), reply_markup=InlineOrderCustomBotKeyboard.get_keyboard(order.id)
-    )
-    await main_bot.edit_message_reply_markup(
-        main_msg.chat.id,
-        main_msg.message_id,
-        reply_markup=InlineOrderStatusesKeyboard.get_keyboard(
-            order.id, msg.message_id, msg.chat.id, current_status=order.status
-        )
-    )
 
 
 @multi_bot_router.callback_query(lambda q: q.data.startswith("request_ad"))

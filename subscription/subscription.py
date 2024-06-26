@@ -31,11 +31,11 @@ class UserHasAlreadyStartedTrial(Exception):
 class Subscription:
     """Модуль системы подписки"""
 
-    def __init__(self, database: Database, scheduler: Scheduler) -> None:
+    def __init__(self, database: Database, custom_scheduler: Scheduler) -> None:
         self.user_db = database.get_user_dao()
         self.payment_db = database.get_payment_dao()
 
-        self.scheduler = scheduler
+        self.scheduler = custom_scheduler
 
     async def start_trial(self, user_id: int) -> datetime:
         """Starts trial subscription of the user"""
@@ -196,5 +196,5 @@ if __name__ == '__main__':
 
     subscription = Subscription(
         database=Database(sqlalchemy_url=os.getenv("DB_FOR_TESTS")),
-        scheduler=scheduler
+        custom_scheduler=scheduler
     )
