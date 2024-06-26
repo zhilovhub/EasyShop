@@ -10,7 +10,8 @@ from aiogram.types import Message, CallbackQuery, LinkPreviewOptions, \
     InputMediaPhoto, InputMediaVideo, InputMediaAudio, InputMediaDocument, BufferedInputFile
 from aiogram.fsm.context import FSMContext
 
-from bot.keyboards.channel_keyboards import ReplyBackChannelMenuKeyboard
+from bot.keyboards.channel_keyboards import ReplyBackChannelMenuKeyboard, InlineChannelsListKeyboard
+from bot.utils import MessageTexts
 from database.models.contest_channel_model import ContestChannelSchema, ContestChannelSchemaWithoutId
 from bot.main import bot, _scheduler, custom_bot_user_db, channel_post_media_file_db, channel_user_db, contest_channel_db, contest_user_db
 from bot.states.states import States
@@ -26,6 +27,34 @@ from aiogram.utils.deep_linking import create_start_link
 from bot.keyboards import *
 from bot.keyboards.main_menu_keyboards import InlineBotMenuKeyboard, ReplyBotMenuKeyboard
 from bot.utils.contest_result import generate_contest_result
+
+
+
+@channel_menu_router.callback_query(lambda query: InlineChannelsListKeyboard.callback_validator(query.data))
+async def channels_list_callback_handler(query: CallbackQuery):
+    callback_data = InlineChannelsListKeyboard.Callback.model_validate_json(query.data)
+
+    bot_id = callback_data.bot_id
+    custom_bot = await bot_db.get_bot(bot_id)
+    custom_tg_bot = Bot(custom_bot.token)
+
+    match callback_data.a:
+        case callback_data.ActionEnum.OPEN_CHANNEL:
+            channel_id = callback_data.channel_id
+            channel_username = (await custom_tg_bot.get_chat(channel_id)).username
+            await query.message.edit_text(
+                MessageTexts.BOT_CHANNEL_MENU_MESSAGE.value.format(
+                    channel_username,
+                    (await custom_tg_bot.get_me()).username
+                ),
+                reply_markup=await get_inline_channel_menu_keyboard(custom_bot.bot_id, int(query.data.split(":")[-1]))
+            )
+        case callback_data.ActionEnum.BACK_TO_MAIN_MENU:
+            await query.message.edit_text(
+                MessageTexts.BOT_MENU_MESSAGE.value.format((await Bot(custom_bot.token).get_me()).username),
+                reply_markup=await InlineBotMenuKeyboard.get_keyboard(custom_bot.bot_id),
+                parse_mode=ParseMode.HTML
+            )
 
 
 class MailingMessageType(Enum):

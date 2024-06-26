@@ -20,41 +20,15 @@ from logs.config import logger, extra_params
 
 @stock_menu_router.callback_query(lambda query: InlineStockMenuKeyboard.callback_validator(query.data))
 async def stock_menu_handler(query: CallbackQuery, state: FSMContext):
-    state_data = await state.get_data()
     callback_data = InlineStockMenuKeyboard.Callback.model_validate_json(query.data)
 
     bot_id = callback_data.bot_id
 
     match callback_data.a:
-        case "channel":  # TODO should not be here
-            custom_bot = await bot_db.get_bot(state_data["bot_id"])
-            custom_tg_bot = Bot(custom_bot.token)
-            channel_id = int(query.data.split(":")[-1])
-            channel_username = (await custom_tg_bot.get_chat(channel_id)).username
-            await query.message.edit_text(
-                MessageTexts.BOT_CHANNEL_MENU_MESSAGE.value.format(channel_username,
-                                                                   (await custom_tg_bot.get_me()).username),
-                reply_markup=await get_inline_channel_menu_keyboard(custom_bot.bot_id, int(query.data.split(":")[-1]))
-            )
-
         case callback_data.ActionEnum.GOODS_COUNT:
             products = await product_db.get_all_products(bot_id)
             await query.message.answer(f"Количество товаров: {len(products)}")
             await query.answer()
-            # case "goods_list":
-            #     products = await product_db.get_all_products(state_data["bot_id"])
-            #     if not products:
-            #         await query.message.answer("Список товаров Вашего магазина пуст")
-            #     else:
-            #         await query.message.answer(
-            #             "Список товаров Вашего магазина 👇\nЧтобы удалить товар, нажмите на тег рядом с ним")
-            #         for product in products:
-            #             await query.message.answer_photo(
-            #                 photo=FSInputFile(os.getenv('FILES_PATH') + product.picture),
-            #                 caption=f"<b>{product.name}</b>\n\n"
-            #                         f"Цена: <b>{float(product.price)}₽</b>",
-            #                 reply_markup=get_inline_delete_button(product.id))
-            #     await query.answer()
         case callback_data.ActionEnum.ADD_GOOD:
             await query.message.answer(
                 "Чтобы добавить товар, прикрепите его картинку и отправьте сообщение в виде:"
