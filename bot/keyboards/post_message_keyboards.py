@@ -405,3 +405,64 @@ class InlinePostMessageExtraSettingsKeyboard:
                 ),
             ]
         ])
+
+
+class InlinePostMessageStartConfirmKeyboard:
+    class Callback(BaseModel):
+        class ActionEnum(Enum):
+            START_CONFIRM = "sc"
+
+            BACK_TO_POST_MESSAGE_MENU = "back_pmm"
+
+        model_config = ConfigDict(from_attributes=True, populate_by_name=True)
+
+        n: str = Field(default="es", frozen=True)
+        a: ActionEnum
+
+        bot_id: int
+        mailing_id: int = Field(alias="mi")
+
+    @staticmethod
+    @callback_json_validator
+    def callback_json(
+            action: Callback.ActionEnum,
+            bot_id: int,
+            mailing_id: int,
+    ) -> str:
+        return InlinePostMessageStartConfirmKeyboard.Callback(
+            a=action,
+            bot_id=bot_id,
+            mailing_id=mailing_id
+        ).model_dump_json(by_alias=True)
+
+    @staticmethod
+    def callback_validator(json_string: str) -> bool:
+        try:
+            InlinePostMessageStartConfirmKeyboard.Callback.model_validate_json(json_string)
+            return True
+        except ValidationError:
+            return False
+
+    @staticmethod
+    def get_keyboard(
+            bot_id: int,
+            mailing_id: int
+    ) -> InlineKeyboardMarkup:
+        actions = InlinePostMessageStartConfirmKeyboard.Callback.ActionEnum
+
+        return InlineKeyboardMarkup(inline_keyboard=[
+            [
+                InlineKeyboardButton(
+                    text="Отправить",
+                    callback_data=InlinePostMessageStartConfirmKeyboard.callback_json(
+                        actions.START_CONFIRM, bot_id, mailing_id
+                    )
+                ),
+                InlineKeyboardButton(
+                    text="🔙 Назад",
+                    callback_data=InlinePostMessageStartConfirmKeyboard.callback_json(
+                        actions.BACK_TO_POST_MESSAGE_MENU, bot_id, mailing_id
+                    )
+                )
+            ]
+        ])

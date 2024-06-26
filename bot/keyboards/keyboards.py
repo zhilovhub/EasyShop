@@ -1,11 +1,9 @@
-from bot.main import contest_user_db
-from typing import Optional
+from aiogram.utils.keyboard import InlineKeyboardMarkup, InlineKeyboardButton
 
-from aiogram.utils.keyboard import InlineKeyboardMarkup, InlineKeyboardButton, ReplyKeyboardMarkup, KeyboardButton
+from bot.main import contest_user_db
+from bot.utils.keyboard_utils import *
 
 from database.models.channel_post_model import ContestTypeValues
-from bot.utils.keyboard_utils import *
-from bot.utils import MessageTexts, make_admin_panel_webapp_info
 
 
 async def get_competition_menu_keyboard(competition_id: int) -> InlineKeyboardMarkup:
@@ -457,19 +455,3 @@ async def get_contest_inline_join_button(channel_id: int):
                 ],
             ]
         )
-
-
-async def get_inline_bot_mailing_start_confirm_keybaord(bot_id: int, mailing_id: int) -> InlineKeyboardMarkup:
-    callback_metadata = f":{bot_id}:{mailing_id}"
-
-    return InlineKeyboardMarkup(inline_keyboard=[
-        [
-            InlineKeyboardButton(
-                text="Отправить", callback_data="mailing_menu:accept_start" + callback_metadata
-            ),
-            InlineKeyboardButton(
-                text="🔙 Назад", callback_data="bot_menu:mailing_menu" + callback_metadata
-            )
-        ]
-    ])
-
