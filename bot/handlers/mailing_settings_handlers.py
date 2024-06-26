@@ -232,35 +232,18 @@ async def mailing_menu_callback_handler(query: CallbackQuery, state: FSMContext)
             await query.answer()
             await state.set_state(States.EDITING_MAILING_MEDIA_FILES)
             await state.set_data({"bot_id": bot_id, "mailing_id": mailing_id})
-        case "start":
+        case callback_data.ActionEnum.START:
             media_files = await mailing_media_file_db.get_all_mailing_media_files(mailing_id)
 
-            if len(media_files) > 1 and mailing.has_button:
-                return await query.answer(
-                    "Telegram не позволяет прикрепить кнопку, если в сообщении минимум 2 медиафайла",
-                    show_alert=True
+            if await _is_post_message_valid(query, mailing, media_files):
+                await query.message.edit_text(
+                    text=MessageTexts.BOT_MAILINGS_MENU_ACCEPT_START.value.format(custom_bot_username),
+                    reply_markup=await get_inline_bot_mailing_start_confirm_keybaord(bot_id, mailing_id)
                 )
-            elif not media_files and not mailing.description:
-                return await query.answer(
-                    text="В Вашем рассылочном сообщении нет ни текста, ни медиафайлов",
-                    show_alert=True
-                )
-
-            await query.message.edit_text(
-                text=MessageTexts.BOT_MAILINGS_MENU_ACCEPT_START.value.format(
-                    custom_bot_username),
-                reply_markup=await get_inline_bot_mailing_start_confirm_keybaord(bot_id, mailing_id)
-            )
-        case "demo":
+        case callback_data.ActionEnum.DEMO:
             media_files = await mailing_media_file_db.get_all_mailing_media_files(mailing_id)
 
-            if len(media_files) > 1 and mailing.has_button:
-                await query.answer(
-                    "Telegram не позволяет прикрепить кнопку, если в сообщении минимум 2 медиафайла",
-                    show_alert=True
-                )
-            elif mailing.description or media_files:
-                media_files = await mailing_media_file_db.get_all_mailing_media_files(mailing_id)
+            if await _is_post_message_valid(query, mailing, media_files):
                 await send_mailing_message(
                     bot,
                     query.from_user.id,
@@ -270,24 +253,15 @@ async def mailing_menu_callback_handler(query: CallbackQuery, state: FSMContext)
                     query.message
                 )
                 await query.message.answer(
-                    text=MessageTexts.BOT_MAILINGS_MENU_MESSAGE.value.format(
-                        custom_bot_username
-                    ),
-                    reply_markup=await get_inline_bot_mailing_menu_keyboard(bot_id)
+                    text=MessageTexts.BOT_MAILINGS_MENU_MESSAGE.value.format(custom_bot_username),
+                    reply_markup=await InlinePostMessageMenuKeyboard.get_keyboard(bot_id)
                 )
-
-            else:
-                await query.answer(
-                    text="В Вашем рассылочном сообщении нет ни текста, ни медиафайлов",
-                    show_alert=True
-                )
-        case "delete_mailing":
+        case callback_data.ActionEnum.DELETE_POST_MESSAGE:
             await query.message.edit_text(
-                text=MessageTexts.BOT_MAILINGS_MENU_ACCEPT_DELETING_MESSAGE.value.format(
-                    custom_bot_username),
+                text=MessageTexts.BOT_MAILINGS_MENU_ACCEPT_DELETING_MESSAGE.value.format(custom_bot_username),
                 reply_markup=await get_inline_bot_mailing_menu_accept_deleting_keyboard(bot_id, mailing_id)
             )
-        case "accept_delete":
+        case "accept_delete":  # TODO should not be here
             await mailing_db.delete_mailing(mailing_id)
             await query.answer(
                 text="Рассылочное сообщение удалено",
@@ -302,7 +276,7 @@ async def mailing_menu_callback_handler(query: CallbackQuery, state: FSMContext)
             await query.message.delete()
             # await new_message.edit_reply_markup(reply_markup=await InlineBotMenuKeyboard.get_keyboard(
             #     bot_id))
-        case "accept_start":
+        case "accept_start":  # TODO should bot be here
             media_files = await mailing_media_file_db.get_all_mailing_media_files(mailing_id)
 
             if len(media_files) > 1 and mailing.has_button:
@@ -351,19 +325,21 @@ async def mailing_menu_callback_handler(query: CallbackQuery, state: FSMContext)
                     text="В Вашем рассылочном сообщении нет ни текста, ни медиафайлов",
                     show_alert=True
                 )
-
-        case "extra_settings":
+        case callback_data.ActionEnum.EXTRA_SETTINGS:
             await query.message.edit_text(
-                text=query.message.html_text + "\n\n🔎 Что такое <a href=\"https://www.google.com/url?sa=i&url=https%3A%2F%2Ftlgrm.ru%2Fblog%2Flink-preview.html&psig=AOvVaw27FhHb7fFrLDNGUX-uzG7y&ust=1717771529744000&source=images&cd=vfe&opi=89978449&ved=0CBIQjRxqFwoTCJj5puKbx4YDFQAAAAAdAAAAABAE\">предпросмотр ссылок</a>",
-                parse_mode=ParseMode.HTML,
+                text=query.message.html_text + "\n\n🔎 Что такое <a href=\"https://www.google.com/url?sa=i&url=https%3A"
+                                               "%2F%2Ftlgrm.ru%2Fblog%2Flink-preview.html&psig=AOvVaw27FhHb7fFrLDNGUX-u"
+                                               "zG7y&ust=1717771529744000&source=images&cd=vfe&opi=89978449&ved=0CBIQjR"
+                                               "xqFwoTCJj5puKbx4YDFQAAAAAdAAAAABAE\">предпросмотр ссылок</a>",
                 reply_markup=await get_inline_bot_mailing_menu_extra_settings_keyboard(
                     bot_id,
                     mailing_id,
                     mailing.enable_notification_sound,
                     mailing.enable_link_preview
-                )
+                ),
+                parse_mode=ParseMode.HTML,
             )
-        case "toggle_link_preview":
+        case "toggle_link_preview":  # TODO should bot be here
             mailing.enable_link_preview = False if mailing.enable_link_preview else True
             await mailing_db.update_mailing(mailing)
             await query.message.edit_reply_markup(
@@ -374,7 +350,7 @@ async def mailing_menu_callback_handler(query: CallbackQuery, state: FSMContext)
                     mailing.enable_link_preview
                 )
             )
-        case "toggle_notigication_sound":
+        case "toggle_notigication_sound":  # TODO should bot be here
             mailing.enable_notification_sound = False if mailing.enable_notification_sound else True
             await mailing_db.update_mailing(mailing)
             await query.message.edit_reply_markup(
@@ -385,9 +361,11 @@ async def mailing_menu_callback_handler(query: CallbackQuery, state: FSMContext)
                     mailing.enable_link_preview
                 )
             )
-        case "delay":
-            await query.message.answer(f"Введите дату рассылки\n\n{MessageTexts.DATE_RULES.value}",
-                                       reply_markup=ReplyBackMailingMenuKeyboard.get_keyboard())
+        case callback_data.ActionEnum.DELAY:
+            await query.message.answer(
+                MessageTexts.DATE_RULES.value,
+                reply_markup=ReplyBackPostMessageMenuKeyboard.get_keyboard()
+            )
             await query.answer()
             await state.set_state(States.EDITING_DELAY_DATE)
             await state.set_data({"bot_id": bot_id, "mailing_id": mailing_id})
@@ -408,52 +386,43 @@ async def editing_mailing_delay_date_handler(message: Message, state: FSMContext
     bot_id = state_data["bot_id"]
     mailing_id = state_data["mailing_id"]
 
-    mailing = await mailing_db.get_mailing(mailing_id)
     custom_bot_tg = Bot((await bot_db.get_bot(bot_id)).token)
     custom_bot_username = (await custom_bot_tg.get_me()).username
 
-    if message_text:
-        if message_text == ReplyBackMailingMenuKeyboard.Callback.ActionEnum.BACK_TO_MAILING_MENU.value:
+    mailing = await mailing_db.get_mailing(mailing_id)
 
-            await message.answer(
-                "Возвращаемся в меню...",
-                reply_markup=ReplyBotMenuKeyboard.get_keyboard(
-                    bot_id=state_data["bot_id"])
-            )
-            await message.answer(
-                text=MessageTexts.BOT_MAILINGS_MENU_MESSAGE.value.format(
-                    custom_bot_username
-                ),
-                reply_markup=await get_inline_bot_mailing_menu_keyboard(bot_id)
-            )
-            await state.set_state(States.BOT_MENU)
-            await state.set_data(state_data)
+    if message_text:
+        if message_text == ReplyBackPostMessageMenuKeyboard.Callback.ActionEnum.BACK_TO_POST_MESSAGE_MENU.value:
+            await _back_to_post_message_menu(message, bot_id, custom_bot_username)
         else:
             try:
-                datetime_obj = datetime.strptime(
-                    message_text, "%d.%m.%Y %H:%M")
+                datetime_obj = datetime.strptime(message_text, "%d.%m.%Y %H:%M")
                 datetime_obj.replace(tzinfo=None)
+
                 if datetime.now() > datetime_obj:
-                    await message.reply("Введенное время уже прошло, попробуйте ввести другое")
-                    return
+                    return await message.reply("Введенное время уже прошло. Введите, пожалуйста, <b>будущее</b> время")
+
                 mailing.is_delayed = True
                 mailing.send_date = datetime_obj
 
                 await mailing_db.update_mailing(mailing)
 
-                await message.reply(f"Запланировано на: {datetime_obj.strftime('%Y-%m-%d %H:%M')}\n\n"
-                                    f"Для запуска отложенной рассылки нажмите <b>Запустить</b>")
-                await message.answer(
-                    MessageTexts.BOT_MAILINGS_MENU_MESSAGE.value.format(
-                        custom_bot_username
-                    ),
-                    reply_markup=await get_inline_bot_mailing_menu_keyboard(bot_id)
+                await message.reply(
+                    f"Запланировано на: <b>{datetime_obj.strftime('%Y-%m-%d %H:%M')}</b>\n\n"
+                    f"Для запуска отложенной рассылки в меню нажмите <b>Запустить</b>",
+                    reply_markup=ReplyBotMenuKeyboard.get_keyboard(bot_id)
                 )
-
-                await state.set_state(States.BOT_MENU)
-                await state.set_data({"bot_id": bot_id})
+                await message.answer(
+                    MessageTexts.BOT_MAILINGS_MENU_MESSAGE.value.format(custom_bot_username),
+                    reply_markup=await InlinePostMessageMenuKeyboard.get_keyboard(bot_id)
+                )
             except ValueError:
-                await message.reply("Некорректный формат. Пожалуйста, введите время и дату в правильном формате.")
+                return await message.reply("Некорректный формат. Пожалуйста, "
+                                           "введите время и дату в правильном формате."
+                                           )
+
+        await state.set_state(States.BOT_MENU)
+        await state.set_data({"bot_id": bot_id})
 
 
 @admin_bot_menu_router.message(States.EDITING_MAILING_MESSAGE)
@@ -823,7 +792,7 @@ async def send_mailing_message(  # TODO that's not funny
             )
 
 
-async def _inline_no_button(query: CallbackQuery, bot_id: int, custom_bot_username: str):
+async def _inline_no_button(query: CallbackQuery, bot_id: int, custom_bot_username: str) -> None:
     await query.answer(
         "В этом рассылочном сообщении кнопки нет", show_alert=True
     )
@@ -834,7 +803,7 @@ async def _inline_no_button(query: CallbackQuery, bot_id: int, custom_bot_userna
     )
 
 
-async def _reply_no_button(message: Message, bot_id: int, custom_bot_username: str, state: FSMContext):
+async def _reply_no_button(message: Message, bot_id: int, custom_bot_username: str, state: FSMContext) -> None:
     await message.answer(
         "В рассылочном сообщении кнопки уже нет",
         reply_markup=ReplyBotMenuKeyboard.get_keyboard(bot_id)
@@ -848,7 +817,7 @@ async def _reply_no_button(message: Message, bot_id: int, custom_bot_username: s
     await state.set_data({"bot_id": bot_id})
 
 
-async def _back_to_post_message_menu(message: Message, bot_id: int, custom_bot_username: str):
+async def _back_to_post_message_menu(message: Message, bot_id: int, custom_bot_username: str) -> None:
     await message.answer(
         "Возвращаемся в меню...",
         reply_markup=ReplyBotMenuKeyboard.get_keyboard(bot_id)
@@ -859,3 +828,24 @@ async def _back_to_post_message_menu(message: Message, bot_id: int, custom_bot_u
         ),
         reply_markup=await InlinePostMessageMenuKeyboard.get_keyboard(bot_id)
     )
+
+
+async def _is_post_message_valid(
+        query: CallbackQuery,
+        mailing: MailingSchema,
+        media_files: list[MailingMediaFileSchema]
+) -> bool:
+    if len(media_files) > 1 and mailing.has_button:
+        await query.answer(
+            "Telegram не позволяет прикрепить кнопку, если в сообщении минимум 2 медиафайла",
+            show_alert=True
+        )
+        return False
+    elif not media_files and not mailing.description:
+        await query.answer(
+            text="В Вашем рассылочном сообщении нет ни текста, ни медиафайлов",
+            show_alert=True
+        )
+        return False
+
+    return True
