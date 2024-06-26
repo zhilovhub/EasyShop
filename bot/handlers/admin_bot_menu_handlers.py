@@ -3,10 +3,10 @@ import os
 import random
 import string
 from random import sample
+from aiohttp import ClientConnectorError
 from datetime import datetime
 
-from aiogram import F
-from aiohttp import ClientConnectorError
+from aiogram import F, Bot
 from aiogram.enums import ParseMode
 from aiogram.types import Message, CallbackQuery
 from sqlalchemy.exc import IntegrityError
@@ -15,14 +15,15 @@ from aiogram.fsm.context import FSMContext
 from aiogram.utils.token import validate_token, TokenValidationError
 from aiogram.fsm.storage.base import StorageKey
 
-from bot.main import bot, user_db, product_db, order_db, custom_bot_user_db, QUESTION_MESSAGES
-from bot.keyboards import *
+from bot.main import bot, user_db, product_db, order_db, custom_bot_user_db, QUESTION_MESSAGES, bot_db, mailing_db
+from bot.utils import MessageTexts
 from bot.exceptions import InstanceAlreadyExists
 from bot.states.states import States
 from bot.handlers.routers import admin_bot_menu_router
 from bot.utils.custom_bot_api import start_custom_bot, stop_custom_bot
 from bot.keyboards.main_menu_keyboards import ReplyBotMenuKeyboard, InlineBotMenuKeyboard, ReplyBackBotMenuKeyboard
 from bot.keyboards.stock_menu_keyboards import InlineStockMenuKeyboard
+from bot.keyboards.post_message_keyboards import InlinePostMessageMenuKeyboard
 from bot.keyboards.order_manage_keyboards import InlineOrderStatusesKeyboard, InlineOrderCancelKeyboard, \
     InlineOrderCustomBotKeyboard
 
@@ -437,7 +438,7 @@ async def bot_menu_callback_handler(query: CallbackQuery, state: FSMContext):
             custom_bot = await bot_db.get_bot(bot_id=bot_id)
             await query.message.edit_text(
                 MessageTexts.BOT_MAILINGS_MENU_MESSAGE.value.format((await Bot(custom_bot.token).get_me()).username),
-                reply_markup=await get_inline_bot_mailing_menu_keyboard(bot_id=bot_id)
+                reply_markup=await InlinePostMessageMenuKeyboard.get_keyboard(bot_id=bot_id)
             )
         case callback_data.ActionEnum.BOT_GOODS_OPEN:
             bot_data = await bot_db.get_bot(bot_id)

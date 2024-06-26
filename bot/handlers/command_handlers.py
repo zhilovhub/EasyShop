@@ -1,12 +1,12 @@
 from datetime import datetime
 
-from aiogram import F
+from aiogram import F, Bot
 from aiogram.types import Message, ReplyKeyboardRemove
 from aiogram.filters import CommandStart
 from aiogram.fsm.context import FSMContext
 
-from bot.main import bot, cache_resources_file_id_store, user_db, adv_db, subscription
-from bot.keyboards import *
+from bot.main import bot, cache_resources_file_id_store, user_db, adv_db, subscription, bot_db
+from bot.utils import MessageTexts
 from bot.states.states import States
 from bot.handlers.routers import commands_router
 from bot.utils.admin_group import send_event, EventTypes, success_event

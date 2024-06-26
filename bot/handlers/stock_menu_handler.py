@@ -1,10 +1,12 @@
+from datetime import datetime
+
 from aiogram.enums import ParseMode
 from aiogram.types import CallbackQuery, Message, FSInputFile
 from aiogram.fsm.context import FSMContext
 from aiogram.utils.media_group import MediaGroupBuilder
 
 from bot.main import stock_manager, bot, product_db
-from datetime import datetime
+from bot.utils import MessageTexts
 from bot.states import States
 from bot.config import FILES_PATH
 from bot.keyboards import *
@@ -12,6 +14,8 @@ from bot.handlers.routers import stock_menu_router
 from bot.keyboards.main_menu_keyboards import InlineBotMenuKeyboard, ReplyBotMenuKeyboard
 from bot.keyboards.stock_menu_keyboards import InlineStockMenuKeyboard, ReplyBackStockMenuKeyboard, \
     InlineStockImportMenuKeyboard
+
+from logs.config import logger, extra_params
 
 
 @stock_menu_router.callback_query(lambda query: InlineStockMenuKeyboard.callback_validator(query.data))
@@ -95,9 +99,13 @@ async def stock_menu_handler(query: CallbackQuery, state: FSMContext):
                     reply_markup=await InlineStockMenuKeyboard.get_keyboard(bot_id, bot_data.settings["auto_reduce"]),
                     parse_mode=ParseMode.HTML
                 )
-            except:
-                # handle telegram api error "message not modified"
-                pass
+            except Exception as e:
+                # TODO handle telegram api error "message not modified"
+                logger.error(
+                    f"user_id={query.from_user.id}: TODO handle telegram api error message not modified",
+                    extra=extra_params(user_id=query.from_user.id, bot_id=bot_id),
+                    exc_info=e
+                )
         case callback_data.ActionEnum.IMPORT:
             await query.message.edit_text(
                 MessageTexts.STOCK_IMPORT_COMMANDS.value,
@@ -183,9 +191,14 @@ async def handle_stock_manage_input(message: Message, state: FSMContext):
         await bot.download(message.document.file_id, destination=file_path)
         await stock_manager.import_xlsx(bot_id=bot_id, path_to_file=file_path, replace=False)
         await message.answer("Кол-во товаров на складе обновлено.")
-    except:
+    except Exception as e:
         # TODO
-        raise
+        logger.error(
+            f"user_id={message.from_user.id}: TODO exception is not dispatched",
+            extra=extra_params(user_id=message.from_user.id),
+            exc_info=e
+        )
+        raise e
 
 
 @stock_menu_router.message(States.IMPORT_PRODUCTS)
@@ -225,9 +238,14 @@ async def handle_stock_import_input(message: Message, state: FSMContext):
                 await stock_manager.import_csv(bot_id=bot_id, path_to_file=file_path, replace=replace,
                                                replace_duplicates=replace_d)
         await message.answer("Товары обновлены.")
-    except:
+    except Exception as e:
         # TODO
-        raise
+        logger.error(
+            f"user_id={message.from_user.id}: TODO exception is not dispatched",
+            extra=extra_params(user_id=message.from_user.id),
+            exc_info=e
+        )
+        raise e
 
 
 async def _back_to_stock_menu(message: Message, state: FSMContext) -> None:
