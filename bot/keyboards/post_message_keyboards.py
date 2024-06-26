@@ -1,10 +1,38 @@
 from enum import Enum
 
-from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 from pydantic import ValidationError, Field, ConfigDict, BaseModel
 
-from bot.keyboards.keyboard_utils import callback_json_validator
+from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup, ReplyKeyboardMarkup, KeyboardButton
+
 from bot.utils.keyboard_utils import get_bot_mailing
+from bot.keyboards.keyboard_utils import callback_json_validator
+
+
+class ReplyBackPostMessageMenuKeyboard:  # TODO should not be common for every mailing's back
+    class Callback(BaseModel):
+        class ActionEnum(Enum):
+            BACK_TO_POST_MESSAGE_MENU = "🔙 Назад"
+
+        model_config = ConfigDict(from_attributes=True, populate_by_name=True)
+
+        n: str = Field(default="back_to_mailing_menu", frozen=True)
+        a: ActionEnum
+
+        bot_id: int
+
+    @staticmethod
+    def get_keyboard() -> ReplyKeyboardMarkup:
+        actions = ReplyBackPostMessageMenuKeyboard.Callback.ActionEnum
+
+        return ReplyKeyboardMarkup(
+            keyboard=[
+                [
+                    KeyboardButton(
+                        text=actions.BACK_TO_MAILING_MENU.value
+                    )
+                ]
+            ], resize_keyboard=True
+        )
 
 
 class InlinePostMessageMenuKeyboard:
