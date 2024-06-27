@@ -3,6 +3,7 @@ from enum import Enum
 from datetime import datetime, timedelta
 
 from aiogram.enums import ParseMode
+from aiogram.filters import StateFilter
 from aiogram.types import Message, CallbackQuery, LinkPreviewOptions, \
     InputMediaPhoto, InputMediaVideo, InputMediaAudio, InputMediaDocument, BufferedInputFile
 from aiogram.client.bot import DefaultBotProperties
@@ -20,7 +21,8 @@ from bot.utils.contest_result import generate_contest_result
 from bot.keyboards.channel_keyboards import ReplyBackChannelMenuKeyboard, InlineChannelsListKeyboard, \
     InlineChannelMenuKeyboard
 from bot.keyboards.main_menu_keyboards import InlineBotMenuKeyboard, ReplyBotMenuKeyboard
-from bot.utils.post_message import edit_button_url, PostMessageType
+from bot.utils.post_message import edit_button_url, PostMessageType, edit_delay_date, edit_message, edit_button_text, \
+    edit_media_files
 
 from database.models.bot_model import BotSchema
 from database.models.channel_model import ChannelNotFound
@@ -982,69 +984,6 @@ async def editing_competition_end_date(message: Message, state: FSMContext):
                 await message.reply("Некорректный формат. Пожалуйста, введите время и дату в правильном формате.")
 
 
-@channel_menu_router.message(States.EDITING_POST_DELAY_DATE)
-async def editing_channel_post_delay_date_handler(message: Message, state: FSMContext):
-    message_text = message.html_text
-
-    state_data = await state.get_data()
-
-    bot_id = state_data["bot_id"]
-    channel_id = state_data["channel_id"]
-    is_contest_flag = False
-    if state_data.get("channel_post_id", None) != None:
-        is_contest_flag = True
-
-    channel_post = await channel_post_db.get_channel_post(channel_id=channel_id, is_contest=is_contest_flag)
-    custom_bot_tg = Bot((await bot_db.get_bot(bot_id)).token)
-    custom_bot_username = (await custom_bot_tg.get_me()).username
-    channel_username = (await custom_bot_tg.get_chat(channel_id)).username
-    if message_text:
-        if message_text == ReplyBackChannelMenuKeyboard.Callback.ActionEnum.BACK_TO_CHANNEL_MENU.value:
-            await message.answer(
-                "Возвращаемся в меню...",
-                reply_markup=ReplyBotMenuKeyboard.get_keyboard(
-                    bot_id=state_data["bot_id"])
-            )
-            await message.answer(
-                MessageTexts.BOT_CHANNEL_POST_MENU_MESSAGE.value.format(
-                    channel_username),
-                reply_markup=await get_inline_bot_channel_post_menu_keyboard(bot_id=bot_id, channel_id=channel_id,
-                                                                             is_contest=channel_post.is_contest)
-            )
-            await state.set_state(States.BOT_MENU)
-            await state.set_data(state_data)
-        else:
-            try:
-                datetime_obj = datetime.strptime(
-                    message_text, "%d.%m.%Y %H:%M")
-                datetime_obj.replace(tzinfo=None)
-                if datetime.now() > datetime_obj:
-                    await message.reply("Введенное время уже прошло, попробуйте ввести другое")
-                    return
-                channel_post.is_delayed = True
-                channel_post.send_date = datetime_obj
-
-                await channel_post_db.update_channel_post(channel_post)
-
-                await message.reply(f"Запланировано на: {datetime_obj.strftime('%Y-%m-%d %H:%M')}\n\n"
-                                    f"Для запуска отложенной рассылки нажмите <b>Запустить</b>")
-                await message.answer(
-                    MessageTexts.BOT_CHANNEL_POST_MENU_MESSAGE.value.format(
-                        channel_username),
-                    reply_markup=await get_inline_bot_channel_post_menu_keyboard(bot_id=bot_id, channel_id=channel_id,
-                                                                                 is_contest=channel_post.is_contest)
-                )
-
-                await state.set_state(States.BOT_MENU)
-                if channel_post.is_contest:
-                    await state.set_data(
-                        {"bot_id": bot_id, "channel_id": channel_id, "channel_post_id": channel_post.channel_post_id})
-                else:
-                    await state.set_data({"bot_id": bot_id, "channel_id": channel_id})
-            except ValueError:
-                await message.reply("Некорректный формат. Пожалуйста, введите время и дату в правильном формате.")
-
-
 @channel_menu_router.message(States.EDITING_POST_MEDIA_FILES)
 async def editing_channel_post_media_files_handler(message: Message, state: FSMContext):
     state_data = await state.get_data()
@@ -1511,6 +1450,24 @@ async def editing_channel_post_button_text_handler(message: Message, state: FSMC
         await message.answer("Название кнопки должно содержать текст")
 
 
-@channel_menu_router.message(States.EDITING_POST_BUTTON_URL)
-async def editing_channel_post_button_url_handler(message: Message, state: FSMContext):
-    await edit_button_url(message, state, PostMessageType.CHANNEL_POST)
+@channel_menu_router.message(StateFilter(
+    States.EDITING_POST_DELAY_DATE,
+    States.EDITING_POST_TEXT,
+    States.EDITING_POST_BUTTON_TEXT,
+    States.EDITING_POST_BUTTON_URL,
+    States.EDITING_POST_MEDIA_FILES,
+))
+async def editing_post_message_handler(message: Message, state: FSMContext):
+    current_state = await state.get_state()
+
+    match current_state:
+        case States.EDITING_POST_DELAY_DATE:
+            await edit_delay_date(message, state, PostMessageType.CHANNEL_POST)
+        case States.EDITING_POST_TEXT:
+            await edit_message(message, state, PostMessageType.CHANNEL_POST)
+        case States.EDITING_POST_BUTTON_TEXT:
+            await edit_button_text(message, state, PostMessageType.CHANNEL_POST)
+        case States.EDITING_POST_BUTTON_URL:
+            await edit_button_url(message, state, PostMessageType.CHANNEL_POST)
+        case States.EDITING_POST_MEDIA_FILES:
+            await edit_media_files(message, state, PostMessageType.CHANNEL_POST)

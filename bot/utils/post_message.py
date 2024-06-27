@@ -26,7 +26,7 @@ class UnknownPostMessageType(Exception):
     pass
 
 
-class PostMessageType(Enum):
+class PostMessageType(Enum):  # TODO get rid of this almost everywhere in here file
     """For what is post message?"""
     MAILING = (
         "post_message_id",
@@ -218,7 +218,12 @@ async def edit_delay_date(message: Message, state: FSMContext, post_message_type
     custom_bot_tg = Bot((await bot_db.get_bot(bot_id)).token)
     custom_bot_username = (await custom_bot_tg.get_me()).username
 
-    post_message = await post_message_db.get_post_message(post_message_id)
+    if post_message_type == PostMessageType.CHANNEL_POST:
+        channel_id = state_data["channel_id"]
+        is_contest_flag = "channel_post_id" in state_data.keys()
+        post_message = await channel_post_db.get_channel_post(channel_id=channel_id, is_contest=is_contest_flag)
+    else:
+        post_message = await post_message_db.get_post_message(post_message_id)
 
     if message_text:
         if message_text == ReplyBackPostMessageMenuKeyboard.Callback.ActionEnum.BACK_TO_POST_MESSAGE_MENU.value:
@@ -234,24 +239,44 @@ async def edit_delay_date(message: Message, state: FSMContext, post_message_type
                 post_message.is_delayed = True
                 post_message.send_date = datetime_obj
 
-                await post_message_db.update_post_message(post_message)
+                if post_message_type == PostMessageType.CHANNEL_POST:
+                    await channel_post_db.update_channel_post(post_message)
+                else:
+                    await post_message_db.update_post_message(post_message)
 
                 await message.reply(
                     f"Запланировано на: <b>{datetime_obj.strftime('%Y-%m-%d %H:%M')}</b>\n\n"
-                    f"Для запуска отложенной рассылки в меню нажмите <b>Запустить</b>",
+                    f"Для отложенного запуска нажмите <b>Запустить</b> в меню",
                     reply_markup=ReplyBotMenuKeyboard.get_keyboard(bot_id)
                 )
-                await message.answer(
-                    MessageTexts.BOT_MAILINGS_MENU_MESSAGE.value.format(custom_bot_username),
-                    reply_markup=await InlinePostMessageMenuKeyboard.get_keyboard(bot_id)
-                )
-            except ValueError:
-                return await message.reply("Некорректный формат. Пожалуйста, "
-                                           "введите время и дату в правильном формате."
-                                           )
 
-        await state.set_state(States.BOT_MENU)
-        await state.set_data(state_data)
+                if post_message_type == PostMessageType.CHANNEL_POST:
+                    channel_id = state_data["channel_id"]
+                    channel_username = (await custom_bot_tg.get_chat(channel_id)).username
+                    await message.answer(
+                        MessageTexts.BOT_CHANNEL_POST_MENU_MESSAGE.value.format(channel_username),
+                        reply_markup=await get_inline_bot_channel_post_menu_keyboard(
+                            bot_id=bot_id,
+                            channel_id=channel_id,
+                            is_contest=post_message.is_contest
+                        )
+                    )
+                else:
+                    await message.answer(
+                        MessageTexts.BOT_MAILINGS_MENU_MESSAGE.value.format(custom_bot_username),
+                        reply_markup=await InlinePostMessageMenuKeyboard.get_keyboard(bot_id)
+                    )
+
+                await state.set_state(States.BOT_MENU)
+                if post_message_type == PostMessageType.CHANNEL_POST and post_message.is_contest:
+                    state_data["channel_post_id"] = post_message.channel_post_id
+                await state.set_data(state_data)
+
+            except ValueError:
+                return await message.reply(
+                    "Некорректный формат. Пожалуйста, "
+                    "введите время и дату в правильном формате."
+                )
 
 
 async def edit_button_url(message: Message, state: FSMContext, post_message_type: PostMessageType):
@@ -289,7 +314,8 @@ async def edit_button_url(message: Message, state: FSMContext, post_message_type
                 )
 
             post_message.button_url = message.text  # TODO can be channel
-            media_files = await post_message_media_file_db.get_all_post_message_media_files(post_message_id)  # TODO can be channel
+            media_files = await post_message_media_file_db.get_all_post_message_media_files(
+                post_message_id)  # TODO can be channel
             await post_message_db.update_post_message(post_message)  # TODO can be channel
 
             await message.answer(
@@ -525,8 +551,10 @@ async def _back_to_post_message_menu(message: Message, bot_id: int, custom_bot_u
         reply_markup=ReplyBotMenuKeyboard.get_keyboard(bot_id)
     )
     await message.answer(
-        text=MessageTexts.BOT_MAILINGS_MENU_MESSAGE.value.format(custom_bot_username),  # TODO here can be channel message
-        reply_markup=await InlinePostMessageMenuKeyboard.get_keyboard(bot_id)  # TODO there are some diffs between mailing and channel
+        text=MessageTexts.BOT_MAILINGS_MENU_MESSAGE.value.format(custom_bot_username),
+        # TODO here can be channel message
+        reply_markup=await InlinePostMessageMenuKeyboard.get_keyboard(bot_id)
+        # TODO there are some diffs between mailing and channel
     )
 
 
