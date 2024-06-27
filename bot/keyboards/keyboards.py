@@ -6,48 +6,6 @@ from bot.utils.keyboard_utils import *
 from database.models.channel_post_model import ContestTypeValues
 
 
-async def get_competition_menu_keyboard(competition_id: int) -> InlineKeyboardMarkup:
-    callback_metadata = str(competition_id)
-    return InlineKeyboardMarkup(
-        inline_keyboard=[
-            [
-                InlineKeyboardButton(
-                    text="Название (для Вас)", callback_data="competition_menu:name:" + callback_metadata)
-            ],
-            [
-                InlineKeyboardButton(
-                    text="Содержание", callback_data="competition_menu:description:" + callback_metadata),
-                InlineKeyboardButton(
-                    text="Медиафайлы", callback_data="competition_menu:media_files:" + callback_metadata),
-            ],
-            [
-                InlineKeyboardButton(
-                    text="Длительность", callback_data="competition_menu:" + callback_metadata),
-                InlineKeyboardButton(
-                    text="Условия", callback_data="competition_menu:" + callback_metadata),
-            ],
-            [
-                # InlineKeyboardButton(text="Рандомайзер", callback_data="competition_menu:" + callback_metadata),
-            ],
-            [
-                InlineKeyboardButton(
-                    text="Кнопка", callback_data="competition_menu:" + callback_metadata),
-            ],
-            # [
-            #     InlineKeyboardButton(text="Аналитика", callback_data="competition_menu:" + callback_metadata),
-            # ],
-            [
-                InlineKeyboardButton(
-                    text="🔙 Назад", callback_data="competition_menu:back_to_competitions_list:" + callback_metadata),
-                InlineKeyboardButton(
-                    text="🔎 Предпросмотр", callback_data="competition_menu:demo:" + callback_metadata),
-                InlineKeyboardButton(
-                    text="⏭ Дальше", callback_data="competition_menu:" + callback_metadata),
-            ]
-        ],
-    )
-
-
 async def get_custom_bot_ad_channels_list_keyboard(bot_id: int) -> InlineKeyboardMarkup:
     callback_metadata = f":{bot_id}"
     all_channels = await get_bot_channels(bot_id=bot_id)
@@ -113,13 +71,6 @@ def get_show_inline_button(bot_id: int, partnership: bool = False) -> InlineKeyb
     return InlineKeyboardMarkup(inline_keyboard=[
         [InlineKeyboardButton(text="🛍 Открыть магазин", web_app=make_webapp_info(bot_id))]
     ], resize_keyboard=True, one_time_keyboard=False)
-
-
-def get_inline_delete_button(product_id: int) -> InlineKeyboardMarkup:
-    return InlineKeyboardMarkup(inline_keyboard=[
-        [InlineKeyboardButton(
-            text="Удалить", callback_data=f"product:delete_{product_id}")]
-    ])
 
 
 async def get_inline_bot_channel_post_menu_keyboard(bot_id: int, channel_id: int, is_contest: bool = False) -> InlineKeyboardMarkup:

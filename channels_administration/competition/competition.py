@@ -1,5 +1,5 @@
 from database.models.models import Database
-from database.models.contest_channel_model import ContestChannelDao, ContestChannelSchema, ContestChannelSchemaWithoutId
+from database.models.channel_contest import ContestChannelDao, ContestChannelSchema, ContestChannelSchemaWithoutId
 from database.models.post_message_media_files import PostMessageMediaFileDao, PostMessageMediaFileSchema
 
 

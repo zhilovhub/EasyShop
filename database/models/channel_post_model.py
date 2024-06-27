@@ -49,37 +49,11 @@ class ChannelPostNotFound(Exception):
 class ChannelPost(Base):
     __tablename__ = "channel_posts"
 
-    channel_post_id = Column(BigInteger, autoincrement=True, primary_key=True)
-    bot_id = Column(ForeignKey(Bot.bot_id), nullable=False)
-    channel_id = Column(ForeignKey(Channel.channel_id,
-                        ondelete="CASCADE"), nullable=False)
-    description = Column(String)
-    is_sent = Column(BOOLEAN, default=False)
-
-    has_button = Column(BOOLEAN, default=False)
-    button_text = Column(String, default="Shop")
-    button_url = Column(String)
     button_query = Column(String, default="contest_join", nullable=False)
 
-    created_at = Column(DateTime, nullable=False)
-
-    # Extra settings
-    enable_notification_sound = Column(BOOLEAN, default=True)
-    enable_link_preview = Column(BOOLEAN, default=False)
-
-    # ChannelPost Stats
-    is_running = Column(BOOLEAN, default=False)
-
-    # Delay
-    is_delayed = Column(BOOLEAN, default=False)
-    send_date = Column(DateTime, nullable=True)
-    job_id = Column(String, nullable=True)
 
     # Contest fields
-    is_contest = Column(BOOLEAN, default=False)
-    contest_type = Column(ContestType, nullable=True)
-    contest_end_date = Column(DateTime, nullable=True)
-    contest_winner_amount = Column(BigInteger, nullable=True)
+
 
     contest_sponsor_url = Column(String, nullable=True)
 
@@ -149,27 +123,6 @@ class ChannelPostDao(Dao):  # TODO write tests
         )
 
         return res
-
-    # @validate_call(validate_return=True)
-    # async def get_channel_post_by_channel_id(self, channel_id: int) -> ChannelPostSchema:
-    #     async with self.engine.begin() as conn:
-    #         raw_res = await conn.execute(
-    #             select(ChannelPost).where(ChannelPost.channel_id == channel_id, ChannelPost.is_sent == False))
-    #     await self.engine.dispose()
-
-    #     raw_res = raw_res.fetchone()
-    #     if not raw_res:
-    #         raise ChannelPostNotFound
-
-    #     res = ChannelPostSchema.model_validate(raw_res)
-
-    #     self.logger.debug(
-    #         f"bot_id={res.bot_id}: channel_post {res.channel_post_id} is found",
-    #         extra=extra_params(
-    #             channel_post_id=res.channel_post_id, bot_id=bot_id)
-    #     )
-
-    #     return res
 
     @validate_call
     async def add_channel_post(self, new_channel_post: ChannelPostSchemaWithoutId) -> int:

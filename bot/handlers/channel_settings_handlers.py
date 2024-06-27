@@ -21,7 +21,7 @@ from bot.keyboards.post_message_keyboards import ReplyConfirmMediaFilesKeyboard
 
 from database.models.channel_model import ChannelNotFound
 from database.models.channel_post_model import ChannelPostSchemaWithoutId
-from database.models.contest_channel_model import ContestChannelSchemaWithoutId
+from database.models.channel_contest import ContestChannelSchemaWithoutId
 
 
 @channel_menu_router.callback_query(lambda query: InlineChannelsListKeyboard.callback_validator(query.data))

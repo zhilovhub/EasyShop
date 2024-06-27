@@ -18,13 +18,13 @@ from database.models.order_model import OrderDao
 from database.models.payment_model import PaymentDao
 from database.models.product_model import ProductDao
 from database.models.channel_model import ChannelDao
+from database.models.channel_contest import ChannelContestDao
 from database.models.post_message_model import PostMessageDao
 from database.models.channel_post_model import ChannelPostDao
 from database.models.contest_user_model import ContestUserDao
 from database.models.channel_user_model import ChannelUserDao
 from database.models.post_message_media_files import PostMessageMediaFileDao
 from database.models.custom_bot_user_model import CustomBotUserDao
-from database.models.contest_channel_model import ContestChannelDao
 
 from subscription.subscription import Subscription
 from subscription.scheduler import Scheduler
@@ -53,7 +53,7 @@ channel_post_db: ChannelPostDao = db_engine.get_channel_post_dao()
 contest_user_db: ContestUserDao = db_engine.get_contest_user_dao()
 channel_user_db: ChannelUserDao = db_engine.get_channel_user_dao()
 custom_bot_user_db: CustomBotUserDao = db_engine.get_custom_bot_user_db()
-contest_channel_db: ContestChannelDao = db_engine.get_contest_channel_dao()
+channel_contest_db: ChannelContestDao = db_engine.get_channel_contest_dao()
 post_message_media_file_db: PostMessageMediaFileDao = db_engine.get_post_message_media_file_dao()
 
 stock_manager = Stoke(db_engine)

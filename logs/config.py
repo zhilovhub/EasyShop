@@ -86,6 +86,8 @@ class LokiFilter(logging.Filter):
                 record.tags["job_id"] = record.job_id
             if hasattr(record, "custom_ad_id"):
                 record.tags["custom_ad_id"] = record.custom_ad_id
+            if hasattr(record, "contest_id"):
+                record.tags["contest_id"] = record.contest_id
             if hasattr(record, "bot_token"):
                 # hide the token from gr
                 record.msg = record.msg.replace(record.bot_token[5:-1], "*" * len(record.bot_token[5:-1]))
