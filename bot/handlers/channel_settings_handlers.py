@@ -10,7 +10,7 @@ from aiogram.fsm.context import FSMContext
 from aiogram.utils.deep_linking import create_start_link
 
 from bot.keyboards.post_message_keyboards import ReplyConfirmMediaFilesKeyboard
-from bot.main import bot, _scheduler, custom_bot_user_db, channel_post_media_file_db, channel_user_db, \
+from bot.main import bot, _scheduler, custom_bot_user_db, post_message_media_file_db, channel_user_db, \
     contest_channel_db
 from bot.utils import MessageTexts
 from bot.keyboards import *
@@ -26,7 +26,7 @@ from database.models.bot_model import BotSchema
 from database.models.channel_model import ChannelNotFound
 from database.models.channel_post_model import ChannelPostSchemaWithoutId
 from database.models.contest_channel_model import ContestChannelSchemaWithoutId
-from database.models.channel_post_media_files_model import ChannelPostMediaFileSchema
+from database.models.post_message_media_files import PostMessageMediaFile
 
 
 @channel_menu_router.callback_query(lambda query: InlineChannelsListKeyboard.callback_validator(query.data))
@@ -408,7 +408,7 @@ async def channel_menu_callback_handler(query: CallbackQuery, state: FSMContext)
                 reply_markup=await InlineChannelMenuKeyboard.get_keyboard(custom_bot.bot_id, channel_id)
             )
         case "demo":
-            media_files = await channel_post_media_file_db.get_all_channel_post_media_files(
+            media_files = await post_message_media_file_db.get_all_channel_post_media_files(
                 channel_post_id=channel_post.channel_post_id)
 
             if len(media_files) > 1 and channel_post.has_button:
@@ -417,7 +417,7 @@ async def channel_menu_callback_handler(query: CallbackQuery, state: FSMContext)
                     show_alert=True
                 )
             elif channel_post.description or media_files:
-                media_files = await channel_post_media_file_db.get_all_channel_post_media_files(
+                media_files = await post_message_media_file_db.get_all_channel_post_media_files(
                     channel_post_id=channel_post.channel_post_id)
                 await send_channel_post_message(
                     bot,
@@ -492,7 +492,7 @@ async def channel_menu_callback_handler(query: CallbackQuery, state: FSMContext)
                                                                                  channel_post.is_contest)
                 )
         case "add_button":
-            media_files = await channel_post_media_file_db.get_all_channel_post_media_files(
+            media_files = await post_message_media_file_db.get_all_channel_post_media_files(
                 channel_post_id=channel_post.channel_post_id)
 
             if channel_post.has_button:
@@ -520,7 +520,7 @@ async def channel_menu_callback_handler(query: CallbackQuery, state: FSMContext)
                 )
         # TODO Add contest validation
         case "start":
-            media_files = await channel_post_media_file_db.get_all_channel_post_media_files(
+            media_files = await post_message_media_file_db.get_all_channel_post_media_files(
                 channel_post_id=channel_post.channel_post_id)
 
             if len(media_files) > 1 and channel_post.has_button:
@@ -561,7 +561,7 @@ async def channel_menu_callback_handler(query: CallbackQuery, state: FSMContext)
                                                                                       channel_post.is_contest)
             )
         case "accept_start":
-            media_files = await channel_post_media_file_db.get_all_channel_post_media_files(
+            media_files = await post_message_media_file_db.get_all_channel_post_media_files(
                 channel_post_id=channel_post.channel_post_id)
 
             if len(media_files) > 1 and channel_post.has_button:
@@ -1059,7 +1059,7 @@ async def editing_channel_post_media_files_handler(message: Message, state: FSMC
     channel_post = await channel_post_db.get_channel_post(channel_id=channel_id, is_contest=is_contest_flag)
 
     if (message.photo or message.video or message.audio or message.document) and "first" not in state_data:
-        await channel_post_media_file_db.delete_channel_post_media_files(channel_post_id=channel_post.channel_post_id)
+        await post_message_media_file_db.delete_channel_post_media_files(channel_post_id=channel_post.channel_post_id)
         state_data["first"] = True
 
     custom_bot_tg = Bot((await bot_db.get_bot(bot_id)).token)
@@ -1090,7 +1090,7 @@ async def editing_channel_post_media_files_handler(message: Message, state: FSMC
         return
     elif message.text == "Очистить":
         await message.answer("Очищаем все файлы...")
-        await channel_post_media_file_db.delete_channel_post_media_files(channel_post_id=channel_post.channel_post_id)
+        await post_message_media_file_db.delete_channel_post_media_files(channel_post_id=channel_post.channel_post_id)
         await message.answer("Отправьте одним сообщением медиафайлы для поста\n\n"
                              "❗ Старые медиафайлы к этому посту<b>перезапишутся</b>\n\n"
                              "❗❗ Обратите внимание, что к сообщению нельзя будет прикрепить кнопку, если медиафайлов <b>больше одного</b>",
@@ -1126,7 +1126,7 @@ async def editing_channel_post_media_files_handler(message: Message, state: FSMC
             reply_markup=ReplyConfirmMediaFilesKeyboard.get_keyboard()
         )
 
-    await channel_post_media_file_db.add_channel_post_media_file(ChannelPostMediaFileSchema.model_validate(
+    await post_message_media_file_db.add_channel_post_media_file(PostMessageMediaFile.model_validate(
         {"channel_post_id": channel_post.channel_post_id, "file_id_main_bot": file_id,
          "file_path": file_path, "media_type": media_type}
     ))
@@ -1166,7 +1166,7 @@ async def editing_post_message_handler(message: Message, state: FSMContext):
             await state.set_data(state_data)
         else:
             channel_post.description = message.html_text
-            media_files = await channel_post_media_file_db.get_all_channel_post_media_files(
+            media_files = await post_message_media_file_db.get_all_channel_post_media_files(
                 channel_post_id=channel_post.channel_post_id)
 
             await channel_post_db.update_channel_post(channel_post)
@@ -1208,7 +1208,7 @@ async def send_channel_post_message(  # TODO that's not funny
         bot_from_send: BotSchema | Bot,
         to_user_id: int,
         channel_post_schema: ChannelPostSchema,
-        media_files: list[ChannelPostMediaFileSchema],
+        media_files: list[PostMessageMediaFile],
         mailing_message_type: MailingMessageType,
         chat_id: int = None,
         message_id: int = None,
@@ -1351,7 +1351,7 @@ async def send_channel_post_message(  # TODO that's not funny
                     raise Exception("unsupported type")
 
                 old_message.file_id_custom_bot = file_id
-                await channel_post_media_file_db.update_media_file(old_message)
+                await post_message_media_file_db.update_media_file(old_message)
     else:
         if channel_post_schema.description is None:
             return
@@ -1463,7 +1463,7 @@ async def editing_channel_post_button_text_handler(message: Message, state: FSMC
             if channel_post.is_contest:
                 message_text += " (0)"
             channel_post.button_text = message_text
-            media_files = await channel_post_media_file_db.get_all_channel_post_media_files(
+            media_files = await post_message_media_file_db.get_all_post_message_media_files(
                 channel_post_id=channel_post.channel_post_id)
             await channel_post_db.update_channel_post(channel_post)
 
