@@ -439,12 +439,13 @@ async def edit_button_url(message: Message, state: FSMContext, post_message_type
 
 
 async def send_post_message(  # TODO that's not funny
-        bot_from_send: Bot,
+        bot_from_send: Bot,  # TODO somewhere there was BotSchema. Be accurate
         to_user_id: int,
         post_message_schema: PostMessageSchema,
         media_files: list[PostMessageMediaFileSchema],
         post_action_type: PostActionType,
-        message: Message = None,
+        post_message_type: PostMessageType,
+        message: Message = None,  # TODO Instead there was chat_id and message_id
 ) -> None:
     if post_message_schema.has_button:
         if post_message_schema.button_url == f"{WEB_APP_URL}:{WEB_APP_PORT}" \
@@ -452,6 +453,11 @@ async def send_post_message(  # TODO that's not funny
             button = InlineKeyboardButton(
                 text=post_message_schema.button_text,
                 web_app=make_webapp_info(bot_id=post_message_schema.bot_id)
+            )
+        elif post_message_type == PostMessageType.CHANNEL_POST and post_message_schema.is_contest:  # TODO add to schema
+            button = InlineKeyboardButton(
+                text=post_message_schema.button_text,
+                callback_data=post_message_schema.button_query  # TODO add to schema
             )
         else:
             button = InlineKeyboardButton(
@@ -507,7 +513,20 @@ async def send_post_message(  # TODO that's not funny
         uploaded_media_files = []
         if len(media_files) > 1:
             if post_message_schema.description:
-                media_group[0].caption = post_message_schema.description
+                if post_message_type == PostMessageType.CHANNEL_POST:
+                    post_text = post_message_schema.description
+                    if post_message_schema.is_contest:
+                        if post_message_schema.contest_type == ContestTypeValues.SPONSOR:
+                            post_text += f"\n\nДля участия нужно подписаться на всех спонсоров\n\n" \
+                                         f"<a href='{post_message_schema.contest_sponsor_url}'>СПОНСОРЫ</a>"
+
+                        post_text += f"\n\nНажать на кнопку участвовать\n\n" \
+                                     f"<b>Подведение итогов:</b> " \
+                                     f"{post_message_schema.contest_end_date.strftime('%Y-%m-%d %H:%M:%S')}\n\n" \
+                                     f"<b>Призовых мест:</b> {post_message_schema.contest_winner_amount}"
+                    media_group[0].caption = post_text
+                else:
+                    media_group[0].caption = post_message_schema.description
 
             uploaded_media_files.extend(await bot_from_send.send_media_group(
                 chat_id=to_user_id,
@@ -516,6 +535,8 @@ async def send_post_message(  # TODO that's not funny
             ))
             if message:
                 await message.delete()
+            # TODO ?           if chat_id and message_id:
+            # TODO ?          await bot.delete_message(chat_id, message_id)
         elif len(media_files) == 1:
             media_file = media_files[0]
 
@@ -530,10 +551,24 @@ async def send_post_message(  # TODO that's not funny
             else:
                 raise Exception("Unexpected type")
 
+            post_text = post_message_schema.description
+            if post_message_type == PostMessageType.CHANNEL_POST:
+                post_text = post_message_schema.description
+                if post_message_schema.is_contest:
+                    post_text = post_message_schema.description
+                    if post_message_schema.contest_type == ContestTypeValues.SPONSOR:
+                        post_text += f"\n\nДля участия нужно подписаться на всех спонсоров\n\n" \
+                                     f"<a href='{post_message_schema.contest_sponsor_url}'>СПОНСОРЫ</a>"
+
+                    post_text += f"\n\nНажать на кнопку участвовать\n\n" \
+                                 f"<b>Подведение итогов:</b> " \
+                                 f"{post_message_schema.contest_end_date.strftime('%Y-%m-%d %H:%M:%S')}\n\n" \
+                                 f"<b>Призовых мест:</b> {post_message_schema.contest_winner_amount}"
+
             uploaded_media_files.append(await method(
                 to_user_id,
                 media_group[0],
-                caption=post_message_schema.description,
+                caption=post_text,
                 reply_markup=keyboard,
                 disable_notification=not (
                     post_message_schema.enable_notification_sound),
@@ -541,6 +576,9 @@ async def send_post_message(  # TODO that's not funny
 
             if message:
                 await message.delete()
+
+            # TODO ? if chat_id and message_id:
+            # TODO ?    await bot.delete_message(chat_id, message_id)
 
         if is_first_message:  # первое сообщение, отправленное в рассылке с кастомного бота. Сохраняем file_id в бд
             for ind in range(len(uploaded_media_files)):
@@ -563,32 +601,103 @@ async def send_post_message(  # TODO that's not funny
         if post_message_schema.description is None:
             return
         if post_action_type == PostActionType.DEMO:  # только при демо с главного бота срабатывает
-            await message.edit_text(
-                text=post_message_schema.description,
-                link_preview_options=LinkPreviewOptions(is_disabled=not (
-                    post_message_schema.enable_link_preview)),
-                reply_markup=keyboard,
+            if post_message_type == PostMessageType.CHANNEL_POST:
+            #     post_text = channel_post_schema.description
+            #     if channel_post_schema.is_contest:
+            #         post_text = channel_post_schema.description
+            #         if channel_post_schema.contest_type == ContestTypeValues.SPONSOR:
+            #             post_text += f"\n\nДля участия нужно подписаться на всех спонсоров\n\n" \
+            #                          f"<a href='{channel_post_schema.contest_sponsor_url}'>СПОНСОРЫ</a>"
+            #
+            #         post_text += f"\n\nНажать на кнопку участвовать\n\n" \
+            #                      f"<b>Подведение итогов:</b> {channel_post_schema.contest_end_date.strftime('%Y-%m-%d %H:%M:%S')}\n\n" \
+            #                      f"<b>Призовых мест:</b> {channel_post_schema.contest_winner_amount}"
+            #     await bot.send_message(chat_id=chat_id, text=post_text,
+            #                            link_preview_options=LinkPreviewOptions(is_disabled=not (
+            #                                channel_post_schema.enable_link_preview)),
+            #                            reply_markup=keyboard, )
+                pass # TODO
+            else:
+                await message.edit_text(
+                    text=post_message_schema.description,
+                    link_preview_options=LinkPreviewOptions(is_disabled=not (
+                        post_message_schema.enable_link_preview)),
+                    reply_markup=keyboard,
             )
         elif post_action_type == PostActionType.AFTER_REDACTING:
-            await bot_from_send.send_message(
-                chat_id=to_user_id,
-                text=post_message_schema.description,
-                reply_markup=keyboard,
-                disable_notification=not (
-                    post_message_schema.enable_notification_sound),
-                link_preview_options=LinkPreviewOptions(is_disabled=not (
-                    post_message_schema.enable_link_preview))
-            )
+            if post_message_type == PostMessageType.CHANNEL_POST:
+                # post_text = channel_post_schema.description
+                # if channel_post_schema.is_contest:
+                #     post_text = channel_post_schema.description
+                #     if channel_post_schema.contest_type == ContestTypeValues.SPONSOR:
+                #         post_text += f"\n\nДля участия нужно подписаться на всех спонсоров\n\n" \
+                #                      f"<a href='{channel_post_schema.contest_sponsor_url}'>СПОНСОРЫ</a>"
+                #
+                #     post_text += f"\n\nНажать на кнопку участвовать\n\n" \
+                #                  f"<b>Подведение итогов:</b> {channel_post_schema.contest_end_date.strftime('%Y-%m-%d %H:%M:%S')}\n\n" \
+                #                  f"<b>Призовых мест:</b> {channel_post_schema.contest_winner_amount}"
+                # await bot_from_send.send_message(
+                #     chat_id=to_user_id,
+                #     text=post_text,
+                #     reply_markup=keyboard,
+                #     disable_notification=not (
+                #         channel_post_schema.enable_notification_sound),
+                #     link_preview_options=LinkPreviewOptions(is_disabled=not (
+                #         channel_post_schema.enable_link_preview))
+                # )
+                pass # TODO
+            else:
+                await bot_from_send.send_message(
+                    chat_id=to_user_id,
+                    text=post_message_schema.description,
+                    reply_markup=keyboard,
+                    disable_notification=not (
+                        post_message_schema.enable_notification_sound),
+                    link_preview_options=LinkPreviewOptions(is_disabled=not (
+                        post_message_schema.enable_link_preview))
+                )
         else:
-            await bot_from_send.send_message(
-                chat_id=to_user_id,
-                text=post_message_schema.description,
-                reply_markup=keyboard,
-                disable_notification=not (
-                    post_message_schema.enable_notification_sound),
-                link_preview_options=LinkPreviewOptions(is_disabled=not (
-                    post_message_schema.enable_link_preview))
-            )
+            if post_message_type == PostMessageType.CHANNEL_POST:
+                # post_text = channel_post_schema.description
+                # if channel_post_schema.is_contest:
+                #     post_text = channel_post_schema.description
+                #     if channel_post_schema.contest_type == ContestTypeValues.SPONSOR:
+                #         post_text += f"\n\nДля участия нужно подписаться на всех спонсоров\n\n" \
+                #                      f"<a href='{channel_post_schema.contest_sponsor_url}'>СПОНСОРЫ</a>"
+                #
+                #     post_text += f"\n\nНажать на кнопку участвовать\n\n" \
+                #                  f"<b>Подведение итогов:</b> {channel_post_schema.contest_end_date.strftime('%Y-%m-%d %H:%M:%S')}\n\n" \
+                #                  f"<b>Призовых мест:</b> {channel_post_schema.contest_winner_amount}"
+                # await bot_from_send.send_message(
+                #     chat_id=to_user_id,
+                #     text=post_text,
+                #     reply_markup=keyboard,
+                #     disable_notification=not (
+                #         channel_post_schema.enable_notification_sound),
+                #     link_preview_options=LinkPreviewOptions(is_disabled=not (
+                #         channel_post_schema.enable_link_preview))
+                # )
+                pass # TODO
+            else:
+                await bot_from_send.send_message(
+                    chat_id=to_user_id,
+                    text=post_message_schema.description,
+                    reply_markup=keyboard,
+                    disable_notification=not (
+                        post_message_schema.enable_notification_sound),
+                    link_preview_options=LinkPreviewOptions(is_disabled=not (
+                        post_message_schema.enable_link_preview))
+                )
+        # if mailing_message_type == MailingMessageType.RELEASE:  TODO this is from Arsen
+        #     if channel_post_schema.is_contest is False:
+        #         await channel_post_db.delete_channel_post(channel_post_id=channel_post_schema.channel_post_id)
+        #     await bot.send_message(chat_id, "Пост отправлен в канал!")
+        #     # Scheduling contest result function
+        #     if channel_post_schema.is_contest:
+        #         job_id = await _scheduler.add_scheduled_job(
+        #             func=generate_contest_result, run_date=channel_post_schema.contest_end_date,
+        #             args=[channel_post_schema.channel_id])
+        #         # await generate_contest_result(channel_post_schema.channel_id)
 
 
 async def _inline_no_button(query: CallbackQuery, bot_id: int, custom_bot_username: str) -> None:

@@ -22,7 +22,7 @@ from bot.keyboards.channel_keyboards import ReplyBackChannelMenuKeyboard, Inline
     InlineChannelMenuKeyboard
 from bot.keyboards.main_menu_keyboards import InlineBotMenuKeyboard, ReplyBotMenuKeyboard
 from bot.utils.post_message import edit_button_url, PostMessageType, edit_delay_date, edit_message, edit_button_text, \
-    edit_media_files
+    edit_media_files, send_post_message
 
 from database.models.bot_model import BotSchema
 from database.models.channel_model import ChannelNotFound
@@ -421,7 +421,7 @@ async def channel_menu_callback_handler(query: CallbackQuery, state: FSMContext)
             elif channel_post.description or media_files:
                 media_files = await post_message_media_file_db.get_all_channel_post_media_files(
                     channel_post_id=channel_post.channel_post_id)
-                await send_channel_post_message(
+                await send_post_message(
                     bot,
                     query.from_user.id,
                     channel_post,
@@ -620,7 +620,7 @@ async def channel_menu_callback_handler(query: CallbackQuery, state: FSMContext)
                     )
 
                 if not (channel_post.is_delayed):
-                    await send_channel_post_message(
+                    await send_post_message(
                         bot_from_send=custom_bot,
                         to_user_id=channel_post.channel_id,
                         channel_post_schema=channel_post,
@@ -636,7 +636,7 @@ async def channel_menu_callback_handler(query: CallbackQuery, state: FSMContext)
                     )
                 else:
                     job_id = await _scheduler.add_scheduled_job(
-                        func=send_channel_post_message, run_date=channel_post.send_date,
+                        func=send_post_message, run_date=channel_post.send_date,
                         args=[custom_bot, channel_post.channel_id, channel_post, media_files,
                               MailingMessageType.RELEASE, query.from_user.id, query.message.message_id])
                     channel_post.job_id = job_id
@@ -982,226 +982,6 @@ async def editing_competition_end_date(message: Message, state: FSMContext):
                     await state.set_data({"bot_id": bot_id, "channel_id": channel_id})
             except ValueError:
                 await message.reply("Некорректный формат. Пожалуйста, введите время и дату в правильном формате.")
-
-
-async def send_channel_post_message(  # TODO that's not funny
-        bot_from_send: BotSchema | Bot,
-        to_user_id: int,
-        channel_post_schema: ChannelPostSchema,
-        media_files: list[PostMessageMediaFile],
-        mailing_message_type: MailingMessageType,
-        chat_id: int = None,
-        message_id: int = None,
-) -> None:
-    if mailing_message_type == MailingMessageType.RELEASE:
-        bot_from_send = Bot(bot_from_send.token, default=DefaultBotProperties(
-            parse_mode=ParseMode.HTML))
-    if channel_post_schema.has_button:
-        if channel_post_schema.button_url == f"{WEB_APP_URL}:{WEB_APP_PORT}/products-page/?bot_id={channel_post_schema.bot_id}":
-            button = InlineKeyboardButton(
-                text=channel_post_schema.button_text,
-                web_app=make_webapp_info(bot_id=channel_post_schema.bot_id)
-            )
-        elif channel_post_schema.is_contest:
-            button = InlineKeyboardButton(
-                text=channel_post_schema.button_text,
-                callback_data=channel_post_schema.button_query
-            )
-        else:
-            button = InlineKeyboardButton(
-                text=channel_post_schema.button_text,
-                url=channel_post_schema.button_url
-            )
-        keyboard = InlineKeyboardMarkup(
-            inline_keyboard=[
-                [button]
-            ]
-        )
-    else:
-        keyboard = None
-
-    if len(media_files) >= 1:
-        is_first_message = False
-        media_group = []
-        for media_file in media_files:
-            if mailing_message_type == MailingMessageType.RELEASE:
-                # мда, ну короче на серверах фотки хранятся только у главного бота, т.к через него админ создавал
-                # рассылки. В кастомных ботах нет того file_id, который есть в главном боте, поэтому, если у нас
-                # file_id_custom_bot == None, значит это первое сообщение из всей рассылки. Поэтому мы скачиваем файл
-                # с серверов главного бота и отправляем это в кастомном, чтобы получить file_id для кастомного и
-                # сохраняем в бд.
-                # При следующей отправки тут уже не будет None
-                if media_file.file_id_custom_bot == None:
-                    is_first_message = True
-                    file_path = media_file.file_path
-                    file_bytes = await bot.download_file(
-                        file_path=file_path,
-                    )
-                    file_name = BufferedInputFile(
-                        file=file_bytes.read(),
-                        filename=file_path
-                    )
-                else:
-                    file_name = media_file.file_id_custom_bot
-            else:
-                file_name = media_file.file_id_main_bot
-            if media_file.media_type == "photo":
-                media_group.append(InputMediaPhoto(media=file_name) if len(
-                    media_files) > 1 else file_name)
-            elif media_file.media_type == "video":
-                media_group.append(InputMediaVideo(media=file_name) if len(
-                    media_files) > 1 else file_name)
-            elif media_file.media_type == "audio":
-                media_group.append(InputMediaAudio(media=file_name) if len(
-                    media_files) > 1 else file_name)
-            elif media_file.media_type == "document":
-                media_group.append(InputMediaDocument(
-                    media=file_name) if len(media_files) > 1 else file_name)
-
-        uploaded_media_files = []
-        if len(media_files) > 1:
-            if channel_post_schema.description:
-                post_text = channel_post_schema.description
-                if channel_post_schema.is_contest:
-                    if channel_post_schema.contest_type == ContestTypeValues.SPONSOR:
-                        post_text += f"\n\nДля участия нужно подписаться на всех спонсоров\n\n" \
-                                     f"<a href='{channel_post_schema.contest_sponsor_url}'>СПОНСОРЫ</a>"
-
-                    post_text += f"\n\nНажать на кнопку участвовать\n\n" \
-                                 f"<b>Подведение итогов:</b> {channel_post_schema.contest_end_date.strftime('%Y-%m-%d %H:%M:%S')}\n\n" \
-                                 f"<b>Призовых мест:</b> {channel_post_schema.contest_winner_amount}"
-                media_group[0].caption = post_text
-
-            uploaded_media_files.extend(await bot_from_send.send_media_group(
-                chat_id=to_user_id,
-                media=media_group,
-                disable_notification=not (
-                    channel_post_schema.enable_link_preview),
-            ))
-            if chat_id and message_id:
-                await bot.delete_message(chat_id, message_id)
-        elif len(media_files) == 1:
-            media_file = media_files[0]
-
-            if media_file.media_type == "photo":
-                method = bot_from_send.send_photo
-            elif media_file.media_type == "video":
-                method = bot_from_send.send_video
-            elif media_file.media_type == "audio":
-                method = bot_from_send.send_audio
-            elif media_file.media_type == "document":
-                method = bot_from_send.send_document
-            else:
-                raise Exception("Unexpected type")
-            post_text = channel_post_schema.description
-            if channel_post_schema.is_contest:
-                post_text = channel_post_schema.description
-                if channel_post_schema.contest_type == ContestTypeValues.SPONSOR:
-                    post_text += f"\n\nДля участия нужно подписаться на всех спонсоров\n\n" \
-                                 f"<a href='{channel_post_schema.contest_sponsor_url}'>СПОНСОРЫ</a>"
-
-                post_text += f"\n\nНажать на кнопку участвовать\n\n" \
-                             f"<b>Подведение итогов:</b> {channel_post_schema.contest_end_date.strftime('%Y-%m-%d %H:%M:%S')}\n\n" \
-                             f"<b>Призовых мест:</b> {channel_post_schema.contest_winner_amount}"
-            uploaded_media_files.append(await method(
-                to_user_id,
-                media_group[0],
-                caption=post_text,
-                reply_markup=keyboard,
-                disable_notification=not (
-                    channel_post_schema.enable_notification_sound),
-            ))
-
-            if chat_id and message_id:
-                await bot.delete_message(chat_id, message_id)
-
-        if is_first_message:  # первое сообщение, отправленное в рассылке с кастомного бота. Сохраняем file_id в бд
-            for ind in range(len(uploaded_media_files)):
-                new_message = uploaded_media_files[ind]
-                old_message = media_files[ind]
-                if new_message.photo:
-                    file_id = new_message.photo[-1].file_id
-                elif new_message.video:
-                    file_id = new_message.video.file_id
-                elif new_message.audio:
-                    file_id = new_message.audio.file_id
-                elif new_message.document:
-                    file_id = new_message.document.file_id
-                else:
-                    raise Exception("unsupported type")
-
-                old_message.file_id_custom_bot = file_id
-                await post_message_media_file_db.update_media_file(old_message)
-    else:
-        if channel_post_schema.description is None:
-            return
-        if mailing_message_type == MailingMessageType.DEMO:  # только при демо с главного бота срабатывает
-            post_text = channel_post_schema.description
-            if channel_post_schema.is_contest:
-                post_text = channel_post_schema.description
-                if channel_post_schema.contest_type == ContestTypeValues.SPONSOR:
-                    post_text += f"\n\nДля участия нужно подписаться на всех спонсоров\n\n" \
-                                 f"<a href='{channel_post_schema.contest_sponsor_url}'>СПОНСОРЫ</a>"
-
-                post_text += f"\n\nНажать на кнопку участвовать\n\n" \
-                             f"<b>Подведение итогов:</b> {channel_post_schema.contest_end_date.strftime('%Y-%m-%d %H:%M:%S')}\n\n" \
-                             f"<b>Призовых мест:</b> {channel_post_schema.contest_winner_amount}"
-            await bot.send_message(chat_id=chat_id, text=post_text,
-                                   link_preview_options=LinkPreviewOptions(is_disabled=not (
-                                       channel_post_schema.enable_link_preview)),
-                                   reply_markup=keyboard, )
-        elif mailing_message_type == MailingMessageType.AFTER_REDACTING:
-            post_text = channel_post_schema.description
-            if channel_post_schema.is_contest:
-                post_text = channel_post_schema.description
-                if channel_post_schema.contest_type == ContestTypeValues.SPONSOR:
-                    post_text += f"\n\nДля участия нужно подписаться на всех спонсоров\n\n" \
-                                 f"<a href='{channel_post_schema.contest_sponsor_url}'>СПОНСОРЫ</a>"
-
-                post_text += f"\n\nНажать на кнопку участвовать\n\n" \
-                             f"<b>Подведение итогов:</b> {channel_post_schema.contest_end_date.strftime('%Y-%m-%d %H:%M:%S')}\n\n" \
-                             f"<b>Призовых мест:</b> {channel_post_schema.contest_winner_amount}"
-            await bot_from_send.send_message(
-                chat_id=to_user_id,
-                text=post_text,
-                reply_markup=keyboard,
-                disable_notification=not (
-                    channel_post_schema.enable_notification_sound),
-                link_preview_options=LinkPreviewOptions(is_disabled=not (
-                    channel_post_schema.enable_link_preview))
-            )
-        else:
-            post_text = channel_post_schema.description
-            if channel_post_schema.is_contest:
-                post_text = channel_post_schema.description
-                if channel_post_schema.contest_type == ContestTypeValues.SPONSOR:
-                    post_text += f"\n\nДля участия нужно подписаться на всех спонсоров\n\n" \
-                                 f"<a href='{channel_post_schema.contest_sponsor_url}'>СПОНСОРЫ</a>"
-
-                post_text += f"\n\nНажать на кнопку участвовать\n\n" \
-                             f"<b>Подведение итогов:</b> {channel_post_schema.contest_end_date.strftime('%Y-%m-%d %H:%M:%S')}\n\n" \
-                             f"<b>Призовых мест:</b> {channel_post_schema.contest_winner_amount}"
-            await bot_from_send.send_message(
-                chat_id=to_user_id,
-                text=post_text,
-                reply_markup=keyboard,
-                disable_notification=not (
-                    channel_post_schema.enable_notification_sound),
-                link_preview_options=LinkPreviewOptions(is_disabled=not (
-                    channel_post_schema.enable_link_preview))
-            )
-    # channel_post_schema.is_running = False
-    # await channel_post_db.update_channel_post(channel_post_schema)
-    if mailing_message_type == MailingMessageType.RELEASE:
-        if channel_post_schema.is_contest is False:
-            await channel_post_db.delete_channel_post(channel_post_id=channel_post_schema.channel_post_id)
-        await bot.send_message(chat_id, "Пост отправлен в канал!")
-        # Scheduling contest result function
-        if channel_post_schema.is_contest:
-            job_id = await _scheduler.add_scheduled_job(
-                func=generate_contest_result, run_date=channel_post_schema.contest_end_date,
-                args=[channel_post_schema.channel_id])
-            # await generate_contest_result(channel_post_schema.channel_id)
 
 
 @channel_menu_router.message(StateFilter(
