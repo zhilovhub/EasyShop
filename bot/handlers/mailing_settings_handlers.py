@@ -46,6 +46,7 @@ async def send_post_messages(custom_bot, post_message, media_files, chat_id):
             post_message_schema=post_message,
             media_files=media_files,
             post_action_type=PostActionType.RELEASE,
+            post_message_type=PostMessageType.MAILING,
             message=None,
         )
 
@@ -252,6 +253,7 @@ async def mailing_menu_callback_handler(query: CallbackQuery, state: FSMContext)
                     post_message,
                     media_files,
                     PostActionType.DEMO,
+                    PostMessageType.MAILING,
                     query.message
                 )
                 await query.message.answer(

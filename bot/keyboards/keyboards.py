@@ -48,26 +48,6 @@ async def get_competition_menu_keyboard(competition_id: int) -> InlineKeyboardMa
     )
 
 
-async def get_competitions_list_keyboard(bot_id: int, channel_id: int) -> InlineKeyboardMarkup:
-    callback_metadata = f":{bot_id}:{channel_id}"
-    competitions = await get_bot_competitions(channel_id, bot_id)
-
-    return InlineKeyboardMarkup(
-        inline_keyboard=[
-            *[
-                [InlineKeyboardButton(
-                    text=i.name,
-                    callback_data=f"competitions_list:competition" + callback_metadata + f":{i.competition_id}")]
-                for i in competitions
-            ],
-            [
-                InlineKeyboardButton(
-                    text="🔙 Назад", callback_data="competitions_list:back_to_channel_menu" + callback_metadata)
-            ]
-        ],
-    )
-
-
 async def get_custom_bot_ad_channels_list_keyboard(bot_id: int) -> InlineKeyboardMarkup:
     callback_metadata = f":{bot_id}"
     all_channels = await get_bot_channels(bot_id=bot_id)

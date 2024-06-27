@@ -1,34 +1,27 @@
-import re
-from enum import Enum
-from datetime import datetime, timedelta
+from datetime import datetime
 
 from aiogram.enums import ParseMode
+from aiogram.types import Message, CallbackQuery
 from aiogram.filters import StateFilter
-from aiogram.types import Message, CallbackQuery, LinkPreviewOptions, \
-    InputMediaPhoto, InputMediaVideo, InputMediaAudio, InputMediaDocument, BufferedInputFile
-from aiogram.client.bot import DefaultBotProperties
 from aiogram.fsm.context import FSMContext
 from aiogram.utils.deep_linking import create_start_link
 
-from bot.keyboards.post_message_keyboards import ReplyConfirmMediaFilesKeyboard
 from bot.main import bot, _scheduler, custom_bot_user_db, post_message_media_file_db, channel_user_db, \
     contest_channel_db
 from bot.utils import MessageTexts
 from bot.keyboards import *
 from bot.states.states import States
 from bot.handlers.routers import channel_menu_router
-from bot.utils.contest_result import generate_contest_result
+from bot.utils.post_message import edit_button_url, PostMessageType, edit_delay_date, edit_message, edit_button_text, \
+    edit_media_files, send_post_message
 from bot.keyboards.channel_keyboards import ReplyBackChannelMenuKeyboard, InlineChannelsListKeyboard, \
     InlineChannelMenuKeyboard
 from bot.keyboards.main_menu_keyboards import InlineBotMenuKeyboard, ReplyBotMenuKeyboard
-from bot.utils.post_message import edit_button_url, PostMessageType, edit_delay_date, edit_message, edit_button_text, \
-    edit_media_files, send_post_message
+from bot.keyboards.post_message_keyboards import ReplyConfirmMediaFilesKeyboard
 
-from database.models.bot_model import BotSchema
 from database.models.channel_model import ChannelNotFound
 from database.models.channel_post_model import ChannelPostSchemaWithoutId
 from database.models.contest_channel_model import ContestChannelSchemaWithoutId
-from database.models.post_message_media_files import PostMessageMediaFile
 
 
 @channel_menu_router.callback_query(lambda query: InlineChannelsListKeyboard.callback_validator(query.data))
@@ -124,14 +117,6 @@ async def channel_menu_callback_handler(query: CallbackQuery):
                 )
             )
         # TODO Я не успел еще остальные добавить
-
-
-class MailingMessageType(Enum):
-    DEMO = "demo"  # Демо сообщение с главного бота
-    # Демо сообщение с главного бота (но немного другой функионал для отправки)
-    AFTER_REDACTING = "after_redacting"
-    # Главная рассылка (отправка с кастомного бота всем пользователям)
-    RELEASE = "release"
 
 
 @channel_menu_router.callback_query(lambda query: query.data.startswith("channel_menu"))

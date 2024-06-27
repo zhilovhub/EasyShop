@@ -6,7 +6,6 @@ from bot.config import WEB_APP_URL, WEB_APP_PORT
 
 from database.models.channel_model import ChannelSchema
 from database.models.post_message_model import PostMessageSchema, PostMessageNotFound
-from database.models.competition_model import CompetitionSchema
 from database.models.channel_post_model import ChannelPostNotFound, ChannelPostSchema
 from logs.config import logger, extra_params
 
@@ -52,7 +51,3 @@ async def get_channel_post(channel_id: int, is_contest: bool) -> ChannelPostSche
             extra=extra_params(channel_id=channel_id),
         )
         return None
-
-
-async def get_bot_competitions(channel_id: int, bot_id: int) -> list[CompetitionSchema]:
-    return await competition.get_all_competitions(channel_id, bot_id)
