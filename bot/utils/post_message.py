@@ -12,11 +12,12 @@ from bot.main import bot_db, post_message_db, bot, post_message_media_file_db, c
 from bot.utils import MessageTexts
 from bot.config import WEB_APP_URL, WEB_APP_PORT
 from bot.states import States
-from bot.keyboards import get_inline_bot_channel_post_menu_keyboard
+from bot.keyboards import get_inline_bot_channel_post_menu_keyboard, get_contest_menu_keyboard
 from bot.utils.keyboard_utils import make_webapp_info
 from bot.keyboards.main_menu_keyboards import ReplyBotMenuKeyboard
 from bot.keyboards.post_message_keyboards import InlinePostMessageMenuKeyboard, ReplyBackPostMessageMenuKeyboard, \
     ReplyConfirmMediaFilesKeyboard
+from database.models.channel_post_model import ContestTypeValues
 
 from database.models.post_message_model import PostMessageSchema
 from database.models.post_message_media_files import PostMessageMediaFileSchema
@@ -125,23 +126,47 @@ async def edit_button_text(message: Message, state: FSMContext, post_message_typ
     custom_bot_tg = Bot((await bot_db.get_bot(bot_id)).token)
     custom_bot_username = (await custom_bot_tg.get_me()).username
 
-    post_message = await post_message_db.get_post_message(post_message_id)
+    if post_message_type == PostMessageType.CHANNEL_POST:
+        channel_id = state_data["channel_id"]
+        is_contest_flag = "channel_post_id" in state_data.keys()
+        post_message = await channel_post_db.get_channel_post(channel_id=channel_id, is_contest=is_contest_flag)
+    else:
+        post_message = await post_message_db.get_post_message(post_message_id)
+
     if not post_message.has_button:
         return await _reply_no_button(message, bot_id, custom_bot_username, state, PostMessageType.MAILING)
 
     if message_text:
         if message_text == ReplyBackPostMessageMenuKeyboard.Callback.ActionEnum.BACK_TO_POST_MESSAGE_MENU.value:
             await _back_to_post_message_menu(message, bot_id, custom_bot_username, post_message_type)
+            if post_message_type == PostMessageType.CHANNEL_POST:
+                channel_id = state_data["channel_id"]
+                if post_message.contest_type == ContestTypeValues.RANDOM:
+                    menu_text = MessageTexts.BOT_CONTEST_MENU.value.format("Рандомайзер 🎲", "Спонсорство 🤝")
+                else:
+                    menu_text = MessageTexts.BOT_CONTEST_MENU.value.format("Спонсорство 🤝", "Рандомайзер 🎲")
+                await message.answer(
+                    text=menu_text,
+                    reply_markup=await get_contest_menu_keyboard(bot_id, channel_id, is_contest=True)
+                )
         else:
             post_message.button_text = message.text
+
+            if post_message_type == PostMessageType.CHANNEL_POST:
+                if post_message.is_contest:
+                    message_text += " (0)"
+                post_message.button_text = message_text
+                await channel_post_db.update_channel_post(post_message)
+            else:
+                await post_message_db.update_post_message(post_message)
+
             media_files = await post_message_media_file_db.get_all_post_message_media_files(post_message_id)
-            await post_message_db.update_post_message(post_message)
 
             await message.answer(
                 "Предпросмотр конкурса 👇",
                 reply_markup=ReplyBotMenuKeyboard.get_keyboard(bot_id)
             )
-            await send_post_message(
+            await send_post_message(  # TODO was send_channel_post_message
                 bot,
                 message.from_user.id,
                 post_message,
@@ -149,13 +174,38 @@ async def edit_button_text(message: Message, state: FSMContext, post_message_typ
                 PostActionType.AFTER_REDACTING,
                 message
             )
-            await message.answer(
-                MessageTexts.BOT_MAILINGS_MENU_MESSAGE.value.format(custom_bot_username),
-                reply_markup=await InlinePostMessageMenuKeyboard.get_keyboard(bot_id)
-            )
+
+            if post_message_type == PostMessageType.CHANNEL_POST:
+                channel_id = state_data["channel_id"]
+                if post_message.is_contest is False:
+                    await message.answer(
+                        text=MessageTexts.BOT_MAILINGS_MENU_MESSAGE.value.format(
+                            custom_bot_username
+                        ),
+                        reply_markup=await get_inline_bot_channel_post_menu_keyboard(bot_id, channel_id,
+                                                                                     post_message.is_contest)
+                    )
+                else:
+                    if post_message.contest_type == ContestTypeValues.RANDOM:
+                        menu_text = MessageTexts.BOT_CONTEST_MENU.value.format(
+                            "Рандомайзер 🎲", "Спонсорство 🤝")
+                    else:
+                        menu_text = MessageTexts.BOT_CONTEST_MENU.value.format(
+                            "Спонсорство 🤝", "Рандомайзер 🎲")
+                    await message.answer(
+                        text=menu_text,
+                        reply_markup=await get_contest_menu_keyboard(bot_id, channel_id, is_contest=True)
+                    )
+            else:
+                await message.answer(
+                    MessageTexts.BOT_MAILINGS_MENU_MESSAGE.value.format(custom_bot_username),
+                    reply_markup=await InlinePostMessageMenuKeyboard.get_keyboard(bot_id)
+                )
 
         await state.set_state(States.BOT_MENU)
-        await state.set_data({"bot_id": bot_id})
+        if post_message_type == PostMessageType.CHANNEL_POST and post_message.is_contest:
+            state_data["channel_post_id"] = post_message.channel_post_id
+        await state.set_data(state_data)
     else:
         await message.answer("Название кнопки должно содержать текст")
 
