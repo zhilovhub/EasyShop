@@ -53,7 +53,15 @@ async def edit_media_files(message: Message, state: FSMContext, post_message_typ
     state_data = await state.get_data()
 
     bot_id = state_data["bot_id"]
-    post_message_id = state_data["post_message_id"]
+
+    if post_message_type == PostMessageType.CHANNEL_POST:
+        channel_id = state_data["channel_id"]
+        is_contest_flag = "channel_post_id" in state_data.keys()
+        post_message = await channel_post_db.get_channel_post(channel_id=channel_id, is_contest=is_contest_flag)
+        post_message_id = post_message.channel_post_id
+    else:
+        post_message_id = state_data["post_message_id"]
+        post_message = await post_message_db.get_post_message(post_message_id)
 
     if (message.photo or message.video or message.audio or message.document) and "first" not in state_data:
         await post_message_media_file_db.delete_post_message_media_files(post_message_id)
@@ -64,7 +72,13 @@ async def edit_media_files(message: Message, state: FSMContext, post_message_typ
 
     match message.text:
         case ReplyConfirmMediaFilesKeyboard.Callback.ActionEnum.CONFIRM.value:
-            return await _back_to_post_message_menu(message, bot_id, custom_bot_username, post_message_type)
+            await _back_to_post_message_menu(message, bot_id, custom_bot_username, post_message_type)
+
+            await state.set_state(States.BOT_MENU)
+            if post_message_type == PostMessageType.CHANNEL_POST and post_message.is_contest:
+                state_data["channel_post_id"] = post_message.channel_post_id
+            return await state.set_data(state_data)
+
         case ReplyConfirmMediaFilesKeyboard.Callback.ActionEnum.CLEAR.value:
             await message.answer("Очищаем все файлы...")
             await post_message_media_file_db.delete_post_message_media_files(post_message_id=post_message_id)
