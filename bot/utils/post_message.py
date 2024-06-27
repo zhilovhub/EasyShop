@@ -1,4 +1,5 @@
 import re
+from datetime import datetime
 from enum import Enum
 
 from aiogram import Bot
@@ -14,7 +15,8 @@ from bot.states import States
 from bot.keyboards import get_inline_bot_channel_post_menu_keyboard
 from bot.utils.keyboard_utils import make_webapp_info
 from bot.keyboards.main_menu_keyboards import ReplyBotMenuKeyboard
-from bot.keyboards.post_message_keyboards import InlinePostMessageMenuKeyboard, ReplyBackPostMessageMenuKeyboard
+from bot.keyboards.post_message_keyboards import InlinePostMessageMenuKeyboard, ReplyBackPostMessageMenuKeyboard, \
+    ReplyConfirmMediaFilesKeyboard
 
 from database.models.post_message_model import PostMessageSchema
 from database.models.post_message_media_files import PostMessageMediaFileSchema
@@ -44,6 +46,212 @@ class PostActionType(Enum):
     AFTER_REDACTING = "after_redacting"
     # Главная рассылка (отправка с кастомного бота всем пользователям)
     RELEASE = "release"
+
+
+async def edit_media_files(message: Message, state: FSMContext, post_message_type: PostMessageType):
+    state_data = await state.get_data()
+
+    bot_id = state_data["bot_id"]
+    post_message_id = state_data["post_message_id"]
+
+    if (message.photo or message.video or message.audio or message.document) and "first" not in state_data:
+        await post_message_media_file_db.delete_post_message_media_files(post_message_id)
+        state_data["first"] = True
+
+    custom_bot_tg = Bot((await bot_db.get_bot(bot_id)).token)
+    custom_bot_username = (await custom_bot_tg.get_me()).username
+
+    match message.text:
+        case ReplyConfirmMediaFilesKeyboard.Callback.ActionEnum.CONFIRM.value:
+            return await _back_to_post_message_menu(message, bot_id, custom_bot_username)
+        case ReplyConfirmMediaFilesKeyboard.Callback.ActionEnum.CLEAR.value:
+            await message.answer("Очищаем все файлы...")
+            await post_message_media_file_db.delete_post_message_media_files(post_message_id=post_message_id)
+            return await message.answer(
+                "Отправьте одним сообщение медиафайлы для рассылочного сообщения\n\n"
+                "❗ Старые медиафайлы к этому рассылочному сообщению <b>перезапишутся</b>\n\n"
+                "❗❗ Обратите внимание, что к сообщению нельзя будет прикрепить кнопку, "
+                "если медиафайлов <b>больше одного</b>",
+                reply_markup=ReplyConfirmMediaFilesKeyboard.get_keyboard()
+            )
+        case _:
+            if message.photo:
+                photo = message.photo[-1]
+                file_id = photo.file_id
+                file_path = (await bot.get_file(photo.file_id)).file_path
+                media_type = "photo"
+                answer_text = f"Фото {photo.file_unique_id} добавлено"
+            elif message.video:
+                video = message.video
+                file_id = video.file_id
+                file_path = (await bot.get_file(video.file_id)).file_path
+                media_type = "video"
+                answer_text = f"Видео {video.file_name} добавлено"
+            elif message.audio:
+                audio = message.audio
+                file_id = audio.file_id
+                file_path = (await bot.get_file(audio.file_id)).file_path
+                media_type = "audio"
+                answer_text = f"Аудио {audio.file_name} добавлено"
+            elif message.document:
+                document = message.document
+                file_id = document.file_id
+                file_path = (await bot.get_file(document.file_id)).file_path
+                media_type = "document"
+                answer_text = f"Документ {document.file_name} добавлен"
+            else:
+                return await message.answer(
+                    "Пришлите медиафайлы (фото, видео, аудио, документы), "
+                    "которые должны быть прикреплены к рассылочному сообщению",
+                    reply_markup=ReplyConfirmMediaFilesKeyboard.get_keyboard()
+                )
+
+    await post_message_media_file_db.add_post_message_media_file(PostMessageMediaFileSchema.model_validate(
+        {"post_message_id": post_message_id, "file_id_main_bot": file_id,
+         "file_path": file_path, "media_type": media_type}
+    ))
+
+    await message.answer(answer_text)
+
+
+async def edit_button_text(message: Message, state: FSMContext, post_message_type: PostMessageType):
+    message_text = message.html_text
+
+    state_data = await state.get_data()
+
+    bot_id = state_data["bot_id"]
+    post_message_id = state_data["post_message_id"]
+
+    custom_bot_tg = Bot((await bot_db.get_bot(bot_id)).token)
+    custom_bot_username = (await custom_bot_tg.get_me()).username
+
+    post_message = await post_message_db.get_post_message(post_message_id)
+    if not post_message.has_button:
+        return await _reply_no_button(message, bot_id, custom_bot_username, state, PostMessageType.MAILING)
+
+    if message_text:
+        if message_text == ReplyBackPostMessageMenuKeyboard.Callback.ActionEnum.BACK_TO_POST_MESSAGE_MENU.value:
+            await _back_to_post_message_menu(message, bot_id, custom_bot_username)
+        else:
+            post_message.button_text = message.text
+            media_files = await post_message_media_file_db.get_all_post_message_media_files(post_message_id)
+            await post_message_db.update_post_message(post_message)
+
+            await message.answer(
+                "Предпросмотр конкурса 👇",
+                reply_markup=ReplyBotMenuKeyboard.get_keyboard(bot_id)
+            )
+            await send_post_message(
+                bot,
+                message.from_user.id,
+                post_message,
+                media_files,
+                PostActionType.AFTER_REDACTING,
+                message
+            )
+            await message.answer(
+                MessageTexts.BOT_MAILINGS_MENU_MESSAGE.value.format(custom_bot_username),
+                reply_markup=await InlinePostMessageMenuKeyboard.get_keyboard(bot_id)
+            )
+
+        await state.set_state(States.BOT_MENU)
+        await state.set_data({"bot_id": bot_id})
+    else:
+        await message.answer("Название кнопки должно содержать текст")
+
+
+async def edit_message(message: Message, state: FSMContext, post_message_type: PostMessageType):
+    message_text = message.html_text
+
+    state_data = await state.get_data()
+
+    bot_id = state_data["bot_id"]
+    post_message_id = state_data["post_message_id"]
+
+    post_message = await post_message_db.get_post_message(post_message_id)
+    custom_bot_tg = Bot((await bot_db.get_bot(bot_id)).token)
+    custom_bot_username = (await custom_bot_tg.get_me()).username
+
+    if message_text:
+        if message_text == ReplyBackPostMessageMenuKeyboard.Callback.ActionEnum.BACK_TO_POST_MESSAGE_MENU.value:
+            await _back_to_post_message_menu(message, bot_id, custom_bot_username)
+        else:
+            post_message.description = message.html_text
+            media_files = await post_message_media_file_db.get_all_post_message_media_files(post_message_id)
+
+            await post_message_db.update_post_message(post_message)
+
+            await message.answer(
+                "Предпросмотр конкурса 👇",
+                reply_markup=ReplyBotMenuKeyboard.get_keyboard(bot_id)
+            )
+            await send_post_message(
+                bot,
+                message.from_user.id,
+                post_message,
+                media_files,
+                PostActionType.AFTER_REDACTING,
+                message,
+            )
+            await message.answer(
+                MessageTexts.BOT_MAILINGS_MENU_MESSAGE.value.format(custom_bot_username),
+                reply_markup=await InlinePostMessageMenuKeyboard.get_keyboard(bot_id)
+            )
+
+        await state.set_state(States.BOT_MENU)
+        await state.set_data({"bot_id": bot_id})
+    else:
+        await message.answer(
+            "Описание должно содержать текст.\n"
+            "Если есть необходимость прикрепить медиафайлы, то для этого есть пункт в меню"
+        )
+
+
+async def edit_delay_date(message: Message, state: FSMContext, post_message_type: PostMessageType):
+    message_text = message.html_text
+
+    state_data = await state.get_data()
+
+    bot_id = state_data["bot_id"]
+    post_message_id = state_data["post_message_id"]
+
+    custom_bot_tg = Bot((await bot_db.get_bot(bot_id)).token)
+    custom_bot_username = (await custom_bot_tg.get_me()).username
+
+    post_message = await post_message_db.get_post_message(post_message_id)
+
+    if message_text:
+        if message_text == ReplyBackPostMessageMenuKeyboard.Callback.ActionEnum.BACK_TO_POST_MESSAGE_MENU.value:
+            await _back_to_post_message_menu(message, bot_id, custom_bot_username)
+        else:
+            try:
+                datetime_obj = datetime.strptime(message_text, "%d.%m.%Y %H:%M")
+                datetime_obj.replace(tzinfo=None)
+
+                if datetime.now() > datetime_obj:
+                    return await message.reply("Введенное время уже прошло. Введите, пожалуйста, <b>будущее</b> время")
+
+                post_message.is_delayed = True
+                post_message.send_date = datetime_obj
+
+                await post_message_db.update_post_message(post_message)
+
+                await message.reply(
+                    f"Запланировано на: <b>{datetime_obj.strftime('%Y-%m-%d %H:%M')}</b>\n\n"
+                    f"Для запуска отложенной рассылки в меню нажмите <b>Запустить</b>",
+                    reply_markup=ReplyBotMenuKeyboard.get_keyboard(bot_id)
+                )
+                await message.answer(
+                    MessageTexts.BOT_MAILINGS_MENU_MESSAGE.value.format(custom_bot_username),
+                    reply_markup=await InlinePostMessageMenuKeyboard.get_keyboard(bot_id)
+                )
+            except ValueError:
+                return await message.reply("Некорректный формат. Пожалуйста, "
+                                           "введите время и дату в правильном формате."
+                                           )
+
+        await state.set_state(States.BOT_MENU)
+        await state.set_data(state_data)
 
 
 async def edit_button_url(message: Message, state: FSMContext, post_message_type: PostMessageType):
