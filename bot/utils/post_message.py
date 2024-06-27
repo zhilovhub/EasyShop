@@ -63,7 +63,7 @@ async def edit_media_files(message: Message, state: FSMContext, post_message_typ
 
     match message.text:
         case ReplyConfirmMediaFilesKeyboard.Callback.ActionEnum.CONFIRM.value:
-            return await _back_to_post_message_menu(message, bot_id, custom_bot_username)
+            return await _back_to_post_message_menu(message, bot_id, custom_bot_username, post_message_type)
         case ReplyConfirmMediaFilesKeyboard.Callback.ActionEnum.CLEAR.value:
             await message.answer("Очищаем все файлы...")
             await post_message_media_file_db.delete_post_message_media_files(post_message_id=post_message_id)
@@ -131,7 +131,7 @@ async def edit_button_text(message: Message, state: FSMContext, post_message_typ
 
     if message_text:
         if message_text == ReplyBackPostMessageMenuKeyboard.Callback.ActionEnum.BACK_TO_POST_MESSAGE_MENU.value:
-            await _back_to_post_message_menu(message, bot_id, custom_bot_username)
+            await _back_to_post_message_menu(message, bot_id, custom_bot_username, post_message_type)
         else:
             post_message.button_text = message.text
             media_files = await post_message_media_file_db.get_all_post_message_media_files(post_message_id)
@@ -168,24 +168,33 @@ async def edit_message(message: Message, state: FSMContext, post_message_type: P
     bot_id = state_data["bot_id"]
     post_message_id = state_data["post_message_id"]
 
-    post_message = await post_message_db.get_post_message(post_message_id)
     custom_bot_tg = Bot((await bot_db.get_bot(bot_id)).token)
     custom_bot_username = (await custom_bot_tg.get_me()).username
 
+    if post_message_type == PostMessageType.CHANNEL_POST:
+        channel_id = state_data["channel_id"]
+        is_contest_flag = "channel_post_id" in state_data.keys()
+        post_message = await channel_post_db.get_channel_post(channel_id=channel_id, is_contest=is_contest_flag)
+    else:
+        post_message = await post_message_db.get_post_message(post_message_id)
+
     if message_text:
         if message_text == ReplyBackPostMessageMenuKeyboard.Callback.ActionEnum.BACK_TO_POST_MESSAGE_MENU.value:
-            await _back_to_post_message_menu(message, bot_id, custom_bot_username)
+            await _back_to_post_message_menu(message, bot_id, custom_bot_username, post_message_type)
         else:
             post_message.description = message.html_text
             media_files = await post_message_media_file_db.get_all_post_message_media_files(post_message_id)
 
-            await post_message_db.update_post_message(post_message)
+            if post_message_type == PostMessageType.CHANNEL_POST:
+                await channel_post_db.update_channel_post(post_message)
+            else:
+                await post_message_db.update_post_message(post_message)
 
             await message.answer(
                 "Предпросмотр конкурса 👇",
                 reply_markup=ReplyBotMenuKeyboard.get_keyboard(bot_id)
             )
-            await send_post_message(
+            await send_post_message(  # TODO was send_channel_post_message
                 bot,
                 message.from_user.id,
                 post_message,
@@ -193,13 +202,27 @@ async def edit_message(message: Message, state: FSMContext, post_message_type: P
                 PostActionType.AFTER_REDACTING,
                 message,
             )
-            await message.answer(
-                MessageTexts.BOT_MAILINGS_MENU_MESSAGE.value.format(custom_bot_username),
-                reply_markup=await InlinePostMessageMenuKeyboard.get_keyboard(bot_id)
-            )
+            if post_message_type == PostMessageType.CHANNEL_POST:
+                channel_id = state_data["channel_id"]
+                channel_username = (await custom_bot_tg.get_chat(channel_id)).username
+                await message.answer(
+                    MessageTexts.BOT_CHANNEL_POST_MENU_MESSAGE.value.format(channel_username),
+                    reply_markup=await get_inline_bot_channel_post_menu_keyboard(
+                        bot_id=bot_id,
+                        channel_id=channel_id,
+                        is_contest=post_message.is_contest
+                    )
+                )
+            else:
+                await message.answer(
+                    MessageTexts.BOT_MAILINGS_MENU_MESSAGE.value.format(custom_bot_username),
+                    reply_markup=await InlinePostMessageMenuKeyboard.get_keyboard(bot_id)
+                )
 
         await state.set_state(States.BOT_MENU)
-        await state.set_data({"bot_id": bot_id})
+        if post_message_type == PostMessageType.CHANNEL_POST and post_message.is_contest:
+            state_data["channel_post_id"] = post_message.channel_post_id
+        await state.set_data(state_data)
     else:
         await message.answer(
             "Описание должно содержать текст.\n"
@@ -227,7 +250,7 @@ async def edit_delay_date(message: Message, state: FSMContext, post_message_type
 
     if message_text:
         if message_text == ReplyBackPostMessageMenuKeyboard.Callback.ActionEnum.BACK_TO_POST_MESSAGE_MENU.value:
-            await _back_to_post_message_menu(message, bot_id, custom_bot_username)
+            await _back_to_post_message_menu(message, bot_id, custom_bot_username, post_message_type)
         else:
             try:
                 datetime_obj = datetime.strptime(message_text, "%d.%m.%Y %H:%M")
@@ -303,7 +326,7 @@ async def edit_button_url(message: Message, state: FSMContext, post_message_type
 
     if message_text:
         if message_text == ReplyBackPostMessageMenuKeyboard.Callback.ActionEnum.BACK_TO_POST_MESSAGE_MENU.value:
-            await _back_to_post_message_menu(message, bot_id, custom_bot_username)
+            await _back_to_post_message_menu(message, bot_id, custom_bot_username, post_message_type)
         else:
             pattern = r"(?i)\b((?:https?://|www\d{0,3}[.]|[a-z0-9.\-]+[.][a-z]{2,4}/)(?:[^\s()<>]+|\(([^\s()<>]+" \
                       r"|(\([^\s()<>]+\)))*\))+(?:\(([^\s()<>]+|(\([^\s()<>]+\)))*\)|[^\s`!()\[\]{};:'\".,<>?«»“”‘’]))"
@@ -545,17 +568,32 @@ async def _inline_back_to_post_message_menu(query: CallbackQuery, bot_id: int, c
     )
 
 
-async def _back_to_post_message_menu(message: Message, bot_id: int, custom_bot_username: str) -> None:
+async def _back_to_post_message_menu(  # TODO here we get always custom_bot_username
+        message: Message,
+        bot_id: int,
+        object_username: str,
+        post_message_type: PostMessageType,
+        channel_id: int | None = None,
+        is_contest: bool | None = None,
+) -> None:
     await message.answer(
         "Возвращаемся в меню...",
         reply_markup=ReplyBotMenuKeyboard.get_keyboard(bot_id)
     )
-    await message.answer(
-        text=MessageTexts.BOT_MAILINGS_MENU_MESSAGE.value.format(custom_bot_username),
-        # TODO here can be channel message
-        reply_markup=await InlinePostMessageMenuKeyboard.get_keyboard(bot_id)
-        # TODO there are some diffs between mailing and channel
-    )
+    if post_message_type == PostMessageType.MAILING:
+        await message.answer(
+            text=MessageTexts.BOT_MAILINGS_MENU_MESSAGE.value.format(object_username),
+            reply_markup=await InlinePostMessageMenuKeyboard.get_keyboard(bot_id)
+        )
+    else:
+        await message.answer(
+            MessageTexts.BOT_CHANNEL_POST_MENU_MESSAGE.value.format(object_username),
+            reply_markup=await get_inline_bot_channel_post_menu_keyboard(
+                bot_id=bot_id,
+                channel_id=channel_id,
+                is_contest=is_contest
+            )
+        )
 
 
 async def _is_post_message_valid(
