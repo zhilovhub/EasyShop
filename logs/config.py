@@ -72,8 +72,8 @@ class LokiFilter(logging.Filter):
                 record.tags["channel_user_id"] = record.channel_user_id
             if hasattr(record, "competition_id"):
                 record.tags["competition_id"] = record.competition_id
-            if hasattr(record, "mailing_id"):
-                record.tags["mailing_id"] = record.mailing_id
+            if hasattr(record, "post_message_id"):
+                record.tags["post_message_id"] = record.post_message_id
             if hasattr(record, "order_id"):
                 record.tags["order_id"] = record.order_id
             if hasattr(record, "product_id"):

@@ -20,6 +20,7 @@ from bot.utils.contest_result import generate_contest_result
 from bot.keyboards.channel_keyboards import ReplyBackChannelMenuKeyboard, InlineChannelsListKeyboard, \
     InlineChannelMenuKeyboard
 from bot.keyboards.main_menu_keyboards import InlineBotMenuKeyboard, ReplyBotMenuKeyboard
+from bot.utils.post_message import edit_button_url, PostMessageType
 
 from database.models.bot_model import BotSchema
 from database.models.channel_model import ChannelNotFound
@@ -1512,67 +1513,4 @@ async def editing_channel_post_button_text_handler(message: Message, state: FSMC
 
 @channel_menu_router.message(States.EDITING_POST_BUTTON_URL)
 async def editing_channel_post_button_url_handler(message: Message, state: FSMContext):
-    message_text = message.html_text
-
-    state_data = await state.get_data()
-
-    bot_id = state_data["bot_id"]
-    channel_id = state_data["channel_id"]
-
-    channel_post = await channel_post_db.get_channel_post(channel_id=channel_id, is_contest=False)
-    custom_bot_tg = Bot((await bot_db.get_bot(bot_id)).token)
-    custom_bot_username = (await custom_bot_tg.get_me()).username
-
-    if message_text:
-        if message_text == ReplyBackChannelMenuKeyboard.Callback.ActionEnum.BACK_TO_CHANNEL_MENU.value:
-            await message.answer(
-                "Возвращаемся в меню...",
-                reply_markup=ReplyBotMenuKeyboard.get_keyboard(
-                    bot_id=state_data["bot_id"])
-            )
-            await message.answer(
-                text=MessageTexts.BOT_MAILINGS_MENU_MESSAGE.value.format(
-                    custom_bot_username
-                ),
-                reply_markup=await get_inline_bot_channel_post_menu_keyboard(bot_id, channel_id,
-                                                                             channel_post.is_contest)
-            )
-            await state.set_state(States.BOT_MENU)
-            await state.set_data(state_data)
-        else:
-            pattern = r"(?i)\b((?:https?://|www\d{0,3}[.]|[a-z0-9.\-]+[.][a-z]{2,4}/)(?:[^\s()<>]+|\(([^\s()<>]+|(\([^\s()<>]+\)))*\))+(?:\(([^\s()<>]+|(\([^\s()<>]+\)))*\)|[^\s`!()\[\]{};:'\".,<>?«»“”‘’]))"
-            if not re.fullmatch(pattern, message.text):
-                return await message.answer(
-                    "Невалидная ссылка. Введите, пожалуйста, ссылку в стандартном формате, начинающимся с <b>http</b> или <b>https</b>")
-
-            channel_post.button_url = message.text
-            media_files = await channel_post_media_file_db.get_all_channel_post_media_files(
-                channel_post_id=channel_post.channel_post_id)
-            await channel_post_db.update_channel_post(channel_post)
-
-            await message.answer(
-                "Предпросмотр конкурса 👇",
-                reply_markup=ReplyBotMenuKeyboard.get_keyboard(
-                    bot_id=state_data["bot_id"])
-            )
-            await send_channel_post_message(
-                bot,
-                message.from_user.id,
-                channel_post,
-                media_files,
-                MailingMessageType.AFTER_REDACTING,
-                message.from_user.id,
-                message.message_id,
-            )
-            await message.answer(
-                text=MessageTexts.BOT_MAILINGS_MENU_MESSAGE.value.format(
-                    custom_bot_username
-                ),
-                reply_markup=await get_inline_bot_channel_post_menu_keyboard(bot_id, channel_id,
-                                                                             channel_post.is_contest)
-            )
-
-        await state.set_state(States.BOT_MENU)
-        await state.set_data({"bot_id": bot_id, "channel_id": channel_id})
-    else:
-        await message.answer("Ссылка должно содержать только текст")
+    await edit_button_url(message, state, PostMessageType.CHANNEL_POST)

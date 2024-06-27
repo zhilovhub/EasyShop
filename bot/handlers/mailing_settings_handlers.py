@@ -1,5 +1,4 @@
 import asyncio
-import re
 
 from enum import Enum
 from datetime import datetime, timedelta
@@ -11,7 +10,7 @@ from aiogram.types import Message, CallbackQuery, LinkPreviewOptions, \
 from aiogram.client.bot import DefaultBotProperties, Bot
 from aiogram.fsm.context import FSMContext
 
-from bot.main import bot, custom_bot_user_db, mailing_media_file_db, _scheduler, mailing_db, bot_db
+from bot.main import bot, custom_bot_user_db, post_message_media_file_db, _scheduler, post_message_db, bot_db
 from bot.utils import MessageTexts
 from bot.config import WEB_APP_URL, WEB_APP_PORT
 from bot.states.states import States
@@ -21,14 +20,15 @@ from bot.keyboards.main_menu_keyboards import ReplyBotMenuKeyboard, InlineBotMen
 from bot.keyboards.post_message_keyboards import InlinePostMessageMenuKeyboard, ReplyBackPostMessageMenuKeyboard, \
     InlinePostMessageAcceptDeletingKeyboard, ReplyConfirmMediaFilesKeyboard, InlinePostMessageExtraSettingsKeyboard, \
     InlinePostMessageStartConfirmKeyboard
+from bot.utils.post_message import edit_button_url, PostMessageType
 
-from database.models.mailing_model import MailingNotFound, MailingSchema
-from database.models.mailing_media_files import MailingMediaFileSchema
+from database.models.post_message_model import PostMessageNotFound, PostMessageSchema
+from database.models.post_message_media_files import PostMessageMediaFile, PostMessageMediaFileSchema
 
 from logs.config import logger, extra_params
 
 
-class MailingMessageType(Enum):
+class PostActionType(Enum):
     DEMO = "demo"  # Демо сообщение с главного бота
     # Демо сообщение с главного бота (но немного другой функионал для отправки)
     AFTER_REDACTING = "after_redacting"
@@ -36,47 +36,48 @@ class MailingMessageType(Enum):
     RELEASE = "release"
 
 
-async def send_mailing_messages(custom_bot, mailing, media_files, chat_id):
-    mailing_id = mailing.mailing_id
+async def send_post_messages(custom_bot, post_message, media_files, chat_id):
+    post_message_id = post_message.post_message_id
     all_custom_bot_users = await custom_bot_user_db.get_custom_bot_users(custom_bot.bot_id)
     custom_bot_tg = Bot(custom_bot.token, default=DefaultBotProperties(
         parse_mode=ParseMode.HTML))
 
     for ind, user in enumerate(all_custom_bot_users, start=1):
-        mailing = await mailing_db.get_mailing(mailing_id)
+        post_message = await post_message_db.get_post_message(post_message_id)
 
-        if not mailing.is_running:
-            mailing.sent_mailing_amount = 0
-            await mailing_db.update_mailing(mailing)
+        if not post_message.is_running:
+            post_message.sent_post_message_amount = 0
+            await post_message_db.update_post_message(post_message)
             return
 
-        await send_mailing_message(
+        await send_post_message(
             bot_from_send=custom_bot_tg,
             to_user_id=user.user_id,
-            mailing_schema=mailing,
+            post_message_schema=post_message,
             media_files=media_files,
-            mailing_message_type=MailingMessageType.RELEASE,
+            post_action_type=PostActionType.RELEASE,
             message=None,
         )
 
         logger.info(
-            f"mailing with mailing_id {mailing_id} has "
+            f"post_message with post_message_id {post_message_id} has "
             f"sent to {ind}/{len(all_custom_bot_users)} with user_id {user.user_id}"
         )
         # 20 messages per second (limit is 30)
         await asyncio.sleep(.05)
-        mailing.sent_mailing_amount += 1
-        await mailing_db.update_mailing(mailing)
+        post_message.sent_post_message_amount += 1
+        await post_message_db.update_post_message(post_message)
 
     await bot.send_message(
         chat_id,
-        f"Рассылка завершена\nСообщений отправлено - {mailing.sent_mailing_amount}/{len(all_custom_bot_users)}"
+        f"Рассылка завершена\nСообщений отправлено - "
+        f"{post_message.sent_post_message_amount}/{len(all_custom_bot_users)}"
     )
 
-    mailing.is_running = False
-    mailing.sent_mailing_amount = 0
+    post_message.is_running = False
+    post_message.sent_post_message_amount = 0
 
-    await mailing_db.delete_mailing(mailing.mailing_id)
+    await post_message_db.delete_post_message(post_message.post_message_id)
     # await asyncio.sleep(10) # For test only
 
 
@@ -85,15 +86,15 @@ async def mailing_menu_callback_handler(query: CallbackQuery, state: FSMContext)
     callback_data = InlinePostMessageMenuKeyboard.Callback.model_validate_json(query.data)
 
     user_id = query.from_user.id
-    mailing_id = callback_data.mailing_id
+    post_message_id = callback_data.post_message_id
     bot_id = callback_data.bot_id
 
     try:
-        mailing = await mailing_db.get_mailing(mailing_id)
-    except MailingNotFound:
+        post_message = await post_message_db.get_post_message(post_message_id)
+    except PostMessageNotFound:
         logger.info(
-            f"user_id={user_id}: tried to edit mailing_id={mailing_id} but it doesn't exist",
-            extra=extra_params(user_id=user_id, bot_id=bot_id, mailing_id=mailing_id)
+            f"user_id={user_id}: tried to edit post_message_id={post_message_id} but it doesn't exist",
+            extra=extra_params(user_id=user_id, bot_id=bot_id, post_message_id=post_message_id)
         )
         await query.answer("Рассылка уже завершена или удалена", show_alert=True)
         await query.message.delete()
@@ -106,7 +107,7 @@ async def mailing_menu_callback_handler(query: CallbackQuery, state: FSMContext)
             callback_data.ActionEnum.STATISTICS,
             callback_data.ActionEnum.CANCEL,
             callback_data.ActionEnum.BACK_TO_MAIN_MENU
-    ) and mailing.is_running:
+    ) and post_message.is_running:
         await query.answer("Рассылка уже запущена", show_alert=True)
         await query.message.edit_text(
             text=MessageTexts.BOT_MAILING_MENU_WHILE_RUNNING.value.format(custom_bot_username),
@@ -121,29 +122,30 @@ async def mailing_menu_callback_handler(query: CallbackQuery, state: FSMContext)
             custom_users_length = len(await custom_bot_user_db.get_custom_bot_users(bot_id=bot_id))
 
             await query.answer(
-                text=f"Отправлено {mailing.sent_mailing_amount}/{custom_users_length} сообщений",
+                text=f"Отправлено {post_message.sent_post_message_amount}/{custom_users_length} сообщений",
                 show_alert=True
             )
         case callback_data.ActionEnum.CANCEL:
             custom_users_length = len(await custom_bot_user_db.get_custom_bot_users(bot_id=bot_id))
 
-            mailing.is_running = False
+            post_message.is_running = False
 
             try:
-                await _scheduler.del_job_by_id(mailing.job_id)
+                await _scheduler.del_job_by_id(post_message.job_id)
             except Exception as e:
                 logger.warning(
-                    f"user_id={user_id}: Job ID {mailing.job_id} not found",
-                    extra=extra_params(user_id=user_id, bot_id=bot_id, mailing_id=mailing_id),
+                    f"user_id={user_id}: Job ID {post_message.job_id} not found",
+                    extra=extra_params(user_id=user_id, bot_id=bot_id, post_message_id=post_message_id),
                     exc_info=e
                 )
 
-            mailing.job_id = None
+            post_message.job_id = None
 
-            await mailing_db.delete_mailing(mailing.mailing_id)
+            await post_message_db.delete_post_message(post_message.post_message_id)
 
             await query.message.answer(
-                f"Рассылка остановлена\nСообщений разослано - {mailing.sent_mailing_amount}/{custom_users_length}",
+                f"Рассылка остановлена\nСообщений разослано - "
+                f"{post_message.sent_post_message_amount}/{custom_users_length}",
                 reply_markup=ReplyBotMenuKeyboard.get_keyboard(bot_id)
             )
             await query.message.edit_text(
@@ -154,9 +156,9 @@ async def mailing_menu_callback_handler(query: CallbackQuery, state: FSMContext)
 
         # NOT RUNNING ACTIONS
         case callback_data.ActionEnum.BUTTON_ADD:
-            media_files = await mailing_media_file_db.get_all_mailing_media_files(mailing_id)
+            media_files = await post_message_media_file_db.get_all_post_message_media_files(post_message_id)
 
-            if mailing.has_button:
+            if post_message.has_button:
                 await query.answer("В рассылочном сообщении кнопка уже есть", show_alert=True)
                 await query.message.edit_text(
                     text=MessageTexts.BOT_MAILINGS_MENU_MESSAGE.value.format(custom_bot_username),
@@ -169,16 +171,16 @@ async def mailing_menu_callback_handler(query: CallbackQuery, state: FSMContext)
                     show_alert=True
                 )
             else:
-                mailing.button_text = "Shop"
-                mailing.button_url = f"{WEB_APP_URL}:{WEB_APP_PORT}/products-page/?bot_id={bot_id}"
-                mailing.has_button = True
+                post_message.button_text = "Shop"
+                post_message.button_url = f"{WEB_APP_URL}:{WEB_APP_PORT}/products-page/?bot_id={bot_id}"
+                post_message.has_button = True
 
-                await mailing_db.update_mailing(mailing)
+                await post_message_db.update_post_message(post_message)
 
                 await query.message.delete()
                 await query.message.answer(
                     "Кнопка добавлена\n\n"
-                    f"Сейчас там стандартный текст '{mailing.button_text}' и ссылка на Ваш магазин.\n"
+                    f"Сейчас там стандартный текст '{post_message.button_text}' и ссылка на Ваш магазин.\n"
                     "Эти два параметры Вы можете изменить в настройках рассылки"
                 )
                 await query.message.answer(
@@ -186,7 +188,7 @@ async def mailing_menu_callback_handler(query: CallbackQuery, state: FSMContext)
                     reply_markup=await InlinePostMessageMenuKeyboard.get_keyboard(bot_id)
                 )
         case callback_data.ActionEnum.BUTTON_URL:
-            if not mailing.has_button:
+            if not post_message.has_button:
                 await _inline_no_button(query, bot_id, custom_bot_username)
             else:
                 await query.message.answer(
@@ -195,9 +197,9 @@ async def mailing_menu_callback_handler(query: CallbackQuery, state: FSMContext)
                 )
                 await query.answer()
                 await state.set_state(States.EDITING_MAILING_BUTTON_URL)
-                await state.set_data({"bot_id": bot_id, "mailing_id": mailing_id})
+                await state.set_data({"bot_id": bot_id, "post_message_id": post_message_id})
         case callback_data.ActionEnum.BUTTON_TEXT:
-            if not mailing.has_button:
+            if not post_message.has_button:
                 await _inline_no_button(query, bot_id, custom_bot_username)
             else:
                 await query.message.answer(
@@ -206,16 +208,16 @@ async def mailing_menu_callback_handler(query: CallbackQuery, state: FSMContext)
                 )
                 await query.answer()
                 await state.set_state(States.EDITING_MAILING_BUTTON_TEXT)
-                await state.set_data({"bot_id": bot_id, "mailing_id": mailing_id})
+                await state.set_data({"bot_id": bot_id, "post_message_id": post_message_id})
         case callback_data.ActionEnum.BUTTON_DELETE:
-            if not mailing.has_button:
+            if not post_message.has_button:
                 await _inline_no_button(query, bot_id, custom_bot_username)
             else:
-                mailing.button_text = None
-                mailing.button_url = None
-                mailing.has_button = False
+                post_message.button_text = None
+                post_message.button_url = None
+                post_message.has_button = False
 
-                await mailing_db.update_mailing(mailing)
+                await post_message_db.update_post_message(post_message)
 
                 await query.message.delete()
                 await query.message.answer("Кнопка удалена")
@@ -230,7 +232,7 @@ async def mailing_menu_callback_handler(query: CallbackQuery, state: FSMContext)
             )
             await query.answer()
             await state.set_state(States.EDITING_MAILING_MESSAGE)
-            await state.set_data({"bot_id": bot_id, "mailing_id": mailing_id})
+            await state.set_data({"bot_id": bot_id, "post_message_id": post_message_id})
         case callback_data.ActionEnum.POST_MESSAGE_MEDIA:
             await query.message.answer(
                 "Отправьте одним сообщение медиафайлы для рассылочного сообщения\n\n"
@@ -241,25 +243,25 @@ async def mailing_menu_callback_handler(query: CallbackQuery, state: FSMContext)
             )
             await query.answer()
             await state.set_state(States.EDITING_MAILING_MEDIA_FILES)
-            await state.set_data({"bot_id": bot_id, "mailing_id": mailing_id})
+            await state.set_data({"bot_id": bot_id, "post_message_id": post_message_id})
         case callback_data.ActionEnum.START:
-            media_files = await mailing_media_file_db.get_all_mailing_media_files(mailing_id)
+            media_files = await post_message_media_file_db.get_all_post_message_media_files(post_message_id)
 
-            if await _is_post_message_valid(query, mailing, media_files):
+            if await _is_post_message_valid(query, post_message, media_files):
                 await query.message.edit_text(
                     text=MessageTexts.BOT_MAILINGS_MENU_ACCEPT_START.value.format(custom_bot_username),
-                    reply_markup=InlinePostMessageStartConfirmKeyboard.get_keyboard(bot_id, mailing_id)
+                    reply_markup=InlinePostMessageStartConfirmKeyboard.get_keyboard(bot_id, post_message_id)
                 )
         case callback_data.ActionEnum.DEMO:
-            media_files = await mailing_media_file_db.get_all_mailing_media_files(mailing_id)
+            media_files = await post_message_media_file_db.get_all_post_message_media_files(post_message_id)
 
-            if await _is_post_message_valid(query, mailing, media_files):
-                await send_mailing_message(
+            if await _is_post_message_valid(query, post_message, media_files):
+                await send_post_message(
                     bot,
                     query.from_user.id,
-                    mailing,
+                    post_message,
                     media_files,
-                    MailingMessageType.DEMO,
+                    PostActionType.DEMO,
                     query.message
                 )
                 await query.message.answer(
@@ -269,7 +271,7 @@ async def mailing_menu_callback_handler(query: CallbackQuery, state: FSMContext)
         case callback_data.ActionEnum.DELETE_POST_MESSAGE:
             await query.message.edit_text(
                 text=MessageTexts.BOT_MAILINGS_MENU_ACCEPT_DELETING_MESSAGE.value.format(custom_bot_username),
-                reply_markup=await InlinePostMessageAcceptDeletingKeyboard.get_keyboard(bot_id, mailing_id)
+                reply_markup=await InlinePostMessageAcceptDeletingKeyboard.get_keyboard(bot_id, post_message_id)
             )
         case callback_data.ActionEnum.EXTRA_SETTINGS:
             await query.message.edit_text(
@@ -279,9 +281,9 @@ async def mailing_menu_callback_handler(query: CallbackQuery, state: FSMContext)
                                                "xqFwoTCJj5puKbx4YDFQAAAAAdAAAAABAE\">предпросмотр ссылок</a>",
                 reply_markup=InlinePostMessageExtraSettingsKeyboard.get_keyboard(
                     bot_id,
-                    mailing_id,
-                    mailing.enable_notification_sound,
-                    mailing.enable_link_preview
+                    post_message_id,
+                    post_message.enable_notification_sound,
+                    post_message.enable_link_preview
                 ),
                 parse_mode=ParseMode.HTML,
             )
@@ -292,13 +294,13 @@ async def mailing_menu_callback_handler(query: CallbackQuery, state: FSMContext)
             )
             await query.answer()
             await state.set_state(States.EDITING_DELAY_DATE)
-            await state.set_data({"bot_id": bot_id, "mailing_id": mailing_id})
+            await state.set_data({"bot_id": bot_id, "post_message_id": post_message_id})
 
         case callback_data.ActionEnum.REMOVE_DELAY:
-            mailing.is_delayed = False
-            mailing.send_date = None
+            post_message.is_delayed = False
+            post_message.send_date = None
 
-            await mailing_db.update_mailing(mailing)
+            await post_message_db.update_post_message(post_message)
 
             await query.message.edit_reply_markup(
                 reply_markup=await InlinePostMessageMenuKeyboard.get_keyboard(bot_id)
@@ -318,15 +320,15 @@ async def mailing_accept_deleting_callback_handler(query: CallbackQuery):
     callback_data = InlinePostMessageAcceptDeletingKeyboard.Callback.model_validate_json(query.data)
 
     user_id = query.from_user.id
-    mailing_id = callback_data.mailing_id
+    post_message_id = callback_data.post_message_id
     bot_id = callback_data.bot_id
 
     try:
-        mailing = await mailing_db.get_mailing(mailing_id)
-    except MailingNotFound:
+        post_message = await post_message_db.get_post_message(post_message_id)
+    except PostMessageNotFound:
         logger.info(
-            f"user_id={user_id}: tried to edit mailing_id={mailing_id} but it doesn't exist",
-            extra=extra_params(user_id=user_id, bot_id=bot_id, mailing_id=mailing_id)
+            f"user_id={user_id}: tried to edit post_message_id={post_message_id} but it doesn't exist",
+            extra=extra_params(user_id=user_id, bot_id=bot_id, post_message_id=post_message_id)
         )
         await query.answer("Рассылка уже завершена или удалена", show_alert=True)
         await query.message.delete()
@@ -335,7 +337,7 @@ async def mailing_accept_deleting_callback_handler(query: CallbackQuery):
     custom_bot = await bot_db.get_bot(bot_id)
     custom_bot_username = (await Bot(custom_bot.token).get_me()).username
 
-    if callback_data.a != callback_data.ActionEnum.BACK_TO_POST_MESSAGE_MENU and mailing.is_running:
+    if callback_data.a != callback_data.ActionEnum.BACK_TO_POST_MESSAGE_MENU and post_message.is_running:
         await query.answer("Рассылка уже запущена", show_alert=True)
         await query.message.edit_text(
             text=MessageTexts.BOT_MAILING_MENU_WHILE_RUNNING.value.format(custom_bot_username),
@@ -346,7 +348,7 @@ async def mailing_accept_deleting_callback_handler(query: CallbackQuery):
 
     match callback_data.a:
         case callback_data.ActionEnum.ACCEPT_DELETE:
-            await mailing_db.delete_mailing(mailing_id)
+            await post_message_db.delete_post_message(post_message_id)
 
             keyboard = await InlineBotMenuKeyboard.get_keyboard(bot_id)
             await query.message.edit_text(
@@ -374,15 +376,15 @@ async def mailing_extra_settings_callback_handler(query: CallbackQuery):
     callback_data = InlinePostMessageExtraSettingsKeyboard.Callback.model_validate_json(query.data)
 
     user_id = query.from_user.id
-    mailing_id = callback_data.mailing_id
+    post_message_id = callback_data.post_message_id
     bot_id = callback_data.bot_id
 
     try:
-        mailing = await mailing_db.get_mailing(mailing_id)
-    except MailingNotFound:
+        post_message = await post_message_db.get_post_message(post_message_id)
+    except PostMessageNotFound:
         logger.info(
-            f"user_id={user_id}: tried to edit mailing_id={mailing_id} but it doesn't exist",
-            extra=extra_params(user_id=user_id, bot_id=bot_id, mailing_id=mailing_id)
+            f"user_id={user_id}: tried to edit post_message_id={post_message_id} but it doesn't exist",
+            extra=extra_params(user_id=user_id, bot_id=bot_id, post_message_id=post_message_id)
         )
         await query.answer("Рассылка уже завершена или удалена", show_alert=True)
         await query.message.delete()
@@ -391,7 +393,7 @@ async def mailing_extra_settings_callback_handler(query: CallbackQuery):
     custom_bot = await bot_db.get_bot(bot_id)
     custom_bot_username = (await Bot(custom_bot.token).get_me()).username
 
-    if callback_data.a != callback_data.ActionEnum.BACK_TO_POST_MESSAGE_MENU and mailing.is_running:
+    if callback_data.a != callback_data.ActionEnum.BACK_TO_POST_MESSAGE_MENU and post_message.is_running:
         await query.answer("Рассылка уже запущена", show_alert=True)
         await query.message.edit_text(
             text=MessageTexts.BOT_MAILING_MENU_WHILE_RUNNING.value.format(custom_bot_username),
@@ -402,27 +404,27 @@ async def mailing_extra_settings_callback_handler(query: CallbackQuery):
 
     match callback_data.a:
         case callback_data.ActionEnum.LINK_PREVIEW:
-            mailing.enable_link_preview = not mailing.enable_link_preview
-            await mailing_db.update_mailing(mailing)
+            post_message.enable_link_preview = not post_message.enable_link_preview
+            await post_message_db.update_post_message(post_message)
 
             await query.message.edit_reply_markup(
                 reply_markup=InlinePostMessageExtraSettingsKeyboard.get_keyboard(
                     bot_id,
-                    mailing_id,
-                    mailing.enable_notification_sound,
-                    mailing.enable_link_preview
+                    post_message_id,
+                    post_message.enable_notification_sound,
+                    post_message.enable_link_preview
                 )
             )
         case callback_data.ActionEnum.NOTIFICATION_SOUND:
-            mailing.enable_notification_sound = not mailing.enable_notification_sound
-            await mailing_db.update_mailing(mailing)
+            post_message.enable_notification_sound = not post_message.enable_notification_sound
+            await post_message_db.update_post_message(post_message)
 
             await query.message.edit_reply_markup(
                 reply_markup=InlinePostMessageExtraSettingsKeyboard.get_keyboard(
                     bot_id,
-                    mailing_id,
-                    mailing.enable_notification_sound,
-                    mailing.enable_link_preview
+                    post_message_id,
+                    post_message.enable_notification_sound,
+                    post_message.enable_link_preview
                 )
             )
         case callback_data.ActionEnum.BACK_TO_POST_MESSAGE_MENU:
@@ -436,15 +438,15 @@ async def mailing_confirm_start_callback_handler(query: CallbackQuery):
     callback_data = InlinePostMessageStartConfirmKeyboard.Callback.model_validate_json(query.data)
 
     user_id = query.from_user.id
-    mailing_id = callback_data.mailing_id
+    post_message_id = callback_data.post_message_id
     bot_id = callback_data.bot_id
 
     try:
-        mailing = await mailing_db.get_mailing(mailing_id)
-    except MailingNotFound:
+        post_message = await post_message_db.get_post_message(post_message_id)
+    except PostMessageNotFound:
         logger.info(
-            f"user_id={user_id}: tried to edit mailing_id={mailing_id} but it doesn't exist",
-            extra=extra_params(user_id=user_id, bot_id=bot_id, mailing_id=mailing_id)
+            f"user_id={user_id}: tried to edit post_message_id={post_message_id} but it doesn't exist",
+            extra=extra_params(user_id=user_id, bot_id=bot_id, post_message_id=post_message_id)
         )
         await query.answer("Рассылка уже завершена или удалена", show_alert=True)
         await query.message.delete()
@@ -453,7 +455,7 @@ async def mailing_confirm_start_callback_handler(query: CallbackQuery):
     custom_bot = await bot_db.get_bot(bot_id)
     custom_bot_username = (await Bot(custom_bot.token).get_me()).username
 
-    if callback_data.a != callback_data.ActionEnum.BACK_TO_POST_MESSAGE_MENU and mailing.is_running:
+    if callback_data.a != callback_data.ActionEnum.BACK_TO_POST_MESSAGE_MENU and post_message.is_running:
         await query.answer("Рассылка уже запущена", show_alert=True)
         await query.message.edit_text(
             text=MessageTexts.BOT_MAILING_MENU_WHILE_RUNNING.value.format(custom_bot_username),
@@ -464,37 +466,37 @@ async def mailing_confirm_start_callback_handler(query: CallbackQuery):
 
     match callback_data.a:
         case callback_data.ActionEnum.START_CONFIRM:
-            media_files = await mailing_media_file_db.get_all_mailing_media_files(mailing_id)
+            media_files = await post_message_media_file_db.get_all_post_message_media_files(post_message_id)
 
-            if await _is_post_message_valid(query, mailing, media_files):
-                if mailing.is_delayed:
+            if await _is_post_message_valid(query, post_message, media_files):
+                if post_message.is_delayed:
                     # Небольшой запас по времени
-                    if datetime.now() > (mailing.send_date + timedelta(minutes=1)):
+                    if datetime.now() > (post_message.send_date + timedelta(minutes=1)):
                         await query.answer(
                             text="Указанное время отправки уже прошло",
                             show_alert=True
                         )
                         return
 
-                mailing.is_running = True
+                post_message.is_running = True
 
-                if not mailing.is_delayed:
-                    await mailing_db.update_mailing(mailing)
-                    await send_mailing_messages(
+                if not post_message.is_delayed:
+                    await post_message_db.update_post_message(post_message)
+                    await send_post_messages(
                         custom_bot,
-                        mailing,
+                        post_message,
                         media_files,
                         query.from_user.id
                     )
                 else:
                     job_id = await _scheduler.add_scheduled_job(
-                        func=send_mailing_messages, run_date=mailing.send_date,
-                        args=[custom_bot, mailing, media_files, query.from_user.id])
-                    mailing.job_id = job_id
-                    await mailing_db.update_mailing(mailing)
+                        func=send_post_messages, run_date=post_message.send_date,
+                        args=[custom_bot, post_message, media_files, query.from_user.id])
+                    post_message.job_id = job_id
+                    await post_message_db.update_post_message(post_message)
 
                 await query.message.answer(
-                    f"Рассылка начнется в {mailing.send_date}" if mailing.is_delayed else "Рассылка началась"
+                    f"Рассылка начнется в {post_message.send_date}" if post_message.is_delayed else "Рассылка началась"
                 )
                 await query.message.edit_text(
                     text=MessageTexts.BOT_MAILING_MENU_WHILE_RUNNING.value.format(custom_bot_username),
@@ -512,12 +514,12 @@ async def editing_mailing_delay_date_handler(message: Message, state: FSMContext
     state_data = await state.get_data()
 
     bot_id = state_data["bot_id"]
-    mailing_id = state_data["mailing_id"]
+    post_message_id = state_data["post_message_id"]
 
     custom_bot_tg = Bot((await bot_db.get_bot(bot_id)).token)
     custom_bot_username = (await custom_bot_tg.get_me()).username
 
-    mailing = await mailing_db.get_mailing(mailing_id)
+    post_message = await post_message_db.get_post_message(post_message_id)
 
     if message_text:
         if message_text == ReplyBackPostMessageMenuKeyboard.Callback.ActionEnum.BACK_TO_POST_MESSAGE_MENU.value:
@@ -530,10 +532,10 @@ async def editing_mailing_delay_date_handler(message: Message, state: FSMContext
                 if datetime.now() > datetime_obj:
                     return await message.reply("Введенное время уже прошло. Введите, пожалуйста, <b>будущее</b> время")
 
-                mailing.is_delayed = True
-                mailing.send_date = datetime_obj
+                post_message.is_delayed = True
+                post_message.send_date = datetime_obj
 
-                await mailing_db.update_mailing(mailing)
+                await post_message_db.update_post_message(post_message)
 
                 await message.reply(
                     f"Запланировано на: <b>{datetime_obj.strftime('%Y-%m-%d %H:%M')}</b>\n\n"
@@ -560,9 +562,9 @@ async def editing_mailing_message_handler(message: Message, state: FSMContext):
     state_data = await state.get_data()
 
     bot_id = state_data["bot_id"]
-    mailing_id = state_data["mailing_id"]
+    post_message_id = state_data["post_message_id"]
 
-    mailing = await mailing_db.get_mailing(mailing_id)
+    post_message = await post_message_db.get_post_message(post_message_id)
     custom_bot_tg = Bot((await bot_db.get_bot(bot_id)).token)
     custom_bot_username = (await custom_bot_tg.get_me()).username
 
@@ -570,21 +572,21 @@ async def editing_mailing_message_handler(message: Message, state: FSMContext):
         if message_text == ReplyBackPostMessageMenuKeyboard.Callback.ActionEnum.BACK_TO_POST_MESSAGE_MENU.value:
             await _back_to_post_message_menu(message, bot_id, custom_bot_username)
         else:
-            mailing.description = message.html_text
-            media_files = await mailing_media_file_db.get_all_mailing_media_files(mailing_id)
+            post_message.description = message.html_text
+            media_files = await post_message_media_file_db.get_all_post_message_media_files(post_message_id)
 
-            await mailing_db.update_mailing(mailing)
+            await post_message_db.update_post_message(post_message)
 
             await message.answer(
                 "Предпросмотр конкурса 👇",
                 reply_markup=ReplyBotMenuKeyboard.get_keyboard(bot_id)
             )
-            await send_mailing_message(
+            await send_post_message_message(
                 bot,
                 message.from_user.id,
-                mailing,
+                post_message,
                 media_files,
-                MailingMessageType.AFTER_REDACTING,
+                PostActionType.AFTER_REDACTING,
                 message,
             )
             await message.answer(
@@ -608,33 +610,33 @@ async def editing_mailing_button_text_handler(message: Message, state: FSMContex
     state_data = await state.get_data()
 
     bot_id = state_data["bot_id"]
-    mailing_id = state_data["mailing_id"]
+    post_message_id = state_data["post_message_id"]
 
     custom_bot_tg = Bot((await bot_db.get_bot(bot_id)).token)
     custom_bot_username = (await custom_bot_tg.get_me()).username
 
-    mailing = await mailing_db.get_mailing(mailing_id)
-    if not mailing.has_button:
+    post_message = await post_message_db.get_post_message(post_message_id)
+    if not post_message.has_button:
         return await _reply_no_button(message, bot_id, custom_bot_username, state)
 
     if message_text:
         if message_text == ReplyBackPostMessageMenuKeyboard.Callback.ActionEnum.BACK_TO_POST_MESSAGE_MENU.value:
             await _back_to_post_message_menu(message, bot_id, custom_bot_username)
         else:
-            mailing.button_text = message.text
-            media_files = await mailing_media_file_db.get_all_mailing_media_files(mailing_id)
-            await mailing_db.update_mailing(mailing)
+            post_message.button_text = message.text
+            media_files = await post_message_media_file_db.get_all_post_message_media_files(post_message_id)
+            await post_message_db.update_post_message(post_message)
 
             await message.answer(
                 "Предпросмотр конкурса 👇",
                 reply_markup=ReplyBotMenuKeyboard.get_keyboard(bot_id)
             )
-            await send_mailing_message(
+            await send_post_message(
                 bot,
                 message.from_user.id,
-                mailing,
+                post_message,
                 media_files,
-                MailingMessageType.AFTER_REDACTING,
+                PostActionType.AFTER_REDACTING,
                 message
             )
             await message.answer(
@@ -650,57 +652,7 @@ async def editing_mailing_button_text_handler(message: Message, state: FSMContex
 
 @admin_bot_menu_router.message(States.EDITING_MAILING_BUTTON_URL)
 async def editing_mailing_button_url_handler(message: Message, state: FSMContext):
-    message_text = message.html_text
-
-    state_data = await state.get_data()
-
-    bot_id = state_data["bot_id"]
-    mailing_id = state_data["mailing_id"]
-
-    custom_bot_tg = Bot((await bot_db.get_bot(bot_id)).token)
-    custom_bot_username = (await custom_bot_tg.get_me()).username
-
-    mailing = await mailing_db.get_mailing(mailing_id)
-    if not mailing.has_button:
-        return await _reply_no_button(message, bot_id, custom_bot_username, state)
-
-    if message_text:
-        if message_text == ReplyBackPostMessageMenuKeyboard.Callback.ActionEnum.BACK_TO_POST_MESSAGE_MENU.value:
-            await _back_to_post_message_menu(message, bot_id, custom_bot_username)
-        else:
-            pattern = r"(?i)\b((?:https?://|www\d{0,3}[.]|[a-z0-9.\-]+[.][a-z]{2,4}/)(?:[^\s()<>]+|\(([^\s()<>]+" \
-                      r"|(\([^\s()<>]+\)))*\))+(?:\(([^\s()<>]+|(\([^\s()<>]+\)))*\)|[^\s`!()\[\]{};:'\".,<>?«»“”‘’]))"
-            if not re.fullmatch(pattern, message.text):
-                return await message.answer(
-                    "Невалидная ссылка. Введите, пожалуйста, ссылку в стандартном формате, "
-                    "начинающемся с <b>http</b> или <b>https</b>"
-                )
-
-            mailing.button_url = message.text
-            media_files = await mailing_media_file_db.get_all_mailing_media_files(mailing_id)
-            await mailing_db.update_mailing(mailing)
-
-            await message.answer(
-                "Предпросмотр конкурса 👇",
-                reply_markup=ReplyBotMenuKeyboard.get_keyboard(bot_id)
-            )
-            await send_mailing_message(
-                bot,
-                message.from_user.id,
-                mailing,
-                media_files,
-                MailingMessageType.AFTER_REDACTING,
-                message
-            )
-            await message.answer(
-                MessageTexts.BOT_MAILINGS_MENU_MESSAGE.value.format(custom_bot_username),
-                reply_markup=await InlinePostMessageMenuKeyboard.get_keyboard(bot_id)
-            )
-
-        await state.set_state(States.BOT_MENU)
-        await state.set_data({"bot_id": bot_id})
-    else:
-        await message.answer("Ссылка должна содержать только текст")
+    await edit_button_url(message, state, PostMessageType.post_message)
 
 
 @admin_bot_menu_router.message(States.EDITING_MAILING_MEDIA_FILES)
@@ -708,10 +660,10 @@ async def editing_mailing_media_files_handler(message: Message, state: FSMContex
     state_data = await state.get_data()
 
     bot_id = state_data["bot_id"]
-    mailing_id = state_data["mailing_id"]
+    post_message_id = state_data["post_message_id"]
 
     if (message.photo or message.video or message.audio or message.document) and "first" not in state_data:
-        await mailing_media_file_db.delete_mailing_media_files(mailing_id)
+        await post_message_media_file_db.delete_post_message_media_files(post_message_id)
         state_data["first"] = True
 
     custom_bot_tg = Bot((await bot_db.get_bot(bot_id)).token)
@@ -722,7 +674,7 @@ async def editing_mailing_media_files_handler(message: Message, state: FSMContex
             return await _back_to_post_message_menu(message, bot_id, custom_bot_username)
         case ReplyConfirmMediaFilesKeyboard.Callback.ActionEnum.CLEAR.value:
             await message.answer("Очищаем все файлы...")
-            await mailing_media_file_db.delete_mailing_media_files(mailing_id=mailing_id)
+            await post_message_media_file_db.delete_post_message_media_files(post_message_id=post_message_id)
             return await message.answer(
                 "Отправьте одним сообщение медиафайлы для рассылочного сообщения\n\n"
                 "❗ Старые медиафайлы к этому рассылочному сообщению <b>перезапишутся</b>\n\n"
@@ -762,32 +714,33 @@ async def editing_mailing_media_files_handler(message: Message, state: FSMContex
                     reply_markup=ReplyConfirmMediaFilesKeyboard.get_keyboard()
                 )
 
-    await mailing_media_file_db.add_mailing_media_file(MailingMediaFileSchema.model_validate(
-        {"mailing_id": mailing_id, "file_id_main_bot": file_id,
+    await post_message_media_file_db.add_post_message_media_file(PostMessageMediaFile.model_validate(
+        {"post_message_id": post_message_id, "file_id_main_bot": file_id,
          "file_path": file_path, "media_type": media_type}
     ))
 
     await message.answer(answer_text)
 
 
-async def send_mailing_message(  # TODO that's not funny
+async def send_post_message(  # TODO that's not funny
         bot_from_send: Bot,
         to_user_id: int,
-        mailing_schema: MailingSchema,
-        media_files: list[MailingMediaFileSchema],
-        mailing_message_type: MailingMessageType,
+        post_message_schema: PostMessageSchema,
+        media_files: list[PostMessageMediaFileSchema],
+        post_action_type: PostActionType,
         message: Message = None,
 ) -> None:
-    if mailing_schema.has_button:
-        if mailing_schema.button_url == f"{WEB_APP_URL}:{WEB_APP_PORT}/products-page/?bot_id={mailing_schema.bot_id}":
+    if post_message_schema.has_button:
+        if post_message_schema.button_url == f"{WEB_APP_URL}:{WEB_APP_PORT}" \
+                                             f"/products-page/?bot_id={post_message_schema.bot_id}":
             button = InlineKeyboardButton(
-                text=mailing_schema.button_text,
-                web_app=make_webapp_info(bot_id=mailing_schema.bot_id)
+                text=post_message_schema.button_text,
+                web_app=make_webapp_info(bot_id=post_message_schema.bot_id)
             )
         else:
             button = InlineKeyboardButton(
-                text=mailing_schema.button_text,
-                url=mailing_schema.button_url
+                text=post_message_schema.button_text,
+                url=post_message_schema.button_url
             )
         keyboard = InlineKeyboardMarkup(
             inline_keyboard=[
@@ -801,7 +754,7 @@ async def send_mailing_message(  # TODO that's not funny
         is_first_message = False
         media_group = []
         for media_file in media_files:
-            if mailing_message_type == MailingMessageType.RELEASE:
+            if post_action_type == PostActionType.RELEASE:
                 # мда, ну короче на серверах фотки хранятся только у главного бота, т.к через него админ создавал
                 # рассылки. В кастомных ботах нет того file_id, который есть в главном боте, поэтому, если у нас
                 # file_id_custom_bot == None, значит это первое сообщение из всей рассылки. Поэтому мы скачиваем файл
@@ -837,13 +790,13 @@ async def send_mailing_message(  # TODO that's not funny
 
         uploaded_media_files = []
         if len(media_files) > 1:
-            if mailing_schema.description:
-                media_group[0].caption = mailing_schema.description
+            if post_message_schema.description:
+                media_group[0].caption = post_message_schema.description
 
             uploaded_media_files.extend(await bot_from_send.send_media_group(
                 chat_id=to_user_id,
                 media=media_group,
-                disable_notification=not mailing_schema.enable_link_preview,
+                disable_notification=not post_message_schema.enable_link_preview,
             ))
             if message:
                 await message.delete()
@@ -864,10 +817,10 @@ async def send_mailing_message(  # TODO that's not funny
             uploaded_media_files.append(await method(
                 to_user_id,
                 media_group[0],
-                caption=mailing_schema.description,
+                caption=post_message_schema.description,
                 reply_markup=keyboard,
                 disable_notification=not (
-                    mailing_schema.enable_notification_sound),
+                    post_message_schema.enable_notification_sound),
             ))
 
             if message:
@@ -889,36 +842,36 @@ async def send_mailing_message(  # TODO that's not funny
                     raise Exception("unsupported type")
 
                 old_message.file_id_custom_bot = file_id
-                await mailing_media_file_db.update_media_file(old_message)
+                await post_message_media_file_db.update_media_file(old_message)
     else:
-        if mailing_schema.description is None:
+        if post_message_schema.description is None:
             return
-        if mailing_message_type == MailingMessageType.DEMO:  # только при демо с главного бота срабатывает
+        if post_action_type == PostActionType.DEMO:  # только при демо с главного бота срабатывает
             await message.edit_text(
-                text=mailing_schema.description,
+                text=post_message_schema.description,
                 link_preview_options=LinkPreviewOptions(is_disabled=not (
-                    mailing_schema.enable_link_preview)),
+                    post_message_schema.enable_link_preview)),
                 reply_markup=keyboard,
             )
-        elif mailing_message_type == MailingMessageType.AFTER_REDACTING:
+        elif post_action_type == PostActionType.AFTER_REDACTING:
             await bot_from_send.send_message(
                 chat_id=to_user_id,
-                text=mailing_schema.description,
+                text=post_message_schema.description,
                 reply_markup=keyboard,
                 disable_notification=not (
-                    mailing_schema.enable_notification_sound),
+                    post_message_schema.enable_notification_sound),
                 link_preview_options=LinkPreviewOptions(is_disabled=not (
-                    mailing_schema.enable_link_preview))
+                    post_message_schema.enable_link_preview))
             )
         else:
             await bot_from_send.send_message(
                 chat_id=to_user_id,
-                text=mailing_schema.description,
+                text=post_message_schema.description,
                 reply_markup=keyboard,
                 disable_notification=not (
-                    mailing_schema.enable_notification_sound),
+                    post_message_schema.enable_notification_sound),
                 link_preview_options=LinkPreviewOptions(is_disabled=not (
-                    mailing_schema.enable_link_preview))
+                    post_message_schema.enable_link_preview))
             )
 
 
@@ -933,20 +886,6 @@ async def _inline_no_button(query: CallbackQuery, bot_id: int, custom_bot_userna
     )
 
 
-async def _reply_no_button(message: Message, bot_id: int, custom_bot_username: str, state: FSMContext) -> None:
-    await message.answer(
-        "В рассылочном сообщении кнопки уже нет",
-        reply_markup=ReplyBotMenuKeyboard.get_keyboard(bot_id)
-    )
-    await message.answer(
-        MessageTexts.BOT_MAILINGS_MENU_MESSAGE.value.format(custom_bot_username),
-        reply_markup=await InlinePostMessageMenuKeyboard.get_keyboard(bot_id)
-    )
-
-    await state.set_state(States.BOT_MENU)
-    await state.set_data({"bot_id": bot_id})
-
-
 async def _inline_back_to_post_message_menu(query: CallbackQuery, bot_id: int, custom_bot_username: str) -> None:
     await query.message.edit_text(
         text=MessageTexts.BOT_MAILINGS_MENU_MESSAGE.value.format(custom_bot_username),
@@ -955,31 +894,18 @@ async def _inline_back_to_post_message_menu(query: CallbackQuery, bot_id: int, c
     )
 
 
-async def _back_to_post_message_menu(message: Message, bot_id: int, custom_bot_username: str) -> None:
-    await message.answer(
-        "Возвращаемся в меню...",
-        reply_markup=ReplyBotMenuKeyboard.get_keyboard(bot_id)
-    )
-    await message.answer(
-        text=MessageTexts.BOT_MAILINGS_MENU_MESSAGE.value.format(
-            custom_bot_username
-        ),
-        reply_markup=await InlinePostMessageMenuKeyboard.get_keyboard(bot_id)
-    )
-
-
 async def _is_post_message_valid(
         query: CallbackQuery,
-        mailing: MailingSchema,
-        media_files: list[MailingMediaFileSchema]
+        post_message: PostMessageSchema,
+        media_files: list[PostMessageMediaFileSchema]
 ) -> bool:
-    if len(media_files) > 1 and mailing.has_button:
+    if len(media_files) > 1 and post_message.has_button:
         await query.answer(
             "Telegram не позволяет прикрепить кнопку, если в сообщении минимум 2 медиафайла",
             show_alert=True
         )
         return False
-    elif not media_files and not mailing.description:
+    elif not media_files and not post_message.description:
         await query.answer(
             text="В Вашем рассылочном сообщении нет ни текста, ни медиафайлов",
             show_alert=True
