@@ -31,7 +31,7 @@ class MailingSchemaWithoutId(BaseModel):
 
     bot_id: int = Field(frozen=True)
 
-    post_message_id = Field(frozen=True)
+    post_message_id: int = Field(frozen=True)
 
 
 class MailingSchema(MailingSchemaWithoutId):
@@ -63,9 +63,9 @@ class MailingDao(Dao):  # TODO write tests
         return res
 
     @validate_call(validate_return=True)
-    async def get_mailing_by_mailing_id(self, mailing_id: int) -> MailingSchema:
+    async def get_mailing_by_post_message_id(self, post_message_id: int) -> MailingSchema:
         async with self.engine.begin() as conn:
-            raw_res = await conn.execute(select(Mailing).where(Mailing.mailing_id == mailing_id))
+            raw_res = await conn.execute(select(Mailing).where(Mailing.post_message_id == post_message_id))
         await self.engine.dispose()
 
         raw_res = raw_res.fetchone()
@@ -75,8 +75,27 @@ class MailingDao(Dao):  # TODO write tests
         res = MailingSchema.model_validate(raw_res)
 
         self.logger.debug(
-            f"bot_id={res.bot_id}: mailing {mailing_id} is found",
-            extra=extra_params(bot_id=res.bot_id, mailing_id=mailing_id)
+            f"bot_id={res.bot_id}: mailing is found: {res}",
+            extra=extra_params(bot_id=res.bot_id, mailing_id=res.mailing_id)
+        )
+
+        return res
+
+    @validate_call(validate_return=True)
+    async def get_mailing_by_bot_id(self, bot_id: int) -> MailingSchema:
+        async with self.engine.begin() as conn:
+            raw_res = await conn.execute(select(Mailing).where(Mailing.bot_id == bot_id))
+        await self.engine.dispose()
+
+        raw_res = raw_res.fetchone()
+        if not raw_res:
+            raise MailingNotFound
+
+        res = MailingSchema.model_validate(raw_res)
+
+        self.logger.debug(
+            f"bot_id={res.bot_id}: mailing is found: {res}",
+            extra=extra_params(bot_id=res.bot_id, mailing_id=res.mailing_id)
         )
 
         return res
@@ -89,7 +108,7 @@ class MailingDao(Dao):  # TODO write tests
 
         async with self.engine.begin() as conn:
             mailing_id = (
-                await conn.execute(insert(MailingSchemaWithoutId).values(new_mailing.model_dump()))
+                await conn.execute(insert(Mailing).values(new_mailing.model_dump()))
             ).inserted_primary_key[0]
 
         self.logger.debug(

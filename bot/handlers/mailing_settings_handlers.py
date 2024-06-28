@@ -8,7 +8,8 @@ from aiogram.types import Message, CallbackQuery
 from aiogram.client.bot import DefaultBotProperties, Bot
 from aiogram.fsm.context import FSMContext
 
-from bot.main import bot, custom_bot_user_db, post_message_media_file_db, _scheduler, post_message_db, bot_db
+from bot.main import bot, custom_bot_user_db, post_message_media_file_db, _scheduler, post_message_db, bot_db, \
+    mailing_db
 from bot.utils import MessageTexts
 from bot.config import WEB_APP_URL, WEB_APP_PORT
 from bot.states.states import States

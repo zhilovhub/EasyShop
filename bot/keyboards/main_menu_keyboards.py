@@ -4,7 +4,7 @@ from aiogram.types import ReplyKeyboardMarkup, KeyboardButton, InlineKeyboardBut
 from pydantic import BaseModel, ConfigDict, Field, ValidationError
 
 from bot.utils.keyboard_utils import make_webapp_info, get_bot_status, get_bot_post_message, get_bot_channels, \
-    get_bot_username
+    get_bot_username, get_bot_mailing
 from bot.keyboards.keyboard_utils import callback_json_validator
 
 
@@ -127,7 +127,7 @@ class InlineBotMenuKeyboard:
             callback_data=InlineBotMenuKeyboard.callback_json(
                 actions.MAILING_ADD, bot_id
             ),
-        ) if not await get_bot_post_message(bot_id=bot_id) else \
+        ) if not await get_bot_mailing(bot_id=bot_id) else \
             InlineKeyboardButton(
                 text="💌 Рассылка в ЛС",
                 callback_data=InlineBotMenuKeyboard.callback_json(
