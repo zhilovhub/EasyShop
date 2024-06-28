@@ -1,26 +1,28 @@
 from datetime import datetime, timedelta
 
+from aiogram import Bot
 from aiogram.enums import ParseMode
 from aiogram.types import Message, CallbackQuery
 from aiogram.filters import StateFilter
 from aiogram.fsm.context import FSMContext
 
-from bot.main import _scheduler, custom_bot_user_db, post_message_media_file_db, channel_user_db
+from bot.main import _scheduler, custom_bot_user_db, post_message_media_file_db, channel_user_db, bot_db, \
+    post_message_db, channel_db
 from bot.utils import MessageTexts
-from bot.keyboards import *
 from bot.states.states import States
 from bot.handlers.routers import channel_menu_router
-from bot.post_message.post_message_editors import edit_button_url, PostMessageType, edit_delay_date, edit_message, \
+from bot.enums.post_message_type import PostMessageType
+from bot.keyboards.channel_keyboards import InlineChannelsListKeyboard, InlineChannelMenuKeyboard
+from bot.keyboards.main_menu_keyboards import InlineBotMenuKeyboard
+from bot.keyboards.post_message_keyboards import InlinePostMessageMenuKeyboard
+from bot.post_message.post_message_editors import edit_button_url, edit_delay_date, edit_message, \
     edit_button_text, edit_media_files, send_post_message
 from bot.post_message.post_message_handler import post_message_handler
-from bot.keyboards.channel_keyboards import ReplyBackChannelMenuKeyboard, InlineChannelsListKeyboard, \
-    InlineChannelMenuKeyboard
-from bot.keyboards.main_menu_keyboards import InlineBotMenuKeyboard, ReplyBotMenuKeyboard
-from bot.keyboards.post_message_keyboards import InlinePostMessageMenuKeyboard
 
 from database.models.channel_model import ChannelNotFound
 from database.models.channel_post_model import ChannelPostSchemaWithoutId
 from database.models.post_message_model import PostMessageSchemaWithoutId
+from logs.config import logger
 
 
 @channel_menu_router.callback_query(lambda query: InlineChannelsListKeyboard.callback_validator(query.data))
@@ -142,25 +144,6 @@ async def channel_menu_callback_handler(query: CallbackQuery, state: FSMContext)
     is_running = False
     channel_post = None
 
-    # if requested object is contest post, len(query_data) will have 5 fields (last one "channel_post_id")
-    # if requested object is reqular post or creation request, len(query_data) will have 4 fields
-
-    if len(query_data) > 4:
-        # Searching for contest object
-        try:
-            channel_post = await channel_post_db.get_channel_post(channel_id, is_contest=True)
-            is_running = channel_post.is_running
-        except ChannelPostNotFound:
-            pass
-    else:
-        # Searching for regular post object
-        # (if not found, channel_post will still be None, so we surely know that it is createion request)
-        try:
-            channel_post = await channel_post_db.get_channel_post(channel_id, is_contest=False)
-            is_running = channel_post.is_running
-        except ChannelPostNotFound:
-            pass
-    # If we found requested object and it is running now we can only stop it
     if is_running is True:
         match action:
             case "stop_post":

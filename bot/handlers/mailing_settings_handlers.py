@@ -12,7 +12,8 @@ from bot.main import bot, custom_bot_user_db, post_message_media_file_db, _sched
 from bot.utils import MessageTexts
 from bot.states.states import States
 from bot.handlers.routers import admin_bot_menu_router
-from bot.post_message.post_message_editors import edit_button_url, PostMessageType, PostActionType, send_post_message, \
+from bot.enums.post_message_type import PostMessageType
+from bot.post_message.post_message_editors import edit_button_url, PostActionType, send_post_message, \
     _is_post_message_valid, _inline_back_to_post_message_menu, \
     edit_delay_date, edit_message, edit_button_text, edit_media_files
 from bot.post_message.post_message_handler import post_message_handler

@@ -7,11 +7,12 @@ from bot.main import bot_db, post_message_db, bot, post_message_media_file_db, c
 from bot.utils import MessageTexts
 from bot.config import WEB_APP_URL, WEB_APP_PORT
 from bot.states import States
+from bot.enums.post_message_type import PostMessageType
 from bot.keyboards.channel_keyboards import InlineChannelMenuKeyboard
 from bot.keyboards.main_menu_keyboards import ReplyBotMenuKeyboard, InlineBotMenuKeyboard
 from bot.keyboards.post_message_keyboards import InlinePostMessageMenuKeyboard, ReplyBackPostMessageMenuKeyboard, \
     ReplyConfirmMediaFilesKeyboard, InlinePostMessageAcceptDeletingKeyboard, InlinePostMessageExtraSettingsKeyboard, \
-    InlinePostMessageStartConfirmKeyboard, PostMessageType
+    InlinePostMessageStartConfirmKeyboard
 from bot.post_message.post_message_editors import _inline_no_button, _is_post_message_valid, send_post_message, \
     PostActionType
 

@@ -13,9 +13,10 @@ from bot.utils import MessageTexts
 from bot.config import WEB_APP_URL, WEB_APP_PORT
 from bot.states import States
 from bot.utils.keyboard_utils import make_webapp_info
+from bot.enums.post_message_type import PostMessageType
 from bot.keyboards.main_menu_keyboards import ReplyBotMenuKeyboard
 from bot.keyboards.post_message_keyboards import InlinePostMessageMenuKeyboard, ReplyBackPostMessageMenuKeyboard, \
-    ReplyConfirmMediaFilesKeyboard, PostMessageType
+    ReplyConfirmMediaFilesKeyboard
 
 from database.models.post_message_model import PostMessageSchema
 from database.models.post_message_media_files import PostMessageMediaFileSchema

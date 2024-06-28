@@ -5,13 +5,8 @@ from pydantic import ValidationError, Field, ConfigDict, BaseModel
 from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup, ReplyKeyboardMarkup, KeyboardButton
 
 from bot.utils.keyboard_utils import get_bot_post_message
+from bot.enums.post_message_type import PostMessageType
 from bot.keyboards.keyboard_utils import callback_json_validator
-
-
-class PostMessageType(Enum):
-    """For what is post message?"""
-    MAILING = 1
-    CHANNEL_POST = 2
 
 
 class UnknownPostMessageType(Exception):

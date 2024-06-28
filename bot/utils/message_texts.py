@@ -1,6 +1,6 @@
 from enum import Enum
 
-from bot.keyboards.post_message_keyboards import PostMessageType
+from bot.enums.post_message_type import PostMessageType
 
 
 class MessageTexts(Enum):

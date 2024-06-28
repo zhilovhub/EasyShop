@@ -15,7 +15,6 @@ from aiogram.fsm.context import FSMContext
 from aiogram.utils.token import validate_token, TokenValidationError
 from aiogram.fsm.storage.base import StorageKey
 
-from bot.keyboards.channel_keyboards import InlineChannelsListKeyboard
 from bot.main import bot, user_db, product_db, order_db, custom_bot_user_db, QUESTION_MESSAGES, bot_db, \
     post_message_db, mailing_db
 from bot.utils import MessageTexts
@@ -23,9 +22,11 @@ from bot.exceptions import InstanceAlreadyExists
 from bot.states.states import States
 from bot.handlers.routers import admin_bot_menu_router
 from bot.utils.custom_bot_api import start_custom_bot, stop_custom_bot
+from bot.enums.post_message_type import PostMessageType
+from bot.keyboards.channel_keyboards import InlineChannelsListKeyboard
 from bot.keyboards.main_menu_keyboards import ReplyBotMenuKeyboard, InlineBotMenuKeyboard, ReplyBackBotMenuKeyboard
 from bot.keyboards.stock_menu_keyboards import InlineStockMenuKeyboard
-from bot.keyboards.post_message_keyboards import InlinePostMessageMenuKeyboard, PostMessageType
+from bot.keyboards.post_message_keyboards import InlinePostMessageMenuKeyboard
 from bot.keyboards.order_manage_keyboards import InlineOrderStatusesKeyboard, InlineOrderCancelKeyboard, \
     InlineOrderCustomBotKeyboard
 

@@ -1,15 +1,15 @@
 from datetime import datetime
 
+from aiogram import Bot
 from aiogram.enums import ParseMode
 from aiogram.types import CallbackQuery, Message, FSInputFile
 from aiogram.fsm.context import FSMContext
 from aiogram.utils.media_group import MediaGroupBuilder
 
-from bot.main import stock_manager, bot, product_db
+from bot.main import stock_manager, bot, product_db, bot_db
 from bot.utils import MessageTexts
 from bot.states import States
 from bot.config import FILES_PATH
-from bot.keyboards import *
 from bot.handlers.routers import stock_menu_router
 from bot.keyboards.main_menu_keyboards import InlineBotMenuKeyboard, ReplyBotMenuKeyboard
 from bot.keyboards.stock_menu_keyboards import InlineStockMenuKeyboard, ReplyBackStockMenuKeyboard, \
