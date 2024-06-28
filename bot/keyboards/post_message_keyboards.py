@@ -8,6 +8,16 @@ from bot.utils.keyboard_utils import get_bot_post_message
 from bot.keyboards.keyboard_utils import callback_json_validator
 
 
+class PostMessageType(Enum):
+    """For what is post message?"""
+    MAILING = 1
+    CHANNEL_POST = 2
+
+
+class UnknownPostMessageType(Exception):
+    pass
+
+
 class ReplyConfirmMediaFilesKeyboard:
     class Callback(BaseModel):
         class ActionEnum(Enum):
@@ -158,7 +168,8 @@ class InlinePostMessageMenuKeyboard:
         a: ActionEnum
 
         bot_id: int
-        post_message_id: int = Field(alias="mi")
+        post_message_id: int = Field(alias="mi"),
+        post_message_type: PostMessageType = Field(alias="t")
 
     @staticmethod
     @callback_json_validator
@@ -166,11 +177,13 @@ class InlinePostMessageMenuKeyboard:
             action: Callback.ActionEnum,
             bot_id: int,
             post_message_id: int,
+            post_message_type: PostMessageType,
     ) -> str:
         return InlinePostMessageMenuKeyboard.Callback(
             a=action,
             bot_id=bot_id,
-            post_message_id=post_message_id
+            post_message_id=post_message_id,
+            post_message_type=post_message_type
         ).model_dump_json(by_alias=True)
 
     @staticmethod
@@ -183,7 +196,8 @@ class InlinePostMessageMenuKeyboard:
 
     @staticmethod
     async def get_keyboard(
-            bot_id: int
+            bot_id: int,
+            post_message_type: PostMessageType
     ) -> InlineKeyboardMarkup:
         actions = InlinePostMessageMenuKeyboard.Callback.ActionEnum
 
@@ -194,25 +208,25 @@ class InlinePostMessageMenuKeyboard:
             delay_btn = InlineKeyboardButton(
                 text="Убрать откладывание",
                 callback_data=InlinePostMessageMenuKeyboard.callback_json(
-                    actions.REMOVE_DELAY, bot_id, post_message_id
+                    actions.REMOVE_DELAY, bot_id, post_message_id, post_message_type
                 )
             )
         else:
             delay_btn = InlineKeyboardButton(
                 text="Отложить",
                 callback_data=InlinePostMessageMenuKeyboard.callback_json(
-                    actions.DELAY, bot_id, post_message_id
+                    actions.DELAY, bot_id, post_message_id, post_message_type
                 )
             )
 
-        if post_message.is_running:
+        if post_message_type == PostMessageType.MAILING and post_message.is_running:
             return InlineKeyboardMarkup(
                 inline_keyboard=[
                     [
                         InlineKeyboardButton(
                             text="Статистика",
                             callback_data=InlinePostMessageMenuKeyboard.callback_json(
-                                actions.STATISTICS, bot_id, post_message_id
+                                actions.STATISTICS, bot_id, post_message_id, post_message_type
                             )
                         )
                     ],
@@ -220,7 +234,7 @@ class InlinePostMessageMenuKeyboard:
                         InlineKeyboardButton(
                             text="Отменить",
                             callback_data=InlinePostMessageMenuKeyboard.callback_json(
-                                actions.CANCEL, bot_id, post_message_id
+                                actions.CANCEL, bot_id, post_message_id, post_message_type
                             )
                         )
                     ]
@@ -233,13 +247,13 @@ class InlinePostMessageMenuKeyboard:
                         InlineKeyboardButton(
                             text="Ссылка кнопки",
                             callback_data=InlinePostMessageMenuKeyboard.callback_json(
-                                actions.BUTTON_URL, bot_id, post_message_id
+                                actions.BUTTON_URL, bot_id, post_message_id, post_message_type
                             )
                         ),
                         InlineKeyboardButton(
                             text="Текст на кнопке",
                             callback_data=InlinePostMessageMenuKeyboard.callback_json(
-                                actions.BUTTON_TEXT, bot_id, post_message_id
+                                actions.BUTTON_TEXT, bot_id, post_message_id, post_message_type
                             )
                         )
                     ],
@@ -247,7 +261,7 @@ class InlinePostMessageMenuKeyboard:
                         InlineKeyboardButton(
                             text="Удалить кнопку",
                             callback_data=InlinePostMessageMenuKeyboard.callback_json(
-                                actions.BUTTON_DELETE, bot_id, post_message_id
+                                actions.BUTTON_DELETE, bot_id, post_message_id, post_message_type
                             )
                         )
                     ]
@@ -258,7 +272,7 @@ class InlinePostMessageMenuKeyboard:
                         InlineKeyboardButton(
                             text="Добавить кнопку",
                             callback_data=InlinePostMessageMenuKeyboard.callback_json(
-                                actions.BUTTON_ADD, bot_id, post_message_id
+                                actions.BUTTON_ADD, bot_id, post_message_id, post_message_type
                             )
                         ),
                     ]
@@ -269,13 +283,13 @@ class InlinePostMessageMenuKeyboard:
                     InlineKeyboardButton(
                         text="Текст сообщения",
                         callback_data=InlinePostMessageMenuKeyboard.callback_json(
-                            actions.POST_MESSAGE_TEXT, bot_id, post_message_id
+                            actions.POST_MESSAGE_TEXT, bot_id, post_message_id, post_message_type
                         )
                     ),
                     InlineKeyboardButton(
                         text="Медиафайлы",
                         callback_data=InlinePostMessageMenuKeyboard.callback_json(
-                            actions.POST_MESSAGE_MEDIA, bot_id, post_message_id
+                            actions.POST_MESSAGE_MEDIA, bot_id, post_message_id, post_message_type
                         )
                     )
                 ],
@@ -284,13 +298,13 @@ class InlinePostMessageMenuKeyboard:
                     InlineKeyboardButton(
                         text="Запустить",
                         callback_data=InlinePostMessageMenuKeyboard.callback_json(
-                            actions.START, bot_id, post_message_id
+                            actions.START, bot_id, post_message_id, post_message_type
                         )
                     ),
                     InlineKeyboardButton(
                         text="Проверить",
                         callback_data=InlinePostMessageMenuKeyboard.callback_json(
-                            actions.DEMO, bot_id, post_message_id
+                            actions.DEMO, bot_id, post_message_id, post_message_type
                         )
                     ),
                 ],
@@ -299,7 +313,7 @@ class InlinePostMessageMenuKeyboard:
                     InlineKeyboardButton(
                         text="Доп настройки",
                         callback_data=InlinePostMessageMenuKeyboard.callback_json(
-                            actions.EXTRA_SETTINGS, bot_id, post_message_id
+                            actions.EXTRA_SETTINGS, bot_id, post_message_id, post_message_type
                         )
                     ),
                 ],
@@ -307,13 +321,13 @@ class InlinePostMessageMenuKeyboard:
                     InlineKeyboardButton(
                         text="🔙 Назад",
                         callback_data=InlinePostMessageMenuKeyboard.callback_json(
-                            actions.BACK_TO_MAIN_MENU, bot_id, post_message_id
+                            actions.BACK_TO_MAIN_MENU, bot_id, post_message_id, post_message_type
                         )
                     ),
                     InlineKeyboardButton(
                         text="Удалить рассылку",
                         callback_data=InlinePostMessageMenuKeyboard.callback_json(
-                            actions.DELETE_POST_MESSAGE, bot_id, post_message_id
+                            actions.DELETE_POST_MESSAGE, bot_id, post_message_id, post_message_type
                         )
                     ),
                 ]

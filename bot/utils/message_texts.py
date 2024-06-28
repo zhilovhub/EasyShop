@@ -1,5 +1,7 @@
 from enum import Enum
 
+from bot.keyboards.post_message_keyboards import PostMessageType
+
 
 class MessageTexts(Enum):
     INSTRUCTION_MESSAGE = """<b>Чтобы</b>
@@ -64,9 +66,6 @@ class MessageTexts(Enum):
 
     BOT_REMOVED_FROM_CHANNEL_MESSAGE = "Ваш бот @{} был <b>удалён</b> из канала @{}"
 
-    BOT_MAILINGS_MENU_MESSAGE = "Управление текущей рассылки для бота <b>@{}</b>\n\n" \
-        "❗️Перед запуcком нажмите <b>Проверить</b>, чтобы убедиться в правильности составленного сообщения"
-
     BOT_MAILINGS_MENU_ACCEPT_START = "Управление текущей рассылки для бота <b>@{}</b>\n\n" \
                                      "<b>Подтверждение начала рассылки</b>"
 
@@ -125,3 +124,37 @@ class MessageTexts(Enum):
     STOCK_IMPORT_COMMANDS = ("1.<b>Перезаписать всё новым содержимым</b>\n"
                              "2.<b>При совпадении артикулов - перезаписать</b>\n"
                              "3.<b>При совпадении артикулов - оставить старое</b>\n")
+
+    @staticmethod
+    def bot_post_message_menu_message(post_message_type: PostMessageType) -> str:
+        match post_message_type:
+            case PostMessageType.MAILING:
+                return "Управление текущей рассылки для бота <b>@{}</b>\n\n" \
+                       "❗️Перед запуcком нажмите <b>Проверить</b>, чтобы убедиться в правильности составленного " \
+                       "сообщения"
+            case PostMessageType.CHANNEL_POST:
+                return "Запись уже выложена или удалена"
+
+    @staticmethod
+    def bot_post_already_done_message(post_message_type: PostMessageType) -> str:
+        match post_message_type:
+            case PostMessageType.MAILING:
+                return "Рассылка уже завершена или удалена"
+            case PostMessageType.CHANNEL_POST:
+                return "Запись уже выложена или удалена"
+
+    @staticmethod
+    def bot_post_already_started_message(post_message_type: PostMessageType) -> str:
+        match post_message_type:
+            case PostMessageType.MAILING:
+                return "Рассылка уже запущена"
+            case PostMessageType.CHANNEL_POST:
+                return "Запись уже запущена"
+
+    @staticmethod
+    def bot_post_button_already_exists_message(post_message_type: PostMessageType) -> str:
+        match post_message_type:
+            case PostMessageType.MAILING:
+                return "В рассылочном сообщении кнопка уже есть"
+            case PostMessageType.CHANNEL_POST:
+                return "В записи кнопка уже есть"

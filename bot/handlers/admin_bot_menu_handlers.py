@@ -16,8 +16,8 @@ from aiogram.utils.token import validate_token, TokenValidationError
 from aiogram.fsm.storage.base import StorageKey
 
 from bot.keyboards.channel_keyboards import InlineChannelsListKeyboard
-from bot.main import bot, user_db, product_db, order_db, custom_bot_user_db, QUESTION_MESSAGES, bot_db, post_message_db, \
-    mailing_db
+from bot.main import bot, user_db, product_db, order_db, custom_bot_user_db, QUESTION_MESSAGES, bot_db, \
+    post_message_db, mailing_db
 from bot.utils import MessageTexts
 from bot.exceptions import InstanceAlreadyExists
 from bot.states.states import States
@@ -25,7 +25,7 @@ from bot.handlers.routers import admin_bot_menu_router
 from bot.utils.custom_bot_api import start_custom_bot, stop_custom_bot
 from bot.keyboards.main_menu_keyboards import ReplyBotMenuKeyboard, InlineBotMenuKeyboard, ReplyBackBotMenuKeyboard
 from bot.keyboards.stock_menu_keyboards import InlineStockMenuKeyboard
-from bot.keyboards.post_message_keyboards import InlinePostMessageMenuKeyboard
+from bot.keyboards.post_message_keyboards import InlinePostMessageMenuKeyboard, PostMessageType
 from bot.keyboards.order_manage_keyboards import InlineOrderStatusesKeyboard, InlineOrderCancelKeyboard, \
     InlineOrderCustomBotKeyboard
 
@@ -449,8 +449,13 @@ async def bot_menu_callback_handler(query: CallbackQuery, state: FSMContext):
                 ))
             custom_bot = await bot_db.get_bot(bot_id=bot_id)
             await query.message.edit_text(
-                MessageTexts.BOT_MAILINGS_MENU_MESSAGE.value.format((await Bot(custom_bot.token).get_me()).username),
-                reply_markup=await InlinePostMessageMenuKeyboard.get_keyboard(bot_id=bot_id)
+                MessageTexts.bot_post_message_menu_message(
+                    PostMessageType.MAILING
+                ).format((await Bot(custom_bot.token).get_me()).username),
+                reply_markup=await InlinePostMessageMenuKeyboard.get_keyboard(
+                    bot_id=bot_id,
+                    post_message_type=PostMessageType.MAILING
+                )
             )
         case callback_data.ActionEnum.BOT_GOODS_OPEN:
             bot_data = await bot_db.get_bot(bot_id)

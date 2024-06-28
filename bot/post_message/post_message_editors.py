@@ -7,37 +7,24 @@ from aiogram.enums import ParseMode
 from aiogram.types import Message, CallbackQuery, LinkPreviewOptions, InputMediaDocument, InputMediaAudio, \
     InputMediaVideo, InputMediaPhoto, BufferedInputFile, InlineKeyboardMarkup, InlineKeyboardButton
 from aiogram.fsm.context import FSMContext
+from pydantic import BaseModel, ConfigDict
 
-from bot.main import bot_db, post_message_db, bot, post_message_media_file_db, channel_contest_db
+from bot.keyboards.channel_keyboards import InlineChannelMenuKeyboard
+from bot.main import bot_db, post_message_db, bot, post_message_media_file_db, channel_contest_db, custom_bot_user_db, \
+    _scheduler
 from bot.utils import MessageTexts
 from bot.config import WEB_APP_URL, WEB_APP_PORT
 from bot.states import States
-from bot.keyboards import get_inline_bot_channel_post_menu_keyboard, get_contest_menu_keyboard
+from bot.keyboards import get_contest_menu_keyboard
 from bot.utils.keyboard_utils import make_webapp_info
-from bot.keyboards.main_menu_keyboards import ReplyBotMenuKeyboard
+from bot.keyboards.main_menu_keyboards import ReplyBotMenuKeyboard, InlineBotMenuKeyboard
 from bot.keyboards.post_message_keyboards import InlinePostMessageMenuKeyboard, ReplyBackPostMessageMenuKeyboard, \
-    ReplyConfirmMediaFilesKeyboard
+    ReplyConfirmMediaFilesKeyboard, InlinePostMessageAcceptDeletingKeyboard, InlinePostMessageExtraSettingsKeyboard, \
+    InlinePostMessageStartConfirmKeyboard, PostMessageType
 
-from database.models.post_message_model import PostMessageSchema
+from database.models.post_message_model import PostMessageSchema, PostMessageNotFound
 from database.models.post_message_media_files import PostMessageMediaFileSchema
-
-
-class UnknownPostMessageType(Exception):
-    pass
-
-
-class PostMessageType(Enum):  # TODO get rid of this almost everywhere in here file
-    """For what is post message?"""
-    MAILING = (
-        "post_message_id",
-        MessageTexts.BOT_MAILINGS_MENU_MESSAGE.value,
-        InlinePostMessageMenuKeyboard
-    )
-    CHANNEL_POST = (
-        "channel_id",
-        MessageTexts.BOT_CHANNEL_POST_MENU_MESSAGE.value,
-        get_inline_bot_channel_post_menu_keyboard
-    )
+from logs.config import extra_params, logger
 
 
 class PostActionType(Enum):
@@ -52,15 +39,8 @@ async def edit_media_files(message: Message, state: FSMContext, post_message_typ
     state_data = await state.get_data()
 
     bot_id = state_data["bot_id"]
-
-    if post_message_type == PostMessageType.CHANNEL_POST:
-        channel_id = state_data["channel_id"]
-        is_contest_flag = "channel_post_id" in state_data.keys()
-        post_message = await channel_contest_db.get_channel_post(channel_id=channel_id, is_contest=is_contest_flag)
-        post_message_id = post_message.channel_post_id
-    else:
-        post_message_id = state_data["post_message_id"]
-        post_message = await post_message_db.get_post_message(post_message_id)
+    post_message = await post_message_db.get_post_message_by_bot_id(bot_id=bot_id, post_message_type)
+    post_message_id = post_message.post_message_id
 
     if (message.photo or message.video or message.audio or message.document) and "first" not in state_data:
         await post_message_media_file_db.delete_post_message_media_files(post_message_id)
@@ -74,8 +54,6 @@ async def edit_media_files(message: Message, state: FSMContext, post_message_typ
             await _back_to_post_message_menu(message, bot_id, custom_bot_username, post_message_type)
 
             await state.set_state(States.BOT_MENU)
-            if post_message_type == PostMessageType.CHANNEL_POST and post_message.is_contest:
-                state_data["channel_post_id"] = post_message.channel_post_id
             return await state.set_data(state_data)
 
         case ReplyConfirmMediaFilesKeyboard.Callback.ActionEnum.CLEAR.value:
