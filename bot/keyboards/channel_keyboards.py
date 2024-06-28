@@ -4,7 +4,7 @@ from pydantic import ValidationError, Field, ConfigDict, BaseModel
 
 from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup, ReplyKeyboardMarkup, KeyboardButton
 
-from bot.utils.keyboard_utils import get_bot_channels, get_bot_username, get_channel_contest, get_bot_channel_post
+from bot.utils.keyboard_utils import get_bot_channels, get_bot_username, get_bot_channel_post
 from bot.keyboards.keyboard_utils import callback_json_validator
 
 
@@ -109,8 +109,6 @@ class InlineChannelMenuKeyboard:
         class ActionEnum(Enum):
             EDIT_POST_MESSAGE = "epm"
             CREATE_POST_MESSAGE = "cpm"
-            EDIT_CONTEST = "ec"
-            CREATE_CONTEST = "cc"
 
             ANALYTICS = "an"
             LEAVE_CHANNEL = "lc"
@@ -176,27 +174,8 @@ class InlineChannelMenuKeyboard:
                 )
             )
 
-        channel_contest = await get_channel_contest(channel_id=channel_id)
-        if channel_contest:
-            contest_button = InlineKeyboardButton(
-                text="Редактировать конкурс",
-                callback_data=InlineChannelMenuKeyboard.callback_json(
-                    actions.EDIT_CONTEST, bot_id, channel_id, channel_contest.contest_id
-                )
-            )
-        else:
-            contest_button = InlineKeyboardButton(
-                text="🆕 Создать конкурс",
-                callback_data=InlineChannelMenuKeyboard.callback_json(
-                    actions.CREATE_CONTEST, bot_id, channel_id
-                )
-            )
-
         return InlineKeyboardMarkup(
             inline_keyboard=[
-                [
-                    contest_button
-                ],
                 [
                     channel_post_button,
                     InlineKeyboardButton(

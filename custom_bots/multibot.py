@@ -71,10 +71,8 @@ bot_db = db_engine.get_bot_dao()
 order_db = db_engine.get_order_dao()
 product_db = db_engine.get_product_db()
 user_db: UserDao = db_engine.get_user_dao()
-contest_user_db = db_engine.get_contest_user_dao()
 channel_db: ChannelDao = db_engine.get_channel_dao()
 custom_bot_user_db = db_engine.get_custom_bot_user_db()
-channel_contest_db = db_engine.get_channel_contest_dao()
 channel_user_db: ChannelUserDao = db_engine.get_channel_user_dao()
 
 storage = AlchemyStorageAsync(db_url=getenv("CUSTOM_BOT_STORAGE_DB_URL"),

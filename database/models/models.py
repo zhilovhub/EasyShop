@@ -9,11 +9,9 @@ from database.models.channel_model import ChannelDao
 from database.models.payment_model import PaymentDao
 from database.models.mailing_model import MailingDao
 from database.models.category_model import CategoryDao
-from database.models.channel_contest import ChannelContestDao
 from database.models.channel_post_model import ChannelPostDao
 from database.models.post_message_model import PostMessageDao
 from database.models.channel_user_model import ChannelUserDao
-from database.models.contest_user_model import ContestUserDao
 from database.models.custom_bot_user_model import CustomBotUserDao
 from database.models.post_message_media_files import PostMessageMediaFileDao
 from database.models import Base  # should be the last import from database.models
@@ -52,9 +50,7 @@ class Database:
         self.post_message_dao = PostMessageDao(self.engine, self.logger)
         self.channel_user_dao = ChannelUserDao(self.engine, self.logger)
         self.channel_post_dao = ChannelPostDao(self.engine, self.logger)
-        self.contest_user_dao = ContestUserDao(self.engine, self.logger)
         self.custom_bot_user_dao = CustomBotUserDao(self.engine, self.logger)
-        self.channel_contest_dao = ChannelContestDao(self.engine, self.logger)
         self.post_message_media_file_dao = PostMessageMediaFileDao(self.engine, self.logger)
 
         self.logger.debug("Database class is initialized")
@@ -95,9 +91,6 @@ class Database:
     def get_post_message_dao(self) -> PostMessageDao:
         return self.post_message_dao
 
-    def get_contest_user_dao(self) -> ContestUserDao:
-        return self.contest_user_dao
-
     def get_channel_user_dao(self) -> ChannelUserDao:
         return self.channel_user_dao
 
@@ -106,9 +99,6 @@ class Database:
 
     def get_custom_bot_user_db(self) -> CustomBotUserDao:
         return self.custom_bot_user_dao
-
-    def get_channel_contest_dao(self) -> ChannelContestDao:
-        return self.channel_contest_dao
 
     def get_post_message_media_file_dao(self) -> PostMessageMediaFileDao:
         return self.post_message_media_file_dao

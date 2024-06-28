@@ -1,30 +1,22 @@
-import re
-from datetime import datetime
-from enum import Enum
-
 from aiogram import Bot
 from aiogram.enums import ParseMode
-from aiogram.types import Message, CallbackQuery, LinkPreviewOptions, InputMediaDocument, InputMediaAudio, \
-    InputMediaVideo, InputMediaPhoto, BufferedInputFile, InlineKeyboardMarkup, InlineKeyboardButton
+from aiogram.types import CallbackQuery
 from aiogram.fsm.context import FSMContext
-from pydantic import BaseModel, ConfigDict
 
-from bot.keyboards.channel_keyboards import InlineChannelMenuKeyboard
-from bot.main import bot_db, post_message_db, bot, post_message_media_file_db, channel_contest_db, custom_bot_user_db, \
-    _scheduler
+from bot.main import bot_db, post_message_db, bot, post_message_media_file_db, custom_bot_user_db, _scheduler
 from bot.utils import MessageTexts
 from bot.config import WEB_APP_URL, WEB_APP_PORT
 from bot.states import States
-from bot.keyboards import get_contest_menu_keyboard
-from bot.utils.keyboard_utils import make_webapp_info
+from bot.keyboards.channel_keyboards import InlineChannelMenuKeyboard
 from bot.keyboards.main_menu_keyboards import ReplyBotMenuKeyboard, InlineBotMenuKeyboard
 from bot.keyboards.post_message_keyboards import InlinePostMessageMenuKeyboard, ReplyBackPostMessageMenuKeyboard, \
     ReplyConfirmMediaFilesKeyboard, InlinePostMessageAcceptDeletingKeyboard, InlinePostMessageExtraSettingsKeyboard, \
     InlinePostMessageStartConfirmKeyboard, PostMessageType
-from bot.post_message.post_message_editors import _inline_no_button, _is_post_message_valid, send_post_message, PostActionType
+from bot.post_message.post_message_editors import _inline_no_button, _is_post_message_valid, send_post_message, \
+    PostActionType
 
 from database.models.post_message_model import PostMessageSchema, PostMessageNotFound
-from database.models.post_message_media_files import PostMessageMediaFileSchema
+
 from logs.config import extra_params, logger
 
 
@@ -266,7 +258,7 @@ async def _post_message_union(
                 reply_markup=ReplyBackPostMessageMenuKeyboard.get_keyboard()
             )
             await query.answer()
-            await state.set_state(States.EDITING_DELAY_DATE)
+            await state.set_state(States.EDITING_MAILING_DELAY_DATE)
             await state.set_data({"bot_id": bot_id, "post_message_id": post_message_id})
 
         case callback_data.ActionEnum.REMOVE_DELAY:

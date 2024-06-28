@@ -275,7 +275,7 @@ async def mailing_confirm_start_callback_handler(query: CallbackQuery):
 
 
 @admin_bot_menu_router.message(StateFilter(
-    States.EDITING_DELAY_DATE,
+    States.EDITING_MAILING_DELAY_DATE,
     States.EDITING_MAILING_MESSAGE,
     States.EDITING_MAILING_BUTTON_TEXT,
     States.EDITING_MAILING_BUTTON_URL,
@@ -285,7 +285,7 @@ async def editing_post_message_handler(message: Message, state: FSMContext):
     current_state = await state.get_state()
 
     match current_state:
-        case States.EDITING_DELAY_DATE:
+        case States.EDITING_MAILING_DELAY_DATE:
             await edit_delay_date(message, state, PostMessageType.MAILING)
         case States.EDITING_MAILING_MESSAGE:
             await edit_message(message, state, PostMessageType.MAILING)
