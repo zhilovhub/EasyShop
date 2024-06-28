@@ -17,10 +17,12 @@ from bot.utils.post_message import edit_button_url, PostMessageType, edit_delay_
 from bot.keyboards.channel_keyboards import ReplyBackChannelMenuKeyboard, InlineChannelsListKeyboard, \
     InlineChannelMenuKeyboard
 from bot.keyboards.main_menu_keyboards import InlineBotMenuKeyboard, ReplyBotMenuKeyboard
-from bot.keyboards.post_message_keyboards import ReplyConfirmMediaFilesKeyboard
+from bot.keyboards.post_message_keyboards import ReplyConfirmMediaFilesKeyboard, InlinePostMessageMenuKeyboard
 
 from database.models.channel_model import ChannelNotFound
 from database.models.channel_contest import ContestChannelSchemaWithoutId
+from database.models.channel_post_model import ChannelPostSchemaWithoutId
+from database.models.post_message_model import PostMessageSchemaWithoutId
 
 
 @channel_menu_router.callback_query(lambda query: InlineChannelsListKeyboard.callback_validator(query.data))
@@ -111,7 +113,25 @@ async def channel_menu_callback_handler(query: CallbackQuery):
                     is_contest=True
                 )
             )
-        # TODO Я не успел еще остальные добавить
+        case callback_data.ActionEnum.CREATE_POST_MESSAGE | callback_data.ActionEnum.EDIT_POST_MESSAGE:
+            try:
+                channel_post = await channel_post_db.get_channel_post_by_bot_id(bot_id=bot_id)
+                await query.answer("Запись уже создана", show_alert=True)
+            except ChannelPostNotFound:
+                channel_post = None
+
+            if not channel_post and callback_data.a == callback_data.ActionEnum.CREATE_POST_MESSAGE:
+                post_message_id = await post_message_db.add_post_message(PostMessageSchemaWithoutId.model_validate(
+                    {"bot_id": bot_id, "created_at": datetime.now().replace(tzinfo=None)}
+                ))
+                await channel_post_db.add_channel_post(ChannelPostSchemaWithoutId.model_validate(
+                    {"bot_id": bot_id, "post_message_id": post_message_id}
+                ))
+
+            await query.message.edit_text(
+                MessageTexts.BOT_CHANNEL_POST_MENU_MESSAGE.value.format(channel_username),
+                reply_markup=await InlinePostMessageMenuKeyboard.get_keyboard(bot_id=bot_id)
+            )
 
 
 @channel_menu_router.callback_query(lambda query: query.data.startswith("channel_menu"))
@@ -194,45 +214,6 @@ async def channel_menu_callback_handler(query: CallbackQuery, state: FSMContext)
                         bot_id, channel_id, is_contest=channel_post.is_contest)
                 )
                 return await query.message.delete()
-
-    # If channel_post is still None, it means that the requested objectd is deleted or
-    # not created yet, which means we receive "create_post" or "create_contest" request
-    # other requests will be blocked
-    if channel_post is None:
-        match action:
-            case "create_post":
-                try:
-                    await channel_post_db.get_channel_post(channel_id=channel_id, is_contest=False)
-                    await query.answer(
-                        "Пост для этого канала уже создан",
-                        show_alert=True
-                    )
-                    await query.message.delete()
-                    return await query.message.edit_text(
-                        MessageTexts.BOT_CHANNEL_POST_MENU_MESSAGE.value.format(
-                            channel_username),
-                        reply_markup=await get_inline_bot_channel_post_menu_keyboard(bot_id=bot_id,
-                                                                                     channel_id=channel_id)
-                    )
-                except ChannelPostNotFound:
-                    pass
-                await channel_post_db.add_channel_post(ChannelPostSchemaWithoutId.model_validate(
-                    {"channel_id": channel_id, "bot_id": bot_id,
-                     "created_at": datetime.now().replace(tzinfo=None), "contest_type": ContestTypeValues.NONE}
-                ))
-                custom_bot = await bot_db.get_bot(bot_id=bot_id)
-                return await query.message.answer(
-                    MessageTexts.BOT_CHANNEL_POST_MENU_MESSAGE.value.format(
-                        channel_username),
-                    reply_markup=await get_inline_bot_channel_post_menu_keyboard(bot_id=bot_id, channel_id=channel_id)
-                )
-            case _:
-                if action != "back_to_channels_list":
-                    await query.answer("Запись не найдена", show_alert=True)
-                    try:
-                        await query.message.delete()
-                    except:
-                        pass
 
     # Works only if we get requested object from db
     match action:

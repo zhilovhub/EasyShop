@@ -4,7 +4,7 @@ from pydantic import ValidationError, Field, ConfigDict, BaseModel
 
 from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup, ReplyKeyboardMarkup, KeyboardButton
 
-from bot.utils.keyboard_utils import get_bot_channels, get_bot_username, get_channel_contest
+from bot.utils.keyboard_utils import get_bot_channels, get_bot_username, get_channel_contest, get_bot_channel_post
 from bot.keyboards.keyboard_utils import callback_json_validator
 
 
@@ -124,7 +124,7 @@ class InlineChannelMenuKeyboard:
 
         bot_id: int
         channel_id: int = Field(alias="ci")
-        channel_post_id: int | None = Field(alias="cp", default=None)
+        post_message_id: int | None = Field(alias="pmi", default=None)
 
     @staticmethod
     @callback_json_validator
@@ -132,17 +132,17 @@ class InlineChannelMenuKeyboard:
             action: Callback.ActionEnum,
             bot_id: int,
             channel_id: int,
-            channel_post_id: int | None = None
+            post_message_id: int | None = None
     ) -> str:
         to_exclude = set()
-        if channel_post_id is None:
-            to_exclude.add("channel_post_id")
+        if post_message_id is None:
+            to_exclude.add("post_message_id")
 
         return InlineChannelMenuKeyboard.Callback(
             a=action,
             bot_id=bot_id,
             channel_id=channel_id,
-            channel_post_id=channel_post_id
+            post_message_id=post_message_id
         ).model_dump_json(by_alias=True, exclude=to_exclude)
 
     @staticmethod
@@ -160,27 +160,21 @@ class InlineChannelMenuKeyboard:
     ) -> InlineKeyboardMarkup:
         actions = InlineChannelMenuKeyboard.Callback.ActionEnum
 
-        # channel_post_not_contest = await get_channel_post(channel_id=channel_id, is_contest=False)
-        # if channel_post_not_contest:
-        #     channel_post_button = InlineKeyboardButton(
-        #         text="Редактировать запись",
-        #         callback_data=InlineChannelMenuKeyboard.callback_json(
-        #             actions.EDIT_POST_MESSAGE, bot_id, channel_id, channel_post_not_contest.channel_post_id
-        #         )  # TODO keep in mind that there was no channel_post_id
-        #     )
-        # else:
-        #     channel_post_button = InlineKeyboardButton(
-        #         text="Создать запись",
-        #         callback_data=InlineChannelMenuKeyboard.callback_json(
-        #             actions.CREATE_POST_MESSAGE, bot_id, channel_id
-        #         )
-        #     )
-        channel_post_button = InlineKeyboardButton(
-            text="Создать запись",
-            callback_data=InlineChannelMenuKeyboard.callback_json(
-                actions.CREATE_POST_MESSAGE, bot_id, channel_id
+        channel_post = await get_bot_channel_post(bot_id=bot_id)
+        if channel_post:
+            channel_post_button = InlineKeyboardButton(
+                text="Редактировать запись",
+                callback_data=InlineChannelMenuKeyboard.callback_json(
+                    actions.EDIT_POST_MESSAGE, bot_id, channel_id, channel_post.post_message_id
+                )
             )
-        )
+        else:
+            channel_post_button = InlineKeyboardButton(
+                text="Создать запись",
+                callback_data=InlineChannelMenuKeyboard.callback_json(
+                    actions.CREATE_POST_MESSAGE, bot_id, channel_id, channel_post.post_message_id
+                )
+            )
 
         channel_contest = await get_channel_contest(channel_id=channel_id)
         if channel_contest:

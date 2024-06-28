@@ -10,7 +10,7 @@ def get_show_inline_button(bot_id: int, partnership: bool = False) -> InlineKeyb
     ], resize_keyboard=True, one_time_keyboard=False)
 
 
-async def get_inline_bot_channel_post_menu_keyboard(bot_id: int, channel_id: int, is_contest: bool = False) -> InlineKeyboardMarkup:
+async def _get_inline_bot_channel_post_menu_keyboard(bot_id: int, channel_id: int, is_contest: bool = False) -> InlineKeyboardMarkup:
     callback_metadata = f":{bot_id}:{channel_id}"
     channel_post = await channel_post_db.get_channel_post(channel_id=channel_id, is_contest=is_contest)
     if is_contest:

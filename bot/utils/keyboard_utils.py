@@ -1,11 +1,12 @@
 from aiogram import Bot
 from aiogram.types import WebAppInfo
 
-from bot.main import bot_db, channel_db, post_message_db, channel_contest_db, mailing_db
+from bot.main import bot_db, channel_db, post_message_db, channel_contest_db, mailing_db, channel_post_db
 from bot.config import WEB_APP_URL, WEB_APP_PORT
 
 from database.models.channel_model import ChannelSchema
 from database.models.channel_contest import ChannelContestSchema, ChannelContestNotFound
+from database.models.channel_post_model import ChannelPostSchema, ChannelPostNotFound
 from database.models.mailing_model import MailingSchema, MailingNotFound
 from database.models.post_message_model import PostMessageSchema, PostMessageNotFound
 
@@ -29,6 +30,18 @@ async def get_bot_channels(bot_id: int) -> list[tuple[ChannelSchema, str]]:
     custom_bot = Bot((await bot_db.get_bot(bot_id=bot_id)).token)
     return [(i, (await custom_bot.get_chat(i.channel_id)).username)
             for i in (await channel_db.get_all_channels(bot_id=bot_id))]
+
+
+async def get_bot_channel_post(bot_id: int) -> ChannelPostSchema | None:
+    try:
+        channel_post = await channel_post_db.get_channel_post_by_bot_id(bot_id=bot_id)
+        return channel_post
+    except ChannelPostNotFound:
+        logger.debug(
+            f"bot_id={bot_id}: there is no channel posts",
+            extra=extra_params(bot_id=bot_id),
+        )
+        return None
 
 
 async def get_bot_mailing(bot_id: int) -> MailingSchema | None:

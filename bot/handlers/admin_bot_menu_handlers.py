@@ -32,7 +32,7 @@ from bot.keyboards.order_manage_keyboards import InlineOrderStatusesKeyboard, In
 from custom_bots.multibot import storage as custom_bot_storage
 
 from database.models.bot_model import BotSchemaWithoutId
-from database.models.mailing_model import MailingSchemaWithoutId
+from database.models.mailing_model import MailingSchemaWithoutId, MailingNotFound
 from database.models.order_model import OrderSchema, OrderNotFound, OrderItem, OrderStatusValues
 from database.models.post_message_model import PostMessageSchemaWithoutId
 from database.models.product_model import ProductWithoutId, NotEnoughProductsInStockToReduce
@@ -433,8 +433,14 @@ async def bot_menu_callback_handler(query: CallbackQuery, state: FSMContext):
                 f"👨🏻‍🦱 Всего пользователей: {len(users)}"
             )
             await query.answer()
-        case callback_data.ActionEnum.MAILING_ADD | InlineBotMenuKeyboard.Callback.ActionEnum.MAILING_OPEN:
-            if callback_data.a == InlineBotMenuKeyboard.Callback.ActionEnum.MAILING_ADD:
+        case callback_data.ActionEnum.MAILING_ADD | callback_data.ActionEnum.MAILING_OPEN:
+            try:
+                mailing = await mailing_db.get_mailing_by_bot_id(bot_id=bot_id)
+                await query.answer("Рассылка уже создана", show_alert=True)
+            except MailingNotFound:
+                mailing = None
+
+            if not mailing and callback_data.a == callback_data.ActionEnum.MAILING_ADD:
                 post_message_id = await post_message_db.add_post_message(PostMessageSchemaWithoutId.model_validate(
                     {"bot_id": bot_id, "created_at": datetime.now().replace(tzinfo=None)}
                 ))
