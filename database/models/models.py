@@ -7,11 +7,11 @@ from database.models.order_model import OrderDao
 from database.models.product_model import ProductDao
 from database.models.channel_model import ChannelDao
 from database.models.payment_model import PaymentDao
+from database.models.mailing_model import MailingDao
 from database.models.category_model import CategoryDao
 from database.models.custom_ad_model import CustomAdDao
 from database.models.channel_contest import ChannelContestDao
 from database.models.post_message_model import PostMessageDao
-from database.models.channel_post_model import ChannelPostDao
 from database.models.channel_user_model import ChannelUserDao
 from database.models.contest_user_model import ContestUserDao
 from database.models.custom_bot_user_model import CustomBotUserDao
@@ -45,12 +45,12 @@ class Database:
         self.user_dao = UserDao(self.engine, self.logger)
         self.order_dao = OrderDao(self.engine, self.logger)
         self.product_dao = ProductDao(self.engine, self.logger)
+        self.mailing_dao = MailingDao(self.engine, self.logger)
         self.payment_dao = PaymentDao(self.engine, self.logger)
         self.channel_dao = ChannelDao(self.engine, self.logger)
         self.category_dao = CategoryDao(self.engine, self.logger)
         self.custom_ad_dao = CustomAdDao(self.engine, self.logger)
         self.post_message_dao = PostMessageDao(self.engine, self.logger)
-        self.channel_post_dao = ChannelPostDao(self.engine, self.logger)
         self.channel_user_dao = ChannelUserDao(self.engine, self.logger)
         self.contest_user_dao = ContestUserDao(self.engine, self.logger)
         self.custom_bot_user_dao = CustomBotUserDao(self.engine, self.logger)
@@ -86,6 +86,9 @@ class Database:
     def get_channel_dao(self) -> ChannelDao:
         return self.channel_dao
 
+    def get_mailing_dao(self) -> MailingDao:
+        return self.mailing_dao
+
     def get_category_dao(self) -> CategoryDao:
         return self.category_dao
 
@@ -94,9 +97,6 @@ class Database:
 
     def get_post_message_dao(self) -> PostMessageDao:
         return self.post_message_dao
-
-    def get_channel_post_dao(self) -> ChannelPostDao:
-        return self.channel_post_dao
 
     def get_contest_user_dao(self) -> ContestUserDao:
         return self.contest_user_dao

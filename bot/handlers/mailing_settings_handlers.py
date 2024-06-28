@@ -472,6 +472,15 @@ async def mailing_confirm_start_callback_handler(query: CallbackQuery):
 
                 post_message.is_running = True
 
+                await query.message.answer(
+                    f"Рассылка начнется в {post_message.send_date}" if post_message.is_delayed else "Рассылка началась"
+                )
+                await query.message.edit_text(
+                    text=MessageTexts.BOT_MAILING_MENU_WHILE_RUNNING.value.format(custom_bot_username),
+                    reply_markup=await InlinePostMessageMenuKeyboard.get_keyboard(bot_id),
+                    parse_mode=ParseMode.HTML
+                )
+
                 if not post_message.is_delayed:
                     await post_message_db.update_post_message(post_message)
                     await send_post_messages(
@@ -487,14 +496,6 @@ async def mailing_confirm_start_callback_handler(query: CallbackQuery):
                     post_message.job_id = job_id
                     await post_message_db.update_post_message(post_message)
 
-                await query.message.answer(
-                    f"Рассылка начнется в {post_message.send_date}" if post_message.is_delayed else "Рассылка началась"
-                )
-                await query.message.edit_text(
-                    text=MessageTexts.BOT_MAILING_MENU_WHILE_RUNNING.value.format(custom_bot_username),
-                    reply_markup=await InlinePostMessageMenuKeyboard.get_keyboard(bot_id),
-                    parse_mode=ParseMode.HTML
-                )
         case callback_data.ActionEnum.BACK_TO_POST_MESSAGE_MENU:
             await _inline_back_to_post_message_menu(query, bot_id, custom_bot_username)
 

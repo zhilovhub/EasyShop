@@ -9,7 +9,7 @@ from bot.exceptions.exceptions import *
 
 from database.models import Base
 from database.models.dao import Dao
-from database.models.channel_post_model import ChannelPost
+from database.models.channel_contest import ChannelContest
 
 from logs.config import extra_params
 
@@ -21,8 +21,8 @@ class ContestUserNotFound(Exception):
 class ContestUser(Base):
     __tablename__ = "contest_users"
     channel_user_pk = Column(BigInteger, primary_key=True, autoincrement=True)
-    contest_post_id = Column(ForeignKey(
-        ChannelPost.channel_post_id, ondelete="CASCADE"), nullable=False)
+
+    contest_id = Column(ForeignKey(ChannelContest.contest_id, ondelete="CASCADE"), nullable=False)
     user_id = Column(BigInteger, nullable=False)
     channel_id = Column(BigInteger, nullable=False)
     join_date = Column(DateTime, nullable=False)
@@ -31,7 +31,7 @@ class ContestUser(Base):
 class ContestUserSchemaWithoutId(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
-    contest_post_id: int = Field(frozen=True)
+    contest_id: int = Field(frozen=True)
     user_id: int = Field(frozen=True)
     channel_id: int = Field(frozen=True)
     join_date: datetime = Field()
@@ -49,7 +49,7 @@ class ContestUserDao(Dao):
         async with self.engine.begin() as conn:
             raw_res = await conn.execute(
                 select(ContestUser).where(
-                    ContestUser.contest_post_id == contest_id
+                    ContestUser.contest_id == contest_id
                 )
             )
         await self.engine.dispose()
@@ -68,7 +68,7 @@ class ContestUserDao(Dao):
         async with self.engine.begin() as conn:
             raw_res = await conn.execute(
                 select(ContestUser).where(
-                    ContestUser.contest_post_id == contest_id,
+                    ContestUser.contest_id == contest_id,
                     ContestUser.user_id == user_id,
                 )
             )
@@ -94,10 +94,10 @@ class ContestUserDao(Dao):
 
         try:
             await self.get_contest_user_by_contest_id_and_user_id(
-                contest_id=contest_user.contest_post_id, user_id=contest_user.user_id
+                contest_id=contest_user.contest_id, user_id=contest_user.user_id
             )
             raise InstanceAlreadyExists(
-                f"ContestUser with {contest_user.user_id} already exists in contest {contest_user.contest_post_id}.")
+                f"ContestUser with {contest_user.user_id} already exists in contest {contest_user.contest_id}.")
         except ContestUserNotFound:
             async with self.engine.begin() as conn:
                 await conn.execute(insert(ContestUser).values(**contest_user.model_dump(by_alias=True)))

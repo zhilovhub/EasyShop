@@ -7,7 +7,7 @@ from aiogram.fsm.context import FSMContext
 from aiogram.utils.deep_linking import create_start_link
 
 from bot.main import bot, _scheduler, custom_bot_user_db, post_message_media_file_db, channel_user_db, \
-    contest_channel_db
+    channel_contest_db
 from bot.utils import MessageTexts
 from bot.keyboards import *
 from bot.states.states import States
@@ -20,7 +20,6 @@ from bot.keyboards.main_menu_keyboards import InlineBotMenuKeyboard, ReplyBotMen
 from bot.keyboards.post_message_keyboards import ReplyConfirmMediaFilesKeyboard
 
 from database.models.channel_model import ChannelNotFound
-from database.models.channel_post_model import ChannelPostSchemaWithoutId
 from database.models.channel_contest import ContestChannelSchemaWithoutId
 
 
@@ -79,17 +78,13 @@ async def channel_menu_callback_handler(query: CallbackQuery):
             leave_result = await custom_tg_bot.leave_chat(chat_id=channel_id)
 
             if leave_result:
-                await query.message.answer(f"Вышел из канала {channel_username}")
-                await query.message.edit_text(
-                    MessageTexts.BOT_CHANNELS_LIST_MESSAGE.value.format(custom_bot_username),
-                    reply_markup=await InlineChannelsListKeyboard.get_keyboard(custom_bot.bot_id)
-                )
+                await query.message.answer(f"Вышел из канала @{channel_username}")
             else:
                 await query.message.answer(f"Произошла ошибка при выходе из канала @{channel_username}")
-                await query.message.edit_text(
-                    MessageTexts.BOT_CHANNELS_LIST_MESSAGE.value.format(custom_bot_username),
-                    reply_markup=await InlineChannelsListKeyboard.get_keyboard(custom_bot.bot_id)
-                )
+            await query.message.edit_text(
+                MessageTexts.BOT_CHANNELS_LIST_MESSAGE.value.format(custom_bot_username),
+                reply_markup=await InlineChannelsListKeyboard.get_keyboard(custom_bot.bot_id)
+            )
         case callback_data.ActionEnum.CREATE_CONTEST:
             try:
                 await channel_post_db.get_channel_post(channel_id=channel_id, is_contest=True)

@@ -3,8 +3,6 @@ from aiogram.utils.keyboard import InlineKeyboardMarkup, InlineKeyboardButton
 from bot.main import contest_user_db
 from bot.utils.keyboard_utils import *
 
-from database.models.channel_post_model import ContestTypeValues
-
 
 async def get_custom_bot_ad_channels_list_keyboard(bot_id: int) -> InlineKeyboardMarkup:
     callback_metadata = f":{bot_id}"
@@ -27,43 +25,6 @@ async def get_custom_bot_ad_channels_list_keyboard(bot_id: int) -> InlineKeyboar
                 url=f"https://t.me/{await get_bot_username(bot_id)}?startchannel&admin=post_messages"
             )
         ],
-    ])
-
-
-def get_partnership_inline_kb(bot_id: int) -> InlineKeyboardMarkup:
-    return InlineKeyboardMarkup(inline_keyboard=[
-        [
-            InlineKeyboardButton(text="Заказать рекламу", callback_data=f"request_ad:{bot_id}")
-        ],
-        [
-            InlineKeyboardButton(text="Принять рекламное предложение", callback_data=f"accept_ad:{bot_id}")
-        ],
-    ])
-
-
-def get_request_ad_keyboard(bot_id: int, admin_username: str) -> InlineKeyboardMarkup:
-    return InlineKeyboardMarkup(inline_keyboard=[
-        [
-            InlineKeyboardButton(text="Связаться с админом", url=f"t.me/{admin_username}")
-        ],
-        [
-            InlineKeyboardButton(text="Назад", callback_data=f"back_to_partnership:{bot_id}")
-        ]
-    ])
-
-
-async def get_accept_ad_keyboard(bot_id: int) -> InlineKeyboardMarkup:
-    return InlineKeyboardMarkup(inline_keyboard=[
-        [
-            InlineKeyboardButton(text="➕ Добавить канал",
-                                 url=f"https://t.me/{await get_bot_username(bot_id)}?startchannel&admin=post_messages")
-        ],
-        [
-            InlineKeyboardButton(text="Продолжить", callback_data=f"continue_ad_accept:{bot_id}")
-        ],
-        [
-            InlineKeyboardButton(text="🔙 Назад", callback_data=f"back_to_partnership:{bot_id}")
-        ]
     ])
 
 

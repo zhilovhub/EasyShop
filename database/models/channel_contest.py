@@ -54,7 +54,6 @@ class ChannelContestDao(Dao):  # TODO write tests
             raw_res = await conn.execute(
                 select(ChannelContest).where(
                     ChannelContest.channel_id == channel_id,
-                    ChannelContest.is_sent == False,  # noqa: E712
                 )
             )
         await self.engine.dispose()

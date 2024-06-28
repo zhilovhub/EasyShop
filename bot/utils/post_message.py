@@ -8,7 +8,7 @@ from aiogram.types import Message, CallbackQuery, LinkPreviewOptions, InputMedia
     InputMediaVideo, InputMediaPhoto, BufferedInputFile, InlineKeyboardMarkup, InlineKeyboardButton
 from aiogram.fsm.context import FSMContext
 
-from bot.main import bot_db, post_message_db, bot, post_message_media_file_db, channel_post_db
+from bot.main import bot_db, post_message_db, bot, post_message_media_file_db, channel_contest_db
 from bot.utils import MessageTexts
 from bot.config import WEB_APP_URL, WEB_APP_PORT
 from bot.states import States
@@ -17,7 +17,6 @@ from bot.utils.keyboard_utils import make_webapp_info
 from bot.keyboards.main_menu_keyboards import ReplyBotMenuKeyboard
 from bot.keyboards.post_message_keyboards import InlinePostMessageMenuKeyboard, ReplyBackPostMessageMenuKeyboard, \
     ReplyConfirmMediaFilesKeyboard
-from database.models.channel_post_model import ContestTypeValues
 
 from database.models.post_message_model import PostMessageSchema
 from database.models.post_message_media_files import PostMessageMediaFileSchema
@@ -57,7 +56,7 @@ async def edit_media_files(message: Message, state: FSMContext, post_message_typ
     if post_message_type == PostMessageType.CHANNEL_POST:
         channel_id = state_data["channel_id"]
         is_contest_flag = "channel_post_id" in state_data.keys()
-        post_message = await channel_post_db.get_channel_post(channel_id=channel_id, is_contest=is_contest_flag)
+        post_message = await channel_contest_db.get_channel_post(channel_id=channel_id, is_contest=is_contest_flag)
         post_message_id = post_message.channel_post_id
     else:
         post_message_id = state_data["post_message_id"]
@@ -143,7 +142,7 @@ async def edit_button_text(message: Message, state: FSMContext, post_message_typ
     if post_message_type == PostMessageType.CHANNEL_POST:
         channel_id = state_data["channel_id"]
         is_contest_flag = "channel_post_id" in state_data.keys()
-        post_message = await channel_post_db.get_channel_post(channel_id=channel_id, is_contest=is_contest_flag)
+        post_message = await channel_contest_db.get_channel_post(channel_id=channel_id, is_contest=is_contest_flag)
     else:
         post_message = await post_message_db.get_post_message(post_message_id)
 
@@ -170,7 +169,7 @@ async def edit_button_text(message: Message, state: FSMContext, post_message_typ
                 if post_message.is_contest:
                     message_text += " (0)"
                 post_message.button_text = message_text
-                await channel_post_db.update_channel_post(post_message)
+                await channel_contest_db.update_channel_post(post_message)
             else:
                 await post_message_db.update_post_message(post_message)
 
@@ -238,7 +237,7 @@ async def edit_message(message: Message, state: FSMContext, post_message_type: P
     if post_message_type == PostMessageType.CHANNEL_POST:
         channel_id = state_data["channel_id"]
         is_contest_flag = "channel_post_id" in state_data.keys()
-        post_message = await channel_post_db.get_channel_post(channel_id=channel_id, is_contest=is_contest_flag)
+        post_message = await channel_contest_db.get_channel_post(channel_id=channel_id, is_contest=is_contest_flag)
     else:
         post_message = await post_message_db.get_post_message(post_message_id)
 
@@ -250,7 +249,7 @@ async def edit_message(message: Message, state: FSMContext, post_message_type: P
             media_files = await post_message_media_file_db.get_all_post_message_media_files(post_message_id)
 
             if post_message_type == PostMessageType.CHANNEL_POST:
-                await channel_post_db.update_channel_post(post_message)
+                await channel_contest_db.update_channel_post(post_message)
             else:
                 await post_message_db.update_post_message(post_message)
 
@@ -308,7 +307,7 @@ async def edit_delay_date(message: Message, state: FSMContext, post_message_type
     if post_message_type == PostMessageType.CHANNEL_POST:
         channel_id = state_data["channel_id"]
         is_contest_flag = "channel_post_id" in state_data.keys()
-        post_message = await channel_post_db.get_channel_post(channel_id=channel_id, is_contest=is_contest_flag)
+        post_message = await channel_contest_db.get_channel_post(channel_id=channel_id, is_contest=is_contest_flag)
     else:
         post_message = await post_message_db.get_post_message(post_message_id)
 
@@ -327,7 +326,7 @@ async def edit_delay_date(message: Message, state: FSMContext, post_message_type
                 post_message.send_date = datetime_obj
 
                 if post_message_type == PostMessageType.CHANNEL_POST:
-                    await channel_post_db.update_channel_post(post_message)
+                    await channel_contest_db.update_channel_post(post_message)
                 else:
                     await post_message_db.update_post_message(post_message)
 
@@ -381,7 +380,7 @@ async def edit_button_url(message: Message, state: FSMContext, post_message_type
         case PostMessageType.MAILING:
             post_message = await post_message_db.get_post_message(post_message_id)
         case PostMessageType.CHANNEL_POST:
-            post_message = await channel_post_db.get_channel_post(channel_id=post_message_id, is_contest=False)
+            post_message = await channel_contest_db.get_channel_post(channel_id=post_message_id, is_contest=False)
         case _:
             raise UnknownPostMessageType
 
@@ -690,7 +689,7 @@ async def send_post_message(  # TODO that's not funny
                 )
         # if mailing_message_type == MailingMessageType.RELEASE:  TODO this is from Arsen
         #     if channel_post_schema.is_contest is False:
-        #         await channel_post_db.delete_channel_post(channel_post_id=channel_post_schema.channel_post_id)
+        #         await channel_contest_db.delete_channel_post(channel_post_id=channel_post_schema.channel_post_id)
         #     await bot.send_message(chat_id, "Пост отправлен в канал!")
         #     # Scheduling contest result function
         #     if channel_post_schema.is_contest:

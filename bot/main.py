@@ -18,9 +18,9 @@ from database.models.order_model import OrderDao
 from database.models.payment_model import PaymentDao
 from database.models.product_model import ProductDao
 from database.models.channel_model import ChannelDao
+from database.models.mailing_model import MailingDao
 from database.models.channel_contest import ChannelContestDao
 from database.models.post_message_model import PostMessageDao
-from database.models.channel_post_model import ChannelPostDao
 from database.models.contest_user_model import ContestUserDao
 from database.models.channel_user_model import ChannelUserDao
 from database.models.post_message_media_files import PostMessageMediaFileDao
@@ -28,8 +28,6 @@ from database.models.custom_bot_user_model import CustomBotUserDao
 
 from subscription.subscription import Subscription
 from subscription.scheduler import Scheduler
-
-from channels_administration.competition.competition import CompetitionModule
 
 from stoke.stoke import Stoke
 
@@ -48,8 +46,8 @@ order_db: OrderDao = db_engine.get_order_dao()
 pay_db: PaymentDao = db_engine.get_payment_dao()
 product_db: ProductDao = db_engine.get_product_db()
 channel_db: ChannelDao = db_engine.get_channel_dao()
+mailing_db: MailingDao = db_engine.get_mailing_dao()
 post_message_db: PostMessageDao = db_engine.get_post_message_dao()
-channel_post_db: ChannelPostDao = db_engine.get_channel_post_dao()
 contest_user_db: ContestUserDao = db_engine.get_contest_user_dao()
 channel_user_db: ChannelUserDao = db_engine.get_channel_user_dao()
 custom_bot_user_db: CustomBotUserDao = db_engine.get_custom_bot_user_db()
@@ -60,8 +58,6 @@ stock_manager = Stoke(db_engine)
 
 _scheduler = Scheduler(config.SCHEDULER_URL, 'postgres', config.TIMEZONE)
 subscription = Subscription(database=db_engine, custom_scheduler=_scheduler)
-
-competition: CompetitionModule = CompetitionModule(db_engine)
 
 cache_resources_file_id_store = JsonStore(
     file_path=config.RESOURCES_PATH.format("cache.json"),

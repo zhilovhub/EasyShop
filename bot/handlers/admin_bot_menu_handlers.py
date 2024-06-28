@@ -16,7 +16,8 @@ from aiogram.utils.token import validate_token, TokenValidationError
 from aiogram.fsm.storage.base import StorageKey
 
 from bot.keyboards.channel_keyboards import InlineChannelsListKeyboard
-from bot.main import bot, user_db, product_db, order_db, custom_bot_user_db, QUESTION_MESSAGES, bot_db, post_message_db
+from bot.main import bot, user_db, product_db, order_db, custom_bot_user_db, QUESTION_MESSAGES, bot_db, post_message_db, \
+    mailing_db
 from bot.utils import MessageTexts
 from bot.exceptions import InstanceAlreadyExists
 from bot.states.states import States
@@ -31,6 +32,7 @@ from bot.keyboards.order_manage_keyboards import InlineOrderStatusesKeyboard, In
 from custom_bots.multibot import storage as custom_bot_storage
 
 from database.models.bot_model import BotSchemaWithoutId
+from database.models.mailing_model import MailingSchemaWithoutId
 from database.models.order_model import OrderSchema, OrderNotFound, OrderItem, OrderStatusValues
 from database.models.post_message_model import PostMessageSchemaWithoutId
 from database.models.product_model import ProductWithoutId, NotEnoughProductsInStockToReduce
@@ -433,8 +435,11 @@ async def bot_menu_callback_handler(query: CallbackQuery, state: FSMContext):
             await query.answer()
         case callback_data.ActionEnum.MAILING_ADD | InlineBotMenuKeyboard.Callback.ActionEnum.MAILING_OPEN:
             if callback_data.a == InlineBotMenuKeyboard.Callback.ActionEnum.MAILING_ADD:
-                await post_message_db.add_post_message(PostMessageSchemaWithoutId.model_validate(
+                post_message_id = await post_message_db.add_post_message(PostMessageSchemaWithoutId.model_validate(
                     {"bot_id": bot_id, "created_at": datetime.now().replace(tzinfo=None)}
+                ))
+                await mailing_db.add_mailing(MailingSchemaWithoutId.model_validate(
+                    {"bot_id": bot_id, "post_message_id": post_message_id}
                 ))
             custom_bot = await bot_db.get_bot(bot_id=bot_id)
             await query.message.edit_text(

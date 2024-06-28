@@ -1,12 +1,13 @@
 from aiogram import Bot
 from aiogram.types import WebAppInfo
 
-from bot.main import bot_db, channel_db, post_message_db, competition, channel_post_db
+from bot.main import bot_db, channel_db, post_message_db, channel_contest_db
 from bot.config import WEB_APP_URL, WEB_APP_PORT
 
 from database.models.channel_model import ChannelSchema
+from database.models.channel_contest import ChannelContestSchema, ChannelContestNotFound
 from database.models.post_message_model import PostMessageSchema, PostMessageNotFound
-from database.models.channel_post_model import ChannelPostNotFound, ChannelPostSchema
+
 from logs.config import logger, extra_params
 
 
@@ -41,13 +42,13 @@ async def get_bot_post_message(bot_id: int) -> PostMessageSchema | None:
         return None
 
 
-async def get_channel_post(channel_id: int, is_contest: bool) -> ChannelPostSchema | None:
+async def get_channel_contest(channel_id: int) -> ChannelContestSchema | None:
     try:
-        channel_post = await channel_post_db.get_channel_post(channel_id=channel_id, is_contest=is_contest)
+        channel_post = await channel_contest_db.get_channel_contest(channel_id=channel_id)
         return channel_post
-    except ChannelPostNotFound:
+    except ChannelContestNotFound:
         logger.debug(
-            f"channel_id={channel_id}: there is no channel_post with is_contest={is_contest}",
+            f"channel_id={channel_id}: there is no contests",
             extra=extra_params(channel_id=channel_id),
         )
         return None
