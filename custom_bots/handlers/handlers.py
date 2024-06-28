@@ -1,25 +1,22 @@
 import json
 import random
 import string
-from datetime import datetime, timedelta
+from datetime import datetime
 
-from aiogram import F, Bot
-from aiogram.types import Message, CallbackQuery, FSInputFile
+from aiogram import F
+from aiogram.types import Message
 
-from bot.keyboards import keyboards
-from bot.utils.message_texts import MessageTexts
 from bot.keyboards.order_manage_keyboards import InlineOrderStatusesKeyboard, InlineOrderCustomBotKeyboard
 from bot.keyboards.custom_bot_menu_keyboards import ReplyCustomBotMenuKeyboard
 
-from custom_bots.multibot import order_db, product_db, bot_db, main_bot, PREV_ORDER_MSGS, custom_bot_user_db, \
-    CustomUserStates, format_locales, channel_db, custom_ad_db, scheduler, user_db
+from custom_bots.multibot import order_db, product_db, bot_db, main_bot, PREV_ORDER_MSGS, \
+    CustomUserStates, format_locales
 from custom_bots.handlers.routers import multi_bot_router
 from custom_bots.utils.custom_bot_options import get_option
 
 from database.models.bot_model import BotNotFound
 from database.models.order_model import OrderSchema, OrderItem
 from database.models.product_model import NotEnoughProductsInStockToReduce
-from database.models.custom_ad_model import CustomAdSchemaWithoutId
 
 from logs.config import custom_bot_logger, extra_params
 
@@ -143,102 +140,6 @@ async def process_web_app_request(event: Message):
         raise e
 
 
-@multi_bot_router.callback_query(lambda q: q.data.startswith("request_ad"))
-async def request_ad_handler(query: CallbackQuery):
-    bot_id = int(query.data.split(':')[-1])
-    bot_data = await bot_db.get_bot(bot_id)
-    admin_user = await query.bot.get_chat(bot_data.created_by)
-    await query.message.edit_text("Правила размещения рекламы:\n1. ...\n2. ...\n3. ...",
-                                  reply_markup=keyboards.get_request_ad_keyboard(bot_id, admin_user.username))
-
-
-@multi_bot_router.callback_query(lambda q: q.data.startswith("accept_ad"))
-async def accept_ad_handler(query: CallbackQuery):
-    bot_id = int(query.data.split(':')[-1])
-    msg = await query.message.answer_photo(photo=FSInputFile("ad_example.jpg"),
-                                           caption=MessageTexts.EXAMPLE_AD_POST_TEXT.value)
-    await msg.reply("Условия для принятия:\n1. В канале должно быть 3 и более подписчиков."
-                    "\n2. В течении 5 минут после рекламного поста нельзя публиковать посты."
-                    "\n3. Время сделки: 10м."
-                    "\n4. Стоимость: 1000руб.",
-                    reply_markup=await keyboards.get_accept_ad_keyboard(bot_id))
-
-
-@multi_bot_router.callback_query(lambda q: q.data.startswith("continue_ad_accept"))
-async def continue_ad_accept_handler(query: CallbackQuery):
-    bot_id = int(query.data.split(':')[-1])
-    await query.message.edit_text("Выберите канал для отправки рекламного сообщения.",
-                                  reply_markup=await keyboards.get_custom_bot_ad_channels_list_keyboard(bot_id))
-
-
-@multi_bot_router.callback_query(lambda q: q.data.startswith("back_to_partnership"))
-async def back_to_partnership(query: CallbackQuery):
-    bot_id = int(query.data.split(':')[-1])
-    await query.message.edit_text(MessageTexts.CUSTOM_BOT_PARTNERSHIP.value,
-                                  reply_markup=keyboards.get_partnership_inline_kb(bot_id))
-
-
-async def complete_custom_ad_request(channel_id: int, bot_id: int):
-    bot_data = await bot_db.get_bot(bot_id)
-    bot = Bot(token=bot_data.token)
-
-    adv = await custom_ad_db.get_channel_last_custom_ad(channel_id=channel_id)
-    adv.status = "finished"
-
-    channel = await channel_db.get_channel(channel_id)
-    channel.is_ad_post_block = False
-    await channel_db.update_channel(channel)
-
-    await bot.send_message(adv.by_user, "Рекламное предложение завершено, на Ваш баланс зачислено 1000руб.")
-
-    user = await custom_bot_user_db.get_custom_bot_user(bot_id, adv.by_user)
-    user.balance += 1000
-
-    admin_user = await user_db.get_user(bot_data.created_by)
-    admin_user.balance -= 1000
-
-    await user_db.update_user(admin_user)
-    await custom_bot_user_db.update_custom_bot_user(user)
-
-
-@multi_bot_router.callback_query(lambda q: q.data.startswith("ad_channel"))
-async def ad_channel_handler(query: CallbackQuery):
-    bot_id = int(query.data.split(':')[-2])
-    channel_id = int(query.data.split(':')[-1])
-    channel = await channel_db.get_channel(channel_id)
-    channel_chat = await query.bot.get_chat(channel_id)
-    members_count = await channel_chat.get_member_count()
-    bot_data = await bot_db.get_bot(bot_id)
-    admin_user = await user_db.get_user(bot_data.created_by)
-    if admin_user.balance < 1000:
-        return await query.answer("В данный момент администратор канала не готов принимать рекламные предложения"
-                                  " (на балансе нет средств)")
-    if members_count < 3:
-        return await query.answer(f"В этом канале не достаточно подписчиков. ({members_count} < 3)",
-                                  show_alert=True)
-    msg = await query.bot.send_photo(chat_id=channel_id,
-                                     photo=FSInputFile("ad_example.jpg"),
-                                     caption=MessageTexts.EXAMPLE_AD_POST_TEXT.value)
-    await query.message.edit_text("Сообщение отправлено в канал. Для завершения сделки, "
-                                  "продолжайте соблюдать условия."
-                                  "\n1. В канале должно быть 3 и более подписчиков."
-                                  "\n2. В течении 5 минут после рекламного поста нельзя публиковать посты."
-                                  "\n3. Время сделки: 10мин."
-                                  "\n4. Стоимость: 1000руб.", reply_markup=None)
-    channel.is_ad_post_block = True
-    channel.ad_post_block_until = datetime.now() + timedelta(minutes=5)
-    await channel_db.update_channel(channel)
-    job_id = await scheduler.add_scheduled_job(complete_custom_ad_request,
-                                               (datetime.now() + timedelta(minutes=10)).replace(tzinfo=None),
-                                               [channel.channel_id, bot_id])
-    await custom_ad_db.add_ad(CustomAdSchemaWithoutId(channel_id=channel.channel_id,
-                                                      message_id=msg.message_id,
-                                                      time_until=datetime.now() + timedelta(minutes=10),
-                                                      status="active",
-                                                      finish_job_id=job_id,
-                                                      by_user=query.from_user.id))
-
-
 @multi_bot_router.message(CustomUserStates.MAIN_MENU)
 async def main_menu_handler(message: Message):
     try:
@@ -251,10 +152,6 @@ async def main_menu_handler(message: Message):
         return await message.answer("Бот не инициализирован")
 
     match message.text:
-        case ReplyCustomBotMenuKeyboard.Callback.ActionEnum.PARTNER_SHIP.value:
-            bot_id = (await bot_db.get_bot_by_token(message.bot.token)).bot_id
-            await message.answer(MessageTexts.CUSTOM_BOT_PARTNERSHIP.value,
-                                 reply_markup=keyboards.get_partnership_inline_kb(bot_id))
         case _:
             default_msg = await get_option("default_msg", message.bot.token)
 
