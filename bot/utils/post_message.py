@@ -515,10 +515,6 @@ async def send_post_message(  # TODO that's not funny
                 if post_message_type == PostMessageType.CHANNEL_POST:
                     post_text = post_message_schema.description
                     if post_message_schema.is_contest:
-                        if post_message_schema.contest_type == ContestTypeValues.SPONSOR:
-                            post_text += f"\n\nДля участия нужно подписаться на всех спонсоров\n\n" \
-                                         f"<a href='{post_message_schema.contest_sponsor_url}'>СПОНСОРЫ</a>"
-
                         post_text += f"\n\nНажать на кнопку участвовать\n\n" \
                                      f"<b>Подведение итогов:</b> " \
                                      f"{post_message_schema.contest_end_date.strftime('%Y-%m-%d %H:%M:%S')}\n\n" \
