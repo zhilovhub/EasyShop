@@ -15,7 +15,7 @@ from bot.utils.keyboard_utils import make_webapp_info
 from bot.enums.post_message_type import PostMessageType
 from bot.keyboards.main_menu_keyboards import ReplyBotMenuKeyboard
 from bot.keyboards.post_message_keyboards import InlinePostMessageMenuKeyboard, ReplyBackPostMessageMenuKeyboard, \
-    ReplyConfirmMediaFilesKeyboard
+    ReplyConfirmMediaFilesKeyboard, UnknownPostMessageType
 
 from database.models.post_message_model import PostMessageSchema
 from database.models.post_message_media_files import PostMessageMediaFileSchema
@@ -40,19 +40,39 @@ async def edit_media_files(message: Message, state: FSMContext, post_message_typ
         await post_message_media_file_db.delete_post_message_media_files(post_message_id)
         state_data["first"] = True
 
-    custom_bot_tg = Bot((await bot_db.get_bot(bot_id)).token)
-    custom_bot_username = (await custom_bot_tg.get_me()).username
-
     match message.text:
         case ReplyConfirmMediaFilesKeyboard.Callback.ActionEnum.CONFIRM.value:
-            await _back_to_post_message_menu(message, bot_id, custom_bot_username, post_message_type)
-
-            await state.set_state(States.BOT_MENU)
-            return await state.set_data(state_data)
+            return await _media_confirm(
+                message,
+                state,
+                bot_id,
+                post_message_type,
+                channel_id=state_data["channel_id"] if post_message_type == PostMessageType.CHANNEL_POST else None
+            )
 
         case ReplyConfirmMediaFilesKeyboard.Callback.ActionEnum.CLEAR.value:
-            await message.answer("Очищаем все файлы...")
-            await post_message_media_file_db.delete_post_message_media_files(post_message_id=post_message_id)
+            return await _media_clear(message, post_message_id, post_message_type)
+        case _:
+            answer_text = await _media_save(message, post_message_id, post_message_type)
+            if answer_text:
+                await message.answer(answer_text)
+
+
+async def _media_confirm(message: Message, state: FSMContext, bot_id: int, post_message_type, channel_id: int | None):
+    state_data = await state.get_data()
+
+    await _back_to_post_message_menu(message, bot_id, post_message_type, channel_id)
+    await state.set_state(States.BOT_MENU)
+
+    return await state.set_data(state_data)
+
+
+async def _media_clear(message: Message, post_message_id, post_message_type):
+    await message.answer("Очищаем все файлы...")
+    await post_message_media_file_db.delete_post_message_media_files(post_message_id=post_message_id)
+
+    match post_message_type:
+        case PostMessageType.MAILING:
             return await message.answer(
                 "Отправьте одним сообщение медиафайлы для рассылочного сообщения\n\n"
                 "❗ Старые медиафайлы к этому рассылочному сообщению <b>перезапишутся</b>\n\n"
@@ -60,44 +80,65 @@ async def edit_media_files(message: Message, state: FSMContext, post_message_typ
                 "если медиафайлов <b>больше одного</b>",
                 reply_markup=ReplyConfirmMediaFilesKeyboard.get_keyboard()
             )
+        case PostMessageType.CHANNEL_POST:
+            return await message.answer(
+                "Отправьте одним сообщение медиафайлы для записи в канал\n\n"
+                "❗ Старые медиафайлы к этому рассылочному сообщению <b>перезапишутся</b>\n\n"
+                "❗❗ Обратите внимание, что к сообщению нельзя будет прикрепить кнопку, "
+                "если медиафайлов <b>больше одного</b>",
+                reply_markup=ReplyConfirmMediaFilesKeyboard.get_keyboard()
+            )
         case _:
-            if message.photo:
-                photo = message.photo[-1]
-                file_id = photo.file_id
-                file_path = (await bot.get_file(photo.file_id)).file_path
-                media_type = "photo"
-                answer_text = f"Фото {photo.file_unique_id} добавлено"
-            elif message.video:
-                video = message.video
-                file_id = video.file_id
-                file_path = (await bot.get_file(video.file_id)).file_path
-                media_type = "video"
-                answer_text = f"Видео {video.file_name} добавлено"
-            elif message.audio:
-                audio = message.audio
-                file_id = audio.file_id
-                file_path = (await bot.get_file(audio.file_id)).file_path
-                media_type = "audio"
-                answer_text = f"Аудио {audio.file_name} добавлено"
-            elif message.document:
-                document = message.document
-                file_id = document.file_id
-                file_path = (await bot.get_file(document.file_id)).file_path
-                media_type = "document"
-                answer_text = f"Документ {document.file_name} добавлен"
-            else:
-                return await message.answer(
-                    "Пришлите медиафайлы (фото, видео, аудио, документы), "
-                    "которые должны быть прикреплены к рассылочному сообщению",
-                    reply_markup=ReplyConfirmMediaFilesKeyboard.get_keyboard()
-                )
+            raise UnknownPostMessageType
+
+
+async def _media_save(message: Message, post_message_id: int, post_message_type: PostMessageType) -> str | None:
+    if message.photo:
+        photo = message.photo[-1]
+        file_id = photo.file_id
+        file_path = (await bot.get_file(photo.file_id)).file_path
+        media_type = "photo"
+        answer_text = f"Фото {photo.file_unique_id} добавлено"
+    elif message.video:
+        video = message.video
+        file_id = video.file_id
+        file_path = (await bot.get_file(video.file_id)).file_path
+        media_type = "video"
+        answer_text = f"Видео {video.file_name} добавлено"
+    elif message.audio:
+        audio = message.audio
+        file_id = audio.file_id
+        file_path = (await bot.get_file(audio.file_id)).file_path
+        media_type = "audio"
+        answer_text = f"Аудио {audio.file_name} добавлено"
+    elif message.document:
+        document = message.document
+        file_id = document.file_id
+        file_path = (await bot.get_file(document.file_id)).file_path
+        media_type = "document"
+        answer_text = f"Документ {document.file_name} добавлен"
+    else:
+        match post_message_type:
+            case PostMessageType.MAILING:
+                text = "Пришлите медиафайлы (фото, видео, аудио, документы), " \
+                       "которые должны быть прикреплены к рассылочному сообщению"
+            case PostMessageType.CHANNEL_POST:
+                text = "Пришлите медиафайлы (фото, видео, аудио, документы), " \
+                       "которые должны быть прикреплены к записи в канал"
+            case _:
+                raise UnknownPostMessageType
+
+        await message.answer(
+            text,
+            reply_markup=ReplyConfirmMediaFilesKeyboard.get_keyboard()
+        )
+        return None
 
     await post_message_media_file_db.add_post_message_media_file(PostMessageMediaFileSchema.model_validate(
         {"post_message_id": post_message_id, "file_id_main_bot": file_id,
          "file_path": file_path, "media_type": media_type}
     ))
-
-    await message.answer(answer_text)
+    return answer_text
 
 
 async def edit_button_text(message: Message, state: FSMContext, post_message_type: PostMessageType):
@@ -108,8 +149,8 @@ async def edit_button_text(message: Message, state: FSMContext, post_message_typ
     bot_id = state_data["bot_id"]
     post_message_id = state_data["post_message_id"]
 
-    custom_bot_tg = Bot((await bot_db.get_bot(bot_id)).token)
-    custom_bot_username = (await custom_bot_tg.get_me()).username
+    custom_bot = Bot((await bot_db.get_bot(bot_id)).token)
+    custom_bot_username = (await custom_bot.get_me()).username
 
     post_message = await post_message_db.get_post_message(post_message_id)
 
@@ -127,7 +168,7 @@ async def edit_button_text(message: Message, state: FSMContext, post_message_typ
             media_files = await post_message_media_file_db.get_all_post_message_media_files(post_message_id)
 
             await message.answer(
-                "Предпросмотр конкурса 👇",
+                "Предпросмотр 👇",
                 reply_markup=ReplyBotMenuKeyboard.get_keyboard(bot_id)
             )
             await send_post_message(
@@ -158,8 +199,8 @@ async def edit_message(message: Message, state: FSMContext, post_message_type: P
     bot_id = state_data["bot_id"]
     post_message_id = state_data["post_message_id"]
 
-    custom_bot_tg = Bot((await bot_db.get_bot(bot_id)).token)
-    custom_bot_username = (await custom_bot_tg.get_me()).username
+    custom_bot = Bot((await bot_db.get_bot(bot_id)).token)
+    custom_bot_username = (await custom_bot.get_me()).username
 
     post_message = await post_message_db.get_post_message(post_message_id)
 
@@ -173,7 +214,7 @@ async def edit_message(message: Message, state: FSMContext, post_message_type: P
             await post_message_db.update_post_message(post_message)
 
             await message.answer(
-                "Предпросмотр конкурса 👇",
+                "Предпросмотр 👇",
                 reply_markup=ReplyBotMenuKeyboard.get_keyboard(bot_id)
             )
             await send_post_message(
@@ -207,8 +248,8 @@ async def edit_delay_date(message: Message, state: FSMContext, post_message_type
     bot_id = state_data["bot_id"]
     post_message_id = state_data["post_message_id"]
 
-    custom_bot_tg = Bot((await bot_db.get_bot(bot_id)).token)
-    custom_bot_username = (await custom_bot_tg.get_me()).username
+    custom_bot = Bot((await bot_db.get_bot(bot_id)).token)
+    custom_bot_username = (await custom_bot.get_me()).username
 
     post_message = await post_message_db.get_post_message(post_message_id)
 
@@ -257,8 +298,8 @@ async def edit_button_url(message: Message, state: FSMContext, post_message_type
     bot_id = state_data["bot_id"]
     post_message_id = state_data["post_message_id"]
 
-    custom_bot_tg = Bot((await bot_db.get_bot(bot_id)).token)
-    custom_bot_username = (await custom_bot_tg.get_me()).username
+    custom_bot = Bot((await bot_db.get_bot(bot_id)).token)
+    custom_bot_username = (await custom_bot.get_me()).username
 
     post_message = await post_message_db.get_post_message(post_message_id)
 
@@ -282,7 +323,7 @@ async def edit_button_url(message: Message, state: FSMContext, post_message_type
             await post_message_db.update_post_message(post_message)
 
             await message.answer(
-                "Предпросмотр конкурса 👇",
+                "Предпросмотр 👇",
                 reply_markup=ReplyBotMenuKeyboard.get_keyboard(bot_id)
             )
             # TODO can be this
@@ -493,14 +534,23 @@ async def _reply_no_button(
 async def _back_to_post_message_menu(
         message: Message,
         bot_id: int,
-        object_username: str,
         post_message_type: PostMessageType,
+        channel_id: int | None
 ) -> None:
     await message.answer(
         "Возвращаемся в меню...",
         reply_markup=ReplyBotMenuKeyboard.get_keyboard(bot_id)
     )
+
+    match post_message_type:
+        case PostMessageType.MAILING:
+            username = (await Bot(message.bot.token).get_me()).username
+        case PostMessageType.CHANNEL_POST:
+            username = (await Bot(message.bot.token).get_chat(channel_id)).username
+        case _:
+            raise UnknownPostMessageType
+
     await message.answer(
-        text=MessageTexts.bot_post_message_menu_message(post_message_type).format(object_username),
+        text=MessageTexts.bot_post_message_menu_message(post_message_type).format(username),
         reply_markup=await InlinePostMessageMenuKeyboard.get_keyboard(bot_id, post_message_type)
     )

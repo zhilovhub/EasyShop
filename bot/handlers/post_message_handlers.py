@@ -388,7 +388,7 @@ async def _inline_back_to_post_message_menu(
         query: CallbackQuery,
         bot_id: int,
         post_message_type: PostMessageType,
-        channel_id: int = None
+        channel_id: int | None
 ) -> None:
     match post_message_type:
         case PostMessageType.MAILING:
