@@ -226,36 +226,22 @@ async def edit_message(message: Message, state: FSMContext, post_message_type: P
     bot_id = state_data["bot_id"]
     post_message_id = state_data["post_message_id"]
 
-    custom_bot = Bot((await bot_db.get_bot(bot_id)).token)
-    custom_bot_username = (await custom_bot.get_me()).username
-
     post_message = await post_message_db.get_post_message(post_message_id)
 
     if message_text:
         if message_text == ReplyBackPostMessageMenuKeyboard.Callback.ActionEnum.BACK_TO_POST_MESSAGE_MENU.value:
-            await _back_to_post_message_menu(message, bot_id, custom_bot_username, post_message_type)
-        else:
-            post_message.description = message.html_text
-            media_files = await post_message_media_file_db.get_all_post_message_media_files(post_message_id)
-
-            await post_message_db.update_post_message(post_message)
-
-            await message.answer(
-                "Предпросмотр 👇",
-                reply_markup=ReplyBotMenuKeyboard.get_keyboard(bot_id)
-            )
-            await send_post_message(
-                bot,
-                message.from_user.id,
-                post_message,
-                media_files,
-                PostActionType.AFTER_REDACTING,
+            await _back_to_post_message_menu(
                 message,
+                bot_id,
+                post_message_type,
+                channel_id=state_data["channel_id"] if post_message_type == PostMessageType.CHANNEL_POST else None
             )
-
-            await message.answer(
-                MessageTexts.bot_post_message_menu_message(post_message_type).format(custom_bot_username),
-                reply_markup=await InlinePostMessageMenuKeyboard.get_keyboard(bot_id, post_message_type)
+        else:
+            await _message_save(
+                message,
+                post_message,
+                post_message_type,
+                channel_id=state_data["channel_id"] if post_message_type == PostMessageType.CHANNEL_POST else None
             )
 
         await state.set_state(States.BOT_MENU)
@@ -265,6 +251,44 @@ async def edit_message(message: Message, state: FSMContext, post_message_type: P
             "Описание должно содержать текст.\n"
             "Если есть необходимость прикрепить медиафайлы, то для этого есть пункт в меню"
         )
+
+
+async def _message_save(
+        message: Message,
+        post_message: PostMessageSchema,
+        post_message_type: PostMessageType,
+        channel_id: int | None
+):
+    post_message.description = message.html_text
+    media_files = await post_message_media_file_db.get_all_post_message_media_files(post_message.post_message_id)
+
+    await post_message_db.update_post_message(post_message)
+
+    await message.answer(
+        "Предпросмотр 👇",
+        reply_markup=ReplyBotMenuKeyboard.get_keyboard(post_message.bot_id)
+    )
+    await send_post_message(
+        bot,
+        message.from_user.id,
+        post_message,
+        media_files,
+        PostActionType.AFTER_REDACTING,
+        message,
+    )
+
+    match post_message_type:
+        case PostMessageType.MAILING:
+            username = (await Bot(message.bot.token).get_me()).username
+        case PostMessageType.CHANNEL_POST:
+            username = (await Bot(message.bot.token).get_chat(channel_id)).username
+        case _:
+            raise UnknownPostMessageType
+
+    await message.answer(
+        MessageTexts.bot_post_message_menu_message(post_message_type).format(username),
+        reply_markup=await InlinePostMessageMenuKeyboard.get_keyboard(post_message.bot_id, post_message_type)
+    )
 
 
 async def edit_delay_date(message: Message, state: FSMContext, post_message_type: PostMessageType):
