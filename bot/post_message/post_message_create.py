@@ -1,9 +1,10 @@
 from datetime import datetime
 
-from bot.enums.post_message_type import PostMessageType
 from bot.main import post_message_db, mailing_db, channel_post_db
-from database.models.channel_post_model import ChannelPostSchemaWithoutId
+from bot.enums.post_message_type import PostMessageType
+
 from database.models.mailing_model import MailingSchemaWithoutId
+from database.models.channel_post_model import ChannelPostSchemaWithoutId
 from database.models.post_message_model import PostMessageSchemaWithoutId
 
 

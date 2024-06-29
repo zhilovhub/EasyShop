@@ -16,8 +16,8 @@ from bot.enums.post_message_type import PostMessageType
 from bot.keyboards.main_menu_keyboards import ReplyBotMenuKeyboard
 from bot.keyboards.post_message_keyboards import InlinePostMessageMenuKeyboard, ReplyBackPostMessageMenuKeyboard, \
     ReplyConfirmMediaFilesKeyboard, UnknownPostMessageType
-from database.models.bot_model import BotSchema
 
+from database.models.bot_model import BotSchema
 from database.models.post_message_model import PostMessageSchema
 from database.models.post_message_media_files import PostMessageMediaFileSchema
 

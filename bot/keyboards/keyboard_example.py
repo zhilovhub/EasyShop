@@ -1,7 +1,8 @@
 from enum import Enum
 
-from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 from pydantic import BaseModel, ConfigDict, Field, ValidationError
+
+from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 
 from bot.keyboards.keyboard_utils import callback_json_validator
 

@@ -1,7 +1,7 @@
 from aiogram import Router
 
-from bot.middlewaries.errors_middleware import ErrorMiddleware
 from bot.middlewaries.log_middleware import LogMiddleware
+from bot.middlewaries.errors_middleware import ErrorMiddleware
 
 from logs.config import custom_bot_logger
 

@@ -1,7 +1,8 @@
 from enum import Enum
 
-from aiogram.types import ReplyKeyboardMarkup, KeyboardButton
 from pydantic import ConfigDict, Field, BaseModel
+
+from aiogram.types import ReplyKeyboardMarkup, KeyboardButton
 
 from bot.utils.keyboard_utils import make_webapp_info
 

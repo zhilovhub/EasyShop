@@ -1,7 +1,7 @@
 import redis
 
-from logging import Logger
 from typing import Callable, Dict, Any, Awaitable
+from logging import Logger
 
 from aiogram import BaseMiddleware
 from aiogram.types import CallbackQuery, Message, TelegramObject, User

@@ -4,8 +4,8 @@ import ssl
 from os import getenv
 from typing import Any, Dict, Union
 
-from aiohttp import web
 from dotenv import load_dotenv
+from aiohttp import web
 
 from aiogram import Bot, Dispatcher, Router
 from aiogram.enums import ParseMode
