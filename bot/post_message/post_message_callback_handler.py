@@ -3,14 +3,14 @@ from aiogram.enums import ParseMode
 from aiogram.types import CallbackQuery
 from aiogram.fsm.context import FSMContext
 
-from bot.main import bot_db, post_message_db, bot, post_message_media_file_db, custom_bot_user_db, _scheduler
+from bot.main import post_message_db, bot, post_message_media_file_db, custom_bot_user_db, _scheduler
 from bot.utils import MessageTexts
 from bot.config import WEB_APP_URL, WEB_APP_PORT
 from bot.states import States
 from bot.enums.post_message_type import PostMessageType
 from bot.keyboards.channel_keyboards import InlineChannelMenuKeyboard
 from bot.keyboards.main_menu_keyboards import ReplyBotMenuKeyboard, InlineBotMenuKeyboard
-from bot.post_message.post_message_utils import is_post_message_valid
+from bot.post_message.post_message_utils import is_post_message_valid, get_post_message
 from bot.keyboards.post_message_keyboards import InlinePostMessageMenuKeyboard, ReplyBackPostMessageMenuKeyboard, \
     ReplyConfirmMediaFilesKeyboard, InlinePostMessageAcceptDeletingKeyboard, InlinePostMessageExtraSettingsKeyboard, \
     InlinePostMessageStartConfirmKeyboard, UnknownPostMessageType
@@ -35,18 +35,6 @@ async def _post_message_mailing(
                 text=f"Отправлено {post_message.sent_post_message_amount}/{custom_users_length} сообщений",
                 show_alert=True
             )
-
-
-async def _post_message_channel_post(
-        query: CallbackQuery,
-        state: FSMContext,
-        callback_data: InlinePostMessageMenuKeyboard.Callback,
-        user_id: int,
-        bot_id: int,
-        post_message: PostMessageSchema,
-        channel_username: str
-):
-    pass
 
 
 async def _cancel_send(
@@ -618,26 +606,19 @@ async def post_message_handler(query: CallbackQuery, state: FSMContext):
     user_id = query.from_user.id
     post_message_id = callback_data.post_message_id
     bot_id = callback_data.bot_id
-    # channel_id = callback_data.channel_id  # TODO get channel_id (there is no it right now)
 
     try:
-        post_message = await post_message_db.get_post_message(post_message_id)
+        post_message = await get_post_message(query, user_id, bot_id, post_message_id, post_message_type)
     except PostMessageNotFound:
-        logger.info(
-            f"user_id={user_id}: tried to edit post_message_id={post_message_id} but it doesn't exist",
-            extra=extra_params(user_id=user_id, bot_id=bot_id, post_message_id=post_message_id)
-        )
-        await query.answer(MessageTexts.bot_post_already_done_message(post_message_type), show_alert=True)
-        await query.message.delete()
         return
 
-    custom_bot = await bot_db.get_bot(bot_id)
-    custom_bot_username = (await Bot(custom_bot.token).get_me()).username
-
-    if not custom_bot_username:
-        username = (await custom_bot.get_chat(channel_id)).username
-    else:
-        username = custom_bot_username
+    match post_message_type:
+        case PostMessageType.MAILING:
+            username = (await Bot(query.bot.token).get_me()).username
+        case PostMessageType.CHANNEL_POST:
+            username = (await Bot(query.bot.token).get_chat(callback_data.channel_id)).username
+        case _:
+            raise UnknownPostMessageType
 
     if callback_data.a not in (
             callback_data.ActionEnum.STATISTICS,
@@ -658,9 +639,7 @@ async def post_message_handler(query: CallbackQuery, state: FSMContext):
                 query, callback_data, bot_id, post_message
             )
         case PostMessageType.CHANNEL_POST:  # specific buttons for channel post
-            await _post_message_channel_post(
-                query, state, post_message_type, post_message_type, bot_id, post_message, username
-            )
+            pass
 
     # union buttons for mailing and channel post
     await _post_message_union(

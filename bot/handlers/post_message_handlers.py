@@ -13,7 +13,7 @@ from bot.handlers.routers import post_message_router
 from bot.enums.post_message_type import PostMessageType
 from bot.keyboards.channel_keyboards import InlineChannelMenuKeyboard
 from bot.keyboards.main_menu_keyboards import InlineBotMenuKeyboard, ReplyBotMenuKeyboard
-from bot.post_message.post_message_utils import is_post_message_valid
+from bot.post_message.post_message_utils import is_post_message_valid, get_post_message
 from bot.keyboards.post_message_keyboards import InlinePostMessageStartConfirmKeyboard, InlinePostMessageMenuKeyboard, \
     InlinePostMessageExtraSettingsKeyboard, InlinePostMessageAcceptDeletingKeyboard, UnknownPostMessageType
 from bot.post_message.post_message_editors import edit_delay_date, edit_message, edit_button_text, edit_button_url, \
@@ -22,8 +22,6 @@ from bot.handlers.mailing_settings_handlers import send_post_messages
 from bot.post_message.post_message_callback_handler import post_message_handler
 
 from database.models.post_message_model import PostMessageNotFound, PostMessageSchema
-
-from logs.config import logger, extra_params
 
 
 @post_message_router.callback_query(lambda query: InlinePostMessageMenuKeyboard.callback_validator(query.data))
@@ -75,7 +73,7 @@ async def post_message_extra_settings_callback_handler(query: CallbackQuery):
     post_message_type = callback_data.post_message_type
 
     try:
-        post_message = await _get_post_message(query, user_id, bot_id, post_message_id, post_message_type)
+        post_message = await get_post_message(query, user_id, bot_id, post_message_id, post_message_type)
     except PostMessageNotFound:
         return
 
@@ -116,7 +114,7 @@ async def post_message_confirm_start_callback_handler(query: CallbackQuery):
     post_message_type = callback_data.post_message_type
 
     try:
-        post_message = await _get_post_message(query, user_id, bot_id, post_message_id, post_message_type)
+        post_message = await get_post_message(query, user_id, bot_id, post_message_id, post_message_type)
     except PostMessageNotFound:
         return
 
@@ -160,7 +158,7 @@ async def post_message_accept_deleting_callback_handler(query: CallbackQuery):
     post_message_type = callback_data.post_message_type
 
     try:
-        post_message = await _get_post_message(query, user_id, bot_id, post_message_id, post_message_type)
+        post_message = await get_post_message(query, user_id, bot_id, post_message_id, post_message_type)
     except PostMessageNotFound:
         return
 
@@ -352,34 +350,6 @@ async def _mailing_already_started(
         return True
 
     return False
-
-
-async def _get_post_message(
-        query: CallbackQuery,
-        user_id: int,
-        bot_id: int,
-        post_message_id: int,
-        post_message_type: PostMessageType
-) -> PostMessageSchema:
-    try:
-        post_message = await post_message_db.get_post_message(post_message_id)
-        return post_message
-    except PostMessageNotFound as e:
-        logger.info(
-            f"user_id={user_id}: tried to edit post_message_id={post_message_id} but it doesn't exist",
-            extra=extra_params(user_id=user_id, bot_idf=bot_id, post_message_id=post_message_id)
-        )
-        await query.message.delete()
-
-        match post_message_type:
-            case PostMessageType.MAILING:
-                await query.answer("Рассылка уже завершена или удалена", show_alert=True)
-            case PostMessageType.CHANNEL_POST:
-                await query.answer("Запись в канал уже отправлена или удалена", show_alert=True)
-            case _:
-                raise UnknownPostMessageType
-
-        raise e
 
 
 async def _inline_back_to_post_message_menu(
