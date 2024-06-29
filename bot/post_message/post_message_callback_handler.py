@@ -166,6 +166,7 @@ async def _button_url(
         await state.set_state(States.EDITING_POST_BUTTON_URL)
         await state.set_data({
             "bot_id": bot_id,
+            "channel_id": channel_id,
             "post_message_id": post_message.post_message_id,
             "post_message_type": post_message_type.value
         })
@@ -196,6 +197,7 @@ async def _button_text(
         await state.set_state(States.EDITING_POST_BUTTON_TEXT)
         await state.set_data({
             "bot_id": bot_id,
+            "channel_id": channel_id,
             "post_message_id": post_message.post_message_id,
             "post_message_type": post_message_type.value
         })
@@ -245,6 +247,7 @@ async def _post_message_text(
         state: FSMContext,
         post_message: PostMessageSchema,
         post_message_type: PostMessageType,
+        channel_id: int | None
 ):
     match post_message_type:
         case PostMessageType.MAILING:
@@ -263,6 +266,7 @@ async def _post_message_text(
     await state.set_state(States.EDITING_POST_TEXT)
     await state.set_data({
         "bot_id": post_message.bot_id,
+        "channel_id": channel_id,
         "post_message_id": post_message.post_message_id,
         "post_message_type": post_message_type.value
     })
@@ -273,6 +277,7 @@ async def _post_message_media(
         state: FSMContext,
         post_message: PostMessageSchema,
         post_message_type: PostMessageType,
+        channel_id: int | None
 ):
     match post_message_type:
         case PostMessageType.MAILING:
@@ -297,6 +302,7 @@ async def _post_message_media(
     await state.set_state(States.EDITING_POST_MEDIA_FILES)
     await state.set_data({
         "bot_id": post_message.bot_id,
+        "channel_id": channel_id,
         "post_message_id": post_message.post_message_id,
         "post_message_type": post_message_type.value
     })
@@ -418,6 +424,7 @@ async def _delay(
         state: FSMContext,
         post_message: PostMessageSchema,
         post_message_type: PostMessageType,
+        channel_id: int | None
 ):
     await query.message.answer(
         MessageTexts.DATE_RULES.value,
@@ -427,6 +434,7 @@ async def _delay(
     await state.set_state(States.EDITING_POST_DELAY_DATE)
     await state.set_data({
         "bot_id": post_message.bot_id,
+        "channel_id": channel_id,
         "post_message_id": post_message.post_message_id,
         "post_message_type": post_message_type.value
     })
@@ -534,6 +542,7 @@ async def _post_message_union(
                 state,
                 post_message,
                 post_message_type,
+                channel_id=callback_data.channel_id if post_message_type == PostMessageType.CHANNEL_POST else None
             )
 
         case callback_data.ActionEnum.POST_MESSAGE_MEDIA:
@@ -542,6 +551,7 @@ async def _post_message_union(
                 state,
                 post_message,
                 post_message_type,
+                channel_id=callback_data.channel_id if post_message_type == PostMessageType.CHANNEL_POST else None
             )
 
         case callback_data.ActionEnum.START:
@@ -581,6 +591,7 @@ async def _post_message_union(
                 state,
                 post_message,
                 post_message_type,
+                channel_id=callback_data.channel_id if post_message_type == PostMessageType.CHANNEL_POST else None
             )
 
         case callback_data.ActionEnum.REMOVE_DELAY:
