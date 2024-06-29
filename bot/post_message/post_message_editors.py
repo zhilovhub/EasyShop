@@ -299,46 +299,68 @@ async def edit_delay_date(message: Message, state: FSMContext, post_message_type
     bot_id = state_data["bot_id"]
     post_message_id = state_data["post_message_id"]
 
-    custom_bot = Bot((await bot_db.get_bot(bot_id)).token)
-    custom_bot_username = (await custom_bot.get_me()).username
-
     post_message = await post_message_db.get_post_message(post_message_id)
 
     if message_text:
         if message_text == ReplyBackPostMessageMenuKeyboard.Callback.ActionEnum.BACK_TO_POST_MESSAGE_MENU.value:
-            await _back_to_post_message_menu(message, bot_id, custom_bot_username, post_message_type)
+            await _back_to_post_message_menu(
+                message,
+                bot_id,
+                post_message_type,
+                channel_id=state_data["channel_id"] if post_message_type == PostMessageType.CHANNEL_POST else None
+            )
         else:
             try:
-                datetime_obj = datetime.strptime(message_text, "%d.%m.%Y %H:%M")
-                datetime_obj.replace(tzinfo=None)
-
-                if datetime.now() > datetime_obj:
-                    return await message.reply("Введенное время уже прошло. Введите, пожалуйста, <b>будущее</b> время")
-
-                post_message.is_delayed = True
-                post_message.send_date = datetime_obj
-
-                await post_message_db.update_post_message(post_message)
-
-                await message.reply(
-                    f"Запланировано на: <b>{datetime_obj.strftime('%Y-%m-%d %H:%M')}</b>\n\n"
-                    f"Для отложенного запуска нажмите <b>Запустить</b> в меню",
-                    reply_markup=ReplyBotMenuKeyboard.get_keyboard(bot_id)
+                await _delay_save(
+                    message,
+                    post_message,
+                    post_message_type,
+                    channel_id=state_data["channel_id"] if post_message_type == PostMessageType.CHANNEL_POST else None
                 )
-
-                await message.answer(
-                    MessageTexts.bot_post_message_menu_message(post_message_type).format(custom_bot_username),
-                    reply_markup=await InlinePostMessageMenuKeyboard.get_keyboard(bot_id, post_message_type)
-                )
-
                 await state.set_state(States.BOT_MENU)
                 await state.set_data(state_data)
-
             except ValueError:
                 return await message.reply(
                     "Некорректный формат. Пожалуйста, "
                     "введите время и дату в правильном формате."
                 )
+
+
+async def _delay_save(
+        message: Message,
+        post_message: PostMessageSchema,
+        post_message_type: PostMessageType,
+        channel_id: int | None
+):
+    datetime_obj = datetime.strptime(message.text, "%d.%m.%Y %H:%M")
+    datetime_obj.replace(tzinfo=None)
+
+    if datetime.now() > datetime_obj:
+        return await message.reply("Введенное время уже прошло. Введите, пожалуйста, <b>будущее</b> время")
+
+    post_message.is_delayed = True
+    post_message.send_date = datetime_obj
+
+    await post_message_db.update_post_message(post_message)
+
+    await message.reply(
+        f"Запланировано на: <b>{datetime_obj.strftime('%Y-%m-%d %H:%M')}</b>\n\n"
+        f"Для отложенного запуска нажмите <b>Запустить</b> в меню",
+        reply_markup=ReplyBotMenuKeyboard.get_keyboard(post_message.bot_id)
+    )
+
+    match post_message_type:
+        case PostMessageType.MAILING:
+            username = (await Bot(message.bot.token).get_me()).username
+        case PostMessageType.CHANNEL_POST:
+            username = (await Bot(message.bot.token).get_chat(channel_id)).username
+        case _:
+            raise UnknownPostMessageType
+
+    await message.answer(
+        MessageTexts.bot_post_message_menu_message(post_message_type).format(username),
+        reply_markup=await InlinePostMessageMenuKeyboard.get_keyboard(post_message.bot_id, post_message_type)
+    )
 
 
 async def edit_button_url(message: Message, state: FSMContext, post_message_type: PostMessageType):
