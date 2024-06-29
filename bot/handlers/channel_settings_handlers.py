@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta
+from datetime import datetime
 
 from aiogram import Bot
 from aiogram.enums import ParseMode
@@ -6,8 +6,7 @@ from aiogram.types import Message, CallbackQuery
 from aiogram.filters import StateFilter
 from aiogram.fsm.context import FSMContext
 
-from bot.main import _scheduler, custom_bot_user_db, post_message_media_file_db, channel_user_db, bot_db, \
-    post_message_db, channel_db
+from bot.main import channel_user_db, bot_db, post_message_db, channel_post_db
 from bot.utils import MessageTexts
 from bot.states.states import States
 from bot.handlers.routers import channel_menu_router
@@ -15,14 +14,12 @@ from bot.enums.post_message_type import PostMessageType
 from bot.keyboards.channel_keyboards import InlineChannelsListKeyboard, InlineChannelMenuKeyboard
 from bot.keyboards.main_menu_keyboards import InlineBotMenuKeyboard
 from bot.keyboards.post_message_keyboards import InlinePostMessageMenuKeyboard
-from bot.post_message.post_message_editors import edit_button_url, edit_delay_date, edit_message, \
-    edit_button_text, edit_media_files, send_post_message
+from bot.post_message.post_message_editors import edit_button_url, edit_delay_date, edit_message, edit_button_text, \
+    edit_media_files
 from bot.post_message.post_message_handler import post_message_handler
 
-from database.models.channel_model import ChannelNotFound
-from database.models.channel_post_model import ChannelPostSchemaWithoutId
+from database.models.channel_post_model import ChannelPostSchemaWithoutId, ChannelPostNotFound
 from database.models.post_message_model import PostMessageSchemaWithoutId
-from logs.config import logger
 
 
 @channel_menu_router.callback_query(lambda query: InlineChannelsListKeyboard.callback_validator(query.data))
@@ -109,175 +106,16 @@ async def channel_menu_callback_handler(query: CallbackQuery):
                     post_message_type=PostMessageType.CHANNEL_POST
                 )
             )
+        case callback_data.ActionEnum.BACK_CHANNELS_LIST:
+            await query.message.edit_text(
+                text=MessageTexts.BOT_CHANNELS_LIST_MESSAGE.value.format(custom_bot_username),
+                reply_markup=await InlineChannelsListKeyboard.get_keyboard(bot_id)
+            )
 
 
 @channel_menu_router.callback_query(lambda query: InlinePostMessageMenuKeyboard.callback_validator(query.data))
 async def channel_post_menu_callback_handler(query: CallbackQuery, state: FSMContext):
     await post_message_handler(query, state)
-
-
-@channel_menu_router.callback_query(lambda query: query.data.startswith("channel_menu"))
-async def channel_menu_callback_handler(query: CallbackQuery, state: FSMContext):
-    query_data = query.data.split(":")
-
-    # Standart fields
-    action = query_data[1]
-    bot_id = int(query_data[2])
-    channel_id = int(query_data[3])
-
-    custom_bot = await bot_db.get_bot(bot_id)
-    custom_tg_bot = Bot(custom_bot.token)
-    custom_bot_username = (await custom_tg_bot.get_me()).username
-
-    channel_username = (await custom_tg_bot.get_chat(channel_id)).username
-
-    # Detect if we have requested channel in db
-    try:
-        await channel_db.get_channel(channel_id=channel_id)
-    except ChannelNotFound:
-        await query.answer("Канал удален", show_alert=True)
-        return query.message.delete()
-
-    # TODO Fix with post_type parameter in state_data
-    # Channel Post Validation:
-    # Temp variables to detect which type of request we recieve
-    is_running = False
-    channel_post = None
-
-    if is_running is True:
-        match action:
-            case "stop_post":
-                custom_users_length = len(await custom_bot_user_db.get_custom_bot_users(bot_id=bot_id))
-
-                channel_post.is_running = False
-                try:
-                    await _scheduler.del_job_by_id(channel_post.job_id)
-                except:
-                    logger.warning(
-                        f"Job ID {channel_post.job_id} not found")
-                channel_post.job_id = None
-                await channel_post_db.update_channel_post(channel_post)
-                await query.message.answer(f"Отправка поста остановлена")
-
-                await query.message.answer(
-                    MessageTexts.BOT_MENU_MESSAGE.value.format((await Bot(custom_bot.token).get_me()).username),
-                    reply_markup=await InlineBotMenuKeyboard.get_keyboard(bot_id)
-                )
-                return await query.message.delete()
-            case _:
-                if channel_post.is_contest:
-                    await query.answer("Сейчас в канале есть активный конкурс, дождитесь когда он закончится",
-                                       show_alert=True)
-                else:
-                    await query.answer("Пост уже в очереди", show_alert=True)
-                await query.message.answer(
-                    text=MessageTexts.BOT_CHANNEL_POST_MENU_WHILE_RUNNING.value.format(
-                        channel_username),
-                    reply_markup=await get_inline_bot_channel_post_menu_keyboard(
-                        bot_id, channel_id, is_contest=channel_post.is_contest)
-                )
-                return await query.message.delete()
-
-    # Works only if we get requested object from db
-    match action:
-        case "back_to_channels_list":
-            await query.message.edit_text(
-                text=MessageTexts.BOT_CHANNELS_LIST_MESSAGE.value.format(
-                    custom_bot_username),
-                reply_markup=await InlineChannelsListKeyboard.get_keyboard(bot_id)
-            )
-        case "back_to_channel_list":
-            await query.message.edit_text(
-                MessageTexts.BOT_CHANNEL_MENU_MESSAGE.value.format(channel_username,
-                                                                   (await custom_tg_bot.get_me()).username),
-                reply_markup=await InlineChannelMenuKeyboard.get_keyboard(custom_bot.bot_id, channel_id)
-            )
-        case "accept_start":
-            media_files = await post_message_media_file_db.get_all_channel_post_media_files(
-                channel_post_id=channel_post.channel_post_id)
-
-            if len(media_files) > 1 and channel_post.has_button:
-                await query.answer(
-                    "Telegram не позволяет прикрепить кнопку, если в сообщении минимум 2 медиафайла",
-                    show_alert=True
-                )
-            elif not media_files and not channel_post.description:
-                return await query.answer(
-                    text="В Вашем рассылочном сообщении нет ни текста, ни медиафайлов",
-                    show_alert=True
-                )
-            if channel_post.is_contest:
-                if channel_post.contest_end_date is None:
-                    return await query.answer(
-                        text="Не установлен конец конкурса",
-                        show_alert=True
-                    )
-                elif channel_post.contest_winner_amount is None:
-                    return await query.answer(
-                        text="Не установлено количество победителей",
-                        show_alert=True
-                    )
-                elif channel_post.contest_end_date < (timedelta(minutes=2) + datetime.now()):
-                    return await query.answer(
-                        text="Дата окончания конкурса уже прошла",
-                        show_alert=True
-                    )
-            if channel_post.description or media_files:
-                if channel_post.is_delayed:
-                    # Небольшой запас по времени
-                    if datetime.now() > (channel_post.send_date + timedelta(minutes=2)):
-                        await query.answer(
-                            text="Указанное время отправки уже прошло",
-                            show_alert=True
-                        )
-                        return
-                channel_post.is_running = True
-                await channel_post_db.update_channel_post(channel_post)
-
-                text = f"Рассылка начнется в {channel_post.send_date}" if channel_post.is_delayed else "Отправляю пост"
-                await query.message.answer(text)
-                if channel_post.is_delayed:
-                    await query.message.answer(
-                        text=MessageTexts.BOT_CHANNEL_POST_MENU_WHILE_RUNNING.value.format(
-                            channel_username),
-                        reply_markup=await get_inline_bot_channel_post_menu_keyboard(
-                            bot_id, channel_id, channel_post.is_contest)
-                    )
-
-                if not (channel_post.is_delayed):
-                    await send_post_message(
-                        bot_from_send=custom_bot,
-                        to_user_id=channel_post.channel_id,
-                        channel_post_schema=channel_post,
-                        media_files=media_files,
-                        mailing_message_type=MailingMessageType.RELEASE,
-                        chat_id=query.from_user.id,
-                        message_id=query.message.message_id,
-                    )
-                    await query.message.edit_text(
-                        MessageTexts.BOT_CHANNEL_MENU_MESSAGE.value.format(channel_username,
-                                                                           (await custom_tg_bot.get_me()).username),
-                        reply_markup=await InlineChannelMenuKeyboard.get_keyboard(custom_bot.bot_id, channel_id)
-                    )
-                else:
-                    job_id = await _scheduler.add_scheduled_job(
-                        func=send_post_message, run_date=channel_post.send_date,
-                        args=[custom_bot, channel_post.channel_id, channel_post, media_files,
-                              MailingMessageType.RELEASE, query.from_user.id, query.message.message_id])
-                    channel_post.job_id = job_id
-                    await channel_post_db.update_channel_post(channel_post)
-            else:
-                await query.answer(
-                    text="В Вашем рассылочном сообщении нет ни текста, ни медиафайлов",
-                    show_alert=True
-                )
-        case "back_to_editing_channel_post":
-            return await query.message.edit_text(
-                MessageTexts.BOT_CHANNEL_POST_MENU_MESSAGE.value.format(
-                    channel_username),
-                reply_markup=await get_inline_bot_channel_post_menu_keyboard(bot_id=bot_id, channel_id=channel_id,
-                                                                             is_contest=channel_post.is_contest)
-            )
 
 
 @channel_menu_router.message(StateFilter(

@@ -70,8 +70,8 @@ class LokiFilter(logging.Filter):
                 record.tags["channel_id"] = record.channel_id
             if hasattr(record, "channel_user_id"):
                 record.tags["channel_user_id"] = record.channel_user_id
-            if hasattr(record, "competition_id"):
-                record.tags["competition_id"] = record.competition_id
+            if hasattr(record, "channel_post_id"):
+                record.tags["channel_post_id"] = record.channel_post_id
             if hasattr(record, "post_message_id"):
                 record.tags["post_message_id"] = record.post_message_id
             if hasattr(record, "order_id"):
@@ -84,8 +84,6 @@ class LokiFilter(logging.Filter):
                 record.tags["adv_id"] = record.adv_id
             if hasattr(record, "job_id"):
                 record.tags["job_id"] = record.job_id
-            if hasattr(record, "custom_ad_id"):
-                record.tags["custom_ad_id"] = record.custom_ad_id
             if hasattr(record, "bot_token"):
                 # hide the token from gr
                 record.msg = record.msg.replace(record.bot_token[5:-1], "*" * len(record.bot_token[5:-1]))
