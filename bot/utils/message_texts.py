@@ -76,10 +76,7 @@ class MessageTexts(Enum):
     DATE_RULES = "Пожалуйста, отправьте дату и время <b>начала отправки сообщения</b> в следующем формате: " \
                  "<b>ДД.ММ.ГГГГ ЧЧ:ММ</b>\nНапример, <code>25.12.2024 14:30</code>"
 
-    BOT_CHANNEL_POST_MENU_MESSAGE = "Управление постом для канала <b>@{}</b>\n\n" \
-        "❗️Перед запуcком нажмите <b>Проверить</b>, чтобы убедиться в правильности составленного сообщения"
-
-    BOT_CHANNEL_POST_MENU_ACCEPT_START = "Управление постом для канала <b>@{}</b>\n\n" \
+    BOT_CHANNEL_POST_MENU_ACCEPT_START = "Управление записью для канала <b>@{}</b>\n\n" \
         "<b>Подтверждение начала рассылки</b>"
 
     BOT_CHANNEL_POST_MENU_ACCEPT_DELETING_MESSAGE = "Управление постом для канала <b>@{}</b>\n\n" \
@@ -103,7 +100,9 @@ class MessageTexts(Enum):
                        "❗️Перед запуcком нажмите <b>Проверить</b>, чтобы убедиться в правильности составленного " \
                        "сообщения"
             case PostMessageType.CHANNEL_POST:
-                return "Запись уже выложена или удалена"
+                return "Управление записью для канала <b>@{}</b>\n\n" \
+                       "❗️Перед запуcком нажмите <b>Проверить</b>, " \
+                       "чтобы убедиться в правильности составленного сообщения"
 
     @staticmethod
     def bot_post_already_done_message(post_message_type: PostMessageType) -> str:

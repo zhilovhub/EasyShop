@@ -88,7 +88,7 @@ async def channel_menu_callback_handler(query: CallbackQuery):
                 await post_message_create(bot_id, PostMessageType.CHANNEL_POST)
 
             await query.message.edit_text(
-                MessageTexts.BOT_CHANNEL_POST_MENU_MESSAGE.value.format(channel_username),
+                MessageTexts.bot_post_message_menu_message(PostMessageType.CHANNEL_POST).format(channel_username),
                 reply_markup=await InlinePostMessageMenuKeyboard.get_keyboard(
                     bot_id=bot_id,
                     post_message_type=PostMessageType.CHANNEL_POST

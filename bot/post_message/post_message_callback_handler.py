@@ -314,6 +314,69 @@ async def _post_message_media(
     })
 
 
+async def _start(
+        query: CallbackQuery,
+        post_message: PostMessageSchema,
+        post_message_type: PostMessageType,
+        channel_id: int | None
+):
+    post_message_id = post_message.post_message_id
+    bot_id = post_message.bot_id
+    media_files = await post_message_media_file_db.get_all_post_message_media_files(post_message_id)
+
+    if await is_post_message_valid(query, post_message, media_files):
+        match post_message_type:
+            case PostMessageType.MAILING:
+                username = (await Bot(query.bot.token).get_me()).username
+                text = MessageTexts.BOT_MAILINGS_MENU_ACCEPT_START.value.format(username)
+            case PostMessageType.CHANNEL_POST:
+                username = (await Bot(query.bot.token).get_chat(channel_id)).username
+                text = MessageTexts.BOT_CHANNEL_POST_MENU_ACCEPT_START.value.format(username)
+            case _:
+                raise UnknownPostMessageType
+
+        await query.message.edit_text(
+            text=text,
+            reply_markup=InlinePostMessageStartConfirmKeyboard.get_keyboard(
+                bot_id,
+                post_message_id,
+                post_message_type
+            )
+        )
+
+
+async def _demo(
+        query: CallbackQuery,
+        post_message: PostMessageSchema,
+        post_message_type: PostMessageType,
+        channel_id: int | None
+):
+    post_message_id = post_message.post_message_id
+    bot_id = post_message.bot_id
+    media_files = await post_message_media_file_db.get_all_post_message_media_files(post_message_id)
+
+    if await is_post_message_valid(query, post_message, media_files):
+        match post_message_type:
+            case PostMessageType.MAILING:
+                username = (await Bot(query.bot.token).get_me()).username
+            case PostMessageType.CHANNEL_POST:
+                username = (await Bot(query.bot.token).get_chat(channel_id)).username
+            case _:
+                raise UnknownPostMessageType
+
+        await send_post_message(
+            bot,
+            query.from_user.id,
+            post_message,
+            media_files,
+            PostActionType.DEMO,
+            message=query.message
+        )
+        await query.message.answer(
+            text=MessageTexts.bot_post_message_menu_message(post_message_type).format(username),
+            reply_markup=await InlinePostMessageMenuKeyboard.get_keyboard(bot_id, post_message_type)
+        )
+
 async def _post_message_union(
         query: CallbackQuery,
         state: FSMContext,
@@ -388,34 +451,20 @@ async def _post_message_union(
             )
 
         case callback_data.ActionEnum.START:
-            media_files = await post_message_media_file_db.get_all_post_message_media_files(post_message_id)
-
-            if await is_post_message_valid(query, post_message, media_files):
-                await query.message.edit_text(
-                    text=MessageTexts.BOT_MAILINGS_MENU_ACCEPT_START.value.format(username),
-                    reply_markup=InlinePostMessageStartConfirmKeyboard.get_keyboard(
-                        bot_id,
-                        post_message_id,
-                        post_message_type
-                    )
-                )
+            await _start(
+                query,
+                post_message,
+                post_message_type,
+                channel_id=callback_data.channel_id if post_message_type == PostMessageType.CHANNEL_POST else None
+            )
 
         case callback_data.ActionEnum.DEMO:
-            media_files = await post_message_media_file_db.get_all_post_message_media_files(post_message_id)
-
-            if await is_post_message_valid(query, post_message, media_files):
-                await send_post_message(
-                    bot,
-                    query.from_user.id,
-                    post_message,
-                    media_files,
-                    PostActionType.DEMO,
-                    message=query.message
-                )
-                await query.message.answer(
-                    text=MessageTexts.bot_post_message_menu_message(post_message_type).format(username),
-                    reply_markup=await InlinePostMessageMenuKeyboard.get_keyboard(bot_id, post_message_type)
-                )
+            await _demo(
+                query,
+                post_message,
+                post_message_type,
+                channel_id=callback_data.channel_id if post_message_type == PostMessageType.CHANNEL_POST else None
+            )
 
         case callback_data.ActionEnum.DELETE_POST_MESSAGE:
             await query.message.edit_text(
