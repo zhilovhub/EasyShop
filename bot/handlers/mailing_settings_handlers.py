@@ -3,24 +3,21 @@ import asyncio
 from datetime import datetime, timedelta
 
 from aiogram.enums import ParseMode
-from aiogram.filters import StateFilter
-from aiogram.types import Message, CallbackQuery
+from aiogram.types import CallbackQuery
 from aiogram.client.bot import DefaultBotProperties, Bot
 from aiogram.fsm.context import FSMContext
 
 from bot.main import bot, custom_bot_user_db, post_message_media_file_db, _scheduler, post_message_db, bot_db
 from bot.utils import MessageTexts
-from bot.states.states import States
 from bot.handlers.routers import admin_bot_menu_router
 from bot.enums.post_message_type import PostMessageType
-from bot.post_message.post_message_editors import edit_button_url, PostActionType, send_post_message, \
-    _is_post_message_valid, _inline_back_to_post_message_menu, \
-    edit_delay_date, edit_message, edit_button_text, edit_media_files
-from bot.post_message.post_message_handler import post_message_handler
 from bot.keyboards.main_menu_keyboards import ReplyBotMenuKeyboard, InlineBotMenuKeyboard
+from bot.post_message.post_message_handler import post_message_handler
 from bot.keyboards.post_message_keyboards import InlinePostMessageMenuKeyboard, \
     InlinePostMessageAcceptDeletingKeyboard, InlinePostMessageExtraSettingsKeyboard, \
     InlinePostMessageStartConfirmKeyboard
+from bot.post_message.post_message_editors import PostActionType, send_post_message, \
+    _is_post_message_valid, _inline_back_to_post_message_menu
 
 from database.models.post_message_model import PostMessageNotFound
 
@@ -277,26 +274,3 @@ async def mailing_confirm_start_callback_handler(query: CallbackQuery):
 
         case callback_data.ActionEnum.BACK_TO_POST_MESSAGE_MENU:
             await _inline_back_to_post_message_menu(query, bot_id, custom_bot_username, post_message_type)
-
-
-@admin_bot_menu_router.message(StateFilter(
-    States.EDITING_MAILING_DELAY_DATE,
-    States.EDITING_MAILING_MESSAGE,
-    States.EDITING_MAILING_BUTTON_TEXT,
-    States.EDITING_MAILING_BUTTON_URL,
-    States.EDITING_MAILING_MEDIA_FILES,
-))
-async def editing_post_message_handler(message: Message, state: FSMContext):
-    current_state = await state.get_state()
-
-    match current_state:
-        case States.EDITING_MAILING_DELAY_DATE:
-            await edit_delay_date(message, state, PostMessageType.MAILING)
-        case States.EDITING_MAILING_MESSAGE:
-            await edit_message(message, state, PostMessageType.MAILING)
-        case States.EDITING_MAILING_BUTTON_TEXT:
-            await edit_button_text(message, state, PostMessageType.MAILING)
-        case States.EDITING_MAILING_BUTTON_URL:
-            await edit_button_url(message, state, PostMessageType.MAILING)
-        case States.EDITING_MAILING_MEDIA_FILES:
-            await edit_media_files(message, state, PostMessageType.MAILING)

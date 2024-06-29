@@ -109,26 +109,3 @@ async def channel_menu_callback_handler(query: CallbackQuery):
 @channel_menu_router.callback_query(lambda query: InlinePostMessageMenuKeyboard.callback_validator(query.data))
 async def channel_post_menu_callback_handler(query: CallbackQuery, state: FSMContext):
     await post_message_handler(query, state)
-
-
-@channel_menu_router.message(StateFilter(
-    States.EDITING_POST_DELAY_DATE,
-    States.EDITING_POST_TEXT,
-    States.EDITING_POST_BUTTON_TEXT,
-    States.EDITING_POST_BUTTON_URL,
-    States.EDITING_POST_MEDIA_FILES,
-))
-async def editing_post_message_handler(message: Message, state: FSMContext):
-    current_state = await state.get_state()
-
-    match current_state:
-        case States.EDITING_POST_DELAY_DATE:
-            await edit_delay_date(message, state, PostMessageType.CHANNEL_POST)
-        case States.EDITING_POST_TEXT:
-            await edit_message(message, state, PostMessageType.CHANNEL_POST)
-        case States.EDITING_POST_BUTTON_TEXT:
-            await edit_button_text(message, state, PostMessageType.CHANNEL_POST)
-        case States.EDITING_POST_BUTTON_URL:
-            await edit_button_url(message, state, PostMessageType.CHANNEL_POST)
-        case States.EDITING_POST_MEDIA_FILES:
-            await edit_media_files(message, state, PostMessageType.CHANNEL_POST)

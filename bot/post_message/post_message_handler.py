@@ -152,8 +152,12 @@ async def _post_message_union(
                     reply_markup=ReplyBackPostMessageMenuKeyboard.get_keyboard()
                 )
                 await query.answer()
-                await state.set_state(States.EDITING_MAILING_BUTTON_URL)
-                await state.set_data({"bot_id": bot_id, "post_message_id": post_message_id})
+                await state.set_state(States.EDITING_POST_BUTTON_URL)
+                await state.set_data({
+                    "bot_id": bot_id,
+                    "post_message_id": post_message_id,
+                    "post_message_type": post_message_type.value
+                })
 
         case callback_data.ActionEnum.BUTTON_TEXT:
             if not post_message.has_button:
@@ -164,8 +168,12 @@ async def _post_message_union(
                     reply_markup=ReplyBackPostMessageMenuKeyboard.get_keyboard()
                 )
                 await query.answer()
-                await state.set_state(States.EDITING_MAILING_BUTTON_TEXT)
-                await state.set_data({"bot_id": bot_id, "post_message_id": post_message_id})
+                await state.set_state(States.EDITING_POST_BUTTON_TEXT)
+                await state.set_data({
+                    "bot_id": bot_id,
+                    "post_message_id": post_message_id,
+                    "post_message_type": post_message_type.value
+                })
 
         case callback_data.ActionEnum.BUTTON_DELETE:
             if not post_message.has_button:
@@ -190,8 +198,12 @@ async def _post_message_union(
                 reply_markup=ReplyBackPostMessageMenuKeyboard.get_keyboard()
             )
             await query.answer()
-            await state.set_state(States.EDITING_MAILING_MESSAGE)
-            await state.set_data({"bot_id": bot_id, "post_message_id": post_message_id})
+            await state.set_state(States.EDITING_POST_TEXT)
+            await state.set_data({
+                "bot_id": bot_id,
+                "post_message_id": post_message_id,
+                "post_message_type": post_message_type.value
+            })
 
         case callback_data.ActionEnum.POST_MESSAGE_MEDIA:
             await query.message.answer(
@@ -202,8 +214,12 @@ async def _post_message_union(
                 reply_markup=ReplyConfirmMediaFilesKeyboard.get_keyboard()
             )
             await query.answer()
-            await state.set_state(States.EDITING_MAILING_MEDIA_FILES)
-            await state.set_data({"bot_id": bot_id, "post_message_id": post_message_id})
+            await state.set_state(States.EDITING_POST_MEDIA_FILES)
+            await state.set_data({
+                "bot_id": bot_id,
+                "post_message_id": post_message_id,
+                "post_message_type": post_message_type.value
+            })
 
         case callback_data.ActionEnum.START:
             media_files = await post_message_media_file_db.get_all_post_message_media_files(post_message_id)
@@ -267,8 +283,12 @@ async def _post_message_union(
                 reply_markup=ReplyBackPostMessageMenuKeyboard.get_keyboard()
             )
             await query.answer()
-            await state.set_state(States.EDITING_MAILING_DELAY_DATE)
-            await state.set_data({"bot_id": bot_id, "post_message_id": post_message_id})
+            await state.set_state(States.EDITING_POST_DELAY_DATE)
+            await state.set_data({
+                "bot_id": bot_id,
+                "post_message_id": post_message_id,
+                "post_message_type": post_message_type.value
+            })
 
         case callback_data.ActionEnum.REMOVE_DELAY:
             post_message.is_delayed = False
