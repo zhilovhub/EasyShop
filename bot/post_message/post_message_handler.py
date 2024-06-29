@@ -351,9 +351,13 @@ async def post_message_handler(query: CallbackQuery, state: FSMContext):
 
     match post_message_type:
         case PostMessageType.MAILING:  # specific buttons for mailing
-            await _post_message_mailing(query, state, callback_data, user_id, bot_id, post_message, custom_bot_username)
+            await _post_message_mailing(
+                query, state, callback_data, user_id, bot_id, post_message, username
+            )
         case PostMessageType.CHANNEL_POST:  # specific buttons for channel post
-            await _post_message_channel_post(query, state, post_message_type, post_message_type)
+            await _post_message_channel_post(
+                query, state, post_message_type, post_message_type, bot_id, post_message, username
+            )
 
     # union buttons for mailing and channel post
     await _post_message_union(
