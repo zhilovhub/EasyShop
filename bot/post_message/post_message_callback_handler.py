@@ -22,12 +22,9 @@ from logs.config import extra_params, logger
 
 async def _post_message_mailing(
         query: CallbackQuery,
-        state: FSMContext,
         callback_data: InlinePostMessageMenuKeyboard.Callback,
-        user_id: int,
         bot_id: int,
         post_message: PostMessageSchema,
-        custom_bot_username: str
 ):
     match callback_data.a:
         # RUNNING ACTIONS
@@ -52,6 +49,62 @@ async def _post_message_channel_post(
     pass
 
 
+async def _cancel_send(
+        query: CallbackQuery,
+        post_message: PostMessageSchema,
+        post_message_type: PostMessageType,
+        user_id: int,
+        channel_id: int | None
+):
+    custom_users_length = len(await custom_bot_user_db.get_custom_bot_users(bot_id=post_message.bot_id))
+
+    post_message.is_running = False
+
+    try:
+        await _scheduler.del_job_by_id(post_message.job_id)
+    except Exception as e:
+        logger.warning(
+            f"user_id={user_id}: Job ID {post_message.job_id} not found",
+            extra=extra_params(
+                user_id=user_id,
+                bot_id=post_message.bot_id,
+                post_message_id=post_message.post_message_id
+            ),
+            exc_info=e
+        )
+
+    post_message.job_id = None
+
+    await post_message_db.delete_post_message(post_message.post_message_id)
+    custom_bot_username = (await Bot(query.bot.token).get_me()).username
+
+    match post_message_type:
+        case PostMessageType.MAILING:
+            await query.message.answer(
+                f"Рассылка остановлена\nСообщений разослано - "
+                f"{post_message.sent_post_message_amount}/{custom_users_length}",
+                reply_markup=ReplyBotMenuKeyboard.get_keyboard(post_message.bot_id)
+            )
+            await query.message.edit_text(
+                MessageTexts.BOT_MENU_MESSAGE.value.format(custom_bot_username),
+                reply_markup=await InlineBotMenuKeyboard.get_keyboard(post_message.bot_id),
+                parse_mode=ParseMode.HTML
+            )
+        case PostMessageType.CHANNEL_POST:
+            username = (await Bot(query.bot.token).get_chat(channel_id)).username
+            await query.message.answer(
+                f"Отправка записи отменена",
+                reply_markup=ReplyBotMenuKeyboard.get_keyboard(post_message.bot_id)
+            )
+            await query.message.edit_text(
+                MessageTexts.BOT_CHANNEL_MENU_MESSAGE.value.format(username, custom_bot_username),
+                reply_markup=await InlineChannelMenuKeyboard.get_keyboard(post_message.bot_id, channel_id),
+                parse_mode=ParseMode.HTML
+            )
+        case _:
+            raise UnknownPostMessageType
+
+
 async def _post_message_union(
         query: CallbackQuery,
         state: FSMContext,
@@ -66,45 +119,13 @@ async def _post_message_union(
     match callback_data.a:
         # RUNNING ACTIONS
         case callback_data.ActionEnum.CANCEL:
-            custom_users_length = len(await custom_bot_user_db.get_custom_bot_users(bot_id=bot_id))
-
-            post_message.is_running = False
-
-            try:
-                await _scheduler.del_job_by_id(post_message.job_id)
-            except Exception as e:
-                logger.warning(
-                    f"user_id={user_id}: Job ID {post_message.job_id} not found",
-                    extra=extra_params(user_id=user_id, bot_id=bot_id, post_message_id=post_message_id),
-                    exc_info=e
-                )
-
-            post_message.job_id = None
-
-            await post_message_db.delete_post_message(post_message.post_message_id)
-
-            match post_message_type:
-                case PostMessageType.MAILING:
-                    await query.message.answer(
-                        f"Рассылка остановлена\nСообщений разослано - "
-                        f"{post_message.sent_post_message_amount}/{custom_users_length}",
-                        reply_markup=ReplyBotMenuKeyboard.get_keyboard(bot_id)
-                    )
-                    await query.message.edit_text(
-                        MessageTexts.BOT_MENU_MESSAGE.value.format(username),
-                        reply_markup=await InlineBotMenuKeyboard.get_keyboard(bot_id),
-                        parse_mode=ParseMode.HTML
-                    )
-                case PostMessageType.CHANNEL_POST:
-                    await query.message.answer(
-                        f"Отправка записи отменена",
-                        reply_markup=ReplyBotMenuKeyboard.get_keyboard(bot_id)
-                    )
-                    # await query.message.edit_text(
-                    #     MessageTexts.BOT_CHANNEL_MENU_MESSAGE.value.format(username),
-                    #     reply_markup=await InlineChannelMenuKeyboard.get_keyboard(bot_id, channel_id),
-                    #     parse_mode=ParseMode.HTML
-                    # )
+            await _cancel_send(
+                query,
+                post_message,
+                post_message_type,
+                user_id,
+                channel_id=callback_data.channel_id if post_message_type == PostMessageType.CHANNEL_POST else None
+            )
 
         # NOT RUNNING ACTIONS
         case callback_data.ActionEnum.BUTTON_ADD:
@@ -365,7 +386,7 @@ async def post_message_handler(query: CallbackQuery, state: FSMContext):
     match post_message_type:
         case PostMessageType.MAILING:  # specific buttons for mailing
             await _post_message_mailing(
-                query, state, callback_data, user_id, bot_id, post_message, username
+                query, callback_data, bot_id, post_message
             )
         case PostMessageType.CHANNEL_POST:  # specific buttons for channel post
             await _post_message_channel_post(

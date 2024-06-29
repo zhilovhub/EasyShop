@@ -252,8 +252,7 @@ async def _start_confirm(
 
 async def _delete_post_message(
         query: CallbackQuery,
-        post_message:
-        PostMessageSchema,
+        post_message: PostMessageSchema,
         post_message_type: PostMessageType,
         channel_id: int = None
 ):
@@ -320,8 +319,7 @@ async def _link_preview(query: CallbackQuery, post_message: PostMessageSchema, p
 
 async def _notification_sound(
         query: CallbackQuery,
-        post_message:
-        PostMessageSchema,
+        post_message: PostMessageSchema,
         post_message_type: PostMessageType
 ):
     post_message.enable_notification_sound = not post_message.enable_notification_sound
