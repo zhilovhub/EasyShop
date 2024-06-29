@@ -16,6 +16,7 @@ from bot.enums.post_message_type import PostMessageType
 from bot.keyboards.main_menu_keyboards import ReplyBotMenuKeyboard
 from bot.keyboards.post_message_keyboards import InlinePostMessageMenuKeyboard, ReplyBackPostMessageMenuKeyboard, \
     ReplyConfirmMediaFilesKeyboard, UnknownPostMessageType
+from database.models.bot_model import BotSchema
 
 from database.models.post_message_model import PostMessageSchema
 from database.models.post_message_media_files import PostMessageMediaFileSchema
@@ -429,16 +430,6 @@ async def _button_url_save(
         "Предпросмотр 👇",
         reply_markup=ReplyBotMenuKeyboard.get_keyboard(post_message.bot_id)
     )
-    # TODO can be this
-    # await send_channel_post_message(
-    #     bot,
-    #     message.from_user.id,
-    #     channel_post,
-    #     media_files,
-    #     MailingMessageType.AFTER_REDACTING,
-    #     message.from_user.id,
-    #     message.message_id,
-    # )
     await send_post_message(
         bot,
         message.from_user.id,
@@ -463,13 +454,16 @@ async def _button_url_save(
 
 
 async def send_post_message(
-        bot_from_send: Bot,
-        to_user_id: int,
+        bot_from_send: Bot | BotSchema,
+        to_chat_id: int,
         post_message_schema: PostMessageSchema,
         media_files: list[PostMessageMediaFileSchema],
         post_action_type: PostActionType,
-        message: Message = None,
-) -> None:  # TODO left
+        message: Message = None
+) -> None:
+    if isinstance(bot_from_send, BotSchema):
+        bot_from_send = Bot(bot_from_send.token)
+
     if post_message_schema.has_button:
         if post_message_schema.button_url == f"{WEB_APP_URL}:{WEB_APP_PORT}" \
                                              f"/products-page/?bot_id={post_message_schema.bot_id}":
@@ -534,7 +528,7 @@ async def send_post_message(
                 media_group[0].caption = post_message_schema.description
 
             uploaded_media_files.extend(await bot_from_send.send_media_group(
-                chat_id=to_user_id,
+                chat_id=to_chat_id,
                 media=media_group,
                 disable_notification=not post_message_schema.enable_link_preview,
             ))
@@ -556,7 +550,7 @@ async def send_post_message(
                 raise Exception("Unexpected type")
 
             uploaded_media_files.append(await method(
-                to_user_id,
+                to_chat_id,
                 media_group[0],
                 caption=post_message_schema.description,
                 reply_markup=keyboard,
@@ -596,7 +590,7 @@ async def send_post_message(
             )
         elif post_action_type == PostActionType.AFTER_REDACTING:
             await bot_from_send.send_message(
-                chat_id=to_user_id,
+                chat_id=to_chat_id,
                 text=post_message_schema.description,
                 reply_markup=keyboard,
                 disable_notification=not (
@@ -606,7 +600,7 @@ async def send_post_message(
             )
         else:
             await bot_from_send.send_message(
-                chat_id=to_user_id,
+                chat_id=to_chat_id,
                 text=post_message_schema.description,
                 reply_markup=keyboard,
                 disable_notification=not (

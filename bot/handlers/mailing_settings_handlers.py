@@ -25,7 +25,7 @@ async def send_post_messages(custom_bot, post_message, media_files, chat_id):
 
         await send_post_message(
             bot_from_send=custom_bot_tg,
-            to_user_id=user.user_id,
+            to_chat_id=user.user_id,
             post_message_schema=post_message,
             media_files=media_files,
             post_action_type=PostActionType.RELEASE,
