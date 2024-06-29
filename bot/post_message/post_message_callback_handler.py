@@ -252,6 +252,68 @@ async def _button_delete(
         )
 
 
+async def _post_message_text(
+        query: CallbackQuery,
+        state: FSMContext,
+        post_message: PostMessageSchema,
+        post_message_type: PostMessageType,
+):
+    match post_message_type:
+        case PostMessageType.MAILING:
+            text = "Введите текст, который будет отображаться в рассылочном сообщении"
+        case PostMessageType.CHANNEL_POST:
+            text = "Введите текст, который будет отображаться в записи для канала"
+        case _:
+            raise UnknownPostMessageType
+
+    await query.message.answer(
+        text,
+        reply_markup=ReplyBackPostMessageMenuKeyboard.get_keyboard()
+    )
+    await query.answer()
+
+    await state.set_state(States.EDITING_POST_TEXT)
+    await state.set_data({
+        "bot_id": post_message.bot_id,
+        "post_message_id": post_message.post_message_id,
+        "post_message_type": post_message_type.value
+    })
+
+
+async def _post_message_media(
+        query: CallbackQuery,
+        state: FSMContext,
+        post_message: PostMessageSchema,
+        post_message_type: PostMessageType,
+):
+    match post_message_type:
+        case PostMessageType.MAILING:
+            text = "Отправьте одним сообщение медиафайлы для рассылочного сообщения\n\n" \
+                    "❗ Старые медиафайлы к этому рассылочному сообщению <b>перезапишутся</b>\n\n" \
+                    "❗❗ Обратите внимание, что к сообщению нельзя будет прикрепить кнопку, " \
+                    "если медиафайлов <b>больше одного</b>"
+        case PostMessageType.CHANNEL_POST:
+            text = "Отправьте одним сообщение медиафайлы для записи в канал\n\n" \
+                   "❗ Старые медиафайлы к этой записи в канал <b>перезапишутся</b>\n\n" \
+                   "❗❗ Обратите внимание, что к сообщению нельзя будет прикрепить кнопку, " \
+                   "если медиафайлов <b>больше одного</b>"
+        case _:
+            raise UnknownPostMessageType
+
+    await query.message.answer(
+        text,
+        reply_markup=ReplyConfirmMediaFilesKeyboard.get_keyboard()
+    )
+    await query.answer()
+
+    await state.set_state(States.EDITING_POST_MEDIA_FILES)
+    await state.set_data({
+        "bot_id": post_message.bot_id,
+        "post_message_id": post_message.post_message_id,
+        "post_message_type": post_message_type.value
+    })
+
+
 async def _post_message_union(
         query: CallbackQuery,
         state: FSMContext,
@@ -310,33 +372,20 @@ async def _post_message_union(
             )
 
         case callback_data.ActionEnum.POST_MESSAGE_TEXT:
-            await query.message.answer(
-                "Введите текст, который будет отображаться в рассылочном сообщении",
-                reply_markup=ReplyBackPostMessageMenuKeyboard.get_keyboard()
+            await _post_message_text(
+                query,
+                state,
+                post_message,
+                post_message_type,
             )
-            await query.answer()
-            await state.set_state(States.EDITING_POST_TEXT)
-            await state.set_data({
-                "bot_id": bot_id,
-                "post_message_id": post_message_id,
-                "post_message_type": post_message_type.value
-            })
 
         case callback_data.ActionEnum.POST_MESSAGE_MEDIA:
-            await query.message.answer(
-                "Отправьте одним сообщение медиафайлы для рассылочного сообщения\n\n"
-                "❗ Старые медиафайлы к этому рассылочному сообщению <b>перезапишутся</b>\n\n"
-                "❗❗ Обратите внимание, что к сообщению нельзя будет прикрепить кнопку, "
-                "если медиафайлов <b>больше одного</b>",
-                reply_markup=ReplyConfirmMediaFilesKeyboard.get_keyboard()
+            await _post_message_media(
+                query,
+                state,
+                post_message,
+                post_message_type,
             )
-            await query.answer()
-            await state.set_state(States.EDITING_POST_MEDIA_FILES)
-            await state.set_data({
-                "bot_id": bot_id,
-                "post_message_id": post_message_id,
-                "post_message_type": post_message_type.value
-            })
 
         case callback_data.ActionEnum.START:
             media_files = await post_message_media_file_db.get_all_post_message_media_files(post_message_id)
