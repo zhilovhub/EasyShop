@@ -1,21 +1,15 @@
 from aiogram import Bot
 from aiogram.enums import ParseMode
-from aiogram.types import Message, CallbackQuery
-from aiogram.filters import StateFilter
-from aiogram.fsm.context import FSMContext
+from aiogram.types import CallbackQuery
 
 from bot.main import channel_user_db, bot_db, channel_post_db
 from bot.utils import MessageTexts
-from bot.states.states import States
 from bot.handlers.routers import channel_menu_router
 from bot.enums.post_message_type import PostMessageType
 from bot.keyboards.channel_keyboards import InlineChannelsListKeyboard, InlineChannelMenuKeyboard
 from bot.keyboards.main_menu_keyboards import InlineBotMenuKeyboard
 from bot.keyboards.post_message_keyboards import InlinePostMessageMenuKeyboard
 from bot.post_message.post_message_create import post_message_create
-from bot.post_message.post_message_editors import edit_button_url, edit_delay_date, edit_message, edit_button_text, \
-    edit_media_files
-from bot.post_message.post_message_handler import post_message_handler
 
 from database.models.channel_post_model import ChannelPostNotFound
 
@@ -104,8 +98,3 @@ async def channel_menu_callback_handler(query: CallbackQuery):
                 text=MessageTexts.BOT_CHANNELS_LIST_MESSAGE.value.format(custom_bot_username),
                 reply_markup=await InlineChannelsListKeyboard.get_keyboard(bot_id)
             )
-
-
-@channel_menu_router.callback_query(lambda query: InlinePostMessageMenuKeyboard.callback_validator(query.data))
-async def channel_post_menu_callback_handler(query: CallbackQuery, state: FSMContext):
-    await post_message_handler(query, state)

@@ -124,12 +124,16 @@ class ChannelPostDao(Dao):  # TODO write tests
             raise InvalidParameterFormat(
                 "new_channel_post must be type of ChannelPostSchema")
         async with self.engine.begin() as conn:
-            await conn.execute(update(ChannelPost).where(ChannelPost.channel_post_id == updated_channel_post.channel_post_id).
-                               values(**updated_channel_post.model_dump(by_alias=True)))
+            await conn.execute(
+                update(ChannelPost).where(
+                    ChannelPost.channel_post_id == updated_channel_post.channel_post_id
+                ).values(**updated_channel_post.model_dump(by_alias=True))
+            )
         await self.engine.dispose()
 
         self.logger.debug(
-            f"channel_post_id={updated_channel_post.channel_post_id}: channel_post {updated_channel_post.channel_post_id} is updated",
+            f"channel_post_id={updated_channel_post.channel_post_id}: "
+            f"channel_post {updated_channel_post.channel_post_id} is updated",
             extra=extra_params(channel_post_id=updated_channel_post.channel_post_id, bot_id=updated_channel_post.bot_id)
         )
 
