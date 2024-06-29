@@ -131,7 +131,7 @@ async def edit_button_text(message: Message, state: FSMContext, post_message_typ
                 "Предпросмотр конкурса 👇",
                 reply_markup=ReplyBotMenuKeyboard.get_keyboard(bot_id)
             )
-            await send_post_message(  # TODO was send_channel_post_message
+            await send_post_message(
                 bot,
                 message.from_user.id,
                 post_message,
@@ -177,7 +177,7 @@ async def edit_message(message: Message, state: FSMContext, post_message_type: P
                 "Предпросмотр конкурса 👇",
                 reply_markup=ReplyBotMenuKeyboard.get_keyboard(bot_id)
             )
-            await send_post_message(  # TODO was send_channel_post_message
+            await send_post_message(
                 bot,
                 message.from_user.id,
                 post_message,

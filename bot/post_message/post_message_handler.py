@@ -126,7 +126,7 @@ async def _post_message_union(
                 )
             else:
                 post_message.button_text = "Shop"
-                post_message.button_url = f"{WEB_APP_URL}:{WEB_APP_PORT}/products-page/?bot_id={bot_id}"  # TODO ?
+                post_message.button_url = f"{WEB_APP_URL}:{WEB_APP_PORT}/products-page/?bot_id={bot_id}"
                 post_message.has_button = True
 
                 await post_message_db.update_post_message(post_message)
@@ -145,31 +145,31 @@ async def _post_message_union(
 
         case callback_data.ActionEnum.BUTTON_URL:
             if not post_message.has_button:
-                await _inline_no_button(query, bot_id, username)
+                await _inline_no_button(query, bot_id, username, post_message_type)
             else:
                 await query.message.answer(
                     "Введите ссылку, которая будет открываться у пользователей по нажатии на кнопку",
                     reply_markup=ReplyBackPostMessageMenuKeyboard.get_keyboard()
                 )
                 await query.answer()
-                await state.set_state(States.EDITING_MAILING_BUTTON_URL)  # TODO 1
+                await state.set_state(States.EDITING_MAILING_BUTTON_URL)
                 await state.set_data({"bot_id": bot_id, "post_message_id": post_message_id})
 
         case callback_data.ActionEnum.BUTTON_TEXT:
             if not post_message.has_button:
-                await _inline_no_button(query, bot_id, username)
+                await _inline_no_button(query, bot_id, username, post_message_type)
             else:
                 await query.message.answer(
                     "Введите текст, который будет отображаться на кнопке",
                     reply_markup=ReplyBackPostMessageMenuKeyboard.get_keyboard()
                 )
                 await query.answer()
-                await state.set_state(States.EDITING_MAILING_BUTTON_TEXT)  # TODO 1
+                await state.set_state(States.EDITING_MAILING_BUTTON_TEXT)
                 await state.set_data({"bot_id": bot_id, "post_message_id": post_message_id})
 
         case callback_data.ActionEnum.BUTTON_DELETE:
             if not post_message.has_button:
-                await _inline_no_button(query, bot_id, username)
+                await _inline_no_button(query, bot_id, username, post_message_type)
             else:
                 post_message.button_text = None
                 post_message.button_url = None
@@ -180,29 +180,29 @@ async def _post_message_union(
                 await query.message.delete()
                 await query.message.answer("Кнопка удалена")
                 await query.message.answer(
-                    text=MessageTexts.BOT_MAILINGS_MENU_MESSAGE.value.format(username),  # TODO 1
+                    text=MessageTexts.BOT_MAILINGS_MENU_MESSAGE.value.format(username),
                     reply_markup=await InlinePostMessageMenuKeyboard.get_keyboard(bot_id, post_message_type)
                 )
 
         case callback_data.ActionEnum.POST_MESSAGE_TEXT:
             await query.message.answer(
-                "Введите текст, который будет отображаться в рассылочном сообщении",  # TODO 1
+                "Введите текст, который будет отображаться в рассылочном сообщении",
                 reply_markup=ReplyBackPostMessageMenuKeyboard.get_keyboard()
             )
             await query.answer()
-            await state.set_state(States.EDITING_MAILING_MESSAGE)  # TODO 1
+            await state.set_state(States.EDITING_MAILING_MESSAGE)
             await state.set_data({"bot_id": bot_id, "post_message_id": post_message_id})
 
         case callback_data.ActionEnum.POST_MESSAGE_MEDIA:
             await query.message.answer(
-                "Отправьте одним сообщение медиафайлы для рассылочного сообщения\n\n"  # TODO 1
+                "Отправьте одним сообщение медиафайлы для рассылочного сообщения\n\n"
                 "❗ Старые медиафайлы к этому рассылочному сообщению <b>перезапишутся</b>\n\n"
                 "❗❗ Обратите внимание, что к сообщению нельзя будет прикрепить кнопку, "
                 "если медиафайлов <b>больше одного</b>",
                 reply_markup=ReplyConfirmMediaFilesKeyboard.get_keyboard()
             )
             await query.answer()
-            await state.set_state(States.EDITING_MAILING_MEDIA_FILES)  # TODO 1
+            await state.set_state(States.EDITING_MAILING_MEDIA_FILES)
             await state.set_data({"bot_id": bot_id, "post_message_id": post_message_id})
 
         case callback_data.ActionEnum.START:
@@ -210,8 +210,12 @@ async def _post_message_union(
 
             if await _is_post_message_valid(query, post_message, media_files):
                 await query.message.edit_text(
-                    text=MessageTexts.BOT_MAILINGS_MENU_ACCEPT_START.value.format(username),  # TODO 1
-                    reply_markup=InlinePostMessageStartConfirmKeyboard.get_keyboard(bot_id, post_message_id)
+                    text=MessageTexts.BOT_MAILINGS_MENU_ACCEPT_START.value.format(username),
+                    reply_markup=InlinePostMessageStartConfirmKeyboard.get_keyboard(
+                        bot_id,
+                        post_message_id,
+                        post_message_type
+                    )
                 )
 
         case callback_data.ActionEnum.DEMO:
@@ -224,18 +228,21 @@ async def _post_message_union(
                     post_message,
                     media_files,
                     PostActionType.DEMO,
-                    PostMessageType.MAILING,
-                    query.message
+                    message=None
                 )
                 await query.message.answer(
-                    text=MessageTexts.BOT_MAILINGS_MENU_MESSAGE.value.format(username),  # TODO 1
+                    text=MessageTexts.BOT_MAILINGS_MENU_MESSAGE.value.format(username),
                     reply_markup=await InlinePostMessageMenuKeyboard.get_keyboard(bot_id, post_message_type)
                 )
 
         case callback_data.ActionEnum.DELETE_POST_MESSAGE:
             await query.message.edit_text(
-                text=MessageTexts.BOT_MAILINGS_MENU_ACCEPT_DELETING_MESSAGE.value.format(username),  # TODO 1
-                reply_markup=await InlinePostMessageAcceptDeletingKeyboard.get_keyboard(bot_id, post_message_id)
+                text=MessageTexts.BOT_MAILINGS_MENU_ACCEPT_DELETING_MESSAGE.value.format(username),
+                reply_markup=await InlinePostMessageAcceptDeletingKeyboard.get_keyboard(
+                    bot_id,
+                    post_message_id,
+                    post_message_type
+                )
             )
 
         case callback_data.ActionEnum.EXTRA_SETTINGS:
@@ -248,7 +255,8 @@ async def _post_message_union(
                     bot_id,
                     post_message_id,
                     post_message.enable_notification_sound,
-                    post_message.enable_link_preview
+                    post_message.enable_link_preview,
+                    post_message_type
                 ),
                 parse_mode=ParseMode.HTML,
             )
@@ -274,8 +282,8 @@ async def _post_message_union(
 
         case callback_data.ActionEnum.BACK_TO_MAIN_MENU:
             await query.message.edit_text(
-                MessageTexts.BOT_MENU_MESSAGE.value.format((await Bot(custom_bot.token).get_me()).username),
-                reply_markup=await InlineBotMenuKeyboard.get_keyboard(custom_bot.bot_id),
+                MessageTexts.BOT_MENU_MESSAGE.value.format(username),
+                reply_markup=await InlineBotMenuKeyboard.get_keyboard(bot_id),
                 parse_mode=ParseMode.HTML
             )
 
@@ -325,7 +333,7 @@ async def post_message_handler(query: CallbackQuery, state: FSMContext):
         case PostMessageType.MAILING:  # specific buttons for mailing
             await _post_message_mailing(query, state, callback_data, user_id, bot_id, post_message, custom_bot_username)
         case PostMessageType.CHANNEL_POST:  # specific buttons for channel post
-            await _post_message_channel_post(query, state, )
+            await _post_message_channel_post(query, state, post_message_type, post_message_type)
 
     # union buttons for mailing and channel post
     await _post_message_union(

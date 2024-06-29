@@ -84,8 +84,9 @@ async def mailing_accept_deleting_callback_handler(query: CallbackQuery):
     callback_data = InlinePostMessageAcceptDeletingKeyboard.Callback.model_validate_json(query.data)
 
     user_id = query.from_user.id
-    post_message_id = callback_data.post_message_id
     bot_id = callback_data.bot_id
+    post_message_id = callback_data.post_message_id
+    post_message_type = callback_data.post_message_type
 
     try:
         post_message = await post_message_db.get_post_message(post_message_id)
@@ -142,8 +143,9 @@ async def mailing_extra_settings_callback_handler(query: CallbackQuery):
     callback_data = InlinePostMessageExtraSettingsKeyboard.Callback.model_validate_json(query.data)
 
     user_id = query.from_user.id
-    post_message_id = callback_data.post_message_id
     bot_id = callback_data.bot_id
+    post_message_id = callback_data.post_message_id
+    post_message_type = callback_data.post_message_type
 
     try:
         post_message = await post_message_db.get_post_message(post_message_id)
@@ -178,7 +180,8 @@ async def mailing_extra_settings_callback_handler(query: CallbackQuery):
                     bot_id,
                     post_message_id,
                     post_message.enable_notification_sound,
-                    post_message.enable_link_preview
+                    post_message.enable_link_preview,
+                    post_message_type
                 )
             )
         case callback_data.ActionEnum.NOTIFICATION_SOUND:
@@ -190,7 +193,8 @@ async def mailing_extra_settings_callback_handler(query: CallbackQuery):
                     bot_id,
                     post_message_id,
                     post_message.enable_notification_sound,
-                    post_message.enable_link_preview
+                    post_message.enable_link_preview,
+                    post_message_type
                 )
             )
         case callback_data.ActionEnum.BACK_TO_POST_MESSAGE_MENU:
@@ -204,8 +208,9 @@ async def mailing_confirm_start_callback_handler(query: CallbackQuery):
     callback_data = InlinePostMessageStartConfirmKeyboard.Callback.model_validate_json(query.data)
 
     user_id = query.from_user.id
-    post_message_id = callback_data.post_message_id
     bot_id = callback_data.bot_id
+    post_message_id = callback_data.post_message_id
+    post_message_type = callback_data.post_message_type
 
     try:
         post_message = await post_message_db.get_post_message(post_message_id)
