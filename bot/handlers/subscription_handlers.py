@@ -1,9 +1,9 @@
 from datetime import timedelta, datetime
 
 from aiogram import Bot
+from aiogram.enums import ContentType
 from aiogram.types import CallbackQuery, FSInputFile, User, Message
 from aiogram.types import ReplyKeyboardRemove, InlineKeyboardMarkup, InlineKeyboardButton
-from aiogram.enums import ContentType
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.storage.base import StorageKey
 
@@ -11,60 +11,24 @@ from bot import config
 from bot.main import subscription, bot, dp, cache_resources_file_id_store, user_db, bot_db
 from bot.utils import MessageTexts
 from bot.states import States
-from bot.keyboards import create_continue_subscription_kb, get_back_keyboard, free_trial_start_kb, \
-    get_reply_bot_menu_keyboard, get_inline_bot_menu_keyboard
 from bot.handlers.routers import subscribe_router
 from bot.utils.admin_group import EventTypes, send_event, success_event
-from subscription.subscription import UserHasAlreadyStartedTrial
-from database.models.user_model import UserSchema, UserStatusValues
-from bot.utils.send_instructions import send_instructions
 from bot.utils.custom_bot_api import stop_custom_bot
+from bot.utils.send_instructions import send_instructions
+from bot.keyboards.main_menu_keyboards import ReplyBotMenuKeyboard, InlineBotMenuKeyboard, ReplyBackBotMenuKeyboard
+from bot.keyboards.subscription_keyboards import InlineSubscriptionContinueKeyboard
+
+from database.models.user_model import UserSchema, UserStatusValues
 
 from logs.config import logger
 
 
-@subscribe_router.callback_query(lambda q: q.data == "start_trial")
-async def start_trial_callback(query: CallbackQuery, state: FSMContext):
-    admin_message = await send_event(query.from_user, EventTypes.STARTED_TRIAL)
-    await query.message.edit_text(MessageTexts.FREE_TRIAL_MESSAGE.value, reply_markup=None)
-    user_id = query.from_user.id
-    # logger.info(f"starting trial subscription for user with id ({user_id} until date {subscribe_until}")
-    # TODO move logger into to subscription module
-    logger.info(
-        f"starting trial subscription for user with id ({user_id} until date ТУТ нужно выполнить TODO"
-    )
-
-    try:
-        subscribed_until = await subscription.start_trial(query.from_user.id)
-    except UserHasAlreadyStartedTrial:
-        # TODO выставлять счет на оплату если триал уже был но пользователь все равно как то сюда попал
-        return await query.answer("Вы уже оформляли пробную подписку", show_alert=True)
-
-    logger.info(f"adding scheduled subscription notifies for user {user_id}")
-    await subscription.add_notifications(
-        user_id,
-        on_expiring_notification=send_subscription_expire_notify,
-        on_end_notification=send_subscription_end_notify,
-        subscribed_until=subscribed_until,
-    )
-
-    await state.set_state(States.WAITING_FOR_TOKEN)
-
-    await send_instructions(bot, None, query.from_user.id, cache_resources_file_id_store)
-    await query.message.answer(
-        "Ваша пробная подписка активирована!\n"
-        "Чтобы получить бота с магазином, воспользуйтесь инструкцией выше 👆",
-        reply_markup=ReplyKeyboardRemove()
-    )
-    await success_event(query.from_user, admin_message, EventTypes.STARTED_TRIAL)
-
-
-@subscribe_router.callback_query(lambda q: q.data.startswith("continue_subscription"))
+@subscribe_router.callback_query(lambda query: InlineSubscriptionContinueKeyboard.callback_validator(query.data))
 async def continue_subscription_callback(query: CallbackQuery, state: FSMContext):
-    await state.set_state(States.WAITING_PAYMENT_PAY)
-    if query.data.split("_")[-1].isdigit():
-        bot_id = int(query.data.split("_")[-1])
-        await state.set_data({"bot_id": bot_id})
+    callback_data = InlineSubscriptionContinueKeyboard.Callback.model_validate_json(query.data)
+
+    if callback_data.bot_id is not None:
+        await state.set_data({"bot_id": callback_data.bot_id})
 
     photo_name, instruction = subscription.get_subscribe_instructions()
     await query.message.answer_photo(
@@ -75,7 +39,11 @@ async def continue_subscription_callback(query: CallbackQuery, state: FSMContext
                 InlineKeyboardButton(text="Перейти на страницу оплаты", url=config.SBP_URL)
             ]
         ]))
-    await query.message.answer(f"По возникновению каких-либо вопросов пишите @maxzim398", reply_markup=get_back_keyboard())
+    await query.message.answer(
+        f"По возникновению каких-либо вопросов пишите @maxzim398",
+        reply_markup=ReplyBackBotMenuKeyboard.get_keyboard()
+    )
+    await state.set_state(States.WAITING_PAYMENT_PAY)
 
 
 async def send_subscription_expire_notify(user: UserSchema) -> None:
@@ -96,12 +64,11 @@ async def send_subscription_expire_notify(user: UserSchema) -> None:
         user_bot_id = user_bots[0].bot_id
     else:
         user_bot_id = None
-    await bot.send_message(actual_user.id, text, reply_markup=create_continue_subscription_kb(bot_id=user_bot_id))
-
-
-@subscribe_router.message(States.WAITING_FREE_TRIAL_APPROVE)
-async def waiting_free_trial_handler(message: Message) -> None:
-    await message.answer(MessageTexts.FREE_TRIAL_MESSAGE.value, reply_markup=free_trial_start_kb)
+    await bot.send_message(
+        actual_user.id,
+        text,
+        reply_markup=InlineSubscriptionContinueKeyboard.get_keyboard(bot_id=user_bot_id)
+    )
 
 
 @subscribe_router.message(States.WAITING_PAYMENT_PAY)
@@ -110,12 +77,12 @@ async def waiting_payment_pay_handler(message: Message, state: FSMContext):
     user_status = (await user_db.get_user(user_id)).status
     state_data = await state.get_data()
 
-    if message.text == "🔙 Назад":
+    if message.text == ReplyBackBotMenuKeyboard.Callback.ActionEnum.BACK_TO_BOT_MENU.value:
         if user_status == UserStatusValues.SUBSCRIPTION_ENDED:
             await state.set_state(States.SUBSCRIBE_ENDED)
             await message.answer(
                 MessageTexts.SUBSCRIBE_END_NOTIFY.value,
-                reply_markup=create_continue_subscription_kb(bot_id=None)
+                reply_markup=InlineSubscriptionContinueKeyboard.get_keyboard(bot_id=None)
             )  # TODO change to keyboard markup
         elif state_data and "bot_id" in state_data:
             await state.set_state(States.BOT_MENU)
@@ -124,11 +91,11 @@ async def waiting_payment_pay_handler(message: Message, state: FSMContext):
 
             await message.answer(
                 "Возвращаемся в главное меню...",
-                reply_markup=get_reply_bot_menu_keyboard(bot_id=state_data["bot_id"])
+                reply_markup=ReplyBotMenuKeyboard.get_keyboard(bot_id=state_data["bot_id"])
             )
             await message.answer(
                 MessageTexts.BOT_MENU_MESSAGE.value.format((await Bot(custom_bot.token).get_me()).username),
-                reply_markup=await get_inline_bot_menu_keyboard(custom_bot.bot_id)
+                reply_markup=await InlineBotMenuKeyboard.get_keyboard(custom_bot.bot_id)
             )
         else:
             await state.set_state(States.WAITING_FOR_TOKEN)
@@ -138,35 +105,39 @@ async def waiting_payment_pay_handler(message: Message, state: FSMContext):
     elif message.content_type not in (ContentType.PHOTO, ContentType.DOCUMENT):
         return await message.answer(
             "Необходимо прислать боту чек в виде скрина или пдф файла",
-            reply_markup=get_back_keyboard()
+            reply_markup=ReplyBackBotMenuKeyboard.get_keyboard()
         )
     elif not message.caption:
         return await message.answer(
             "В подписи к файлу или фото укажите Ваши контактные данные и отправьте чек повторно",
-            reply_markup=get_back_keyboard()
+            reply_markup=ReplyBackBotMenuKeyboard.get_keyboard()
         )
     for admin in config.ADMINS:
         try:
             msg: Message = await message.send_copy(admin)
-            await bot.send_message(admin, f"💳 Оплата подписки от пользователя <b>"
-                                          f"{'@' + message.from_user.username if message.from_user.username else message.from_user.full_name}</b>",
-                                   reply_to_message_id=msg.message_id,
-                                   reply_markup=InlineKeyboardMarkup(inline_keyboard=[
-                                       [
-                                           InlineKeyboardButton(text="Подтвердить оплату",
-                                                                callback_data=f"approve_pay:{message.from_user.id}")
-                                       ],
-                                       [
-                                           InlineKeyboardButton(text="Отклонить оплату",
-                                                                callback_data=f"cancel_pay:{message.from_user.id}")
-                                       ]
-                                   ]))
-        except:
-            logger.warning("error while notify admin", exc_info=True)
+            await bot.send_message(
+                admin,
+                f"💳 Оплата подписки от пользователя <b>"
+                f"{'@' + message.from_user.username if message.from_user.username else message.from_user.full_name}"
+                f"</b>",
+                reply_to_message_id=msg.message_id,
+                reply_markup=InlineKeyboardMarkup(inline_keyboard=[
+                    [
+                        InlineKeyboardButton(text="Подтвердить оплату",
+                                             callback_data=f"approve_pay:{message.from_user.id}")
+                    ],
+                    [
+                        InlineKeyboardButton(text="Отклонить оплату",
+                                             callback_data=f"cancel_pay:{message.from_user.id}")
+                    ]
+                ])
+            )
+        except Exception as e:
+            logger.warning("error while notify admin", exc_info=e)
 
     await message.reply(
         "Ваши данные отправлены на модерацию, ожидайте изменения статуса оплаты",
-        reply_markup=get_back_keyboard() if user_status in (
+        reply_markup=ReplyBackBotMenuKeyboard.get_keyboard() if user_status in (
             UserStatusValues.SUBSCRIBED, UserStatusValues.TRIAL) else ReplyKeyboardRemove()
     )
     await state.set_state(States.WAITING_PAYMENT_APPROVE)
@@ -178,7 +149,9 @@ async def waiting_payment_approve_handler(message: Message, state: FSMContext):
     user_id = message.from_user.id
     user_status = (await user_db.get_user(user_id)).status
 
-    if user_status in (UserStatusValues.SUBSCRIBED, UserStatusValues.TRIAL) and message.text == "🔙 Назад":
+    if user_status in (UserStatusValues.SUBSCRIBED,
+                       UserStatusValues.TRIAL) \
+            and message.text == ReplyBackBotMenuKeyboard.Callback.ActionEnum.BACK_TO_BOT_MENU.value:
         state_data = await state.get_data()
         custom_bot = await bot_db.get_bot(state_data['bot_id'])
         if state_data and "bot_id" in state_data:
@@ -187,11 +160,11 @@ async def waiting_payment_approve_handler(message: Message, state: FSMContext):
 
             await message.answer(
                 "Возвращаемся в главное меню (мы Вас оповестим, когда оплата пройдет модерацию)...",
-                reply_markup=get_reply_bot_menu_keyboard(bot_id=state_data["bot_id"])
+                reply_markup=ReplyBotMenuKeyboard.get_keyboard(bot_id=state_data["bot_id"])
             )
             await message.answer(
                 MessageTexts.BOT_MENU_MESSAGE.value.format((await Bot(custom_bot.token).get_me()).username),
-                reply_markup=await get_inline_bot_menu_keyboard(custom_bot.bot_id)
+                reply_markup=await InlineBotMenuKeyboard.get_keyboard(custom_bot.bot_id)
             )
         else:
             await state.set_state(States.WAITING_FOR_TOKEN)
@@ -205,7 +178,7 @@ async def waiting_payment_approve_handler(message: Message, state: FSMContext):
 async def subscribe_ended_handler(message: Message) -> None:
     await message.answer(
         MessageTexts.SUBSCRIBE_END_NOTIFY.value,
-        reply_markup=create_continue_subscription_kb(bot_id=None)
+        reply_markup=InlineSubscriptionContinueKeyboard.get_keyboard(bot_id=None)
     )
 
 
@@ -246,12 +219,12 @@ async def approve_pay_callback(query: CallbackQuery):
         await bot.send_message(
             user_id,
             "Оплата подписки подтверждена ✅",
-            reply_markup=get_reply_bot_menu_keyboard(bot_id)
+            reply_markup=ReplyBotMenuKeyboard.get_keyboard(bot_id)
         )
         await bot.send_message(
             user_id,
             MessageTexts.BOT_MENU_MESSAGE.value.format(user_bot_data.username),
-            reply_markup=await get_inline_bot_menu_keyboard(user_bots[0].bot_id)
+            reply_markup=await InlineBotMenuKeyboard.get_keyboard(user_bots[0].bot_id)
         )
         await user_state.set_state(States.BOT_MENU)
         await user_state.set_data({'bot_id': bot_id})
@@ -286,7 +259,8 @@ async def cancel_pay_callback(query: CallbackQuery, state: FSMContext):
     await bot.send_message(user_id, "Оплата не была принята, перепроверьте корректность отправленных данный (чека) "
                                     "и отправьте его еще раз")
     await bot.send_message(
-        user_id, f"По возникновению каких-либо вопросов, пишите @maxzim398", reply_markup=get_back_keyboard()
+        user_id, f"По возникновению каких-либо вопросов, пишите @maxzim398",
+        reply_markup=ReplyBackBotMenuKeyboard.get_keyboard()
     )
 
     await query.answer("Оплата отклонена", show_alert=True)
@@ -312,7 +286,7 @@ async def send_subscription_end_notify(user: UserSchema) -> None:
     await bot.send_message(
         actual_user.id,
         MessageTexts.SUBSCRIBE_END_NOTIFY.value,
-        reply_markup=create_continue_subscription_kb(bot_id=user_bot_id)
+        reply_markup=InlineSubscriptionContinueKeyboard.get_keyboard(bot_id=user_bot_id)
     )
     user_state = FSMContext(storage=dp.storage, key=StorageKey(
         chat_id=actual_user.id,

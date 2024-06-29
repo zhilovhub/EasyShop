@@ -8,10 +8,11 @@ from sqlalchemy.ext.asyncio import AsyncEngine
 
 from pydantic import BaseModel, Field, ConfigDict
 
+from bot.exceptions.exceptions import *
+
 from database.models import Base
 from database.models.dao import Dao
 
-from bot.exceptions.exceptions import *
 from logs.config import extra_params
 
 
@@ -23,7 +24,7 @@ class UserStatusValues(Enum):
     SUBSCRIPTION_ENDED = "subscription_ended"
 
 
-class UserStatus(TypeDecorator):
+class UserStatus(TypeDecorator):  # noqa
     impl = Unicode
     cache_ok = True
 

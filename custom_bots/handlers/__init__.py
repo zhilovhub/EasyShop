@@ -1,3 +1,7 @@
+import custom_bots.handlers.command_handlers
 import custom_bots.handlers.handlers
 import custom_bots.handlers.channel_handlers
+import custom_bots.handlers.order_handlers
+import custom_bots.handlers.question_handlers
+
 from .routers import multi_bot_router, multi_bot_channel_router

@@ -1,20 +1,18 @@
-from datetime import datetime, timedelta
-from enum import Enum
-from typing import Optional
 from datetime import datetime
-
-from sqlalchemy import BOOLEAN, BigInteger, Column, String, DateTime, JSON, TypeDecorator, Unicode, Dialect
-from sqlalchemy import select, update, delete, insert
-from sqlalchemy.ext.asyncio import AsyncEngine
+from datetime import timedelta
 
 from pydantic import BaseModel, Field, ConfigDict
 
+from sqlalchemy import ForeignKey, BOOLEAN, BigInteger, Column, DateTime, select, update, delete, insert
+from sqlalchemy.ext.asyncio import AsyncEngine
+
+from bot.exceptions.exceptions import *
+
 from database.models import Base
 from database.models.dao import Dao
-from sqlalchemy import ForeignKey
-from bot.exceptions.exceptions import *
-from logs.config import extra_params
 from database.models.channel_model import Channel
+
+from logs.config import extra_params
 
 
 class ChannelUser(Base):
@@ -50,7 +48,7 @@ class ChannelUserDao(Dao):
                 select(ChannelUser).where(
                     (ChannelUser.channel_id == channel_id),
                     ((datetime.now() - ChannelUser.join_date) < timedelta(hours=24)),
-                    (ChannelUser.is_channel_member == True)
+                    (ChannelUser.is_channel_member is True)
                 )
             )
         await self.engine.dispose()
@@ -71,7 +69,7 @@ class ChannelUserDao(Dao):
                 select(ChannelUser).where(
                     (ChannelUser.channel_id == channel_id),
                     ((datetime.now() - ChannelUser.join_date) < timedelta(hours=24)),
-                    (ChannelUser.is_channel_member == False)
+                    (ChannelUser.is_channel_member is False)
                 )
             )
         await self.engine.dispose()
@@ -102,7 +100,11 @@ class ChannelUserDao(Dao):
 
         return res
 
-    async def get_channel_user_by_channel_user_id_and_channel_id(self, channel_user_id: int, channel_id: int) -> ChannelUserSchema:
+    async def get_channel_user_by_channel_user_id_and_channel_id(
+            self,
+            channel_user_id: int,
+            channel_id: int
+    ) -> ChannelUserSchema:
         if not isinstance(channel_user_id, int):
             raise InvalidParameterFormat("ChannelUser_id must be type of int.")
 
@@ -156,14 +158,19 @@ class ChannelUserDao(Dao):
                 "updated_ChannelUser must be type of database.DbChannelUser.")
 
         async with self.engine.begin() as conn:
-            await conn.execute(update(ChannelUser).where(ChannelUser.channel_user_id == updated_channel_user.channel_user_id).
-                               values(**updated_channel_user.model_dump(by_alias=True)))
+            await conn.execute(
+                update(ChannelUser).where(
+                    ChannelUser.channel_user_id == updated_channel_user.channel_user_id
+                ).values(**updated_channel_user.model_dump(by_alias=True))
+            )
         await self.engine.dispose()
 
         self.logger.debug(
-            f"channel_user_id={updated_channel_user.channel_user_id}: ChannelUser {updated_channel_user.channel_user_id} is updated",
+            f"channel_user_id={updated_channel_user.channel_user_id}: "
+            f"ChannelUser {updated_channel_user.channel_user_id} is updated",
             extra=extra_params(
-                channel_user_id=updated_channel_user.channel_user_id)
+                channel_user_id=updated_channel_user.channel_user_id
+            )
         )
 
     async def del_channel_user(self, channel_user_id: int) -> None:

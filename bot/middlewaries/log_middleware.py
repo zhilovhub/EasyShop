@@ -1,19 +1,19 @@
-from logging import Logger
+import redis
+
 from typing import Callable, Dict, Any, Awaitable
+from logging import Logger
 
 from aiogram import BaseMiddleware
-from aiogram.fsm.context import FSMContext
 from aiogram.types import CallbackQuery, Message, TelegramObject, User
+from aiogram.fsm.context import FSMContext
 
 from logs.config import extra_params
-
-import redis
 
 
 class _MockRedis:
     """If connect to real Redis is broken"""
 
-    def get(self, *args, **kwargs) -> None:
+    def get(self, *args, **kwargs) -> None:  # noqa
         return None
 
     def set(self, *args, **kwargs) -> None:

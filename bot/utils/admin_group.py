@@ -1,12 +1,12 @@
+from enum import Enum
+
+from aiogram import Bot
 from aiogram.enums import ParseMode
 from aiogram.types import Message, User
-from aiogram import Bot
 
 from bot.main import bot, config
 
 from logs.config import logger
-
-from enum import Enum
 
 
 class EventTypes(Enum):
@@ -49,8 +49,10 @@ async def send_event(user: User, event_type: EventTypes, event_bot: Bot = bot, e
             chat_id=config.ADMIN_GROUP_ID,
             text=message_text
         )
-    except Exception:
-        logger.warning(f"cant send event to admin group (event_type: {event_type}).", exc_info=True)
+    except Exception as e:
+        logger.warning(
+            f"cant send event to admin group (event_type: {event_type}).", exc_info=e
+        )
 
 
 async def success_event(user: User, message: Message, event_type: EventTypes):
@@ -67,5 +69,7 @@ async def success_event(user: User, message: Message, event_type: EventTypes):
             text=message_text,
             parse_mode=ParseMode.HTML
         )
-    except Exception:
-        logger.warning(f"cant edit event message in admin group (event_type: {event_type}).", exc_info=True)
+    except Exception as e:
+        logger.warning(
+            f"cant edit event message in admin group (event_type: {event_type}).", exc_info=e
+        )

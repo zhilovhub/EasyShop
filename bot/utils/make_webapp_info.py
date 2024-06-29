@@ -1,4 +1,5 @@
 from aiogram.types import WebAppInfo
+
 from bot.config import WEB_APP_URL, WEB_APP_PORT
 
 

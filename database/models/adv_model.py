@@ -1,11 +1,13 @@
 from datetime import datetime
 
 from pydantic import BaseModel, Field, validate_call, ConfigDict
-from sqlalchemy import BigInteger, Column, ForeignKey, select, insert, delete, BOOLEAN, update, DateTime, desc
+
+from sqlalchemy import BigInteger, Column, select, insert, DateTime, desc
 from sqlalchemy.ext.asyncio import AsyncEngine
 
 from database.models import Base
 from database.models.dao import Dao
+
 from logs.config import extra_params
 
 
@@ -66,7 +68,9 @@ class AdvDao(Dao):  # TODO write tests
     async def add_adv(self, new_schema: AdvSchemaWithoutId) -> None:
         new_schema.time = datetime.utcnow().replace(tzinfo=None)
         async with self.engine.begin() as conn:
-            adv_id = (await conn.execute(insert(Adv).values(new_schema.model_dump(exclude={"id"})))).inserted_primary_key[0]
+            adv_id = (await conn.execute(insert(Adv).values(
+                new_schema.model_dump(exclude={"id"}))
+            )).inserted_primary_key[0]
 
         self.logger.debug(
             f"adv={adv_id}: new adv is created",

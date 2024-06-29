@@ -1,13 +1,15 @@
-from sqlalchemy import BigInteger, Column, String, ForeignKey, insert, select, update
+from pydantic import BaseModel, ConfigDict
+
+from sqlalchemy import BigInteger, Column, ForeignKey, insert, select, update
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncEngine
 
-from pydantic import BaseModel, Field, ConfigDict
-
 from bot.exceptions import InvalidParameterFormat, InstanceAlreadyExists
+
 from database.models import Base
-from database.models.bot_model import Bot
 from database.models.dao import Dao
+from database.models.bot_model import Bot
+
 from logs.config import extra_params
 
 

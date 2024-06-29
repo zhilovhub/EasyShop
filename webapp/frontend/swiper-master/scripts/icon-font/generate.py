@@ -1,16 +1,16 @@
-from subprocess import call
-import os
-import json
+from subprocess import call  # noqa
+import os  # noqa
+import json  # noqa
 
-BUILDER_PATH = os.path.dirname(os.path.abspath(__file__))
+BUILDER_PATH = os.path.dirname(os.path.abspath(__file__))  # noqa
 
-def main():
-  generate_font_files()
+def main():  # noqa
+  generate_font_files()  # noqa
 
-def generate_font_files():
-  print "Generate Fonts"
-  cmd = "fontforge -script %s/generate_font.py" % (BUILDER_PATH)
-  call(cmd, shell=True)
+def generate_font_files():  # noqa
+  print "Generate Fonts"  # noqa
+  cmd = "fontforge -script %s/generate_font.py" % (BUILDER_PATH)  # noqa
+  call(cmd, shell=True)  # noqa
 
-if __name__ == "__main__":
-  main()
+if __name__ == "__main__":  # noqa
+  main()  # noqa

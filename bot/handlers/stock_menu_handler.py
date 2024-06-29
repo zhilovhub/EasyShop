@@ -1,102 +1,187 @@
-from bot.handlers.routers import stock_menu_router
+from datetime import datetime
+
+from aiogram import Bot
+from aiogram.enums import ParseMode
 from aiogram.types import CallbackQuery, Message, FSInputFile
 from aiogram.fsm.context import FSMContext
 from aiogram.utils.media_group import MediaGroupBuilder
+
+from bot.main import stock_manager, bot, product_db, bot_db
+from bot.utils import MessageTexts
 from bot.states import States
-from bot.keyboards import *
-from bot.main import stock_manager, bot, bot_db
-from config import FILES_PATH
-from datetime import datetime
+from bot.config import FILES_PATH
+from bot.handlers.routers import stock_menu_router
+from bot.keyboards.main_menu_keyboards import InlineBotMenuKeyboard, ReplyBotMenuKeyboard
+from bot.keyboards.stock_menu_keyboards import InlineStockMenuKeyboard, ReplyBackStockMenuKeyboard, \
+    InlineStockImportMenuKeyboard
+
+from logs.config import logger, extra_params
 
 
-@stock_menu_router.message(lambda m: m.text and m.text == STOCK_STATE_BACK_BUTTON)
-async def back_to_menu(message: Message, state: FSMContext):
-    bot_id = (await state.get_data())['bot_id']
-    user_bot_db = await bot_db.get_bot(int(bot_id))
-    user_bot = Bot(user_bot_db.token)
-    user_bot_data = await user_bot.get_me()
-    msg = await message.answer("Возвращаюсь в меню...", reply_markup=get_reply_bot_menu_keyboard(bot_id))
-    # await msg.delete()
-    await message.answer(
-        MessageTexts.BOT_MENU_MESSAGE.value.format(user_bot_data.username),
-        reply_markup=await get_inline_bot_menu_keyboard(bot_id)
-    )
-    await state.set_state(States.BOT_MENU)
-    await state.set_data({'bot_id': bot_id})
+@stock_menu_router.callback_query(lambda query: InlineStockMenuKeyboard.callback_validator(query.data))
+async def stock_menu_handler(query: CallbackQuery, state: FSMContext):
+    callback_data = InlineStockMenuKeyboard.Callback.model_validate_json(query.data)
+
+    bot_id = callback_data.bot_id
+
+    match callback_data.a:
+        case callback_data.ActionEnum.GOODS_COUNT:
+            products = await product_db.get_all_products(bot_id)
+            await query.message.answer(f"Количество товаров: {len(products)}")
+            await query.answer()
+        case callback_data.ActionEnum.ADD_GOOD:
+            await query.message.answer(
+                "Чтобы добавить товар, прикрепите его картинку и отправьте сообщение в виде:"
+                "\n\nНазвание\nЦена в рублях"
+            )
+            await query.answer()
+        case callback_data.ActionEnum.GOODS_COUNT_MANAGE:
+            await query.message.edit_text(
+                MessageTexts.GOODS_COUNT_MESSAGE.value,
+                reply_markup=None
+            )
+            xlsx_file_path, photo_path = await stock_manager.export_xlsx(bot_id=bot_id, with_pictures=False)
+            await query.message.answer_document(document=FSInputFile(xlsx_file_path),
+                                                caption="Список товаров на складе",
+                                                reply_markup=ReplyBackStockMenuKeyboard.get_keyboard())
+
+            await state.set_state(States.GOODS_COUNT_MANAGE)
+            await state.set_data({'bot_id': bot_id})
+        case callback_data.ActionEnum.AUTO_REDUCE:
+            bot_data = await bot_db.get_bot(bot_id)
+            if not bot_data.settings:
+                bot_data.settings = {}
+            if "auto_reduce" not in bot_data.settings:
+                bot_data.settings["auto_reduce"] = True
+            else:
+                bot_data.settings["auto_reduce"] = not bot_data.settings["auto_reduce"]
+            await bot_db.update_bot(bot_data)
+            if bot_data.settings["auto_reduce"]:
+                await query.message.answer("✅ Автоуменьшение кол-ва товаров после заказа <b>включено</b>.")
+            else:
+                await query.message.answer("❌ Автоуменьшение кол-ва товаров после заказа <b>выключено</b>.")
+            try:
+                await query.message.edit_text(
+                    query.message.text,
+                    reply_markup=await InlineStockMenuKeyboard.get_keyboard(bot_id, bot_data.settings["auto_reduce"]),
+                    parse_mode=ParseMode.HTML
+                )
+            except Exception as e:
+                # TODO handle telegram api error "message not modified"
+                logger.error(
+                    f"user_id={query.from_user.id}: TODO handle telegram api error message not modified",
+                    extra=extra_params(user_id=query.from_user.id, bot_id=bot_id),
+                    exc_info=e
+                )
+        case callback_data.ActionEnum.IMPORT:
+            await query.message.edit_text(
+                MessageTexts.STOCK_IMPORT_COMMANDS.value,
+                reply_markup=InlineStockImportMenuKeyboard.get_keyboard(bot_id),
+                parse_mode=ParseMode.HTML
+            )
+        case callback_data.ActionEnum.EXPORT:
+            bot_data = await bot_db.get_bot(bot_id)
+
+            if not bot_data.settings or "auto_reduce" not in bot_data.settings:
+                button_data = False
+            else:
+                button_data = True
+
+            xlsx_path, photo_path = await stock_manager.export_xlsx(bot_id=bot_id)
+            json_path, photo_path = await stock_manager.export_json(bot_id=bot_id)
+            csv_path, photo_path = await stock_manager.export_csv(bot_id=bot_id)
+
+            media_group = MediaGroupBuilder()
+            media_group.add_document(media=FSInputFile(xlsx_path), caption="Excel таблица")
+            media_group.add_document(media=FSInputFile(json_path), caption="JSON файл")
+            media_group.add_document(media=FSInputFile(csv_path), caption="CSV таблица")
+
+            await bot.send_media_group(chat_id=query.message.chat.id, media=media_group.build())
+            await query.message.answer(
+                "Меню склада:",
+                reply_markup=await InlineStockMenuKeyboard.get_keyboard(bot_id, button_data)
+            )
+            await query.answer()
+        case callback_data.ActionEnum.BACK_TO_BOT_MENU:
+            custom_bot = await bot_db.get_bot(bot_id)
+            await query.message.edit_text(
+                MessageTexts.BOT_MENU_MESSAGE.value.format((await Bot(custom_bot.token).get_me()).username),
+                reply_markup=await InlineBotMenuKeyboard.get_keyboard(custom_bot.bot_id)
+            )
 
 
-@stock_menu_router.callback_query(lambda q: q.data.startswith("stock_menu:import"))
-async def import_products_callback(query: CallbackQuery, state: FSMContext):
-    bot_id = (await state.get_data())['bot_id']
-    await query.message.answer(MessageTexts.STOCK_IMPORT_COMMANDS.value,
-                               reply_markup=get_stock_import_options_keyboard(bot_id))
+@stock_menu_router.callback_query(lambda query: InlineStockImportMenuKeyboard.callback_validator(query.data))
+async def import_menu_handler(query: CallbackQuery, state: FSMContext):
+    callback_data = InlineStockImportMenuKeyboard.Callback.model_validate_json(query.data)
 
+    bot_id = callback_data.bot_id
 
-@stock_menu_router.callback_query(lambda q: q.data.startswith("stock_menu:export"))
-async def export_products_callback(query: CallbackQuery, state: FSMContext):
-    bot_id = int(query.data.split(':')[2])
-    bot_data = await bot_db.get_bot(bot_id)
+    if callback_data.a == callback_data.ActionEnum.BACK_TO_STOCK_MENU:
+        bot_data = await bot_db.get_bot(bot_id)
 
-    if not bot_data.settings or "auto_reduce" not in bot_data.settings:
-        button_data = False
-    else:
-        button_data = True
+        if not bot_data.settings or "auto_reduce" not in bot_data.settings:
+            auto_reduce = False
+        else:
+            auto_reduce = True
 
-    xlsx_path, photo_path = await stock_manager.export_xlsx(bot_id=bot_id)
-    json_path, photo_path = await stock_manager.export_json(bot_id=bot_id)
-    csv_path, photo_path = await stock_manager.export_csv(bot_id=bot_id)
-
-    media_group = MediaGroupBuilder()
-    media_group.add_document(media=FSInputFile(xlsx_path), caption="Excel таблица")
-    media_group.add_document(media=FSInputFile(json_path), caption="JSON файл")
-    media_group.add_document(media=FSInputFile(csv_path), caption="CSV таблица")
-
-    await bot.send_media_group(chat_id=query.message.chat.id, media=media_group.build())
-    await query.message.answer("Меню склада:",
-                               reply_markup=get_inline_bot_goods_menu_keyboard(bot_id, button_data))
+        return await query.message.edit_text(
+            "Меню склада:",
+            reply_markup=await InlineStockMenuKeyboard.get_keyboard(bot_id, auto_reduce),
+            parse_mode=ParseMode.HTML
+        )
+    await query.message.answer(
+        "Теперь отправьте боту xlsx / csv / json файл с товарами в таком же формате, "
+        "как файлы из экспорта товаров.",
+        reply_markup=ReplyBackStockMenuKeyboard.get_keyboard())
     await query.answer()
 
-
-@stock_menu_router.callback_query(lambda q: q.data.startswith("import_menu:"))
-async def import_menu_handler(query: CallbackQuery, state: FSMContext):
-    bot_id = query.data.split(':')[2]
-    action = query.data.split(':')[1]
     await state.set_state(States.IMPORT_PRODUCTS)
-    await state.set_data({"bot_id": bot_id, "action": action})
-    await query.message.answer("Теперь отправьте боту xlsx / csv / json файл с товарами в таком же формате, "
-                               "как файлы из экспорта товаров.", reply_markup=get_stock_back_keyboard())
+    await state.set_data({"bot_id": bot_id, "action": callback_data.a.value})
 
 
-@stock_menu_router.message(States.STOCK_MANAGE)
+@stock_menu_router.message(States.GOODS_COUNT_MANAGE)
 async def handle_stock_manage_input(message: Message, state: FSMContext):
+    if message.text == ReplyBackStockMenuKeyboard.Callback.ActionEnum.BACK_TO_STOCK_MENU.value:
+        await _back_to_stock_menu(message, state)
+        return
+
     if message.content_type != "document":
         return await message.answer("Необходимо отправить xlsx файл с товарами.",
-                                    reply_markup=get_stock_back_keyboard())
+                                    reply_markup=ReplyBackStockMenuKeyboard.get_keyboard())
     file_extension = message.document.file_name.split('.')[-1].lower()
-    if file_extension not in ("xlsx", ):
+    if file_extension not in ("xlsx",):
         return await message.answer("Файл должен быть в формате xlsx товарами.",
-                                    reply_markup=get_stock_back_keyboard())
+                                    reply_markup=ReplyBackStockMenuKeyboard.get_keyboard())
     try:
         bot_id = (await state.get_data())['bot_id']
         file_path = f"{FILES_PATH}docs/{datetime.now().strftime('%d$m%Y_%H%M%S')}.{file_extension}"
         await bot.download(message.document.file_id, destination=file_path)
         await stock_manager.import_xlsx(bot_id=bot_id, path_to_file=file_path, replace=False)
         await message.answer("Кол-во товаров на складе обновлено.")
-    except:
+    except Exception as e:
         # TODO
-        raise
+        logger.error(
+            f"user_id={message.from_user.id}: TODO exception is not dispatched",
+            extra=extra_params(user_id=message.from_user.id),
+            exc_info=e
+        )
+        raise e
 
 
 @stock_menu_router.message(States.IMPORT_PRODUCTS)
 async def handle_stock_import_input(message: Message, state: FSMContext):
+    if message.text == ReplyBackStockMenuKeyboard.Callback.ActionEnum.BACK_TO_STOCK_MENU.value:
+        await _back_to_stock_menu(message, state)
+        return
+
     state_data = await state.get_data()
     if message.content_type != "document":
         return await message.answer("Необходимо отправить файл с товарами.",
-                                    reply_markup=get_stock_back_keyboard())
+                                    reply_markup=ReplyBackStockMenuKeyboard.get_keyboard())
     file_extension = message.document.file_name.split('.')[-1].lower()
     if file_extension not in ("xlsx", "json", "csv"):
         return await message.answer("Файл должен быть в формате xlsx / json / csv",
-                                    reply_markup=get_stock_back_keyboard())
+                                    reply_markup=ReplyBackStockMenuKeyboard.get_keyboard())
     try:
         bot_id = state_data['bot_id']
         file_path = f"{FILES_PATH}docs/{datetime.now().strftime('%d$m%Y_%H%M%S')}.{file_extension}"
@@ -111,12 +196,41 @@ async def handle_stock_import_input(message: Message, state: FSMContext):
             replace_d = False
         match file_extension:
             case "xlsx":
-                await stock_manager.import_xlsx(bot_id=bot_id, path_to_file=file_path, replace=replace, replace_duplicates=replace_d)
+                await stock_manager.import_xlsx(bot_id=bot_id, path_to_file=file_path, replace=replace,
+                                                replace_duplicates=replace_d)
             case "json":
-                await stock_manager.import_json(bot_id=bot_id, path_to_file=file_path, replace=replace, replace_duplicates=replace_d)
+                await stock_manager.import_json(bot_id=bot_id, path_to_file=file_path, replace=replace,
+                                                replace_duplicates=replace_d)
             case "csv":
-                await stock_manager.import_csv(bot_id=bot_id, path_to_file=file_path, replace=replace, replace_duplicates=replace_d)
+                await stock_manager.import_csv(bot_id=bot_id, path_to_file=file_path, replace=replace,
+                                               replace_duplicates=replace_d)
         await message.answer("Товары обновлены.")
-    except:
+    except Exception as e:
         # TODO
-        raise
+        logger.error(
+            f"user_id={message.from_user.id}: TODO exception is not dispatched",
+            extra=extra_params(user_id=message.from_user.id),
+            exc_info=e
+        )
+        raise e
+
+
+async def _back_to_stock_menu(message: Message, state: FSMContext) -> None:
+    bot_id = (await state.get_data())['bot_id']
+    bot_data = await bot_db.get_bot(bot_id)
+
+    if not bot_data.settings or "auto_reduce" not in bot_data.settings:
+        auto_reduce = False
+    else:
+        auto_reduce = True
+
+    await message.answer(
+        "Возвращаемся в меню склада...",
+        reply_markup=ReplyBotMenuKeyboard.get_keyboard(bot_id)
+    )
+    await message.answer(
+        "Меню склада:",
+        reply_markup=await InlineStockMenuKeyboard.get_keyboard(bot_id, auto_reduce)
+    )
+    await state.set_state(States.BOT_MENU)
+    await state.set_data({'bot_id': bot_id})

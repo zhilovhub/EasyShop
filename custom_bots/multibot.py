@@ -1,39 +1,38 @@
 import asyncio
 import ssl
-from datetime import datetime
+
 from os import getenv
 from typing import Any, Dict, Union
 
+from dotenv import load_dotenv
+from aiohttp import web
+
 from aiogram import Bot, Dispatcher, Router
+from aiogram.enums import ParseMode
+from aiogram.types import User, Chat
+from aiogram.fsm.state import State, StatesGroup
+from aiogram.exceptions import TelegramUnauthorizedError
+from aiogram.utils.token import TokenValidationError, validate_token
 from aiogram.client.default import DefaultBotProperties
 from aiogram.client.session.aiohttp import AiohttpSession
-from aiogram.enums import ParseMode
-from aiogram.exceptions import TelegramUnauthorizedError
-from aiogram.fsm.state import State, StatesGroup
-from aiogram.types import User, Chat
-from aiogram.utils.token import TokenValidationError, validate_token
 from aiogram.webhook.aiohttp_server import (
     TokenBasedRequestHandler,
     setup_application,
 )
-from aiohttp import web
-from dotenv import load_dotenv
 
 from bot import config
-from bot.utils import JsonStore
+from bot.utils import JsonStore, send_start_message_to_admins
 from bot.utils.storage import AlchemyStorageAsync
+
+from database.models.models import Database
 from database.models.bot_model import BotNotFound
+from database.models.user_model import UserDao
 from database.models.channel_model import ChannelDao
 from database.models.channel_user_model import ChannelUserDao
-from database.models.custom_ad_model import CustomAdDao
-from database.models.models import Database
-from database.models.user_model import UserDao
-
-from logs.config import custom_bot_logger, db_logger, extra_params
 
 from subscription.scheduler import Scheduler
 
-from bot.utils import send_start_message_to_admins
+from logs.config import custom_bot_logger, db_logger, extra_params
 
 app = web.Application()
 
@@ -69,15 +68,12 @@ LOCAL_API_SERVER_PORT = int(getenv("WEBHOOK_LOCAL_API_PORT"))
 db_engine: Database = Database(
     sqlalchemy_url=getenv("SQLALCHEMY_URL"), logger=db_logger)
 bot_db = db_engine.get_bot_dao()
-product_db = db_engine.get_product_db()
 order_db = db_engine.get_order_dao()
-custom_bot_user_db = db_engine.get_custom_bot_user_db()
-channel_db: ChannelDao = db_engine.get_channel_dao()
-channel_user_db: ChannelUserDao = db_engine.get_channel_user_dao()
-custom_ad_db: CustomAdDao = db_engine.get_custom_ad_dao()
+product_db = db_engine.get_product_db()
 user_db: UserDao = db_engine.get_user_dao()
-channel_post_db = db_engine.get_channel_post_dao()
-contest_user_db = db_engine.get_contest_user_dao()
+channel_db: ChannelDao = db_engine.get_channel_dao()
+custom_bot_user_db = db_engine.get_custom_bot_user_db()
+channel_user_db: ChannelUserDao = db_engine.get_channel_user_dao()
 
 storage = AlchemyStorageAsync(db_url=getenv("CUSTOM_BOT_STORAGE_DB_URL"),
                               table_name=getenv("CUSTOM_BOT_STORAGE_TABLE_NAME"))
@@ -235,14 +231,14 @@ async def main():
     await scheduler.start()
 
     await asyncio.gather(
-        web._run_app(
+        web._run_app(  # noqa
             local_app,
             host=LOCAL_API_SERVER_HOST,
             port=LOCAL_API_SERVER_PORT,
             access_log=custom_bot_logger,
             print=custom_bot_logger.debug
         ),
-        web._run_app(
+        web._run_app(  # noqa
             app,
             host=WEBHOOK_SERVER_HOST,
             port=WEBHOOK_SERVER_PORT,

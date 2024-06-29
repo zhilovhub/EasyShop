@@ -3,6 +3,7 @@ from json.decoder import JSONDecodeError
 
 from logs.config import logger
 
+
 class JsonStore:
 
     def __init__(self, file_path: str, json_store_name: str):

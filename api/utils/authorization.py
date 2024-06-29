@@ -1,17 +1,15 @@
-import time
-from functools import wraps
-from loader import db_engine, DEBUG, MAIN_BOT_TOKEN
-from database.models.bot_model import BotDao, BotNotFound
-from fastapi import HTTPException
-from aiogram.utils.web_app import WebAppInitData
-from urllib.parse import unquote, quote, parse_qsl
-import hmac
 import hashlib
-import base64
-from operator import itemgetter
-from typing import *
+import hmac
 import json
+import time
+from operator import itemgetter
+from urllib.parse import unquote, parse_qsl
 
+from fastapi import HTTPException
+
+from api.loader import db_engine, DEBUG, MAIN_BOT_TOKEN
+
+from database.models.bot_model import BotDao, BotNotFound
 
 bot_db: BotDao = db_engine.get_bot_dao()
 

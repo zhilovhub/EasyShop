@@ -1,15 +1,18 @@
 import os
+import datetime
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+
 from dotenv import load_dotenv
-import datetime
-from orders.router import router as order_router
-from categories.router import router as category_router
-from products.router import router as product_router
-from files.router import router as files_router
+
+from api.loader import LOGS_PATH
+from api.files.router import router as files_router
+from api.orders.router import router as order_router
+from api.products.router import router as product_router
+from api.categories.router import router as category_router
 
 from logs.config import logger_configuration
-from loader import LOGS_PATH
 
 tags_metadata = [
     {
@@ -39,7 +42,7 @@ ROOT_PATH = "/api/"
 
 origins = ["*"]
 app.add_middleware(
-    CORSMiddleware,
+    CORSMiddleware,  # noqa
     allow_origins=origins,
     allow_credentials=True,
     allow_methods=["*"],
@@ -54,13 +57,12 @@ async def read_root():
     return "You can see all available methods in rest api docs"
 
 
-# Start uvicorn from python
 if __name__ == "__main__":
     import uvicorn
 
     try:
         os.system("mkdir logs")
-    except:
+    except Exception as e:  # noqa
         pass
 
     for log_file in ('all.log', 'err.log'):
@@ -81,6 +83,6 @@ if __name__ == "__main__":
 
 # Start uvicorn from cli (no logs)
 if __name__ == "api.main":
-    import api.products
-    import api.orders
-    import api.files
+    import api.products  # noqa
+    import api.orders  # noqa
+    import api.files  # noqa

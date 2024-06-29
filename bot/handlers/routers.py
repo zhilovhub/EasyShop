@@ -1,9 +1,9 @@
 from aiogram import Router
 
 from bot.filters import ChatTypeFilter
-from bot.middlewaries.subscription_middleware import CheckSubscriptionMiddleware
-from bot.middlewaries.errors_middleware import ErrorMiddleware
 from bot.middlewaries.log_middleware import LogMiddleware
+from bot.middlewaries.errors_middleware import ErrorMiddleware
+from bot.middlewaries.subscription_middleware import CheckSubscriptionMiddleware
 
 from logs.config import logger
 
@@ -26,6 +26,15 @@ admin_bot_menu_router.callback_query.outer_middleware(log_middleware)
 admin_bot_menu_router.callback_query.middleware(CheckSubscriptionMiddleware())
 admin_bot_menu_router.message.middleware(ErrorMiddleware())
 admin_bot_menu_router.callback_query.middleware(ErrorMiddleware())
+
+post_message_router = Router(name="post_message")  # only for SUBSCRIBERS
+post_message_router.message.filter(ChatTypeFilter(chat_type="private"))
+post_message_router.message.outer_middleware(log_middleware)
+post_message_router.message.middleware(CheckSubscriptionMiddleware())
+post_message_router.callback_query.outer_middleware(log_middleware)
+post_message_router.callback_query.middleware(CheckSubscriptionMiddleware())
+post_message_router.message.middleware(ErrorMiddleware())
+post_message_router.callback_query.middleware(ErrorMiddleware())
 
 channel_menu_router = Router(name="channel_menu")  # only for SUBSCRIBERS
 channel_menu_router.message.filter(ChatTypeFilter(chat_type="private"))

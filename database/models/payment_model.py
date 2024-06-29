@@ -8,10 +8,10 @@ from pydantic import BaseModel, Field, ConfigDict, field_validator
 
 from database.models import Base
 from database.models.dao import Dao
+from database.models.user_model import User
 
 from bot.exceptions.exceptions import *
 
-from database.models.user_model import User
 from logs.config import extra_params
 
 
@@ -20,12 +20,12 @@ class PaymentNotFound(Exception):
     pass
 
 
-PAYMENT_STATUSES = ("waiting_payment", "success", "error", "refund")
-
-
 class NotInPaymentStatusesList(ValueError):
     """Error when value of user status not in values list"""
     pass
+
+
+PAYMENT_STATUSES = ("waiting_payment", "success", "error", "refund")
 
 
 class Payment(Base):
@@ -60,6 +60,7 @@ class PaymentSchemaWithoutId(BaseModel):
     # invoice_payload: Optional | str
     # shipping_option_id: Optional | str
 
+    @classmethod
     @field_validator("status")
     def validate_request_status(cls, value: str):
         if value.lower() not in PAYMENT_STATUSES:
@@ -121,7 +122,9 @@ class PaymentDao(Dao):
         #     raise InstanceAlreadyExists(f"payment with {payment.id} already exists in db.")
         # except PaymentNotFound:
         async with self.engine.begin() as conn:
-            payment_id = (await conn.execute(insert(Payment).values(**payment.model_dump(by_alias=True)))).inserted_primary_key[0]
+            payment_id = (
+                await conn.execute(insert(Payment).values(**payment.model_dump(by_alias=True)))
+            ).inserted_primary_key[0]
         await self.engine.dispose()
 
         self.logger.debug(

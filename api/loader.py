@@ -3,6 +3,7 @@ import os
 from dotenv import load_dotenv
 
 from database.models.models import Database
+
 from logs.config import db_logger
 
 load_dotenv()
