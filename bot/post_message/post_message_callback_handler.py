@@ -153,6 +153,105 @@ async def _button_add(
         )
 
 
+async def _button_url(
+        query: CallbackQuery,
+        state: FSMContext,
+        post_message: PostMessageSchema,
+        post_message_type: PostMessageType,
+        channel_id: int | None
+):
+    bot_id = post_message.bot_id
+
+    if not post_message.has_button:
+        await _inline_no_button(
+            query,
+            bot_id,
+            post_message_type,
+            channel_id=channel_id
+        )
+    else:
+        await query.message.answer(
+            "Введите ссылку, которая будет открываться у пользователей по нажатии на кнопку",
+            reply_markup=ReplyBackPostMessageMenuKeyboard.get_keyboard()
+        )
+        await query.answer()
+        await state.set_state(States.EDITING_POST_BUTTON_URL)
+        await state.set_data({
+            "bot_id": bot_id,
+            "post_message_id": post_message.post_message_id,
+            "post_message_type": post_message_type.value
+        })
+
+
+async def _button_text(
+        query: CallbackQuery,
+        state: FSMContext,
+        post_message: PostMessageSchema,
+        post_message_type: PostMessageType,
+        channel_id: int | None
+):
+    bot_id = post_message.bot_id
+
+    if not post_message.has_button:
+        await _inline_no_button(
+            query,
+            bot_id,
+            post_message_type,
+            channel_id=channel_id
+        )
+    else:
+        await query.message.answer(
+            "Введите текст, который будет отображаться на кнопке",
+            reply_markup=ReplyBackPostMessageMenuKeyboard.get_keyboard()
+        )
+        await query.answer()
+        await state.set_state(States.EDITING_POST_BUTTON_TEXT)
+        await state.set_data({
+            "bot_id": bot_id,
+            "post_message_id": post_message.post_message_id,
+            "post_message_type": post_message_type.value
+        })
+
+
+async def _button_delete(
+        query: CallbackQuery,
+        post_message: PostMessageSchema,
+        post_message_type: PostMessageType,
+        channel_id: int | None
+):
+    bot_id = post_message.bot_id
+
+    if not post_message.has_button:
+        await _inline_no_button(
+            query,
+            bot_id,
+            post_message_type,
+            channel_id=channel_id
+        )
+    else:
+        post_message.button_text = None
+        post_message.button_url = None
+        post_message.has_button = False
+
+        await post_message_db.update_post_message(post_message)
+
+        await query.message.delete()
+        await query.message.answer("Кнопка удалена")
+
+        match post_message_type:
+            case PostMessageType.MAILING:
+                username = (await Bot(query.bot.token).get_me()).username
+            case PostMessageType.CHANNEL_POST:
+                username = (await Bot(query.bot.token).get_chat(channel_id)).username
+            case _:
+                raise UnknownPostMessageType
+
+        await query.message.answer(
+            text=MessageTexts.bot_post_message_menu_message(post_message_type).format(username),
+            reply_markup=await InlinePostMessageMenuKeyboard.get_keyboard(bot_id, post_message_type)
+        )
+
+
 async def _post_message_union(
         query: CallbackQuery,
         state: FSMContext,
@@ -185,68 +284,30 @@ async def _post_message_union(
             )
 
         case callback_data.ActionEnum.BUTTON_URL:
-            if not post_message.has_button:
-                await _inline_no_button(
-                    query,
-                    bot_id,
-                    post_message_type,
-                    channel_id=callback_data.channel_id if post_message_type == PostMessageType.CHANNEL_POST else None
-                )
-            else:
-                await query.message.answer(
-                    "Введите ссылку, которая будет открываться у пользователей по нажатии на кнопку",
-                    reply_markup=ReplyBackPostMessageMenuKeyboard.get_keyboard()
-                )
-                await query.answer()
-                await state.set_state(States.EDITING_POST_BUTTON_URL)
-                await state.set_data({
-                    "bot_id": bot_id,
-                    "post_message_id": post_message_id,
-                    "post_message_type": post_message_type.value
-                })
+            await _button_url(
+                query,
+                state,
+                post_message,
+                post_message_type,
+                channel_id=callback_data.channel_id if post_message_type == PostMessageType.CHANNEL_POST else None
+            )
 
         case callback_data.ActionEnum.BUTTON_TEXT:
-            if not post_message.has_button:
-                await _inline_no_button(
-                    query,
-                    bot_id,
-                    post_message_type,
-                    channel_id=callback_data.channel_id if post_message_type == PostMessageType.CHANNEL_POST else None
-                )
-            else:
-                await query.message.answer(
-                    "Введите текст, который будет отображаться на кнопке",
-                    reply_markup=ReplyBackPostMessageMenuKeyboard.get_keyboard()
-                )
-                await query.answer()
-                await state.set_state(States.EDITING_POST_BUTTON_TEXT)
-                await state.set_data({
-                    "bot_id": bot_id,
-                    "post_message_id": post_message_id,
-                    "post_message_type": post_message_type.value
-                })
+            await _button_text(
+                query,
+                state,
+                post_message,
+                post_message_type,
+                channel_id=callback_data.channel_id if post_message_type == PostMessageType.CHANNEL_POST else None
+            )
 
         case callback_data.ActionEnum.BUTTON_DELETE:
-            if not post_message.has_button:
-                await _inline_no_button(
-                    query,
-                    bot_id,
-                    post_message_type,
-                    channel_id=callback_data.channel_id if post_message_type == PostMessageType.CHANNEL_POST else None
-                )
-            else:
-                post_message.button_text = None
-                post_message.button_url = None
-                post_message.has_button = False
-
-                await post_message_db.update_post_message(post_message)
-
-                await query.message.delete()
-                await query.message.answer("Кнопка удалена")
-                await query.message.answer(
-                    text=MessageTexts.bot_post_message_menu_message(post_message_type).format(username),
-                    reply_markup=await InlinePostMessageMenuKeyboard.get_keyboard(bot_id, post_message_type)
-                )
+            await _button_delete(
+                query,
+                post_message,
+                post_message_type,
+                channel_id=callback_data.channel_id if post_message_type == PostMessageType.CHANNEL_POST else None
+            )
 
         case callback_data.ActionEnum.POST_MESSAGE_TEXT:
             await query.message.answer(
