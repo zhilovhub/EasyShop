@@ -377,16 +377,122 @@ async def _demo(
             reply_markup=await InlinePostMessageMenuKeyboard.get_keyboard(bot_id, post_message_type)
         )
 
+
+async def _delete_post_message(
+        query: CallbackQuery,
+        post_message: PostMessageSchema,
+        post_message_type: PostMessageType,
+        channel_id: int | None
+):
+    match post_message_type:
+        case PostMessageType.MAILING:
+            username = (await Bot(query.bot.token).get_me()).username
+            text = MessageTexts.BOT_MAILINGS_MENU_ACCEPT_DELETING_MESSAGE.value.format(username)
+        case PostMessageType.CHANNEL_POST:
+            username = (await Bot(query.bot.token).get_chat(channel_id)).username
+            text = MessageTexts.BOT_CHANNEL_POST_MENU_ACCEPT_DELETING_MESSAGE.value.format(username)
+        case _:
+            raise UnknownPostMessageType
+
+    await query.message.edit_text(
+        text=text,
+        reply_markup=await InlinePostMessageAcceptDeletingKeyboard.get_keyboard(
+            post_message.bot_id,
+            post_message.post_message_id,
+            post_message_type
+        )
+    )
+
+
+async def _extra_settings(
+        query: CallbackQuery,
+        post_message: PostMessageSchema,
+        post_message_type: PostMessageType,
+):
+    await query.message.edit_text(
+        text=query.message.html_text + "\n\n🔎 Что такое <a href=\"https://www.google.com/url?sa=i&url=https%3A"
+                                       "%2F%2Ftlgrm.ru%2Fblog%2Flink-preview.html&psig=AOvVaw27FhHb7fFrLDNGUX-u"
+                                       "zG7y&ust=1717771529744000&source=images&cd=vfe&opi=89978449&ved=0CBIQjR"
+                                       "xqFwoTCJj5puKbx4YDFQAAAAAdAAAAABAE\">предпросмотр ссылок</a>",
+        reply_markup=InlinePostMessageExtraSettingsKeyboard.get_keyboard(
+            post_message.bot_id,
+            post_message.post_message_id,
+            post_message.enable_notification_sound,
+            post_message.enable_link_preview,
+            post_message_type
+        ),
+        parse_mode=ParseMode.HTML,
+    )
+
+
+async def _delay(
+        query: CallbackQuery,
+        state: FSMContext,
+        post_message: PostMessageSchema,
+        post_message_type: PostMessageType,
+):
+    await query.message.answer(
+        MessageTexts.DATE_RULES.value,
+        reply_markup=ReplyBackPostMessageMenuKeyboard.get_keyboard()
+    )
+    await query.answer()
+    await state.set_state(States.EDITING_POST_DELAY_DATE)
+    await state.set_data({
+        "bot_id": post_message.bot_id,
+        "post_message_id": post_message.post_message_id,
+        "post_message_type": post_message_type.value
+    })
+
+
+async def _remove_delay(
+        query: CallbackQuery,
+        post_message: PostMessageSchema,
+        post_message_type: PostMessageType,
+):
+    post_message.is_delayed = False
+    post_message.send_date = None
+
+    await post_message_db.update_post_message(post_message)
+
+    await query.message.edit_reply_markup(
+        reply_markup=await InlinePostMessageMenuKeyboard.get_keyboard(post_message.bot_id, post_message_type)
+    )
+
+
+async def _back(
+        query: CallbackQuery,
+        post_message: PostMessageSchema,
+        post_message_type: PostMessageType,
+        channel_id: int | None
+):
+    bot_id = post_message.bot_id
+    custom_bot_username = (await Bot(query.bot.token).get_me()).username
+
+    match post_message_type:
+        case PostMessageType.MAILING:
+            await query.message.edit_text(
+                MessageTexts.BOT_MENU_MESSAGE.value.format(custom_bot_username),
+                reply_markup=await InlineBotMenuKeyboard.get_keyboard(bot_id),
+                parse_mode=ParseMode.HTML
+            )
+        case PostMessageType.CHANNEL_POST:
+            username = (await Bot(query.bot.token).get_chat(channel_id)).username
+            await query.message.edit_text(
+                MessageTexts.BOT_CHANNEL_MENU_MESSAGE.value.format(username, custom_bot_username),
+                reply_markup=await InlineChannelMenuKeyboard.get_keyboard(bot_id, channel_id),
+                parse_mode=ParseMode.HTML
+            )
+        case _:
+            raise UnknownPostMessageType
+
+
 async def _post_message_union(
         query: CallbackQuery,
         state: FSMContext,
         callback_data: InlinePostMessageMenuKeyboard.Callback,
         user_id: int,
-        bot_id: int,
         post_message: PostMessageSchema,
-        username: str,
         post_message_type: PostMessageType):
-    post_message_id = post_message.post_message_id
 
     match callback_data.a:
         # RUNNING ACTIONS
@@ -467,59 +573,41 @@ async def _post_message_union(
             )
 
         case callback_data.ActionEnum.DELETE_POST_MESSAGE:
-            await query.message.edit_text(
-                text=MessageTexts.BOT_MAILINGS_MENU_ACCEPT_DELETING_MESSAGE.value.format(username),
-                reply_markup=await InlinePostMessageAcceptDeletingKeyboard.get_keyboard(
-                    bot_id,
-                    post_message_id,
-                    post_message_type
-                )
+            await _delete_post_message(
+                query,
+                post_message,
+                post_message_type,
+                channel_id=callback_data.channel_id if post_message_type == PostMessageType.CHANNEL_POST else None
             )
 
         case callback_data.ActionEnum.EXTRA_SETTINGS:
-            await query.message.edit_text(
-                text=query.message.html_text + "\n\n🔎 Что такое <a href=\"https://www.google.com/url?sa=i&url=https%3A"
-                                               "%2F%2Ftlgrm.ru%2Fblog%2Flink-preview.html&psig=AOvVaw27FhHb7fFrLDNGUX-u"
-                                               "zG7y&ust=1717771529744000&source=images&cd=vfe&opi=89978449&ved=0CBIQjR"
-                                               "xqFwoTCJj5puKbx4YDFQAAAAAdAAAAABAE\">предпросмотр ссылок</a>",
-                reply_markup=InlinePostMessageExtraSettingsKeyboard.get_keyboard(
-                    bot_id,
-                    post_message_id,
-                    post_message.enable_notification_sound,
-                    post_message.enable_link_preview,
-                    post_message_type
-                ),
-                parse_mode=ParseMode.HTML,
+            await _extra_settings(
+                query,
+                post_message,
+                post_message_type,
             )
 
         case callback_data.ActionEnum.DELAY:
-            await query.message.answer(
-                MessageTexts.DATE_RULES.value,
-                reply_markup=ReplyBackPostMessageMenuKeyboard.get_keyboard()
+            await _delay(
+                query,
+                state,
+                post_message,
+                post_message_type,
             )
-            await query.answer()
-            await state.set_state(States.EDITING_POST_DELAY_DATE)
-            await state.set_data({
-                "bot_id": bot_id,
-                "post_message_id": post_message_id,
-                "post_message_type": post_message_type.value
-            })
 
         case callback_data.ActionEnum.REMOVE_DELAY:
-            post_message.is_delayed = False
-            post_message.send_date = None
-
-            await post_message_db.update_post_message(post_message)
-
-            await query.message.edit_reply_markup(
-                reply_markup=await InlinePostMessageMenuKeyboard.get_keyboard(bot_id, post_message_type)
+            await _remove_delay(
+                query,
+                post_message,
+                post_message_type,
             )
 
-        case callback_data.ActionEnum.BACK_TO_MAIN_MENU:
-            await query.message.edit_text(
-                MessageTexts.BOT_MENU_MESSAGE.value.format(username),
-                reply_markup=await InlineBotMenuKeyboard.get_keyboard(bot_id),
-                parse_mode=ParseMode.HTML
+        case callback_data.ActionEnum.BACK:
+            await _back(
+                query,
+                post_message,
+                post_message_type,
+                channel_id=callback_data.channel_id if post_message_type == PostMessageType.CHANNEL_POST else None
             )
 
 
@@ -554,7 +642,7 @@ async def post_message_handler(query: CallbackQuery, state: FSMContext):
     if callback_data.a not in (
             callback_data.ActionEnum.STATISTICS,
             callback_data.ActionEnum.CANCEL,
-            callback_data.ActionEnum.BACK_TO_MAIN_MENU
+            callback_data.ActionEnum.BACK
     ) and post_message.is_running:
         await query.answer(MessageTexts.bot_post_already_started_message(post_message_type), show_alert=True)
         await query.message.edit_text(
@@ -580,9 +668,7 @@ async def post_message_handler(query: CallbackQuery, state: FSMContext):
         state,
         callback_data,
         user_id,
-        bot_id,
         post_message,
-        custom_bot_username,  # TODO what about channel username
         post_message_type
     )
 

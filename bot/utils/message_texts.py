@@ -79,7 +79,7 @@ class MessageTexts(Enum):
     BOT_CHANNEL_POST_MENU_ACCEPT_START = "Управление записью для канала <b>@{}</b>\n\n" \
         "<b>Подтверждение начала рассылки</b>"
 
-    BOT_CHANNEL_POST_MENU_ACCEPT_DELETING_MESSAGE = "Управление постом для канала <b>@{}</b>\n\n" \
+    BOT_CHANNEL_POST_MENU_ACCEPT_DELETING_MESSAGE = "Управление записью для канала <b>@{}</b>\n\n" \
         "<b>Подтверждение удаления рассылки</b>"
 
     BOT_CHANNEL_POST_MENU_WHILE_RUNNING = "Сейчас в очереди пост в канал <b>@{}</b>\n\n"

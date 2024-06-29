@@ -154,7 +154,7 @@ class InlinePostMessageMenuKeyboard:
 
             EXTRA_SETTINGS = "extra_settings"
 
-            BACK_TO_MAIN_MENU = "back_main_menu"
+            BACK = "back"
             DELETE_POST_MESSAGE = "delete"
 
             # RUNNING ACTIONS
@@ -320,7 +320,7 @@ class InlinePostMessageMenuKeyboard:
                     InlineKeyboardButton(
                         text="🔙 Назад",
                         callback_data=InlinePostMessageMenuKeyboard.callback_json(
-                            actions.BACK_TO_MAIN_MENU, bot_id, post_message_id, post_message_type
+                            actions.BACK, bot_id, post_message_id, post_message_type
                         )
                     ),
                     InlineKeyboardButton(
