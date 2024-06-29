@@ -8,7 +8,7 @@ from bot.utils.keyboard_utils import get_bot_channels, get_bot_username, get_bot
 from bot.keyboards.keyboard_utils import callback_json_validator
 
 
-class ReplyBackChannelMenuKeyboard:  # TODO should not be common for every channel's back
+class ReplyBackChannelMenuKeyboard:
     class Callback(BaseModel):
         class ActionEnum(Enum):
             BACK_TO_CHANNEL_MENU = "🔙 Назад"

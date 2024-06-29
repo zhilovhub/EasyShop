@@ -51,4 +51,3 @@ async def send_post_messages(custom_bot, post_message, media_files, chat_id):
     post_message.sent_post_message_amount = 0
 
     await post_message_db.delete_post_message(post_message.post_message_id)
-    # await asyncio.sleep(10) # For test only
