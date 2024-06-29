@@ -13,7 +13,7 @@ from bot.keyboards.main_menu_keyboards import ReplyBotMenuKeyboard, InlineBotMen
 from bot.post_message.post_message_utils import is_post_message_valid
 from bot.keyboards.post_message_keyboards import InlinePostMessageMenuKeyboard, ReplyBackPostMessageMenuKeyboard, \
     ReplyConfirmMediaFilesKeyboard, InlinePostMessageAcceptDeletingKeyboard, InlinePostMessageExtraSettingsKeyboard, \
-    InlinePostMessageStartConfirmKeyboard
+    InlinePostMessageStartConfirmKeyboard, UnknownPostMessageType
 from bot.post_message.post_message_editors import send_post_message, PostActionType
 from database.models.post_message_model import PostMessageSchema, PostMessageNotFound
 
@@ -143,7 +143,12 @@ async def _post_message_union(
 
         case callback_data.ActionEnum.BUTTON_URL:
             if not post_message.has_button:
-                await _inline_no_button(query, bot_id, username, post_message_type)
+                await _inline_no_button(
+                    query,
+                    bot_id,
+                    post_message_type,
+                    channel_id=callback_data.channel_id if post_message_type == PostMessageType.CHANNEL_POST else None
+                )
             else:
                 await query.message.answer(
                     "Введите ссылку, которая будет открываться у пользователей по нажатии на кнопку",
@@ -159,7 +164,12 @@ async def _post_message_union(
 
         case callback_data.ActionEnum.BUTTON_TEXT:
             if not post_message.has_button:
-                await _inline_no_button(query, bot_id, username, post_message_type)
+                await _inline_no_button(
+                    query,
+                    bot_id,
+                    post_message_type,
+                    channel_id=callback_data.channel_id if post_message_type == PostMessageType.CHANNEL_POST else None
+                )
             else:
                 await query.message.answer(
                     "Введите текст, который будет отображаться на кнопке",
@@ -175,7 +185,12 @@ async def _post_message_union(
 
         case callback_data.ActionEnum.BUTTON_DELETE:
             if not post_message.has_button:
-                await _inline_no_button(query, bot_id, username, post_message_type)
+                await _inline_no_button(
+                    query,
+                    bot_id,
+                    post_message_type,
+                    channel_id=callback_data.channel_id if post_message_type == PostMessageType.CHANNEL_POST else None
+                )
             else:
                 post_message.button_text = None
                 post_message.button_url = None
@@ -373,14 +388,24 @@ async def post_message_handler(query: CallbackQuery, state: FSMContext):
 async def _inline_no_button(
         query: CallbackQuery,
         bot_id: int,
-        custom_bot_username: str,
-        post_message_type: PostMessageType
+        post_message_type: PostMessageType,
+        channel_id: int | None
 ) -> None:
+    match post_message_type:
+        case PostMessageType.MAILING:
+            username = (await Bot(query.bot.token).get_me()).username
+            text = "В этом рассылочном сообщении кнопки нет"
+        case PostMessageType.CHANNEL_POST:
+            username = (await Bot(query.bot.token).get_chat(channel_id)).username
+            text = "В этой записи для канала кнопки нет"
+        case _:
+            raise UnknownPostMessageType
+
     await query.answer(
-        "В этом рассылочном сообщении кнопки нет", show_alert=True
+        text, show_alert=True
     )
     await query.message.edit_text(
-        text=MessageTexts.bot_post_message_menu_message(post_message_type).format(custom_bot_username),
+        text=MessageTexts.bot_post_message_menu_message(post_message_type).format(username),
         reply_markup=await InlinePostMessageMenuKeyboard.get_keyboard(bot_id, post_message_type),
         parse_mode=ParseMode.HTML
     )
