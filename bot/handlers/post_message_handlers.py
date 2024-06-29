@@ -11,6 +11,7 @@ from bot.utils import MessageTexts
 from bot.states import States
 from bot.handlers.routers import post_message_router
 from bot.enums.post_message_type import PostMessageType
+from bot.keyboards.channel_keyboards import InlineChannelMenuKeyboard
 from bot.keyboards.main_menu_keyboards import InlineBotMenuKeyboard, ReplyBotMenuKeyboard
 from bot.post_message.post_message_utils import is_post_message_valid
 from bot.keyboards.post_message_keyboards import InlinePostMessageStartConfirmKeyboard, InlinePostMessageMenuKeyboard, \
@@ -95,7 +96,12 @@ async def post_message_extra_settings_callback_handler(query: CallbackQuery):
         case callback_data.ActionEnum.NOTIFICATION_SOUND:
             await _notification_sound(query, post_message, post_message_type)
         case callback_data.ActionEnum.BACK_TO_POST_MESSAGE_MENU:
-            await _inline_back_to_post_message_menu(query, bot_id, custom_bot_username, post_message_type)
+            await _inline_back_to_post_message_menu(
+                query,
+                bot_id,
+                post_message_type,
+                channel_id=callback_data.channel_id if post_message_type == PostMessageType.CHANNEL_POST else None
+            )
 
 
 @post_message_router.callback_query(
@@ -127,9 +133,19 @@ async def post_message_confirm_start_callback_handler(query: CallbackQuery):
 
     match callback_data.a:
         case callback_data.ActionEnum.START_CONFIRM:
-            await _start_confirm(query, post_message, post_message_type)
+            await _start_confirm(
+                query,
+                post_message,
+                post_message_type,
+                channel_id=callback_data.channel_id if post_message_type == PostMessageType.CHANNEL_POST else None
+            )
         case callback_data.ActionEnum.BACK_TO_POST_MESSAGE_MENU:
-            await _inline_back_to_post_message_menu(query, bot_id, custom_bot_username, post_message_type)
+            await _inline_back_to_post_message_menu(
+                query,
+                bot_id,
+                post_message_type,
+                channel_id=callback_data.channel_id if post_message_type == PostMessageType.CHANNEL_POST else None
+            )
 
 
 @post_message_router.callback_query(
@@ -161,12 +177,27 @@ async def post_message_accept_deleting_callback_handler(query: CallbackQuery):
 
     match callback_data.a:
         case callback_data.ActionEnum.ACCEPT_DELETE:
-            await _delete_post_message(query, post_message, post_message_type)
+            await _delete_post_message(
+                query,
+                post_message,
+                post_message_type,
+                channel_id=callback_data.channel_id if post_message_type == PostMessageType.CHANNEL_POST else None
+            )
         case callback_data.ActionEnum.BACK_TO_POST_MESSAGE_MENU:
-            await _inline_back_to_post_message_menu(query, bot_id, custom_bot_username, post_message_type)
+            await _inline_back_to_post_message_menu(
+                query,
+                bot_id,
+                post_message_type,
+                channel_id=callback_data.channel_id if post_message_type == PostMessageType.CHANNEL_POST else None
+            )
 
 
-async def _start_confirm(query: CallbackQuery, post_message: PostMessageSchema, post_message_type: PostMessageType):
+async def _start_confirm(
+        query: CallbackQuery,
+        post_message: PostMessageSchema,
+        post_message_type: PostMessageType,
+        channel_id: int = None
+):
     media_files = await post_message_media_file_db.get_all_post_message_media_files(post_message.post_message_id)
 
     if await is_post_message_valid(query, post_message, media_files):
@@ -223,16 +254,17 @@ async def _delete_post_message(
         query: CallbackQuery,
         post_message:
         PostMessageSchema,
-        post_message_type: PostMessageType
+        post_message_type: PostMessageType,
+        channel_id: int = None
 ):
     await post_message_db.delete_post_message(post_message.post_message_id)
+    custom_bot = await bot_db.get_bot(post_message.bot_id)
+    custom_bot_username = (await Bot(custom_bot.token).get_me()).username
 
     match post_message_type:
         case PostMessageType.MAILING:
-            custom_bot = await bot_db.get_bot(post_message.bot_id)
-            custom_bot_username = (await Bot(custom_bot.token).get_me()).username
-
             keyboard = await InlineBotMenuKeyboard.get_keyboard(post_message.bot_id)
+
             await query.message.edit_text(
                 text=MessageTexts.BOT_MENU_MESSAGE.value.format(custom_bot_username),
                 reply_markup=keyboard,
@@ -249,7 +281,23 @@ async def _delete_post_message(
             )
 
         case PostMessageType.CHANNEL_POST:
-            raise Exception("TODO")  # TODO
+            channel_username = (await Bot(custom_bot.token).get_chat(channel_id)).username
+            keyboard = await InlineChannelMenuKeyboard.get_keyboard(post_message.bot_id, channel_id)
+
+            await query.message.edit_text(
+                text=MessageTexts.BOT_CHANNEL_MENU_MESSAGE.value.format(channel_username, custom_bot_username),
+                reply_markup=keyboard,
+                parse_mode=ParseMode.HTML
+            )
+            await query.message.answer(
+                text="Запись в канал удалена",
+                reply_markup=ReplyBotMenuKeyboard.get_keyboard(post_message.bot_id)
+            )
+            await query.message.answer(
+                text=MessageTexts.BOT_CHANNEL_MENU_MESSAGE.value.format(channel_username, custom_bot_username),
+                reply_markup=keyboard,
+                parse_mode=ParseMode.HTML
+            )
 
         case _:
             raise UnknownPostMessageType
@@ -339,11 +387,19 @@ async def _get_post_message(
 async def _inline_back_to_post_message_menu(
         query: CallbackQuery,
         bot_id: int,
-        custom_bot_username: str,
-        post_message_type: PostMessageType
+        post_message_type: PostMessageType,
+        channel_id: int = None
 ) -> None:
+    match post_message_type:
+        case PostMessageType.MAILING:
+            username = (await Bot(query.bot.token).get_me()).username
+        case PostMessageType.CHANNEL_POST:
+            username = (await Bot(query.bot.token).get_chat(channel_id)).username
+        case _:
+            raise UnknownPostMessageType
+
     await query.message.edit_text(
-        text=MessageTexts.bot_post_message_menu_message(post_message_type).format(custom_bot_username),
+        text=MessageTexts.bot_post_message_menu_message(post_message_type).format(username),
         reply_markup=await InlinePostMessageMenuKeyboard.get_keyboard(bot_id, post_message_type),
         parse_mode=ParseMode.HTML
     )
