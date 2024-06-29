@@ -436,7 +436,8 @@ async def bot_menu_callback_handler(query: CallbackQuery, state: FSMContext):
         case callback_data.ActionEnum.MAILING_ADD | callback_data.ActionEnum.MAILING_OPEN:
             try:
                 mailing = await mailing_db.get_mailing_by_bot_id(bot_id=bot_id)
-                await query.answer("Рассылка уже создана", show_alert=True)
+                if callback_data.a == callback_data.ActionEnum.MAILING_ADD:
+                    await query.answer("Рассылка уже создана", show_alert=True)
             except MailingNotFound:
                 mailing = None
 

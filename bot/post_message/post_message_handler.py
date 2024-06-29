@@ -59,7 +59,6 @@ async def _post_message_union(
         callback_data: InlinePostMessageMenuKeyboard.Callback,
         user_id: int,
         bot_id: int,
-        channel_id: int,
         post_message: PostMessageSchema,
         username: str,
         post_message_type: PostMessageType):
@@ -102,11 +101,11 @@ async def _post_message_union(
                         f"Отправка записи отменена",
                         reply_markup=ReplyBotMenuKeyboard.get_keyboard(bot_id)
                     )
-                    await query.message.edit_text(
-                        MessageTexts.BOT_CHANNEL_MENU_MESSAGE.value.format(username),
-                        reply_markup=await InlineChannelMenuKeyboard.get_keyboard(bot_id, channel_id),
-                        parse_mode=ParseMode.HTML
-                    )
+                    # await query.message.edit_text(
+                    #     MessageTexts.BOT_CHANNEL_MENU_MESSAGE.value.format(username),
+                    #     reply_markup=await InlineChannelMenuKeyboard.get_keyboard(bot_id, channel_id),
+                    #     parse_mode=ParseMode.HTML
+                    # )
 
         # NOT RUNNING ACTIONS
         case callback_data.ActionEnum.BUTTON_ADD:
@@ -188,7 +187,7 @@ async def _post_message_union(
                 await query.message.delete()
                 await query.message.answer("Кнопка удалена")
                 await query.message.answer(
-                    text=MessageTexts.BOT_MAILINGS_MENU_MESSAGE.value.format(username),
+                    text=MessageTexts.bot_post_message_menu_message(post_message_type).format(username),
                     reply_markup=await InlinePostMessageMenuKeyboard.get_keyboard(bot_id, post_message_type)
                 )
 
@@ -244,10 +243,10 @@ async def _post_message_union(
                     post_message,
                     media_files,
                     PostActionType.DEMO,
-                    message=None
+                    message=query.message
                 )
                 await query.message.answer(
-                    text=MessageTexts.BOT_MAILINGS_MENU_MESSAGE.value.format(username),
+                    text=MessageTexts.bot_post_message_menu_message(post_message_type).format(username),
                     reply_markup=await InlinePostMessageMenuKeyboard.get_keyboard(bot_id, post_message_type)
                 )
 
@@ -315,7 +314,7 @@ async def post_message_handler(query: CallbackQuery, state: FSMContext):
     user_id = query.from_user.id
     post_message_id = callback_data.post_message_id
     bot_id = callback_data.bot_id
-    channel_id = callback_data.channel_id  # TODO get channel_id (there is no it right now)
+    # channel_id = callback_data.channel_id  # TODO get channel_id (there is no it right now)
 
     try:
         post_message = await post_message_db.get_post_message(post_message_id)
@@ -366,7 +365,6 @@ async def post_message_handler(query: CallbackQuery, state: FSMContext):
         callback_data,
         user_id,
         bot_id,
-        channel_id,
         post_message,
         custom_bot_username,  # TODO what about channel username
         post_message_type

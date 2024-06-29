@@ -9,7 +9,7 @@ from aiogram.fsm.context import FSMContext
 from bot.main import post_message_db, bot_db, post_message_media_file_db, _scheduler
 from bot.utils import MessageTexts
 from bot.states import States
-from bot.handlers import post_message_router
+from bot.handlers.routers import post_message_router
 from bot.enums.post_message_type import PostMessageType
 from bot.keyboards.main_menu_keyboards import InlineBotMenuKeyboard, ReplyBotMenuKeyboard
 from bot.keyboards.post_message_keyboards import InlinePostMessageStartConfirmKeyboard, InlinePostMessageMenuKeyboard, \

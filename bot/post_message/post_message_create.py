@@ -9,7 +9,7 @@ from database.models.post_message_model import PostMessageSchemaWithoutId
 
 async def post_message_create(bot_id: int, post_message_type: PostMessageType) -> None:
     post_message_id = await post_message_db.add_post_message(PostMessageSchemaWithoutId.model_validate(
-        {"bot_id": bot_id, "created_at": datetime.now().replace(tzinfo=None)}
+        {"bot_id": bot_id, "created_at": datetime.now().replace(tzinfo=None), "post_message_type": post_message_type}
     ))
 
     data = {"bot_id": bot_id, "post_message_id": post_message_id}

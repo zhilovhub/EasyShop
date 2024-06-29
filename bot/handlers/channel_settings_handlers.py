@@ -79,7 +79,8 @@ async def channel_menu_callback_handler(query: CallbackQuery):
         case callback_data.ActionEnum.CREATE_POST_MESSAGE | callback_data.ActionEnum.EDIT_POST_MESSAGE:
             try:
                 channel_post = await channel_post_db.get_channel_post_by_bot_id(bot_id=bot_id)
-                await query.answer("Запись уже создана", show_alert=True)
+                if callback_data.a == callback_data.ActionEnum.CREATE_POST_MESSAGE:
+                    await query.answer("Запись уже создана", show_alert=True)
             except ChannelPostNotFound:
                 channel_post = None
 

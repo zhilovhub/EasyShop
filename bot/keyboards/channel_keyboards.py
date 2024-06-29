@@ -170,7 +170,7 @@ class InlineChannelMenuKeyboard:
             channel_post_button = InlineKeyboardButton(
                 text="Создать запись",
                 callback_data=InlineChannelMenuKeyboard.callback_json(
-                    actions.CREATE_POST_MESSAGE, bot_id, channel_id, channel_post.post_message_id
+                    actions.CREATE_POST_MESSAGE, bot_id, channel_id
                 )
             )
 

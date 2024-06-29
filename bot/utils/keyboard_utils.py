@@ -1,6 +1,7 @@
 from aiogram import Bot
 from aiogram.types import WebAppInfo
 
+from bot.enums.post_message_type import PostMessageType
 from bot.main import bot_db, channel_db, post_message_db, mailing_db, channel_post_db
 from bot.config import WEB_APP_URL, WEB_APP_PORT
 
@@ -55,9 +56,9 @@ async def get_bot_mailing(bot_id: int) -> MailingSchema | None:
         return None
 
 
-async def get_bot_post_message(bot_id: int) -> PostMessageSchema | None:
+async def get_bot_post_message(bot_id: int, post_message_type: PostMessageType) -> PostMessageSchema | None:
     try:
-        post_message = await post_message_db.get_post_message_by_bot_id(bot_id=bot_id)
+        post_message = await post_message_db.get_post_message_by_bot_id(bot_id, post_message_type)
         return post_message
     except PostMessageNotFound:
         logger.debug(

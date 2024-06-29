@@ -3,9 +3,11 @@ from typing import Optional
 
 from pydantic import BaseModel, Field, validate_call, ConfigDict
 
-from sqlalchemy import BigInteger, Column, ForeignKey, select, insert, delete, BOOLEAN, String, DateTime, update
+from sqlalchemy import BigInteger, Column, ForeignKey, select, insert, delete, BOOLEAN, String, DateTime, update, \
+    TypeDecorator, Unicode, Dialect
 from sqlalchemy.ext.asyncio import AsyncEngine
 
+from bot.enums.post_message_type import PostMessageType
 from bot.exceptions import InvalidParameterFormat
 
 from database.models import Base
@@ -20,11 +22,28 @@ class PostMessageNotFound(Exception):
     pass
 
 
+class PostMessageTypeModel(TypeDecorator):  # noqa
+    impl = Unicode
+    cache_ok = True
+
+    def process_bind_param(self, value: Optional[PostMessageType], dialect: Dialect) -> String:
+        return value.value
+
+    def process_result_value(self, value: Optional[String], dialect: Dialect) -> Optional[PostMessageType]:
+        match value:
+            case PostMessageType.MAILING.value:
+                return PostMessageType.MAILING
+            case PostMessageType.CHANNEL_POST.value:
+                return PostMessageType.CHANNEL_POST
+
+
 class PostMessage(Base):
     __tablename__ = "post_message"
 
     post_message_id = Column(BigInteger, autoincrement=True, primary_key=True)
+
     bot_id = Column(ForeignKey(Bot.bot_id, ondelete="CASCADE"), nullable=False)
+    post_message_type = Column(PostMessageTypeModel, nullable=False)
 
     description = Column(String)
     is_sent = Column(BOOLEAN, default=False)
@@ -53,6 +72,7 @@ class PostMessageSchemaWithoutId(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
     bot_id: int = Field(frozen=True)
+    post_message_type: PostMessageType
 
     description: Optional[str | None] = None
     is_sent: bool = False
@@ -104,10 +124,14 @@ class PostMessageDao(Dao):  # TODO write tests
         return res
 
     @validate_call(validate_return=True)
-    async def get_post_message_by_bot_id(self, bot_id: int) -> PostMessageSchema:
+    async def get_post_message_by_bot_id(self, bot_id: int, post_message_type: PostMessageType) -> PostMessageSchema:
         async with self.engine.begin() as conn:
             raw_res = await conn.execute(
-                select(PostMessage).where(PostMessage.bot_id == bot_id, PostMessage.is_sent == False)  # noqa: E712
+                select(PostMessage).where(
+                    PostMessage.bot_id == bot_id,
+                    PostMessage.is_sent == False,
+                    PostMessage.post_message_type == post_message_type
+                )  # noqa: E712
             )
         await self.engine.dispose()
 

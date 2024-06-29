@@ -141,7 +141,7 @@ async def edit_button_text(message: Message, state: FSMContext, post_message_typ
             )
 
             await message.answer(
-                MessageTexts.BOT_MAILINGS_MENU_MESSAGE.value.format(custom_bot_username),
+                MessageTexts.bot_post_message_menu_message(post_message_type).format(custom_bot_username),
                 reply_markup=await InlinePostMessageMenuKeyboard.get_keyboard(bot_id, post_message_type)
             )
 
@@ -187,7 +187,7 @@ async def edit_message(message: Message, state: FSMContext, post_message_type: P
             )
 
             await message.answer(
-                MessageTexts.BOT_MAILINGS_MENU_MESSAGE.value.format(custom_bot_username),
+                MessageTexts.bot_post_message_menu_message(post_message_type).format(custom_bot_username),
                 reply_markup=await InlinePostMessageMenuKeyboard.get_keyboard(bot_id, post_message_type)
             )
 
@@ -236,7 +236,7 @@ async def edit_delay_date(message: Message, state: FSMContext, post_message_type
                 )
 
                 await message.answer(
-                    MessageTexts.BOT_MAILINGS_MENU_MESSAGE.value.format(custom_bot_username),
+                    MessageTexts.bot_post_message_menu_message(post_message_type).format(custom_bot_username),
                     reply_markup=await InlinePostMessageMenuKeyboard.get_keyboard(bot_id, post_message_type)
                 )
 
@@ -256,7 +256,7 @@ async def edit_button_url(message: Message, state: FSMContext, post_message_type
     state_data = await state.get_data()
 
     bot_id = state_data["bot_id"]
-    post_message_id = state_data[post_message_type.value[0]]
+    post_message_id = state_data["post_message_id"]
 
     custom_bot_tg = Bot((await bot_db.get_bot(bot_id)).token)
     custom_bot_username = (await custom_bot_tg.get_me()).username
@@ -305,7 +305,7 @@ async def edit_button_url(message: Message, state: FSMContext, post_message_type
                 message
             )
             await message.answer(
-                MessageTexts.BOT_MAILINGS_MENU_MESSAGE.value.format(custom_bot_username),
+                MessageTexts.bot_post_message_menu_message(post_message_type).format(custom_bot_username),
                 reply_markup=await InlinePostMessageMenuKeyboard.get_keyboard(bot_id, post_message_type)
             )
 
@@ -479,7 +479,7 @@ async def _inline_no_button(
         "В этом рассылочном сообщении кнопки нет", show_alert=True
     )
     await query.message.edit_text(
-        text=MessageTexts.BOT_MAILINGS_MENU_MESSAGE.value.format(custom_bot_username),
+        text=MessageTexts.bot_post_message_menu_message(post_message_type).format(custom_bot_username),
         reply_markup=await InlinePostMessageMenuKeyboard.get_keyboard(bot_id, post_message_type),
         parse_mode=ParseMode.HTML
     )
@@ -499,7 +499,7 @@ async def _reply_no_button(
         reply_markup=ReplyBotMenuKeyboard.get_keyboard(bot_id)
     )
     await message.answer(
-        post_message_type.value[1].format(object_username),
+        post_message_type.value.format(object_username),  # TODO WRONG
         reply_markup=await InlinePostMessageMenuKeyboard.get_keyboard(bot_id, post_message_type)
     )
 
@@ -514,7 +514,7 @@ async def _inline_back_to_post_message_menu(
         post_message_type: PostMessageType
 ) -> None:
     await query.message.edit_text(
-        text=MessageTexts.BOT_MAILINGS_MENU_MESSAGE.value.format(custom_bot_username),
+        text=MessageTexts.bot_post_message_menu_message(post_message_type).format(custom_bot_username),
         reply_markup=await InlinePostMessageMenuKeyboard.get_keyboard(bot_id, post_message_type),
         parse_mode=ParseMode.HTML
     )
@@ -531,7 +531,7 @@ async def _back_to_post_message_menu(
         reply_markup=ReplyBotMenuKeyboard.get_keyboard(bot_id)
     )
     await message.answer(
-        text=MessageTexts.BOT_MAILINGS_MENU_MESSAGE.value.format(object_username),
+        text=MessageTexts.bot_post_message_menu_message(post_message_type).format(object_username),
         reply_markup=await InlinePostMessageMenuKeyboard.get_keyboard(bot_id, post_message_type)
     )
 

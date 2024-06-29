@@ -163,11 +163,11 @@ class InlinePostMessageMenuKeyboard:
 
         model_config = ConfigDict(from_attributes=True, populate_by_name=True)
 
-        n: str = Field(default="post_message", frozen=True)
+        n: str = Field(default="pm", frozen=True)
         a: ActionEnum
 
         bot_id: int
-        post_message_id: int = Field(alias="mi"),
+        post_message_id: int = Field(alias="mi")
         post_message_type: PostMessageType = Field(alias="t")
 
     @staticmethod
@@ -200,7 +200,7 @@ class InlinePostMessageMenuKeyboard:
     ) -> InlineKeyboardMarkup:
         actions = InlinePostMessageMenuKeyboard.Callback.ActionEnum
 
-        post_message = await get_bot_post_message(bot_id=bot_id)
+        post_message = await get_bot_post_message(bot_id, post_message_type)
         post_message_id = post_message.post_message_id
 
         if post_message.is_delayed:
