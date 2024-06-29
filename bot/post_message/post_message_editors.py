@@ -34,7 +34,7 @@ async def edit_media_files(message: Message, state: FSMContext, post_message_typ
     state_data = await state.get_data()
 
     bot_id = state_data["bot_id"]
-    post_message = await post_message_db.get_post_message_by_bot_id(bot_id=bot_id, post_message_type)
+    post_message = await post_message_db.get_post_message_by_bot_id(bot_id, post_message_type)
     post_message_id = post_message.post_message_id
 
     if (message.photo or message.video or message.audio or message.document) and "first" not in state_data:
@@ -112,12 +112,7 @@ async def edit_button_text(message: Message, state: FSMContext, post_message_typ
     custom_bot_tg = Bot((await bot_db.get_bot(bot_id)).token)
     custom_bot_username = (await custom_bot_tg.get_me()).username
 
-    if post_message_type == PostMessageType.CHANNEL_POST:
-        channel_id = state_data["channel_id"]
-        is_contest_flag = "channel_post_id" in state_data.keys()
-        post_message = await channel_contest_db.get_channel_post(channel_id=channel_id, is_contest=is_contest_flag)
-    else:
-        post_message = await post_message_db.get_post_message(post_message_id)
+    post_message = await post_message_db.get_post_message(post_message_id)
 
     if not post_message.has_button:
         return await _reply_no_button(message, bot_id, custom_bot_username, state, PostMessageType.MAILING)
@@ -125,26 +120,10 @@ async def edit_button_text(message: Message, state: FSMContext, post_message_typ
     if message_text:
         if message_text == ReplyBackPostMessageMenuKeyboard.Callback.ActionEnum.BACK_TO_POST_MESSAGE_MENU.value:
             await _back_to_post_message_menu(message, bot_id, custom_bot_username, post_message_type)
-            if post_message_type == PostMessageType.CHANNEL_POST:
-                channel_id = state_data["channel_id"]
-                if post_message.contest_type == ContestTypeValues.RANDOM:
-                    menu_text = MessageTexts.BOT_CONTEST_MENU.value.format("Рандомайзер 🎲", "Спонсорство 🤝")
-                else:
-                    menu_text = MessageTexts.BOT_CONTEST_MENU.value.format("Спонсорство 🤝", "Рандомайзер 🎲")
-                await message.answer(
-                    text=menu_text,
-                    reply_markup=await get_contest_menu_keyboard(bot_id, channel_id, is_contest=True)
-                )
         else:
             post_message.button_text = message.text
 
-            if post_message_type == PostMessageType.CHANNEL_POST:
-                if post_message.is_contest:
-                    message_text += " (0)"
-                post_message.button_text = message_text
-                await channel_contest_db.update_channel_post(post_message)
-            else:
-                await post_message_db.update_post_message(post_message)
+            await post_message_db.update_post_message(post_message)
 
             media_files = await post_message_media_file_db.get_all_post_message_media_files(post_message_id)
 
@@ -161,36 +140,12 @@ async def edit_button_text(message: Message, state: FSMContext, post_message_typ
                 message
             )
 
-            if post_message_type == PostMessageType.CHANNEL_POST:
-                channel_id = state_data["channel_id"]
-                if post_message.is_contest is False:
-                    await message.answer(
-                        text=MessageTexts.BOT_MAILINGS_MENU_MESSAGE.value.format(
-                            custom_bot_username
-                        ),
-                        reply_markup=await get_inline_bot_channel_post_menu_keyboard(bot_id, channel_id,
-                                                                                     post_message.is_contest)
-                    )
-                else:
-                    if post_message.contest_type == ContestTypeValues.RANDOM:
-                        menu_text = MessageTexts.BOT_CONTEST_MENU.value.format(
-                            "Рандомайзер 🎲", "Спонсорство 🤝")
-                    else:
-                        menu_text = MessageTexts.BOT_CONTEST_MENU.value.format(
-                            "Спонсорство 🤝", "Рандомайзер 🎲")
-                    await message.answer(
-                        text=menu_text,
-                        reply_markup=await get_contest_menu_keyboard(bot_id, channel_id, is_contest=True)
-                    )
-            else:
-                await message.answer(
-                    MessageTexts.BOT_MAILINGS_MENU_MESSAGE.value.format(custom_bot_username),
-                    reply_markup=await InlinePostMessageMenuKeyboard.get_keyboard(bot_id)
-                )
+            await message.answer(
+                MessageTexts.BOT_MAILINGS_MENU_MESSAGE.value.format(custom_bot_username),
+                reply_markup=await InlinePostMessageMenuKeyboard.get_keyboard(bot_id, post_message_type)
+            )
 
         await state.set_state(States.BOT_MENU)
-        if post_message_type == PostMessageType.CHANNEL_POST and post_message.is_contest:
-            state_data["channel_post_id"] = post_message.channel_post_id
         await state.set_data(state_data)
     else:
         await message.answer("Название кнопки должно содержать текст")
@@ -207,12 +162,7 @@ async def edit_message(message: Message, state: FSMContext, post_message_type: P
     custom_bot_tg = Bot((await bot_db.get_bot(bot_id)).token)
     custom_bot_username = (await custom_bot_tg.get_me()).username
 
-    if post_message_type == PostMessageType.CHANNEL_POST:
-        channel_id = state_data["channel_id"]
-        is_contest_flag = "channel_post_id" in state_data.keys()
-        post_message = await channel_contest_db.get_channel_post(channel_id=channel_id, is_contest=is_contest_flag)
-    else:
-        post_message = await post_message_db.get_post_message(post_message_id)
+    post_message = await post_message_db.get_post_message(post_message_id)
 
     if message_text:
         if message_text == ReplyBackPostMessageMenuKeyboard.Callback.ActionEnum.BACK_TO_POST_MESSAGE_MENU.value:
@@ -221,10 +171,7 @@ async def edit_message(message: Message, state: FSMContext, post_message_type: P
             post_message.description = message.html_text
             media_files = await post_message_media_file_db.get_all_post_message_media_files(post_message_id)
 
-            if post_message_type == PostMessageType.CHANNEL_POST:
-                await channel_contest_db.update_channel_post(post_message)
-            else:
-                await post_message_db.update_post_message(post_message)
+            await post_message_db.update_post_message(post_message)
 
             await message.answer(
                 "Предпросмотр конкурса 👇",
@@ -238,26 +185,13 @@ async def edit_message(message: Message, state: FSMContext, post_message_type: P
                 PostActionType.AFTER_REDACTING,
                 message,
             )
-            if post_message_type == PostMessageType.CHANNEL_POST:
-                channel_id = state_data["channel_id"]
-                channel_username = (await custom_bot_tg.get_chat(channel_id)).username
-                await message.answer(
-                    MessageTexts.BOT_CHANNEL_POST_MENU_MESSAGE.value.format(channel_username),
-                    reply_markup=await get_inline_bot_channel_post_menu_keyboard(
-                        bot_id=bot_id,
-                        channel_id=channel_id,
-                        is_contest=post_message.is_contest
-                    )
-                )
-            else:
-                await message.answer(
-                    MessageTexts.BOT_MAILINGS_MENU_MESSAGE.value.format(custom_bot_username),
-                    reply_markup=await InlinePostMessageMenuKeyboard.get_keyboard(bot_id)
-                )
+
+            await message.answer(
+                MessageTexts.BOT_MAILINGS_MENU_MESSAGE.value.format(custom_bot_username),
+                reply_markup=await InlinePostMessageMenuKeyboard.get_keyboard(bot_id, post_message_type)
+            )
 
         await state.set_state(States.BOT_MENU)
-        if post_message_type == PostMessageType.CHANNEL_POST and post_message.is_contest:
-            state_data["channel_post_id"] = post_message.channel_post_id
         await state.set_data(state_data)
     else:
         await message.answer(
@@ -277,12 +211,7 @@ async def edit_delay_date(message: Message, state: FSMContext, post_message_type
     custom_bot_tg = Bot((await bot_db.get_bot(bot_id)).token)
     custom_bot_username = (await custom_bot_tg.get_me()).username
 
-    if post_message_type == PostMessageType.CHANNEL_POST:
-        channel_id = state_data["channel_id"]
-        is_contest_flag = "channel_post_id" in state_data.keys()
-        post_message = await channel_contest_db.get_channel_post(channel_id=channel_id, is_contest=is_contest_flag)
-    else:
-        post_message = await post_message_db.get_post_message(post_message_id)
+    post_message = await post_message_db.get_post_message(post_message_id)
 
     if message_text:
         if message_text == ReplyBackPostMessageMenuKeyboard.Callback.ActionEnum.BACK_TO_POST_MESSAGE_MENU.value:
@@ -298,10 +227,7 @@ async def edit_delay_date(message: Message, state: FSMContext, post_message_type
                 post_message.is_delayed = True
                 post_message.send_date = datetime_obj
 
-                if post_message_type == PostMessageType.CHANNEL_POST:
-                    await channel_contest_db.update_channel_post(post_message)
-                else:
-                    await post_message_db.update_post_message(post_message)
+                await post_message_db.update_post_message(post_message)
 
                 await message.reply(
                     f"Запланировано на: <b>{datetime_obj.strftime('%Y-%m-%d %H:%M')}</b>\n\n"
@@ -309,26 +235,12 @@ async def edit_delay_date(message: Message, state: FSMContext, post_message_type
                     reply_markup=ReplyBotMenuKeyboard.get_keyboard(bot_id)
                 )
 
-                if post_message_type == PostMessageType.CHANNEL_POST:
-                    channel_id = state_data["channel_id"]
-                    channel_username = (await custom_bot_tg.get_chat(channel_id)).username
-                    await message.answer(
-                        MessageTexts.BOT_CHANNEL_POST_MENU_MESSAGE.value.format(channel_username),
-                        reply_markup=await get_inline_bot_channel_post_menu_keyboard(
-                            bot_id=bot_id,
-                            channel_id=channel_id,
-                            is_contest=post_message.is_contest
-                        )
-                    )
-                else:
-                    await message.answer(
-                        MessageTexts.BOT_MAILINGS_MENU_MESSAGE.value.format(custom_bot_username),
-                        reply_markup=await InlinePostMessageMenuKeyboard.get_keyboard(bot_id)
-                    )
+                await message.answer(
+                    MessageTexts.BOT_MAILINGS_MENU_MESSAGE.value.format(custom_bot_username),
+                    reply_markup=await InlinePostMessageMenuKeyboard.get_keyboard(bot_id, post_message_type)
+                )
 
                 await state.set_state(States.BOT_MENU)
-                if post_message_type == PostMessageType.CHANNEL_POST and post_message.is_contest:
-                    state_data["channel_post_id"] = post_message.channel_post_id
                 await state.set_data(state_data)
 
             except ValueError:
@@ -349,13 +261,7 @@ async def edit_button_url(message: Message, state: FSMContext, post_message_type
     custom_bot_tg = Bot((await bot_db.get_bot(bot_id)).token)
     custom_bot_username = (await custom_bot_tg.get_me()).username
 
-    match post_message_type:
-        case PostMessageType.MAILING:
-            post_message = await post_message_db.get_post_message(post_message_id)
-        case PostMessageType.CHANNEL_POST:
-            post_message = await channel_contest_db.get_channel_post(channel_id=post_message_id, is_contest=False)
-        case _:
-            raise UnknownPostMessageType
+    post_message = await post_message_db.get_post_message(post_message_id)
 
     if not post_message.has_button:
         return await _reply_no_button(message, bot_id, custom_bot_username, state, post_message_type)
@@ -372,10 +278,9 @@ async def edit_button_url(message: Message, state: FSMContext, post_message_type
                     "начинающемся с <b>http</b> или <b>https</b>"
                 )
 
-            post_message.button_url = message.text  # TODO can be channel
-            media_files = await post_message_media_file_db.get_all_post_message_media_files(
-                post_message_id)  # TODO can be channel
-            await post_message_db.update_post_message(post_message)  # TODO can be channel
+            post_message.button_url = message.text
+            media_files = await post_message_media_file_db.get_all_post_message_media_files(post_message_id)
+            await post_message_db.update_post_message(post_message)
 
             await message.answer(
                 "Предпросмотр конкурса 👇",
@@ -401,7 +306,7 @@ async def edit_button_url(message: Message, state: FSMContext, post_message_type
             )
             await message.answer(
                 MessageTexts.BOT_MAILINGS_MENU_MESSAGE.value.format(custom_bot_username),
-                reply_markup=await InlinePostMessageMenuKeyboard.get_keyboard(bot_id)  # TODO ofcourse can be a channel
+                reply_markup=await InlinePostMessageMenuKeyboard.get_keyboard(bot_id, post_message_type)
             )
 
         await state.set_state(States.BOT_MENU)
@@ -410,14 +315,13 @@ async def edit_button_url(message: Message, state: FSMContext, post_message_type
         await message.answer("Ссылка должна содержать только текст")
 
 
-async def send_post_message(  # TODO that's not funny
-        bot_from_send: Bot,  # TODO somewhere there was BotSchema. Be accurate
+async def send_post_message(
+        bot_from_send: Bot,
         to_user_id: int,
         post_message_schema: PostMessageSchema,
         media_files: list[PostMessageMediaFileSchema],
         post_action_type: PostActionType,
-        post_message_type: PostMessageType,
-        message: Message = None,  # TODO Instead there was chat_id and message_id
+        message: Message = None,
 ) -> None:
     if post_message_schema.has_button:
         if post_message_schema.button_url == f"{WEB_APP_URL}:{WEB_APP_PORT}" \
@@ -425,11 +329,6 @@ async def send_post_message(  # TODO that's not funny
             button = InlineKeyboardButton(
                 text=post_message_schema.button_text,
                 web_app=make_webapp_info(bot_id=post_message_schema.bot_id)
-            )
-        elif post_message_type == PostMessageType.CHANNEL_POST and post_message_schema.is_contest:  # TODO add to schema
-            button = InlineKeyboardButton(
-                text=post_message_schema.button_text,
-                callback_data=post_message_schema.button_query  # TODO add to schema
             )
         else:
             button = InlineKeyboardButton(
@@ -485,16 +384,7 @@ async def send_post_message(  # TODO that's not funny
         uploaded_media_files = []
         if len(media_files) > 1:
             if post_message_schema.description:
-                if post_message_type == PostMessageType.CHANNEL_POST:
-                    post_text = post_message_schema.description
-                    if post_message_schema.is_contest:
-                        post_text += f"\n\nНажать на кнопку участвовать\n\n" \
-                                     f"<b>Подведение итогов:</b> " \
-                                     f"{post_message_schema.contest_end_date.strftime('%Y-%m-%d %H:%M:%S')}\n\n" \
-                                     f"<b>Призовых мест:</b> {post_message_schema.contest_winner_amount}"
-                    media_group[0].caption = post_text
-                else:
-                    media_group[0].caption = post_message_schema.description
+                media_group[0].caption = post_message_schema.description
 
             uploaded_media_files.extend(await bot_from_send.send_media_group(
                 chat_id=to_user_id,
@@ -503,8 +393,7 @@ async def send_post_message(  # TODO that's not funny
             ))
             if message:
                 await message.delete()
-            # TODO ?           if chat_id and message_id:
-            # TODO ?          await bot.delete_message(chat_id, message_id)
+
         elif len(media_files) == 1:
             media_file = media_files[0]
 
@@ -519,24 +408,10 @@ async def send_post_message(  # TODO that's not funny
             else:
                 raise Exception("Unexpected type")
 
-            post_text = post_message_schema.description
-            if post_message_type == PostMessageType.CHANNEL_POST:
-                post_text = post_message_schema.description
-                if post_message_schema.is_contest:
-                    post_text = post_message_schema.description
-                    if post_message_schema.contest_type == ContestTypeValues.SPONSOR:
-                        post_text += f"\n\nДля участия нужно подписаться на всех спонсоров\n\n" \
-                                     f"<a href='{post_message_schema.contest_sponsor_url}'>СПОНСОРЫ</a>"
-
-                    post_text += f"\n\nНажать на кнопку участвовать\n\n" \
-                                 f"<b>Подведение итогов:</b> " \
-                                 f"{post_message_schema.contest_end_date.strftime('%Y-%m-%d %H:%M:%S')}\n\n" \
-                                 f"<b>Призовых мест:</b> {post_message_schema.contest_winner_amount}"
-
             uploaded_media_files.append(await method(
                 to_user_id,
                 media_group[0],
-                caption=post_text,
+                caption=post_message_schema.description,
                 reply_markup=keyboard,
                 disable_notification=not (
                     post_message_schema.enable_notification_sound),
@@ -544,9 +419,6 @@ async def send_post_message(  # TODO that's not funny
 
             if message:
                 await message.delete()
-
-            # TODO ? if chat_id and message_id:
-            # TODO ?    await bot.delete_message(chat_id, message_id)
 
         if is_first_message:  # первое сообщение, отправленное в рассылке с кастомного бота. Сохраняем file_id в бд
             for ind in range(len(uploaded_media_files)):
@@ -569,112 +441,46 @@ async def send_post_message(  # TODO that's not funny
         if post_message_schema.description is None:
             return
         if post_action_type == PostActionType.DEMO:  # только при демо с главного бота срабатывает
-            if post_message_type == PostMessageType.CHANNEL_POST:
-            #     post_text = channel_post_schema.description
-            #     if channel_post_schema.is_contest:
-            #         post_text = channel_post_schema.description
-            #         if channel_post_schema.contest_type == ContestTypeValues.SPONSOR:
-            #             post_text += f"\n\nДля участия нужно подписаться на всех спонсоров\n\n" \
-            #                          f"<a href='{channel_post_schema.contest_sponsor_url}'>СПОНСОРЫ</a>"
-            #
-            #         post_text += f"\n\nНажать на кнопку участвовать\n\n" \
-            #                      f"<b>Подведение итогов:</b> {channel_post_schema.contest_end_date.strftime('%Y-%m-%d %H:%M:%S')}\n\n" \
-            #                      f"<b>Призовых мест:</b> {channel_post_schema.contest_winner_amount}"
-            #     await bot.send_message(chat_id=chat_id, text=post_text,
-            #                            link_preview_options=LinkPreviewOptions(is_disabled=not (
-            #                                channel_post_schema.enable_link_preview)),
-            #                            reply_markup=keyboard, )
-                pass # TODO
-            else:
-                await message.edit_text(
-                    text=post_message_schema.description,
-                    link_preview_options=LinkPreviewOptions(is_disabled=not (
-                        post_message_schema.enable_link_preview)),
-                    reply_markup=keyboard,
+            await message.edit_text(
+                text=post_message_schema.description,
+                link_preview_options=LinkPreviewOptions(is_disabled=not (
+                    post_message_schema.enable_link_preview)),
+                reply_markup=keyboard,
             )
         elif post_action_type == PostActionType.AFTER_REDACTING:
-            if post_message_type == PostMessageType.CHANNEL_POST:
-                # post_text = channel_post_schema.description
-                # if channel_post_schema.is_contest:
-                #     post_text = channel_post_schema.description
-                #     if channel_post_schema.contest_type == ContestTypeValues.SPONSOR:
-                #         post_text += f"\n\nДля участия нужно подписаться на всех спонсоров\n\n" \
-                #                      f"<a href='{channel_post_schema.contest_sponsor_url}'>СПОНСОРЫ</a>"
-                #
-                #     post_text += f"\n\nНажать на кнопку участвовать\n\n" \
-                #                  f"<b>Подведение итогов:</b> {channel_post_schema.contest_end_date.strftime('%Y-%m-%d %H:%M:%S')}\n\n" \
-                #                  f"<b>Призовых мест:</b> {channel_post_schema.contest_winner_amount}"
-                # await bot_from_send.send_message(
-                #     chat_id=to_user_id,
-                #     text=post_text,
-                #     reply_markup=keyboard,
-                #     disable_notification=not (
-                #         channel_post_schema.enable_notification_sound),
-                #     link_preview_options=LinkPreviewOptions(is_disabled=not (
-                #         channel_post_schema.enable_link_preview))
-                # )
-                pass # TODO
-            else:
-                await bot_from_send.send_message(
-                    chat_id=to_user_id,
-                    text=post_message_schema.description,
-                    reply_markup=keyboard,
-                    disable_notification=not (
-                        post_message_schema.enable_notification_sound),
-                    link_preview_options=LinkPreviewOptions(is_disabled=not (
-                        post_message_schema.enable_link_preview))
-                )
+            await bot_from_send.send_message(
+                chat_id=to_user_id,
+                text=post_message_schema.description,
+                reply_markup=keyboard,
+                disable_notification=not (
+                    post_message_schema.enable_notification_sound),
+                link_preview_options=LinkPreviewOptions(is_disabled=not (
+                    post_message_schema.enable_link_preview))
+            )
         else:
-            if post_message_type == PostMessageType.CHANNEL_POST:
-                # post_text = channel_post_schema.description
-                # if channel_post_schema.is_contest:
-                #     post_text = channel_post_schema.description
-                #     if channel_post_schema.contest_type == ContestTypeValues.SPONSOR:
-                #         post_text += f"\n\nДля участия нужно подписаться на всех спонсоров\n\n" \
-                #                      f"<a href='{channel_post_schema.contest_sponsor_url}'>СПОНСОРЫ</a>"
-                #
-                #     post_text += f"\n\nНажать на кнопку участвовать\n\n" \
-                #                  f"<b>Подведение итогов:</b> {channel_post_schema.contest_end_date.strftime('%Y-%m-%d %H:%M:%S')}\n\n" \
-                #                  f"<b>Призовых мест:</b> {channel_post_schema.contest_winner_amount}"
-                # await bot_from_send.send_message(
-                #     chat_id=to_user_id,
-                #     text=post_text,
-                #     reply_markup=keyboard,
-                #     disable_notification=not (
-                #         channel_post_schema.enable_notification_sound),
-                #     link_preview_options=LinkPreviewOptions(is_disabled=not (
-                #         channel_post_schema.enable_link_preview))
-                # )
-                pass # TODO
-            else:
-                await bot_from_send.send_message(
-                    chat_id=to_user_id,
-                    text=post_message_schema.description,
-                    reply_markup=keyboard,
-                    disable_notification=not (
-                        post_message_schema.enable_notification_sound),
-                    link_preview_options=LinkPreviewOptions(is_disabled=not (
-                        post_message_schema.enable_link_preview))
-                )
-        # if mailing_message_type == MailingMessageType.RELEASE:  TODO this is from Arsen
-        #     if channel_post_schema.is_contest is False:
-        #         await channel_contest_db.delete_channel_post(channel_post_id=channel_post_schema.channel_post_id)
-        #     await bot.send_message(chat_id, "Пост отправлен в канал!")
-        #     # Scheduling contest result function
-        #     if channel_post_schema.is_contest:
-        #         job_id = await _scheduler.add_scheduled_job(
-        #             func=generate_contest_result, run_date=channel_post_schema.contest_end_date,
-        #             args=[channel_post_schema.channel_id])
-        #         # await generate_contest_result(channel_post_schema.channel_id)
+            await bot_from_send.send_message(
+                chat_id=to_user_id,
+                text=post_message_schema.description,
+                reply_markup=keyboard,
+                disable_notification=not (
+                    post_message_schema.enable_notification_sound),
+                link_preview_options=LinkPreviewOptions(is_disabled=not (
+                    post_message_schema.enable_link_preview))
+            )
 
 
-async def _inline_no_button(query: CallbackQuery, bot_id: int, custom_bot_username: str) -> None:
+async def _inline_no_button(
+        query: CallbackQuery,
+        bot_id: int,
+        custom_bot_username: str,
+        post_message_type: PostMessageType
+) -> None:
     await query.answer(
         "В этом рассылочном сообщении кнопки нет", show_alert=True
     )
     await query.message.edit_text(
         text=MessageTexts.BOT_MAILINGS_MENU_MESSAGE.value.format(custom_bot_username),
-        reply_markup=await InlinePostMessageMenuKeyboard.get_keyboard(bot_id),
+        reply_markup=await InlinePostMessageMenuKeyboard.get_keyboard(bot_id, post_message_type),
         parse_mode=ParseMode.HTML
     )
 
@@ -694,47 +500,40 @@ async def _reply_no_button(
     )
     await message.answer(
         post_message_type.value[1].format(object_username),
-        reply_markup=await InlinePostMessageMenuKeyboard.get_keyboard(bot_id)  # TODO make common keyboard
+        reply_markup=await InlinePostMessageMenuKeyboard.get_keyboard(bot_id, post_message_type)
     )
 
     await state.set_state(States.BOT_MENU)
     await state.set_data(state_data)
 
 
-async def _inline_back_to_post_message_menu(query: CallbackQuery, bot_id: int, custom_bot_username: str) -> None:
+async def _inline_back_to_post_message_menu(
+        query: CallbackQuery,
+        bot_id: int,
+        custom_bot_username: str,
+        post_message_type: PostMessageType
+) -> None:
     await query.message.edit_text(
         text=MessageTexts.BOT_MAILINGS_MENU_MESSAGE.value.format(custom_bot_username),
-        reply_markup=await InlinePostMessageMenuKeyboard.get_keyboard(bot_id),
+        reply_markup=await InlinePostMessageMenuKeyboard.get_keyboard(bot_id, post_message_type),
         parse_mode=ParseMode.HTML
     )
 
 
-async def _back_to_post_message_menu(  # TODO here we get always custom_bot_username
+async def _back_to_post_message_menu(
         message: Message,
         bot_id: int,
         object_username: str,
         post_message_type: PostMessageType,
-        channel_id: int | None = None,
-        is_contest: bool | None = None,
 ) -> None:
     await message.answer(
         "Возвращаемся в меню...",
         reply_markup=ReplyBotMenuKeyboard.get_keyboard(bot_id)
     )
-    if post_message_type == PostMessageType.MAILING:
-        await message.answer(
-            text=MessageTexts.BOT_MAILINGS_MENU_MESSAGE.value.format(object_username),
-            reply_markup=await InlinePostMessageMenuKeyboard.get_keyboard(bot_id)
-        )
-    else:
-        await message.answer(
-            MessageTexts.BOT_CHANNEL_POST_MENU_MESSAGE.value.format(object_username),
-            reply_markup=await get_inline_bot_channel_post_menu_keyboard(
-                bot_id=bot_id,
-                channel_id=channel_id,
-                is_contest=is_contest
-            )
-        )
+    await message.answer(
+        text=MessageTexts.BOT_MAILINGS_MENU_MESSAGE.value.format(object_username),
+        reply_markup=await InlinePostMessageMenuKeyboard.get_keyboard(bot_id, post_message_type)
+    )
 
 
 async def _is_post_message_valid(

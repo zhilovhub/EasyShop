@@ -47,7 +47,6 @@ async def send_post_messages(custom_bot, post_message, media_files, chat_id):
             post_message_schema=post_message,
             media_files=media_files,
             post_action_type=PostActionType.RELEASE,
-            post_message_type=PostMessageType.MAILING,
             message=None,
         )
 
@@ -133,7 +132,7 @@ async def mailing_accept_deleting_callback_handler(query: CallbackQuery):
                 parse_mode=ParseMode.HTML
             )
         case callback_data.ActionEnum.BACK_TO_POST_MESSAGE_MENU:
-            await _inline_back_to_post_message_menu(query, bot_id, custom_bot_username)
+            await _inline_back_to_post_message_menu(query, bot_id, custom_bot_username, post_message_type)
 
 
 @admin_bot_menu_router.callback_query(
@@ -195,7 +194,7 @@ async def mailing_extra_settings_callback_handler(query: CallbackQuery):
                 )
             )
         case callback_data.ActionEnum.BACK_TO_POST_MESSAGE_MENU:
-            await _inline_back_to_post_message_menu(query, bot_id, custom_bot_username)
+            await _inline_back_to_post_message_menu(query, bot_id, custom_bot_username, post_message_type)
 
 
 @admin_bot_menu_router.callback_query(
@@ -272,7 +271,7 @@ async def mailing_confirm_start_callback_handler(query: CallbackQuery):
                     await post_message_db.update_post_message(post_message)
 
         case callback_data.ActionEnum.BACK_TO_POST_MESSAGE_MENU:
-            await _inline_back_to_post_message_menu(query, bot_id, custom_bot_username)
+            await _inline_back_to_post_message_menu(query, bot_id, custom_bot_username, post_message_type)
 
 
 @admin_bot_menu_router.message(StateFilter(
