@@ -1,12 +1,10 @@
-from datetime import datetime
-
 from aiogram import Bot
 from aiogram.enums import ParseMode
 from aiogram.types import Message, CallbackQuery
 from aiogram.filters import StateFilter
 from aiogram.fsm.context import FSMContext
 
-from bot.main import channel_user_db, bot_db, post_message_db, channel_post_db
+from bot.main import channel_user_db, bot_db, channel_post_db
 from bot.utils import MessageTexts
 from bot.states.states import States
 from bot.handlers.routers import channel_menu_router
@@ -14,12 +12,12 @@ from bot.enums.post_message_type import PostMessageType
 from bot.keyboards.channel_keyboards import InlineChannelsListKeyboard, InlineChannelMenuKeyboard
 from bot.keyboards.main_menu_keyboards import InlineBotMenuKeyboard
 from bot.keyboards.post_message_keyboards import InlinePostMessageMenuKeyboard
+from bot.post_message.post_message_create import post_message_create
 from bot.post_message.post_message_editors import edit_button_url, edit_delay_date, edit_message, edit_button_text, \
     edit_media_files
 from bot.post_message.post_message_handler import post_message_handler
 
-from database.models.channel_post_model import ChannelPostSchemaWithoutId, ChannelPostNotFound
-from database.models.post_message_model import PostMessageSchemaWithoutId
+from database.models.channel_post_model import ChannelPostNotFound
 
 
 @channel_menu_router.callback_query(lambda query: InlineChannelsListKeyboard.callback_validator(query.data))
@@ -92,12 +90,7 @@ async def channel_menu_callback_handler(query: CallbackQuery):
                 channel_post = None
 
             if not channel_post and callback_data.a == callback_data.ActionEnum.CREATE_POST_MESSAGE:
-                post_message_id = await post_message_db.add_post_message(PostMessageSchemaWithoutId.model_validate(
-                    {"bot_id": bot_id, "created_at": datetime.now().replace(tzinfo=None)}
-                ))
-                await channel_post_db.add_channel_post(ChannelPostSchemaWithoutId.model_validate(
-                    {"bot_id": bot_id, "post_message_id": post_message_id}
-                ))
+                await post_message_create(bot_id, PostMessageType.CHANNEL_POST)
 
             await query.message.edit_text(
                 MessageTexts.BOT_CHANNEL_POST_MENU_MESSAGE.value.format(channel_username),

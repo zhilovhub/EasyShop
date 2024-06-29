@@ -15,8 +15,7 @@ from aiogram.fsm.context import FSMContext
 from aiogram.utils.token import validate_token, TokenValidationError
 from aiogram.fsm.storage.base import StorageKey
 
-from bot.main import bot, user_db, product_db, order_db, custom_bot_user_db, QUESTION_MESSAGES, bot_db, \
-    post_message_db, mailing_db
+from bot.main import bot, user_db, product_db, order_db, custom_bot_user_db, QUESTION_MESSAGES, bot_db, mailing_db
 from bot.utils import MessageTexts
 from bot.exceptions import InstanceAlreadyExists
 from bot.states.states import States
@@ -29,13 +28,13 @@ from bot.keyboards.stock_menu_keyboards import InlineStockMenuKeyboard
 from bot.keyboards.post_message_keyboards import InlinePostMessageMenuKeyboard
 from bot.keyboards.order_manage_keyboards import InlineOrderStatusesKeyboard, InlineOrderCancelKeyboard, \
     InlineOrderCustomBotKeyboard
+from bot.post_message.post_message_create import post_message_create
 
 from custom_bots.multibot import storage as custom_bot_storage
 
 from database.models.bot_model import BotSchemaWithoutId
-from database.models.mailing_model import MailingSchemaWithoutId, MailingNotFound
 from database.models.order_model import OrderSchema, OrderNotFound, OrderItem, OrderStatusValues
-from database.models.post_message_model import PostMessageSchemaWithoutId
+from database.models.mailing_model import MailingNotFound
 from database.models.product_model import ProductWithoutId, NotEnoughProductsInStockToReduce
 
 from logs.config import logger
@@ -442,12 +441,8 @@ async def bot_menu_callback_handler(query: CallbackQuery, state: FSMContext):
                 mailing = None
 
             if not mailing and callback_data.a == callback_data.ActionEnum.MAILING_ADD:
-                post_message_id = await post_message_db.add_post_message(PostMessageSchemaWithoutId.model_validate(
-                    {"bot_id": bot_id, "created_at": datetime.now().replace(tzinfo=None)}
-                ))
-                await mailing_db.add_mailing(MailingSchemaWithoutId.model_validate(
-                    {"bot_id": bot_id, "post_message_id": post_message_id}
-                ))
+                await post_message_create(bot_id, PostMessageType.MAILING)
+
             custom_bot = await bot_db.get_bot(bot_id=bot_id)
             await query.message.edit_text(
                 MessageTexts.bot_post_message_menu_message(
