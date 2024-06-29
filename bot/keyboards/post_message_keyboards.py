@@ -146,37 +146,37 @@ class InlinePostMessageAcceptDeletingKeyboard:
 class InlinePostMessageMenuKeyboard:
     class Callback(BaseModel):
         class ActionEnum(Enum):
-            REMOVE_DELAY = "remove_delay"
-            DELAY = "delay"
+            REMOVE_DELAY = "r"
+            DELAY = "d"
 
-            BUTTON_ADD = "button_add"
-            BUTTON_URL = "button_url"
-            BUTTON_TEXT = "button_text"
-            BUTTON_DELETE = "button_delete"
+            BUTTON_ADD = "ba"
+            BUTTON_URL = "bu"
+            BUTTON_TEXT = "bt"
+            BUTTON_DELETE = "bd"
 
-            POST_MESSAGE_TEXT = "message"
-            POST_MESSAGE_MEDIA = "media"
+            POST_MESSAGE_TEXT = "m"
+            POST_MESSAGE_MEDIA = "me"
 
-            START = "start"
-            DEMO = "demo"
+            START = "s"
+            DEMO = "d"
 
-            EXTRA_SETTINGS = "extra_settings"
+            EXTRA_SETTINGS = "es"
 
-            BACK = "back"
-            DELETE_POST_MESSAGE = "delete"
+            BACK = "ba"
+            DELETE_POST_MESSAGE = "de"
 
             # RUNNING ACTIONS
-            STATISTICS = "statistics"
-            CANCEL = "cancel"
+            STATISTICS = "st"
+            CANCEL = "ca"
 
         model_config = ConfigDict(from_attributes=True, populate_by_name=True)
 
         n: str = Field(default="pm", frozen=True)
         a: ActionEnum
 
-        bot_id: int
+        bot_id: int = Field(alias="b")
         channel_id: int | None = Field(default=None, alias="c")
-        post_message_id: int = Field(alias="mi")
+        post_message_id: int = Field(alias="m")
         post_message_type: PostMessageType = Field(alias="t")
 
     @staticmethod

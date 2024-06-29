@@ -3,7 +3,7 @@ from aiogram.enums import ParseMode
 from aiogram.types import CallbackQuery
 from aiogram.fsm.context import FSMContext
 
-from bot.main import post_message_db, bot, post_message_media_file_db, custom_bot_user_db, _scheduler
+from bot.main import post_message_db, bot, post_message_media_file_db, custom_bot_user_db, _scheduler, bot_db
 from bot.utils import MessageTexts
 from bot.config import WEB_APP_URL, WEB_APP_PORT
 from bot.states import States
@@ -15,6 +15,7 @@ from bot.keyboards.post_message_keyboards import InlinePostMessageMenuKeyboard, 
     ReplyConfirmMediaFilesKeyboard, InlinePostMessageAcceptDeletingKeyboard, InlinePostMessageExtraSettingsKeyboard, \
     InlinePostMessageStartConfirmKeyboard, UnknownPostMessageType
 from bot.post_message.post_message_editors import send_post_message, PostActionType
+
 from database.models.post_message_model import PostMessageSchema, PostMessageNotFound
 
 from logs.config import extra_params, logger
@@ -64,7 +65,9 @@ async def _cancel_send(
     post_message.job_id = None
 
     await post_message_db.delete_post_message(post_message.post_message_id)
-    custom_bot_username = (await Bot(query.bot.token).get_me()).username
+
+    custom_bot_token = (await bot_db.get_bot(post_message.bot_id)).token
+    custom_bot_username = (await Bot(custom_bot_token).get_me()).username
 
     match post_message_type:
         case PostMessageType.MAILING:
@@ -79,7 +82,7 @@ async def _cancel_send(
                 parse_mode=ParseMode.HTML
             )
         case PostMessageType.CHANNEL_POST:
-            username = (await Bot(query.bot.token).get_chat(channel_id)).username
+            username = (await Bot(custom_bot_token).get_chat(channel_id)).username
             await query.message.answer(
                 f"Отправка записи отменена",
                 reply_markup=ReplyBotMenuKeyboard.get_keyboard(post_message.bot_id)
@@ -99,11 +102,13 @@ async def _button_add(
         post_message_type: PostMessageType,
         channel_id: int | None
 ):
+    custom_bot_token = (await bot_db.get_bot(post_message.bot_id)).token
+
     match post_message_type:
         case PostMessageType.MAILING:
-            username = (await Bot(query.bot.token).get_me()).username
+            username = (await Bot(custom_bot_token).get_me()).username
         case PostMessageType.CHANNEL_POST:
-            username = (await Bot(query.bot.token).get_chat(channel_id)).username
+            username = (await Bot(custom_bot_token).get_chat(channel_id)).username
         case _:
             raise UnknownPostMessageType
 
@@ -232,11 +237,13 @@ async def _button_delete(
         await query.message.delete()
         await query.message.answer("Кнопка удалена")
 
+        custom_bot_token = (await bot_db.get_bot(bot_id)).token
+
         match post_message_type:
             case PostMessageType.MAILING:
-                username = (await Bot(query.bot.token).get_me()).username
+                username = (await Bot(custom_bot_token).get_me()).username
             case PostMessageType.CHANNEL_POST:
-                username = (await Bot(query.bot.token).get_chat(channel_id)).username
+                username = (await Bot(custom_bot_token).get_chat(channel_id)).username
             case _:
                 raise UnknownPostMessageType
 
@@ -325,12 +332,14 @@ async def _start(
     media_files = await post_message_media_file_db.get_all_post_message_media_files(post_message_id)
 
     if await is_post_message_valid(query, post_message, media_files):
+        custom_bot_token = (await bot_db.get_bot(bot_id)).token
+
         match post_message_type:
             case PostMessageType.MAILING:
-                username = (await Bot(query.bot.token).get_me()).username
+                username = (await Bot(custom_bot_token).get_me()).username
                 text = MessageTexts.BOT_MAILINGS_MENU_ACCEPT_START.value.format(username)
             case PostMessageType.CHANNEL_POST:
-                username = (await Bot(query.bot.token).get_chat(channel_id)).username
+                username = (await Bot(custom_bot_token).get_chat(channel_id)).username
                 text = MessageTexts.BOT_CHANNEL_POST_MENU_ACCEPT_START.value.format(username)
             case _:
                 raise UnknownPostMessageType
@@ -357,11 +366,13 @@ async def _demo(
     media_files = await post_message_media_file_db.get_all_post_message_media_files(post_message_id)
 
     if await is_post_message_valid(query, post_message, media_files):
+        custom_bot_token = (await bot_db.get_bot(bot_id)).token
+
         match post_message_type:
             case PostMessageType.MAILING:
-                username = (await Bot(query.bot.token).get_me()).username
+                username = (await Bot(custom_bot_token).get_me()).username
             case PostMessageType.CHANNEL_POST:
-                username = (await Bot(query.bot.token).get_chat(channel_id)).username
+                username = (await Bot(custom_bot_token).get_chat(channel_id)).username
             case _:
                 raise UnknownPostMessageType
 
@@ -387,12 +398,14 @@ async def _delete_post_message(
         post_message_type: PostMessageType,
         channel_id: int | None
 ):
+    custom_bot_token = (await bot_db.get_bot(post_message.bot_id)).token
+
     match post_message_type:
         case PostMessageType.MAILING:
-            username = (await Bot(query.bot.token).get_me()).username
+            username = (await Bot(custom_bot_token).get_me()).username
             text = MessageTexts.BOT_MAILINGS_MENU_ACCEPT_DELETING_MESSAGE.value.format(username)
         case PostMessageType.CHANNEL_POST:
-            username = (await Bot(query.bot.token).get_chat(channel_id)).username
+            username = (await Bot(custom_bot_token).get_chat(channel_id)).username
             text = MessageTexts.BOT_CHANNEL_POST_MENU_ACCEPT_DELETING_MESSAGE.value.format(username)
         case _:
             raise UnknownPostMessageType
@@ -640,11 +653,12 @@ async def post_message_handler(query: CallbackQuery, state: FSMContext):
     except PostMessageNotFound:
         return
 
+    custom_bot_token = (await bot_db.get_bot(bot_id)).token
     match post_message_type:
         case PostMessageType.MAILING:
-            username = (await Bot(query.bot.token).get_me()).username
+            username = (await Bot(custom_bot_token).get_me()).username
         case PostMessageType.CHANNEL_POST:
-            username = (await Bot(query.bot.token).get_chat(callback_data.channel_id)).username
+            username = (await Bot(custom_bot_token).get_chat(callback_data.channel_id)).username
         case _:
             raise UnknownPostMessageType
 
@@ -691,12 +705,14 @@ async def _inline_no_button(
         post_message_type: PostMessageType,
         channel_id: int | None
 ) -> None:
+    custom_bot_token = (await bot_db.get_bot(bot_id)).token
+
     match post_message_type:
         case PostMessageType.MAILING:
-            username = (await Bot(query.bot.token).get_me()).username
+            username = (await Bot(custom_bot_token).get_me()).username
             text = "В этом рассылочном сообщении кнопки нет"
         case PostMessageType.CHANNEL_POST:
-            username = (await Bot(query.bot.token).get_chat(channel_id)).username
+            username = (await Bot(custom_bot_token).get_chat(channel_id)).username
             text = "В этой записи для канала кнопки нет"
         case _:
             raise UnknownPostMessageType

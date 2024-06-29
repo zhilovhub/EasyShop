@@ -407,11 +407,13 @@ async def _inline_back_to_post_message_menu(
         post_message_type: PostMessageType,
         channel_id: int | None
 ) -> None:
+    custom_bot_token = (await bot_db.get_bot(bot_id)).token
+
     match post_message_type:
         case PostMessageType.MAILING:
-            username = (await Bot(query.bot.token).get_me()).username
+            username = (await Bot(custom_bot_token).get_me()).username
         case PostMessageType.CHANNEL_POST:
-            username = (await Bot(query.bot.token).get_chat(channel_id)).username
+            username = (await Bot(custom_bot_token).get_chat(channel_id)).username
         case _:
             raise UnknownPostMessageType
 

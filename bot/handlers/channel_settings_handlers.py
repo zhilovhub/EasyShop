@@ -87,6 +87,7 @@ async def channel_menu_callback_handler(query: CallbackQuery):
             if not channel_post and callback_data.a == callback_data.ActionEnum.CREATE_POST_MESSAGE:
                 await post_message_create(bot_id, PostMessageType.CHANNEL_POST)
 
+            print(channel_id)
             await query.message.edit_text(
                 MessageTexts.bot_post_message_menu_message(PostMessageType.CHANNEL_POST).format(channel_username),
                 reply_markup=await InlinePostMessageMenuKeyboard.get_keyboard(
