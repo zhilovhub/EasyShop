@@ -469,22 +469,6 @@ async def send_post_message(
             )
 
 
-async def _inline_no_button(
-        query: CallbackQuery,
-        bot_id: int,
-        custom_bot_username: str,
-        post_message_type: PostMessageType
-) -> None:
-    await query.answer(
-        "В этом рассылочном сообщении кнопки нет", show_alert=True
-    )
-    await query.message.edit_text(
-        text=MessageTexts.bot_post_message_menu_message(post_message_type).format(custom_bot_username),
-        reply_markup=await InlinePostMessageMenuKeyboard.get_keyboard(bot_id, post_message_type),
-        parse_mode=ParseMode.HTML
-    )
-
-
 async def _reply_no_button(
         message: Message,
         bot_id: int,
@@ -507,19 +491,6 @@ async def _reply_no_button(
     await state.set_data(state_data)
 
 
-async def _inline_back_to_post_message_menu(
-        query: CallbackQuery,
-        bot_id: int,
-        custom_bot_username: str,
-        post_message_type: PostMessageType
-) -> None:
-    await query.message.edit_text(
-        text=MessageTexts.bot_post_message_menu_message(post_message_type).format(custom_bot_username),
-        reply_markup=await InlinePostMessageMenuKeyboard.get_keyboard(bot_id, post_message_type),
-        parse_mode=ParseMode.HTML
-    )
-
-
 async def _back_to_post_message_menu(
         message: Message,
         bot_id: int,
@@ -534,24 +505,3 @@ async def _back_to_post_message_menu(
         text=MessageTexts.bot_post_message_menu_message(post_message_type).format(object_username),
         reply_markup=await InlinePostMessageMenuKeyboard.get_keyboard(bot_id, post_message_type)
     )
-
-
-async def _is_post_message_valid(
-        query: CallbackQuery,
-        post_message: PostMessageSchema,
-        media_files: list[PostMessageMediaFileSchema]
-) -> bool:
-    if len(media_files) > 1 and post_message.has_button:
-        await query.answer(
-            "Telegram не позволяет прикрепить кнопку, если в сообщении минимум 2 медиафайла",
-            show_alert=True
-        )
-        return False
-    elif not media_files and not post_message.description:
-        await query.answer(
-            text="В Вашем рассылочном сообщении нет ни текста, ни медиафайлов",
-            show_alert=True
-        )
-        return False
-
-    return True

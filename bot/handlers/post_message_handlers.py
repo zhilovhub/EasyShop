@@ -12,10 +12,11 @@ from bot.states import States
 from bot.handlers.routers import post_message_router
 from bot.enums.post_message_type import PostMessageType
 from bot.keyboards.main_menu_keyboards import InlineBotMenuKeyboard, ReplyBotMenuKeyboard
+from bot.post_message.post_message_utils import is_post_message_valid
 from bot.keyboards.post_message_keyboards import InlinePostMessageStartConfirmKeyboard, InlinePostMessageMenuKeyboard, \
     InlinePostMessageExtraSettingsKeyboard, InlinePostMessageAcceptDeletingKeyboard, UnknownPostMessageType
 from bot.post_message.post_message_editors import edit_delay_date, edit_message, edit_button_text, edit_button_url, \
-    edit_media_files, _is_post_message_valid, _inline_back_to_post_message_menu
+    edit_media_files
 from bot.handlers.mailing_settings_handlers import send_post_messages
 from bot.post_message.post_message_callback_handler import post_message_handler
 
@@ -168,7 +169,7 @@ async def post_message_accept_deleting_callback_handler(query: CallbackQuery):
 async def _start_confirm(query: CallbackQuery, post_message: PostMessageSchema, post_message_type: PostMessageType):
     media_files = await post_message_media_file_db.get_all_post_message_media_files(post_message.post_message_id)
 
-    if await _is_post_message_valid(query, post_message, media_files):
+    if await is_post_message_valid(query, post_message, media_files):
         if post_message.is_delayed:
             # Небольшой запас по времени
             if datetime.now() > (post_message.send_date + timedelta(minutes=1)):
@@ -333,3 +334,16 @@ async def _get_post_message(
                 raise UnknownPostMessageType
 
         raise e
+
+
+async def _inline_back_to_post_message_menu(
+        query: CallbackQuery,
+        bot_id: int,
+        custom_bot_username: str,
+        post_message_type: PostMessageType
+) -> None:
+    await query.message.edit_text(
+        text=MessageTexts.bot_post_message_menu_message(post_message_type).format(custom_bot_username),
+        reply_markup=await InlinePostMessageMenuKeyboard.get_keyboard(bot_id, post_message_type),
+        parse_mode=ParseMode.HTML
+    )

@@ -10,12 +10,11 @@ from bot.states import States
 from bot.enums.post_message_type import PostMessageType
 from bot.keyboards.channel_keyboards import InlineChannelMenuKeyboard
 from bot.keyboards.main_menu_keyboards import ReplyBotMenuKeyboard, InlineBotMenuKeyboard
+from bot.post_message.post_message_utils import is_post_message_valid
 from bot.keyboards.post_message_keyboards import InlinePostMessageMenuKeyboard, ReplyBackPostMessageMenuKeyboard, \
     ReplyConfirmMediaFilesKeyboard, InlinePostMessageAcceptDeletingKeyboard, InlinePostMessageExtraSettingsKeyboard, \
     InlinePostMessageStartConfirmKeyboard
-from bot.post_message.post_message_editors import _inline_no_button, _is_post_message_valid, send_post_message, \
-    PostActionType
-
+from bot.post_message.post_message_editors import send_post_message, PostActionType
 from database.models.post_message_model import PostMessageSchema, PostMessageNotFound
 
 from logs.config import extra_params, logger
@@ -223,7 +222,7 @@ async def _post_message_union(
         case callback_data.ActionEnum.START:
             media_files = await post_message_media_file_db.get_all_post_message_media_files(post_message_id)
 
-            if await _is_post_message_valid(query, post_message, media_files):
+            if await is_post_message_valid(query, post_message, media_files):
                 await query.message.edit_text(
                     text=MessageTexts.BOT_MAILINGS_MENU_ACCEPT_START.value.format(username),
                     reply_markup=InlinePostMessageStartConfirmKeyboard.get_keyboard(
@@ -236,7 +235,7 @@ async def _post_message_union(
         case callback_data.ActionEnum.DEMO:
             media_files = await post_message_media_file_db.get_all_post_message_media_files(post_message_id)
 
-            if await _is_post_message_valid(query, post_message, media_files):
+            if await is_post_message_valid(query, post_message, media_files):
                 await send_post_message(
                     bot,
                     query.from_user.id,
@@ -368,4 +367,20 @@ async def post_message_handler(query: CallbackQuery, state: FSMContext):
         post_message,
         custom_bot_username,  # TODO what about channel username
         post_message_type
+    )
+
+
+async def _inline_no_button(
+        query: CallbackQuery,
+        bot_id: int,
+        custom_bot_username: str,
+        post_message_type: PostMessageType
+) -> None:
+    await query.answer(
+        "В этом рассылочном сообщении кнопки нет", show_alert=True
+    )
+    await query.message.edit_text(
+        text=MessageTexts.bot_post_message_menu_message(post_message_type).format(custom_bot_username),
+        reply_markup=await InlinePostMessageMenuKeyboard.get_keyboard(bot_id, post_message_type),
+        parse_mode=ParseMode.HTML
     )
