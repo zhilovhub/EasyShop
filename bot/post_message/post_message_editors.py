@@ -7,7 +7,7 @@ from aiogram.types import Message, LinkPreviewOptions, InputMediaDocument, Input
     InputMediaVideo, InputMediaPhoto, BufferedInputFile, InlineKeyboardMarkup, InlineKeyboardButton
 from aiogram.fsm.context import FSMContext
 
-from bot.main import post_message_db, bot, post_message_media_file_db
+from bot.main import post_message_db, bot, post_message_media_file_db, bot_db
 from bot.utils import MessageTexts
 from bot.config import WEB_APP_URL, WEB_APP_PORT
 from bot.states import States
@@ -208,11 +208,12 @@ async def _button_text_save(
         message
     )
 
+    custom_bot_token = (await bot_db.get_bot(post_message.bot_id)).token
     match post_message_type:
         case PostMessageType.MAILING:
-            username = (await Bot(message.bot.token).get_me()).username
+            username = (await Bot(custom_bot_token).get_me()).username
         case PostMessageType.CHANNEL_POST:
-            username = (await Bot(message.bot.token).get_chat(channel_id)).username
+            username = (await Bot(custom_bot_token).get_chat(channel_id)).username
         case _:
             raise UnknownPostMessageType
 
@@ -283,11 +284,12 @@ async def _message_save(
         message,
     )
 
+    custom_bot_token = (await bot_db.get_bot(post_message.bot_id)).token
     match post_message_type:
         case PostMessageType.MAILING:
-            username = (await Bot(message.bot.token).get_me()).username
+            username = (await Bot(custom_bot_token).get_me()).username
         case PostMessageType.CHANNEL_POST:
-            username = (await Bot(message.bot.token).get_chat(channel_id)).username
+            username = (await Bot(custom_bot_token).get_chat(channel_id)).username
         case _:
             raise UnknownPostMessageType
 
@@ -357,11 +359,12 @@ async def _delay_save(
         reply_markup=ReplyBotMenuKeyboard.get_keyboard(post_message.bot_id)
     )
 
+    custom_bot_token = (await bot_db.get_bot(post_message.bot_id)).token
     match post_message_type:
         case PostMessageType.MAILING:
-            username = (await Bot(message.bot.token).get_me()).username
+            username = (await Bot(custom_bot_token).get_me()).username
         case PostMessageType.CHANNEL_POST:
-            username = (await Bot(message.bot.token).get_chat(channel_id)).username
+            username = (await Bot(custom_bot_token).get_chat(channel_id)).username
         case _:
             raise UnknownPostMessageType
 
@@ -445,11 +448,12 @@ async def _button_url_save(
         message
     )
 
+    custom_bot_token = (await bot_db.get_bot(post_message.bot_id)).token
     match post_message_type:
         case PostMessageType.MAILING:
-            username = (await Bot(message.bot.token).get_me()).username
+            username = (await Bot(custom_bot_token).get_me()).username
         case PostMessageType.CHANNEL_POST:
-            username = (await Bot(message.bot.token).get_chat(channel_id)).username
+            username = (await Bot(custom_bot_token).get_chat(channel_id)).username
         case _:
             raise UnknownPostMessageType
 
@@ -632,11 +636,12 @@ async def _reply_no_button(
         reply_markup=ReplyBotMenuKeyboard.get_keyboard(bot_id)
     )
 
+    custom_bot_token = (await bot_db.get_bot(bot_id)).token
     match post_message_type:
         case PostMessageType.MAILING:
-            username = (await Bot(message.bot.token).get_me()).username
+            username = (await Bot(custom_bot_token).get_me()).username
         case PostMessageType.CHANNEL_POST:
-            username = (await Bot(message.bot.token).get_chat(channel_id)).username
+            username = (await Bot(custom_bot_token).get_chat(channel_id)).username
         case _:
             raise UnknownPostMessageType
 
@@ -662,11 +667,12 @@ async def _back_to_post_message_menu(
         reply_markup=ReplyBotMenuKeyboard.get_keyboard(bot_id)
     )
 
+    custom_bot_token = (await bot_db.get_bot(bot_id)).token
     match post_message_type:
         case PostMessageType.MAILING:
-            username = (await Bot(message.bot.token).get_me()).username
+            username = (await Bot(custom_bot_token).get_me()).username
         case PostMessageType.CHANNEL_POST:
-            username = (await Bot(message.bot.token).get_chat(channel_id)).username
+            username = (await Bot(custom_bot_token).get_chat(channel_id)).username
         case _:
             raise UnknownPostMessageType
 

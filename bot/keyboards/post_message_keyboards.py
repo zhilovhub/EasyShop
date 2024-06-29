@@ -74,15 +74,15 @@ class ReplyBackPostMessageMenuKeyboard:
 class InlinePostMessageAcceptDeletingKeyboard:
     class Callback(BaseModel):
         class ActionEnum(Enum):
-            ACCEPT_DELETE = "accept_delete"
-            BACK_TO_POST_MESSAGE_MENU = "back_pmm"
+            ACCEPT_DELETE = "a"
+            BACK_TO_POST_MESSAGE_MENU = "b"
 
         model_config = ConfigDict(from_attributes=True, populate_by_name=True)
 
-        n: str = Field(default="pmad", frozen=True)
+        n: str = Field(default="p", frozen=True)
         a: ActionEnum
 
-        bot_id: int
+        bot_id: int = Field(alias="b")
         channel_id: int | None = Field(default=None, alias="c")
         post_message_id: int = Field(alias="mi")
         post_message_type: PostMessageType = Field(alias="t")
@@ -162,7 +162,7 @@ class InlinePostMessageMenuKeyboard:
 
             EXTRA_SETTINGS = "es"
 
-            BACK = "ba"
+            BACK = "bk"
             DELETE_POST_MESSAGE = "de"
 
             # RUNNING ACTIONS
@@ -355,14 +355,14 @@ class InlinePostMessageExtraSettingsKeyboard:
             NOTIFICATION_SOUND = "ns"
             LINK_PREVIEW = "lp"
 
-            BACK_TO_POST_MESSAGE_MENU = "back_pmm"
+            BACK_TO_POST_MESSAGE_MENU = "db"
 
         model_config = ConfigDict(from_attributes=True, populate_by_name=True)
 
-        n: str = Field(default="es", frozen=True)
+        n: str = Field(default="e", frozen=True)
         a: ActionEnum
 
-        bot_id: int
+        bot_id: int = Field(alias="b")
         channel_id: int | None = Field(default=None, alias="c")
         post_message_id: int = Field(alias="mi")
         post_message_type: PostMessageType = Field(alias="t")
@@ -451,16 +451,16 @@ class InlinePostMessageExtraSettingsKeyboard:
 class InlinePostMessageStartConfirmKeyboard:
     class Callback(BaseModel):
         class ActionEnum(Enum):
-            START_CONFIRM = "sc"
+            START_CONFIRM = "s"
 
-            BACK_TO_POST_MESSAGE_MENU = "back_pmm"
+            BACK_TO_POST_MESSAGE_MENU = "b"
 
         model_config = ConfigDict(from_attributes=True, populate_by_name=True)
 
         n: str = Field(default="es", frozen=True)
         a: ActionEnum
 
-        bot_id: int
+        bot_id: int = Field(alias="b")
         channel_id: int | None = Field(default=None, alias="c")
         post_message_id: int = Field(alias="mi")
         post_message_type: PostMessageType = Field(alias="t")
