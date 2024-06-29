@@ -105,6 +105,54 @@ async def _cancel_send(
             raise UnknownPostMessageType
 
 
+async def _button_add(
+        query: CallbackQuery,
+        post_message: PostMessageSchema,
+        post_message_type: PostMessageType,
+        channel_id: int | None
+):
+    match post_message_type:
+        case PostMessageType.MAILING:
+            username = (await Bot(query.bot.token).get_me()).username
+        case PostMessageType.CHANNEL_POST:
+            username = (await Bot(query.bot.token).get_chat(channel_id)).username
+        case _:
+            raise UnknownPostMessageType
+
+    media_files = await post_message_media_file_db.get_all_post_message_media_files(post_message.post_message_id)
+
+    if post_message.has_button:
+        await query.answer(MessageTexts.bot_post_already_done_message(post_message_type), show_alert=True)
+        await query.message.edit_text(
+            text=MessageTexts.bot_post_message_menu_message(post_message_type).format(username),
+            reply_markup=await InlinePostMessageMenuKeyboard.get_keyboard(post_message.bot_id, post_message_type),
+            parse_mode=ParseMode.HTML
+        )
+    elif len(media_files) > 1:
+        await query.answer(
+            "Кнопку нельзя добавить, если в сообщении больше одного медиафайла",
+            show_alert=True
+        )
+    else:
+        post_message.button_text = "Shop"
+        post_message.button_url = f"{WEB_APP_URL}:{WEB_APP_PORT}/products-page/?bot_id={post_message.bot_id}"
+        post_message.has_button = True
+
+        await post_message_db.update_post_message(post_message)
+
+        await query.message.delete()
+        await query.message.answer(
+            "Кнопка добавлена\n\n"
+            f"Сейчас там стандартный текст '{post_message.button_text}' и ссылка на Ваш магазин.\n"
+            "Эти два параметры Вы можете изменить в настройках кнопки"
+        )
+
+        await query.message.answer(
+            text=MessageTexts.bot_post_message_menu_message(post_message_type).format(username),
+            reply_markup=await InlinePostMessageMenuKeyboard.get_keyboard(post_message.bot_id, post_message_type)
+        )
+
+
 async def _post_message_union(
         query: CallbackQuery,
         state: FSMContext,
@@ -129,38 +177,12 @@ async def _post_message_union(
 
         # NOT RUNNING ACTIONS
         case callback_data.ActionEnum.BUTTON_ADD:
-            media_files = await post_message_media_file_db.get_all_post_message_media_files(post_message_id)
-
-            if post_message.has_button:
-                await query.answer(MessageTexts.bot_post_already_done_message(post_message_type), show_alert=True)
-                await query.message.edit_text(
-                    text=MessageTexts.bot_post_message_menu_message(post_message_type).format(username),
-                    reply_markup=await InlinePostMessageMenuKeyboard.get_keyboard(bot_id, post_message_type),
-                    parse_mode=ParseMode.HTML
-                )
-            elif len(media_files) > 1:
-                await query.answer(
-                    "Кнопку нельзя добавить, если в сообщении больше одного медиафайла",
-                    show_alert=True
-                )
-            else:
-                post_message.button_text = "Shop"
-                post_message.button_url = f"{WEB_APP_URL}:{WEB_APP_PORT}/products-page/?bot_id={bot_id}"
-                post_message.has_button = True
-
-                await post_message_db.update_post_message(post_message)
-
-                await query.message.delete()
-                await query.message.answer(
-                    "Кнопка добавлена\n\n"
-                    f"Сейчас там стандартный текст '{post_message.button_text}' и ссылка на Ваш магазин.\n"
-                    "Эти два параметры Вы можете изменить в настройках рассылки"
-                )
-
-                await query.message.answer(
-                    text=MessageTexts.bot_post_message_menu_message(post_message_type).format(username),
-                    reply_markup=await InlinePostMessageMenuKeyboard.get_keyboard(bot_id, post_message_type)
-                )
+            await _button_add(
+                query,
+                post_message,
+                post_message_type,
+                channel_id=callback_data.channel_id if post_message_type == PostMessageType.CHANNEL_POST else None
+            )
 
         case callback_data.ActionEnum.BUTTON_URL:
             if not post_message.has_button:
