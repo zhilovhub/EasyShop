@@ -113,7 +113,9 @@ async def _button_add(
         await query.answer(MessageTexts.bot_post_already_done_message(post_message_type), show_alert=True)
         await query.message.edit_text(
             text=MessageTexts.bot_post_message_menu_message(post_message_type).format(username),
-            reply_markup=await InlinePostMessageMenuKeyboard.get_keyboard(post_message.bot_id, post_message_type),
+            reply_markup=await InlinePostMessageMenuKeyboard.get_keyboard(
+                post_message.bot_id, post_message_type, channel_id
+            ),
             parse_mode=ParseMode.HTML
         )
     elif len(media_files) > 1:
@@ -137,7 +139,9 @@ async def _button_add(
 
         await query.message.answer(
             text=MessageTexts.bot_post_message_menu_message(post_message_type).format(username),
-            reply_markup=await InlinePostMessageMenuKeyboard.get_keyboard(post_message.bot_id, post_message_type)
+            reply_markup=await InlinePostMessageMenuKeyboard.get_keyboard(
+                post_message.bot_id, post_message_type, channel_id
+            )
         )
 
 
@@ -238,7 +242,9 @@ async def _button_delete(
 
         await query.message.answer(
             text=MessageTexts.bot_post_message_menu_message(post_message_type).format(username),
-            reply_markup=await InlinePostMessageMenuKeyboard.get_keyboard(bot_id, post_message_type)
+            reply_markup=await InlinePostMessageMenuKeyboard.get_keyboard(
+                bot_id, post_message_type, channel_id
+            )
         )
 
 
@@ -334,7 +340,8 @@ async def _start(
             reply_markup=InlinePostMessageStartConfirmKeyboard.get_keyboard(
                 bot_id,
                 post_message_id,
-                post_message_type
+                post_message_type,
+                channel_id=channel_id
             )
         )
 
@@ -368,7 +375,9 @@ async def _demo(
         )
         await query.message.answer(
             text=MessageTexts.bot_post_message_menu_message(post_message_type).format(username),
-            reply_markup=await InlinePostMessageMenuKeyboard.get_keyboard(bot_id, post_message_type)
+            reply_markup=await InlinePostMessageMenuKeyboard.get_keyboard(
+                bot_id, post_message_type, channel_id
+            )
         )
 
 
@@ -393,7 +402,8 @@ async def _delete_post_message(
         reply_markup=await InlinePostMessageAcceptDeletingKeyboard.get_keyboard(
             post_message.bot_id,
             post_message.post_message_id,
-            post_message_type
+            post_message_type,
+            channel_id
         )
     )
 
@@ -402,6 +412,7 @@ async def _extra_settings(
         query: CallbackQuery,
         post_message: PostMessageSchema,
         post_message_type: PostMessageType,
+        channel_id: int | None
 ):
     await query.message.edit_text(
         text=query.message.html_text + "\n\n🔎 Что такое <a href=\"https://www.google.com/url?sa=i&url=https%3A"
@@ -413,7 +424,8 @@ async def _extra_settings(
             post_message.post_message_id,
             post_message.enable_notification_sound,
             post_message.enable_link_preview,
-            post_message_type
+            post_message_type,
+            channel_id
         ),
         parse_mode=ParseMode.HTML,
     )
@@ -444,6 +456,7 @@ async def _remove_delay(
         query: CallbackQuery,
         post_message: PostMessageSchema,
         post_message_type: PostMessageType,
+        channel_id: int | None
 ):
     post_message.is_delayed = False
     post_message.send_date = None
@@ -451,7 +464,9 @@ async def _remove_delay(
     await post_message_db.update_post_message(post_message)
 
     await query.message.edit_reply_markup(
-        reply_markup=await InlinePostMessageMenuKeyboard.get_keyboard(post_message.bot_id, post_message_type)
+        reply_markup=await InlinePostMessageMenuKeyboard.get_keyboard(
+            post_message.bot_id, post_message_type, channel_id
+        )
     )
 
 
@@ -583,6 +598,7 @@ async def _post_message_union(
                 query,
                 post_message,
                 post_message_type,
+                channel_id=callback_data.channel_id if post_message_type == PostMessageType.CHANNEL_POST else None
             )
 
         case callback_data.ActionEnum.DELAY:
@@ -599,6 +615,7 @@ async def _post_message_union(
                 query,
                 post_message,
                 post_message_type,
+                channel_id=callback_data.channel_id if post_message_type == PostMessageType.CHANNEL_POST else None
             )
 
         case callback_data.ActionEnum.BACK:
@@ -639,7 +656,12 @@ async def post_message_handler(query: CallbackQuery, state: FSMContext):
         await query.answer(MessageTexts.bot_post_already_started_message(post_message_type), show_alert=True)
         await query.message.edit_text(
             text=MessageTexts.BOT_MAILING_MENU_WHILE_RUNNING.value.format(username),
-            reply_markup=await InlinePostMessageMenuKeyboard.get_keyboard(bot_id, post_message_type),
+            reply_markup=await InlinePostMessageMenuKeyboard.get_keyboard(
+                bot_id,
+                post_message_type,
+                channel_id=callback_data.channel_id if post_message_type == PostMessageType.CHANNEL_POST else None
+
+            ),
             parse_mode=ParseMode.HTML
         )
         return
@@ -684,6 +706,8 @@ async def _inline_no_button(
     )
     await query.message.edit_text(
         text=MessageTexts.bot_post_message_menu_message(post_message_type).format(username),
-        reply_markup=await InlinePostMessageMenuKeyboard.get_keyboard(bot_id, post_message_type),
+        reply_markup=await InlinePostMessageMenuKeyboard.get_keyboard(
+            bot_id, post_message_type, channel_id
+        ),
         parse_mode=ParseMode.HTML
     )

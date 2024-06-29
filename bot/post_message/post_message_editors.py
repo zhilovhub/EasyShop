@@ -218,7 +218,9 @@ async def _button_text_save(
 
     await message.answer(
         MessageTexts.bot_post_message_menu_message(post_message_type).format(username),
-        reply_markup=await InlinePostMessageMenuKeyboard.get_keyboard(post_message.bot_id, post_message_type)
+        reply_markup=await InlinePostMessageMenuKeyboard.get_keyboard(
+            post_message.bot_id, post_message_type, channel_id
+        )
     )
 
 
@@ -291,7 +293,9 @@ async def _message_save(
 
     await message.answer(
         MessageTexts.bot_post_message_menu_message(post_message_type).format(username),
-        reply_markup=await InlinePostMessageMenuKeyboard.get_keyboard(post_message.bot_id, post_message_type)
+        reply_markup=await InlinePostMessageMenuKeyboard.get_keyboard(
+            post_message.bot_id, post_message_type, channel_id
+        )
     )
 
 
@@ -363,7 +367,9 @@ async def _delay_save(
 
     await message.answer(
         MessageTexts.bot_post_message_menu_message(post_message_type).format(username),
-        reply_markup=await InlinePostMessageMenuKeyboard.get_keyboard(post_message.bot_id, post_message_type)
+        reply_markup=await InlinePostMessageMenuKeyboard.get_keyboard(
+            post_message.bot_id, post_message_type, channel_id
+        )
     )
 
 
@@ -449,7 +455,9 @@ async def _button_url_save(
 
     await message.answer(
         MessageTexts.bot_post_message_menu_message(post_message_type).format(username),
-        reply_markup=await InlinePostMessageMenuKeyboard.get_keyboard(post_message.bot_id, post_message_type)
+        reply_markup=await InlinePostMessageMenuKeyboard.get_keyboard(
+            post_message.bot_id, post_message_type, channel_id
+        )
     )
 
 
@@ -634,7 +642,9 @@ async def _reply_no_button(
 
     await message.answer(
         post_message_type.value.format(username),
-        reply_markup=await InlinePostMessageMenuKeyboard.get_keyboard(bot_id, post_message_type)
+        reply_markup=await InlinePostMessageMenuKeyboard.get_keyboard(
+            bot_id, post_message_type, channel_id
+        )
     )
 
     await state.set_state(States.BOT_MENU)
@@ -662,5 +672,7 @@ async def _back_to_post_message_menu(
 
     await message.answer(
         text=MessageTexts.bot_post_message_menu_message(post_message_type).format(username),
-        reply_markup=await InlinePostMessageMenuKeyboard.get_keyboard(bot_id, post_message_type)
+        reply_markup=await InlinePostMessageMenuKeyboard.get_keyboard(
+            bot_id, post_message_type, channel_id
+        )
     )

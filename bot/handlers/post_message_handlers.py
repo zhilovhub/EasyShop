@@ -39,7 +39,7 @@ async def post_message_menu_callback_handler(query: CallbackQuery, state: FSMCon
 async def editing_post_message_handler(message: Message, state: FSMContext):
     state_data = await state.get_data()
     current_state = await state.get_state()
-    
+
     match state_data["post_message_type"]:
         case PostMessageType.MAILING.value:
             post_message_type = PostMessageType.MAILING
@@ -90,9 +90,19 @@ async def post_message_extra_settings_callback_handler(query: CallbackQuery):
 
     match callback_data.a:
         case callback_data.ActionEnum.LINK_PREVIEW:
-            await _link_preview(query, post_message, post_message_type)
+            await _link_preview(
+                query,
+                post_message,
+                post_message_type,
+                channel_id=callback_data.channel_id if post_message_type == PostMessageType.CHANNEL_POST else None
+            )
         case callback_data.ActionEnum.NOTIFICATION_SOUND:
-            await _notification_sound(query, post_message, post_message_type)
+            await _notification_sound(
+                query,
+                post_message,
+                post_message_type,
+                channel_id=callback_data.channel_id if post_message_type == PostMessageType.CHANNEL_POST else None
+            )
         case callback_data.ActionEnum.BACK_TO_POST_MESSAGE_MENU:
             await _inline_back_to_post_message_menu(
                 query,
@@ -221,7 +231,7 @@ async def _start_confirm(
                 await query.message.edit_text(
                     text=MessageTexts.BOT_MAILING_MENU_WHILE_RUNNING.value.format(custom_bot_username),
                     reply_markup=await InlinePostMessageMenuKeyboard.get_keyboard(
-                        post_message.bot_id, post_message_type
+                        post_message.bot_id, post_message_type, channel_id
                     ),
                     parse_mode=ParseMode.HTML
                 )
@@ -250,7 +260,7 @@ async def _start_confirm(
                 await query.message.edit_text(
                     text=MessageTexts.BOT_CHANNEL_POST_MENU_WHILE_RUNNING.value.format(channel_username),
                     reply_markup=await InlinePostMessageMenuKeyboard.get_keyboard(
-                        post_message.bot_id, post_message_type
+                        post_message.bot_id, post_message_type, channel_id
                     ),
                     parse_mode=ParseMode.HTML
                 )
@@ -327,7 +337,12 @@ async def _delete_post_message(
             raise UnknownPostMessageType
 
 
-async def _link_preview(query: CallbackQuery, post_message: PostMessageSchema, post_message_type: PostMessageType):
+async def _link_preview(
+        query: CallbackQuery,
+        post_message: PostMessageSchema,
+        post_message_type: PostMessageType,
+        channel_id: int | None
+):
     post_message.enable_link_preview = not post_message.enable_link_preview
     await post_message_db.update_post_message(post_message)
 
@@ -337,7 +352,8 @@ async def _link_preview(query: CallbackQuery, post_message: PostMessageSchema, p
             post_message.post_message_id,
             post_message.enable_notification_sound,
             post_message.enable_link_preview,
-            post_message_type
+            post_message_type,
+            channel_id
         )
     )
 
@@ -345,7 +361,8 @@ async def _link_preview(query: CallbackQuery, post_message: PostMessageSchema, p
 async def _notification_sound(
         query: CallbackQuery,
         post_message: PostMessageSchema,
-        post_message_type: PostMessageType
+        post_message_type: PostMessageType,
+        channel_id: int | None
 ):
     post_message.enable_notification_sound = not post_message.enable_notification_sound
     await post_message_db.update_post_message(post_message)
@@ -356,7 +373,8 @@ async def _notification_sound(
             post_message.post_message_id,
             post_message.enable_notification_sound,
             post_message.enable_link_preview,
-            post_message_type
+            post_message_type,
+            channel_id
         )
     )
 
@@ -371,7 +389,11 @@ async def _mailing_already_started(
         await query.answer("Рассылка уже запущена", show_alert=True)
         await query.message.edit_text(
             text=MessageTexts.BOT_MAILING_MENU_WHILE_RUNNING.value.format(custom_bot_username),
-            reply_markup=await InlinePostMessageMenuKeyboard.get_keyboard(post_message.bot_id, PostMessageType.MAILING),
+            reply_markup=await InlinePostMessageMenuKeyboard.get_keyboard(
+                post_message.bot_id,
+                PostMessageType.MAILING,
+                channel_id=None
+            ),
             parse_mode=ParseMode.HTML
         )
         return True
@@ -395,6 +417,8 @@ async def _inline_back_to_post_message_menu(
 
     await query.message.edit_text(
         text=MessageTexts.bot_post_message_menu_message(post_message_type).format(username),
-        reply_markup=await InlinePostMessageMenuKeyboard.get_keyboard(bot_id, post_message_type),
+        reply_markup=await InlinePostMessageMenuKeyboard.get_keyboard(
+            bot_id, post_message_type, channel_id
+        ),
         parse_mode=ParseMode.HTML
     )

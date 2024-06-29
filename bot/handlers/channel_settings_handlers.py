@@ -91,7 +91,8 @@ async def channel_menu_callback_handler(query: CallbackQuery):
                 MessageTexts.bot_post_message_menu_message(PostMessageType.CHANNEL_POST).format(channel_username),
                 reply_markup=await InlinePostMessageMenuKeyboard.get_keyboard(
                     bot_id=bot_id,
-                    post_message_type=PostMessageType.CHANNEL_POST
+                    post_message_type=PostMessageType.CHANNEL_POST,
+                    channel_id=channel_id
                 )
             )
         case callback_data.ActionEnum.BACK_CHANNELS_LIST:

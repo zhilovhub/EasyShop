@@ -451,7 +451,8 @@ async def bot_menu_callback_handler(query: CallbackQuery, state: FSMContext):
                 ).format((await Bot(custom_bot.token).get_me()).username),
                 reply_markup=await InlinePostMessageMenuKeyboard.get_keyboard(
                     bot_id=bot_id,
-                    post_message_type=PostMessageType.MAILING
+                    post_message_type=PostMessageType.MAILING,
+                    channel_id=None
                 )
             )
         case callback_data.ActionEnum.BOT_GOODS_OPEN:
