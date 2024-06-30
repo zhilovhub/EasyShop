@@ -186,7 +186,6 @@ async def _start_confirm(
 
         match post_message_type:
             case PostMessageType.MAILING:
-
                 if not post_message.is_delayed:
                     await post_message_db.update_post_message(post_message)
                     await send_post_messages(
@@ -195,24 +194,24 @@ async def _start_confirm(
                         media_files,
                         query.from_user.id
                     )
-
-                    await query.message.answer(
-                        f"Рассылка начнется в {post_message.send_date}"
-                        if post_message.is_delayed else "Рассылка началась"
-                    )
-                    await query.message.edit_text(
-                        text=MessageTexts.BOT_MAILING_MENU_WHILE_RUNNING.value.format(custom_bot_username),
-                        reply_markup=await InlinePostMessageMenuKeyboard.get_keyboard(
-                            post_message.bot_id, post_message_type, channel_id
-                        ),
-                        parse_mode=ParseMode.HTML
-                    )
                 else:
                     job_id = await _scheduler.add_scheduled_job(
                         func=send_post_messages, run_date=post_message.send_date,
                         args=[custom_bot, post_message, media_files, query.from_user.id])
                     post_message.job_id = job_id
                     await post_message_db.update_post_message(post_message)
+
+                await query.message.answer(
+                    f"Рассылка начнется в {post_message.send_date}"
+                    if post_message.is_delayed else "Рассылка началась"
+                )
+                await query.message.edit_text(
+                    text=MessageTexts.BOT_MAILING_MENU_WHILE_RUNNING.value.format(custom_bot_username),
+                    reply_markup=await InlinePostMessageMenuKeyboard.get_keyboard(
+                        post_message.bot_id, post_message_type, channel_id
+                    ),
+                    parse_mode=ParseMode.HTML
+                )
 
             case PostMessageType.CHANNEL_POST:
                 channel_username = (await Bot(custom_bot.token).get_chat(channel_id)).username
@@ -227,23 +226,24 @@ async def _start_confirm(
                     )
                     await post_message_db.delete_post_message(post_message.post_message_id)
 
-                    await query.message.answer(
-                        f"Запись отправится в {post_message.send_date}"
-                        if post_message.is_delayed else "Запись отправлена!"
-                    )
-                    await query.message.edit_text(
-                        text=MessageTexts.BOT_CHANNEL_MENU_MESSAGE.value.format(channel_username, custom_bot_username),
-                        reply_markup=await InlineChannelMenuKeyboard.get_keyboard(
-                            post_message.bot_id, channel_id
-                        ),
-                        parse_mode=ParseMode.HTML
-                    )
                 else:
                     job_id = await _scheduler.add_scheduled_job(
                         func=send_post_message, run_date=post_message.send_date,
                         args=[custom_bot, channel_id, post_message, media_files, PostActionType.RELEASE])
                     post_message.job_id = job_id
                     await post_message_db.update_post_message(post_message)
+
+                await query.message.answer(
+                    f"Запись отправится в {post_message.send_date}"
+                    if post_message.is_delayed else "Запись отправлена!"
+                )
+                await query.message.edit_text(
+                    text=MessageTexts.BOT_CHANNEL_MENU_MESSAGE.value.format(channel_username, custom_bot_username),
+                    reply_markup=await InlineChannelMenuKeyboard.get_keyboard(
+                        post_message.bot_id, channel_id
+                    ),
+                    parse_mode=ParseMode.HTML
+                )
 
             case _:
                 raise UnknownPostMessageType

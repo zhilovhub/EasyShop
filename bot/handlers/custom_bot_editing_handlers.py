@@ -1,5 +1,5 @@
 from aiogram import Bot
-from aiogram.types import Message, ReplyKeyboardRemove, CallbackQuery
+from aiogram.types import Message, ReplyKeyboardRemove
 from aiogram.fsm.context import FSMContext
 
 from bot.main import bot, cache_resources_file_id_store
@@ -9,7 +9,7 @@ from bot.handlers.routers import custom_bot_editing_router
 from bot.utils.send_instructions import send_instructions
 from bot.keyboards.main_menu_keyboards import ReplyBotMenuKeyboard, InlineBotMenuKeyboard, ReplyBackBotMenuKeyboard
 
-from custom_bots.multibot import bot_db, product_db
+from custom_bots.multibot import bot_db
 
 from logs.config import logger
 
