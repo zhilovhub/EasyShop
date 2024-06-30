@@ -13,20 +13,27 @@ from bot.handlers.routers import post_message_router
 from bot.enums.post_message_type import PostMessageType
 from bot.keyboards.channel_keyboards import InlineChannelMenuKeyboard
 from bot.keyboards.main_menu_keyboards import InlineBotMenuKeyboard, ReplyBotMenuKeyboard
-from bot.post_message.post_message_utils import is_post_message_valid, get_post_message
+from bot.post_message.post_message_utils import is_post_message_valid
 from bot.keyboards.post_message_keyboards import InlinePostMessageStartConfirmKeyboard, InlinePostMessageMenuKeyboard, \
     InlinePostMessageExtraSettingsKeyboard, InlinePostMessageAcceptDeletingKeyboard, UnknownPostMessageType
 from bot.post_message.post_message_editors import edit_delay_date, edit_message, edit_button_text, edit_button_url, \
     edit_media_files, send_post_message, PostActionType
 from bot.handlers.mailing_settings_handlers import send_post_messages
+from bot.post_message.post_message_decorators import check_callback_conflicts
 from bot.post_message.post_message_callback_handler import post_message_handler
 
-from database.models.post_message_model import PostMessageNotFound, PostMessageSchema
+from database.models.post_message_model import PostMessageSchema
 
 
 @post_message_router.callback_query(lambda query: InlinePostMessageMenuKeyboard.callback_validator(query.data))
-async def post_message_menu_callback_handler(query: CallbackQuery, state: FSMContext):
-    await post_message_handler(query, state)
+@check_callback_conflicts
+async def post_message_menu_callback_handler(
+        query: CallbackQuery,
+        state: FSMContext,
+        callback_data: InlinePostMessageMenuKeyboard.Callback,
+        post_message: PostMessageSchema
+):
+    await post_message_handler(query, state, callback_data, post_message)
 
 
 @post_message_router.message(StateFilter(
@@ -64,29 +71,14 @@ async def editing_post_message_handler(message: Message, state: FSMContext):
 @post_message_router.callback_query(
     lambda query: InlinePostMessageExtraSettingsKeyboard.callback_validator(query.data)
 )
-async def post_message_extra_settings_callback_handler(query: CallbackQuery):
-    callback_data = InlinePostMessageExtraSettingsKeyboard.Callback.model_validate_json(query.data)
-
-    user_id = query.from_user.id
+@check_callback_conflicts
+async def post_message_extra_settings_callback_handler(
+        query: CallbackQuery,
+        callback_data: InlinePostMessageExtraSettingsKeyboard.Callback,
+        post_message: PostMessageSchema
+):
     bot_id = callback_data.bot_id
-    post_message_id = callback_data.post_message_id
     post_message_type = callback_data.post_message_type
-
-    try:
-        post_message = await get_post_message(query, user_id, bot_id, post_message_id, post_message_type)
-    except PostMessageNotFound:
-        return
-
-    custom_bot = await bot_db.get_bot(bot_id)
-    custom_bot_username = (await Bot(custom_bot.token).get_me()).username
-
-    if await _mailing_already_started(
-            query,
-            callback_data.a != callback_data.ActionEnum.BACK_TO_POST_MESSAGE_MENU,
-            post_message,
-            custom_bot_username
-    ):
-        return
 
     match callback_data.a:
         case callback_data.ActionEnum.LINK_PREVIEW:
@@ -115,29 +107,14 @@ async def post_message_extra_settings_callback_handler(query: CallbackQuery):
 @post_message_router.callback_query(
     lambda query: InlinePostMessageStartConfirmKeyboard.callback_validator(query.data)
 )
-async def post_message_confirm_start_callback_handler(query: CallbackQuery):
-    callback_data = InlinePostMessageStartConfirmKeyboard.Callback.model_validate_json(query.data)
-
-    user_id = query.from_user.id
+@check_callback_conflicts
+async def post_message_confirm_start_callback_handler(
+        query: CallbackQuery,
+        callback_data: InlinePostMessageStartConfirmKeyboard.Callback,
+        post_message: PostMessageSchema
+):
     bot_id = callback_data.bot_id
-    post_message_id = callback_data.post_message_id
     post_message_type = callback_data.post_message_type
-
-    try:
-        post_message = await get_post_message(query, user_id, bot_id, post_message_id, post_message_type)
-    except PostMessageNotFound:
-        return
-
-    custom_bot = await bot_db.get_bot(bot_id)
-    custom_bot_username = (await Bot(custom_bot.token).get_me()).username
-
-    if await _mailing_already_started(
-            query,
-            callback_data.a != callback_data.ActionEnum.BACK_TO_POST_MESSAGE_MENU,
-            post_message,
-            custom_bot_username
-    ):
-        return
 
     match callback_data.a:
         case callback_data.ActionEnum.START_CONFIRM:
@@ -159,29 +136,14 @@ async def post_message_confirm_start_callback_handler(query: CallbackQuery):
 @post_message_router.callback_query(
     lambda query: InlinePostMessageAcceptDeletingKeyboard.callback_validator(query.data)
 )
-async def post_message_accept_deleting_callback_handler(query: CallbackQuery):
-    callback_data = InlinePostMessageAcceptDeletingKeyboard.Callback.model_validate_json(query.data)
-
-    user_id = query.from_user.id
+@check_callback_conflicts
+async def post_message_accept_deleting_callback_handler(
+        query: CallbackQuery,
+        callback_data: InlinePostMessageAcceptDeletingKeyboard.Callback,
+        post_message: PostMessageSchema
+):
     bot_id = callback_data.bot_id
-    post_message_id = callback_data.post_message_id
     post_message_type = callback_data.post_message_type
-
-    try:
-        post_message = await get_post_message(query, user_id, bot_id, post_message_id, post_message_type)
-    except PostMessageNotFound:
-        return
-
-    custom_bot = await bot_db.get_bot(bot_id)
-    custom_bot_username = (await Bot(custom_bot.token).get_me()).username
-
-    if await _mailing_already_started(
-            query,
-            callback_data.a != callback_data.ActionEnum.BACK_TO_POST_MESSAGE_MENU,
-            post_message,
-            custom_bot_username
-    ):
-        return
 
     match callback_data.a:
         case callback_data.ActionEnum.ACCEPT_DELETE:
@@ -225,17 +187,6 @@ async def _start_confirm(
             case PostMessageType.MAILING:
                 custom_bot_username = (await Bot(custom_bot.token).get_me()).username
 
-                await query.message.answer(
-                    f"Рассылка начнется в {post_message.send_date}" if post_message.is_delayed else "Рассылка началась"
-                )
-                await query.message.edit_text(
-                    text=MessageTexts.BOT_MAILING_MENU_WHILE_RUNNING.value.format(custom_bot_username),
-                    reply_markup=await InlinePostMessageMenuKeyboard.get_keyboard(
-                        post_message.bot_id, post_message_type, channel_id
-                    ),
-                    parse_mode=ParseMode.HTML
-                )
-
                 if not post_message.is_delayed:
                     await post_message_db.update_post_message(post_message)
                     await send_post_messages(
@@ -243,6 +194,18 @@ async def _start_confirm(
                         post_message,
                         media_files,
                         query.from_user.id
+                    )
+
+                    await query.message.answer(
+                        f"Рассылка начнется в {post_message.send_date}"
+                        if post_message.is_delayed else "Рассылка началась"
+                    )
+                    await query.message.edit_text(
+                        text=MessageTexts.BOT_MAILING_MENU_WHILE_RUNNING.value.format(custom_bot_username),
+                        reply_markup=await InlinePostMessageMenuKeyboard.get_keyboard(
+                            post_message.bot_id, post_message_type, channel_id
+                        ),
+                        parse_mode=ParseMode.HTML
                     )
                 else:
                     job_id = await _scheduler.add_scheduled_job(
@@ -254,17 +217,6 @@ async def _start_confirm(
             case PostMessageType.CHANNEL_POST:
                 channel_username = (await Bot(custom_bot.token).get_chat(channel_id)).username
 
-                await query.message.answer(
-                    f"Запись отправится в {post_message.send_date}" if post_message.is_delayed else "Запись отправлена!"
-                )
-                await query.message.edit_text(
-                    text=MessageTexts.BOT_CHANNEL_POST_MENU_WHILE_RUNNING.value.format(channel_username),
-                    reply_markup=await InlinePostMessageMenuKeyboard.get_keyboard(
-                        post_message.bot_id, post_message_type, channel_id
-                    ),
-                    parse_mode=ParseMode.HTML
-                )
-
                 if not post_message.is_delayed:
                     await post_message_db.update_post_message(post_message)
                     await send_post_message(
@@ -273,6 +225,18 @@ async def _start_confirm(
                         post_message,
                         media_files,
                         PostActionType.RELEASE
+                    )
+
+                    await query.message.answer(
+                        f"Запись отправится в {post_message.send_date}"
+                        if post_message.is_delayed else "Запись отправлена!"
+                    )
+                    await query.message.edit_text(
+                        text=MessageTexts.BOT_CHANNEL_POST_MENU_WHILE_RUNNING.value.format(channel_username),
+                        reply_markup=await InlinePostMessageMenuKeyboard.get_keyboard(
+                            post_message.bot_id, post_message_type, channel_id
+                        ),
+                        parse_mode=ParseMode.HTML
                     )
                 else:
                     job_id = await _scheduler.add_scheduled_job(
@@ -377,28 +341,6 @@ async def _notification_sound(
             channel_id
         )
     )
-
-
-async def _mailing_already_started(
-        query: CallbackQuery,
-        is_callback_data_back: bool,
-        post_message: PostMessageSchema,
-        custom_bot_username: str
-) -> bool:
-    if is_callback_data_back and post_message.is_running:
-        await query.answer("Рассылка уже запущена", show_alert=True)
-        await query.message.edit_text(
-            text=MessageTexts.BOT_MAILING_MENU_WHILE_RUNNING.value.format(custom_bot_username),
-            reply_markup=await InlinePostMessageMenuKeyboard.get_keyboard(
-                post_message.bot_id,
-                PostMessageType.MAILING,
-                channel_id=None
-            ),
-            parse_mode=ParseMode.HTML
-        )
-        return True
-
-    return False
 
 
 async def _inline_back_to_post_message_menu(

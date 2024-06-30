@@ -147,7 +147,7 @@ class InlinePostMessageMenuKeyboard:
     class Callback(BaseModel):
         class ActionEnum(Enum):
             REMOVE_DELAY = "r"
-            DELAY = "d"
+            DELAY = "dy"
 
             BUTTON_ADD = "ba"
             BUTTON_URL = "bu"
@@ -219,6 +219,14 @@ class InlinePostMessageMenuKeyboard:
         post_message = await get_bot_post_message(bot_id, post_message_type)
         post_message_id = post_message.post_message_id
 
+        match post_message_type:
+            case PostMessageType.MAILING:
+                delete_button_text = "🗑 Удалить рассылку"
+            case PostMessageType.CHANNEL_POST:
+                delete_button_text = "🗑 Удалить запись"
+            case _:
+                raise UnknownPostMessageType
+
         if post_message.is_delayed:
             delay_btn = InlineKeyboardButton(
                 text="Убрать откладывание",
@@ -234,27 +242,34 @@ class InlinePostMessageMenuKeyboard:
                 )
             )
 
-        if post_message_type == PostMessageType.MAILING and post_message.is_running:
-            return InlineKeyboardMarkup(
-                inline_keyboard=[
-                    [
-                        InlineKeyboardButton(
-                            text="Статистика",
-                            callback_data=InlinePostMessageMenuKeyboard.callback_json(
-                                actions.STATISTICS, bot_id, post_message_id, post_message_type
-                            )
-                        )
-                    ],
-                    [
-                        InlineKeyboardButton(
-                            text="Отменить",
-                            callback_data=InlinePostMessageMenuKeyboard.callback_json(
-                                actions.CANCEL, bot_id, post_message_id, post_message_type
-                            )
-                        )
-                    ]
-                ]
+        if post_message.is_running:
+            cancel_button = InlineKeyboardButton(
+                text="Отменить",
+                callback_data=InlinePostMessageMenuKeyboard.callback_json(
+                    actions.CANCEL, bot_id, post_message_id, post_message_type, channel_id
+                )
             )
+            match post_message_type:
+                case PostMessageType.MAILING:
+                    statistic_button = InlineKeyboardButton(
+                        text="Статистика",
+                        callback_data=InlinePostMessageMenuKeyboard.callback_json(
+                            actions.STATISTICS, bot_id, post_message_id, post_message_type
+                        )
+                    )
+                    return InlineKeyboardMarkup(
+                        inline_keyboard=[
+                            [statistic_button], [cancel_button]
+                        ]
+                    )
+                case PostMessageType.CHANNEL_POST:
+                    return InlineKeyboardMarkup(
+                        inline_keyboard=[
+                            [cancel_button]
+                        ]
+                    )
+                case _:
+                    raise UnknownPostMessageType
         else:
             if post_message.has_button:
                 button_buttons = [
@@ -340,7 +355,7 @@ class InlinePostMessageMenuKeyboard:
                         )
                     ),
                     InlineKeyboardButton(
-                        text="Удалить рассылку",
+                        text=delete_button_text,
                         callback_data=InlinePostMessageMenuKeyboard.callback_json(
                             actions.DELETE_POST_MESSAGE, bot_id, post_message_id, post_message_type, channel_id
                         )

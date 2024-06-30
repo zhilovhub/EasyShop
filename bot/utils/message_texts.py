@@ -105,14 +105,6 @@ class MessageTexts(Enum):
                        "чтобы убедиться в правильности составленного сообщения"
 
     @staticmethod
-    def bot_post_already_done_message(post_message_type: PostMessageType) -> str:
-        match post_message_type:
-            case PostMessageType.MAILING:
-                return "Рассылка уже завершена или удалена"
-            case PostMessageType.CHANNEL_POST:
-                return "Запись уже выложена или удалена"
-
-    @staticmethod
     def bot_post_already_started_message(post_message_type: PostMessageType) -> str:
         match post_message_type:
             case PostMessageType.MAILING:
