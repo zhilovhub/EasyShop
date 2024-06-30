@@ -10,32 +10,15 @@ from bot.states import States
 from bot.enums.post_message_type import PostMessageType
 from bot.keyboards.channel_keyboards import InlineChannelMenuKeyboard
 from bot.keyboards.main_menu_keyboards import ReplyBotMenuKeyboard, InlineBotMenuKeyboard
-from bot.post_message.post_message_utils import is_post_message_valid, get_post_message
+from bot.post_message.post_message_utils import is_post_message_valid
 from bot.keyboards.post_message_keyboards import InlinePostMessageMenuKeyboard, ReplyBackPostMessageMenuKeyboard, \
     ReplyConfirmMediaFilesKeyboard, InlinePostMessageAcceptDeletingKeyboard, InlinePostMessageExtraSettingsKeyboard, \
     InlinePostMessageStartConfirmKeyboard, UnknownPostMessageType
 from bot.post_message.post_message_editors import send_post_message, PostActionType
 
-from database.models.post_message_model import PostMessageSchema, PostMessageNotFound
+from database.models.post_message_model import PostMessageSchema
 
 from logs.config import extra_params, logger
-
-
-async def _post_message_mailing(
-        query: CallbackQuery,
-        callback_data: InlinePostMessageMenuKeyboard.Callback,
-        bot_id: int,
-        post_message: PostMessageSchema,
-):
-    match callback_data.a:
-        # RUNNING ACTIONS
-        case callback_data.ActionEnum.STATISTICS:
-            custom_users_length = len(await custom_bot_user_db.get_custom_bot_users(bot_id=bot_id))
-
-            await query.answer(
-                text=f"Отправлено {post_message.sent_post_message_amount}/{custom_users_length} сообщений",
-                show_alert=True
-            )
 
 
 async def _cancel_send(
@@ -115,7 +98,7 @@ async def _button_add(
     media_files = await post_message_media_file_db.get_all_post_message_media_files(post_message.post_message_id)
 
     if post_message.has_button:
-        await query.answer(MessageTexts.bot_post_already_done_message(post_message_type), show_alert=True)
+        await query.answer(MessageTexts.bot_post_button_already_exists_message(post_message_type), show_alert=True)
         await query.message.edit_text(
             text=MessageTexts.bot_post_message_menu_message(post_message_type).format(username),
             reply_markup=await InlinePostMessageMenuKeyboard.get_keyboard(
@@ -510,6 +493,23 @@ async def _back(
             raise UnknownPostMessageType
 
 
+async def _post_message_mailing(
+        query: CallbackQuery,
+        callback_data: InlinePostMessageMenuKeyboard.Callback,
+        bot_id: int,
+        post_message: PostMessageSchema,
+):
+    match callback_data.a:
+        # RUNNING ACTIONS
+        case callback_data.ActionEnum.STATISTICS:
+            custom_users_length = len(await custom_bot_user_db.get_custom_bot_users(bot_id=bot_id))
+
+            await query.answer(
+                text=f"Отправлено {post_message.sent_post_message_amount}/{custom_users_length} сообщений",
+                show_alert=True
+            )
+
+
 async def _post_message_union(
         query: CallbackQuery,
         state: FSMContext,
@@ -640,45 +640,15 @@ async def _post_message_union(
             )
 
 
-async def post_message_handler(query: CallbackQuery, state: FSMContext):
-    callback_data = InlinePostMessageMenuKeyboard.Callback.model_validate_json(query.data)
-
+async def post_message_handler(
+        query: CallbackQuery,
+        state: FSMContext,
+        callback_data: InlinePostMessageMenuKeyboard.Callback,
+        post_message: PostMessageSchema
+):
     post_message_type = callback_data.post_message_type
     user_id = query.from_user.id
-    post_message_id = callback_data.post_message_id
-    bot_id = callback_data.bot_id
-
-    try:
-        post_message = await get_post_message(query, user_id, bot_id, post_message_id, post_message_type)
-    except PostMessageNotFound:
-        return
-
-    custom_bot_token = (await bot_db.get_bot(bot_id)).token
-    match post_message_type:
-        case PostMessageType.MAILING:
-            username = (await Bot(custom_bot_token).get_me()).username
-        case PostMessageType.CHANNEL_POST:
-            username = (await Bot(custom_bot_token).get_chat(callback_data.channel_id)).username
-        case _:
-            raise UnknownPostMessageType
-
-    if callback_data.a not in (
-            callback_data.ActionEnum.STATISTICS,
-            callback_data.ActionEnum.CANCEL,
-            callback_data.ActionEnum.BACK
-    ) and post_message.is_running:
-        await query.answer(MessageTexts.bot_post_already_started_message(post_message_type), show_alert=True)
-        await query.message.edit_text(
-            text=MessageTexts.BOT_MAILING_MENU_WHILE_RUNNING.value.format(username),
-            reply_markup=await InlinePostMessageMenuKeyboard.get_keyboard(
-                bot_id,
-                post_message_type,
-                channel_id=callback_data.channel_id if post_message_type == PostMessageType.CHANNEL_POST else None
-
-            ),
-            parse_mode=ParseMode.HTML
-        )
-        return
+    bot_id = post_message.bot_id
 
     match post_message_type:
         case PostMessageType.MAILING:  # specific buttons for mailing

@@ -480,7 +480,7 @@ async def bot_menu_handler(message: Message, state: FSMContext):
     custom_bot = await bot_db.get_bot(state_data['bot_id'])
 
     match message.text:
-        case ReplyBotMenuKeyboard.Callback.ActionEnum.SHOP.value:
+        case ReplyBotMenuKeyboard.Callback.ActionEnum.SETTINGS.value:
             await message.answer(
                 MessageTexts.BOT_MENU_MESSAGE.value.format((await Bot(custom_bot.token).get_me()).username),
                 reply_markup=await InlineBotMenuKeyboard.get_keyboard(custom_bot.bot_id)

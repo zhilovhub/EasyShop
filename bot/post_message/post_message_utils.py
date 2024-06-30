@@ -46,7 +46,6 @@ async def get_post_message(
             f"user_id={user_id}: tried to edit post_message_id={post_message_id} but it doesn't exist",
             extra=extra_params(user_id=user_id, bot_idf=bot_id, post_message_id=post_message_id)
         )
-        await query.message.delete()
 
         match post_message_type:
             case PostMessageType.MAILING:
@@ -55,5 +54,7 @@ async def get_post_message(
                 await query.answer("Запись в канал уже отправлена или удалена", show_alert=True)
             case _:
                 raise UnknownPostMessageType
+
+        await query.message.delete()
 
         raise e
