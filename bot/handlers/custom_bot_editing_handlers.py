@@ -128,10 +128,3 @@ async def delete_bot_handler(message: Message, state: FSMContext):
 
         case _:
             await message.answer("Напишите ПОДТВЕРДИТЬ для подтверждения удаления или вернитесь назад")
-
-
-@custom_bot_editing_router.callback_query(lambda q: q.data.startswith('product:delete'))
-async def delete_product_handler(query: CallbackQuery):
-    product_id = int(query.data.split("_")[-1])
-    await product_db.delete_product(product_id)
-    await query.message.delete()
