@@ -243,33 +243,26 @@ class InlinePostMessageMenuKeyboard:
             )
 
         if post_message.is_running:
-            cancel_button = InlineKeyboardButton(
-                text="Отменить",
-                callback_data=InlinePostMessageMenuKeyboard.callback_json(
-                    actions.CANCEL, bot_id, post_message_id, post_message_type, channel_id
-                )
-            )
-            match post_message_type:
-                case PostMessageType.MAILING:
-                    statistic_button = InlineKeyboardButton(
-                        text="Статистика",
-                        callback_data=InlinePostMessageMenuKeyboard.callback_json(
-                            actions.STATISTICS, bot_id, post_message_id, post_message_type
+            return InlineKeyboardMarkup(
+                inline_keyboard=[
+                    [
+                        InlineKeyboardButton(
+                            text="Статистика",
+                            callback_data=InlinePostMessageMenuKeyboard.callback_json(
+                                actions.STATISTICS, bot_id, post_message_id, post_message_type
+                            )
                         )
-                    )
-                    return InlineKeyboardMarkup(
-                        inline_keyboard=[
-                            [statistic_button], [cancel_button]
-                        ]
-                    )
-                case PostMessageType.CHANNEL_POST:
-                    return InlineKeyboardMarkup(
-                        inline_keyboard=[
-                            [cancel_button]
-                        ]
-                    )
-                case _:
-                    raise UnknownPostMessageType
+                    ],
+                    [
+                        InlineKeyboardButton(
+                            text="Отменить",
+                            callback_data=InlinePostMessageMenuKeyboard.callback_json(
+                                actions.CANCEL, bot_id, post_message_id, post_message_type, channel_id
+                            )
+                        )
+                    ]
+                ]
+            )
         else:
             if post_message.has_button:
                 button_buttons = [

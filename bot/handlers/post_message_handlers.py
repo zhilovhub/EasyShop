@@ -182,10 +182,10 @@ async def _start_confirm(
 
         post_message.is_running = True
         custom_bot = await bot_db.get_bot(post_message.bot_id)
+        custom_bot_username = (await Bot(custom_bot.token).get_me()).username
 
         match post_message_type:
             case PostMessageType.MAILING:
-                custom_bot_username = (await Bot(custom_bot.token).get_me()).username
 
                 if not post_message.is_delayed:
                     await post_message_db.update_post_message(post_message)
@@ -218,7 +218,6 @@ async def _start_confirm(
                 channel_username = (await Bot(custom_bot.token).get_chat(channel_id)).username
 
                 if not post_message.is_delayed:
-                    await post_message_db.update_post_message(post_message)
                     await send_post_message(
                         Bot(custom_bot.token),
                         channel_id,
@@ -226,15 +225,16 @@ async def _start_confirm(
                         media_files,
                         PostActionType.RELEASE
                     )
+                    await post_message_db.delete_post_message(post_message.post_message_id)
 
                     await query.message.answer(
                         f"Запись отправится в {post_message.send_date}"
                         if post_message.is_delayed else "Запись отправлена!"
                     )
                     await query.message.edit_text(
-                        text=MessageTexts.BOT_CHANNEL_POST_MENU_WHILE_RUNNING.value.format(channel_username),
-                        reply_markup=await InlinePostMessageMenuKeyboard.get_keyboard(
-                            post_message.bot_id, post_message_type, channel_id
+                        text=MessageTexts.BOT_CHANNEL_MENU_MESSAGE.value.format(channel_username, custom_bot_username),
+                        reply_markup=await InlineChannelMenuKeyboard.get_keyboard(
+                            post_message.bot_id, channel_id
                         ),
                         parse_mode=ParseMode.HTML
                     )
