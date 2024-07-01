@@ -1,9 +1,7 @@
-import datetime
-
 from pydantic import BaseModel, Field, validate_call, ConfigDict
 
 from sqlalchemy import BigInteger, Column, ForeignKey, UniqueConstraint, \
-    select, insert, delete, BOOLEAN, DATETIME, update
+    select, insert, delete, BOOLEAN, update
 from sqlalchemy.ext.asyncio import AsyncEngine
 
 from bot.exceptions import InvalidParameterFormat
@@ -28,9 +26,6 @@ class Channel(Base):
     # import because everyone can add bots. So now let our admins know only about their channels
     added_by_admin = Column(BOOLEAN, nullable=False)
 
-    is_ad_post_block = Column(BOOLEAN, default=False)
-    ad_post_block_until = Column(DATETIME, default=None)
-
     __table_args__ = (
         UniqueConstraint('channel_id', 'bot_id', name='unique_channel_bot'),
     )
@@ -43,9 +38,6 @@ class ChannelSchema(BaseModel):
     bot_id: int = Field(frozen=True)
 
     added_by_admin: bool
-
-    is_ad_post_block: bool = False
-    ad_post_block_until: datetime.datetime | None = None
 
 
 class ChannelDao(Dao):  # TODO write tests
