@@ -483,7 +483,9 @@ async def _back(
                 parse_mode=ParseMode.HTML
             )
         case PostMessageType.CHANNEL_POST:
-            username = (await Bot(query.bot.token).get_chat(channel_id)).username
+            custom_bot = await bot_db.get_bot(bot_id)
+
+            username = (await Bot(custom_bot.token).get_chat(channel_id)).username
             await query.message.edit_text(
                 MessageTexts.BOT_CHANNEL_MENU_MESSAGE.value.format(username, custom_bot_username),
                 reply_markup=await InlineChannelMenuKeyboard.get_keyboard(bot_id, channel_id),
