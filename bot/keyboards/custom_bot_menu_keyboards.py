@@ -11,7 +11,6 @@ class ReplyCustomBotMenuKeyboard:
     class Callback(BaseModel):
         class ActionEnum(Enum):
             SHOP = "🛍 Открыть магазин"
-            PARTNER_SHIP = "🤝 Партнёрство"
 
         model_config = ConfigDict(from_attributes=True, populate_by_name=True)
 
@@ -29,10 +28,5 @@ class ReplyCustomBotMenuKeyboard:
                         text=actions.SHOP.value,
                         web_app=make_webapp_info(bot_id))
                 ],
-                [
-                    KeyboardButton(
-                        text=actions.PARTNER_SHIP.value,
-                    )
-                ]
             ], resize_keyboard=True, one_time_keyboard=False
         )
