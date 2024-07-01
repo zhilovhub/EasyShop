@@ -88,7 +88,7 @@ async def on_start():
 
     logger.info("onStart finished. Bot online")
 
-    await send_start_message_to_admins(bot=bot, admins=config.ADMINS, msg_text="Main Bot started!")
+    await send_start_message_to_admins(bot=bot, admins=config.TECH_ADMINS, msg_text="Main Bot started!")
 
     await dp.start_polling(bot)
 

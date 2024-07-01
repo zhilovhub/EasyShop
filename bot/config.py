@@ -10,6 +10,7 @@ RESOURCES_PATH = os.getenv("PROJECT_ROOT") + "resources/{}"
 # Telegram bot variables
 TELEGRAM_TOKEN = os.getenv("TELEGRAM_TOKEN")
 ADMINS = [int(uid.strip()) for uid in os.getenv("ADMINS").split(',')]
+TECH_ADMINS = [int(uid.strip()) for uid in os.getenv("TECH_ADMINS").split(',')]
 ADMIN_GROUP_ID = os.getenv("ADMIN_GROUP_ID")
 
 # Database variables

@@ -246,7 +246,7 @@ async def main():
             access_log=custom_bot_logger,
             print=custom_bot_logger.debug
         ),
-        send_start_message_to_admins(Bot(MAIN_TELEGRAM_TOKEN), config.ADMINS, "Custom bots started!")
+        send_start_message_to_admins(Bot(MAIN_TELEGRAM_TOKEN), config.TECH_ADMINS, "Custom bots started!")
     )
 
 
