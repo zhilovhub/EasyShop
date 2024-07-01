@@ -21,7 +21,7 @@ class ChannelNotFound(Exception):
 class Channel(Base):
     __tablename__ = "channels"
     channel_id = Column(BigInteger, primary_key=True, unique=True)
-    bot_id = Column(ForeignKey(Bot.bot_id, ondelete="CASCADE"))
+    bot_id = Column(ForeignKey(Bot.bot_id, ondelete="CASCADE"), nullable=False)
 
     # import because everyone can add bots. So now let our admins know only about their channels
     added_by_admin = Column(BOOLEAN, nullable=False)
