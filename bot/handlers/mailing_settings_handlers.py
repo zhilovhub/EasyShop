@@ -1,11 +1,12 @@
-from utils.message_texts import MessageTexts
 import asyncio
 
 from aiogram.enums import ParseMode
 from aiogram.exceptions import TelegramForbiddenError
 from aiogram.client.bot import DefaultBotProperties, Bot
 
+from bot.utils.message_texts import MessageTexts
 from bot.enums.post_message_type import PostMessageType
+from bot.utils.excel_utils import send_ban_users_xlsx
 from bot.main import bot, custom_bot_user_db, post_message_db
 from bot.post_message.post_message_editors import PostActionType, send_post_message
 
@@ -56,7 +57,8 @@ async def send_post_messages(custom_bot, post_message, media_files, chat_id):
         # 20 messages per second (limit is 30)
         await asyncio.sleep(.05)
 
-    pass  # Generate xlsx file
+    # Generate xlsx file
+    await send_ban_users_xlsx(banned_users_list, post_message.bot_id)
 
     pass  # Remove banned users from db
 
