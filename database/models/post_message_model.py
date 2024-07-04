@@ -123,8 +123,7 @@ class PostMessageDao(Dao):  # TODO write tests
 
         self.logger.debug(
             f"bot_id={res.bot_id}: post_message {res.post_message_id} is found",
-            extra=extra_params(
-                post_message_id=post_message_id, bot_id=res.bot_id)
+            extra=extra_params(post_message_id=post_message_id, bot_id=res.bot_id)
         )
 
         return res
@@ -149,8 +148,7 @@ class PostMessageDao(Dao):  # TODO write tests
 
         self.logger.debug(
             f"bot_id={res.bot_id}: post_message {res.post_message_id} is found",
-            extra=extra_params(
-                post_message_id=res.post_message_id, bot_id=bot_id)
+            extra=extra_params(post_message_id=res.post_message_id, bot_id=bot_id)
         )
 
         return res
@@ -158,8 +156,7 @@ class PostMessageDao(Dao):  # TODO write tests
     @validate_call
     async def add_post_message(self, new_post_message: PostMessageSchemaWithoutId) -> int:
         if type(new_post_message) != PostMessageSchemaWithoutId:
-            raise InvalidParameterFormat(
-                "new_post_message must be type of PostMessageSchema")
+            raise InvalidParameterFormat("new_post_message must be type of PostMessageSchema")
 
         async with self.engine.begin() as conn:
             post_message_id = (
@@ -168,8 +165,7 @@ class PostMessageDao(Dao):  # TODO write tests
 
         self.logger.debug(
             f"bot_id={new_post_message.bot_id}: post_message_id {post_message_id} is added",
-            extra=extra_params(post_message_id=post_message_id,
-                               bot_id=new_post_message.bot_id)
+            extra=extra_params(post_message_id=post_message_id, bot_id=new_post_message.bot_id)
         )
 
         return post_message_id
@@ -185,15 +181,13 @@ class PostMessageDao(Dao):  # TODO write tests
 
         self.logger.debug(
             f"bot_id={updated_post_message.bot_id}: post_message {updated_post_message.post_message_id} is updated",
-            extra=extra_params(
-                post_message_id=updated_post_message.post_message_id, bot_id=updated_post_message.bot_id)
+            extra=extra_params(post_message_id=updated_post_message.post_message_id, bot_id=updated_post_message.bot_id)
         )
 
     @validate_call
     async def delete_post_message(self, post_message_id: int) -> None:
         if type(post_message_id) != int:
-            raise InvalidParameterFormat(
-                "new_post_message must be type of int")
+            raise InvalidParameterFormat("new_post_message must be type of int")
 
         async with self.engine.begin() as conn:
             await conn.execute(

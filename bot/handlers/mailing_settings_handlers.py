@@ -1,13 +1,14 @@
+from logs.config import extra_params
 import asyncio
 
 from aiogram.enums import ParseMode
 from aiogram.exceptions import TelegramForbiddenError
 from aiogram.client.bot import DefaultBotProperties, Bot
 
+from bot.main import bot, custom_bot_user_db, post_message_db
+from bot.utils.excel_utils import send_ban_users_xlsx
 from bot.utils.message_texts import MessageTexts
 from bot.enums.post_message_type import PostMessageType
-from bot.utils.excel_utils import send_ban_users_xlsx
-from bot.main import bot, custom_bot_user_db, post_message_db
 from bot.post_message.post_message_editors import PostActionType, send_post_message
 
 from logs.config import logger
@@ -51,7 +52,8 @@ async def send_post_messages(custom_bot, post_message, media_files, chat_id):
             banned_users_list.append(user.user_id)
             logger.info(
                 f"post_message with post_message_id {post_message_id}"
-                f"user with user_id {user.user_id} banned bot {post_message.bot_id}"
+                f"user with user_id {user.user_id} banned bot {post_message.bot_id}",
+                extra=extra_params(post_message_id=post_message_id, user_id=user.user_id, bot_id=post_message.bot_id)
             )
 
         # 20 messages per second (limit is 30)
@@ -67,7 +69,6 @@ async def send_post_messages(custom_bot, post_message, media_files, chat_id):
     await bot.send_message(
         chat_id,
         MessageTexts.show_mailing_info(
-            post_message_type=PostMessageType.MAILING,
             sent_post_message_amount=post_message.sent_post_message_amount,
             custom_bot_users_len=len(all_custom_bot_users),
             banned_amount=post_message.banned_amount

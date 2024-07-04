@@ -57,12 +57,10 @@ async def _cancel_send(
             await query.message.answer(
                 f"Рассылка остановлена\nСообщений разослано - "
                 f"{post_message.sent_post_message_amount}/{custom_users_length}",
-                reply_markup=ReplyBotMenuKeyboard.get_keyboard(
-                    post_message.bot_id)
+                reply_markup=ReplyBotMenuKeyboard.get_keyboard(post_message.bot_id)
             )
             await query.message.edit_text(
-                MessageTexts.BOT_MENU_MESSAGE.value.format(
-                    custom_bot_username),
+                MessageTexts.BOT_MENU_MESSAGE.value.format(custom_bot_username),
                 reply_markup=await InlineBotMenuKeyboard.get_keyboard(post_message.bot_id),
                 parse_mode=ParseMode.HTML
             )
@@ -70,12 +68,10 @@ async def _cancel_send(
             username = (await Bot(custom_bot_token).get_chat(channel_id)).username
             await query.message.answer(
                 f"Отправка записи отменена",
-                reply_markup=ReplyBotMenuKeyboard.get_keyboard(
-                    post_message.bot_id)
+                reply_markup=ReplyBotMenuKeyboard.get_keyboard(post_message.bot_id)
             )
             await query.message.edit_text(
-                MessageTexts.BOT_CHANNEL_MENU_MESSAGE.value.format(
-                    username, custom_bot_username),
+                MessageTexts.BOT_CHANNEL_MENU_MESSAGE.value.format(username, custom_bot_username),
                 reply_markup=await InlineChannelMenuKeyboard.get_keyboard(post_message.bot_id, channel_id),
                 parse_mode=ParseMode.HTML
             )
@@ -104,8 +100,7 @@ async def _button_add(
     if post_message.has_button:
         await query.answer(MessageTexts.bot_post_button_already_exists_message(post_message_type), show_alert=True)
         await query.message.edit_text(
-            text=MessageTexts.bot_post_message_menu_message(
-                post_message_type).format(username),
+            text=MessageTexts.bot_post_message_menu_message(post_message_type).format(username),
             reply_markup=await InlinePostMessageMenuKeyboard.get_keyboard(
                 post_message.bot_id, post_message_type, channel_id
             ),
@@ -131,8 +126,7 @@ async def _button_add(
         )
 
         await query.message.answer(
-            text=MessageTexts.bot_post_message_menu_message(
-                post_message_type).format(username),
+            text=MessageTexts.bot_post_message_menu_message(post_message_type).format(username),
             reply_markup=await InlinePostMessageMenuKeyboard.get_keyboard(
                 post_message.bot_id, post_message_type, channel_id
             )
@@ -237,8 +231,7 @@ async def _button_delete(
                 raise UnknownPostMessageType
 
         await query.message.answer(
-            text=MessageTexts.bot_post_message_menu_message(
-                post_message_type).format(username),
+            text=MessageTexts.bot_post_message_menu_message(post_message_type).format(username),
             reply_markup=await InlinePostMessageMenuKeyboard.get_keyboard(
                 bot_id, post_message_type, channel_id
             )
@@ -327,12 +320,10 @@ async def _start(
         match post_message_type:
             case PostMessageType.MAILING:
                 username = (await Bot(custom_bot_token).get_me()).username
-                text = MessageTexts.BOT_MAILINGS_MENU_ACCEPT_START.value.format(
-                    username)
+                text = MessageTexts.BOT_MAILINGS_MENU_ACCEPT_START.value.format(username)
             case PostMessageType.CHANNEL_POST:
                 username = (await Bot(custom_bot_token).get_chat(channel_id)).username
-                text = MessageTexts.BOT_CHANNEL_POST_MENU_ACCEPT_START.value.format(
-                    username)
+                text = MessageTexts.BOT_CHANNEL_POST_MENU_ACCEPT_START.value.format(username)
             case _:
                 raise UnknownPostMessageType
 
@@ -377,8 +368,7 @@ async def _demo(
             message=query.message
         )
         await query.message.answer(
-            text=MessageTexts.bot_post_message_menu_message(
-                post_message_type).format(username),
+            text=MessageTexts.bot_post_message_menu_message(post_message_type).format(username),
             reply_markup=await InlinePostMessageMenuKeyboard.get_keyboard(
                 bot_id, post_message_type, channel_id
             )
@@ -396,12 +386,10 @@ async def _delete_post_message(
     match post_message_type:
         case PostMessageType.MAILING:
             username = (await Bot(custom_bot_token).get_me()).username
-            text = MessageTexts.BOT_MAILINGS_MENU_ACCEPT_DELETING_MESSAGE.value.format(
-                username)
+            text = MessageTexts.BOT_MAILINGS_MENU_ACCEPT_DELETING_MESSAGE.value.format(username)
         case PostMessageType.CHANNEL_POST:
             username = (await Bot(custom_bot_token).get_chat(channel_id)).username
-            text = MessageTexts.BOT_CHANNEL_POST_MENU_ACCEPT_DELETING_MESSAGE.value.format(
-                username)
+            text = MessageTexts.BOT_CHANNEL_POST_MENU_ACCEPT_DELETING_MESSAGE.value.format(username)
         case _:
             raise UnknownPostMessageType
 
@@ -423,11 +411,10 @@ async def _extra_settings(
         channel_id: int | None
 ):
     await query.message.edit_text(
-        text=query.message.html_text +
-        "\n\n🔎 Что такое <a href=\"https://www.google.com/url?sa=i&url=https%3A"
-        "%2F%2Ftlgrm.ru%2Fblog%2Flink-preview.html&psig=AOvVaw27FhHb7fFrLDNGUX-u"
-        "zG7y&ust=1717771529744000&source=images&cd=vfe&opi=89978449&ved=0CBIQjR"
-        "xqFwoTCJj5puKbx4YDFQAAAAAdAAAAABAE\">предпросмотр ссылок</a>",
+        text=query.message.html_text + "\n\n🔎 Что такое <a href=\"https://www.google.com/url?sa=i&url=https%3A"
+                                       "%2F%2Ftlgrm.ru%2Fblog%2Flink-preview.html&psig=AOvVaw27FhHb7fFrLDNGUX-u"
+                                       "zG7y&ust=1717771529744000&source=images&cd=vfe&opi=89978449&ved=0CBIQjR"
+                                       "xqFwoTCJj5puKbx4YDFQAAAAAdAAAAABAE\">предпросмотр ссылок</a>",
         reply_markup=InlinePostMessageExtraSettingsKeyboard.get_keyboard(
             post_message.bot_id,
             post_message.post_message_id,
@@ -491,8 +478,7 @@ async def _back(
     match post_message_type:
         case PostMessageType.MAILING:
             await query.message.edit_text(
-                MessageTexts.BOT_MENU_MESSAGE.value.format(
-                    custom_bot_username),
+                MessageTexts.BOT_MENU_MESSAGE.value.format(custom_bot_username),
                 reply_markup=await InlineBotMenuKeyboard.get_keyboard(bot_id),
                 parse_mode=ParseMode.HTML
             )
@@ -501,8 +487,7 @@ async def _back(
 
             username = (await Bot(custom_bot.token).get_chat(channel_id)).username
             await query.message.edit_text(
-                MessageTexts.BOT_CHANNEL_MENU_MESSAGE.value.format(
-                    username, custom_bot_username),
+                MessageTexts.BOT_CHANNEL_MENU_MESSAGE.value.format(username, custom_bot_username),
                 reply_markup=await InlineChannelMenuKeyboard.get_keyboard(bot_id, channel_id),
                 parse_mode=ParseMode.HTML
             )
@@ -523,7 +508,6 @@ async def _post_message_mailing(
 
             await query.answer(
                 text=MessageTexts.show_mailing_info(
-                    post_message_type=PostMessageType.MAILING,
                     sent_post_message_amount=post_message.sent_post_message_amount,
                     custom_bot_users_len=custom_users_length,
                     banned_amount=post_message.banned_amount
@@ -713,8 +697,7 @@ async def _inline_no_button(
         text, show_alert=True
     )
     await query.message.edit_text(
-        text=MessageTexts.bot_post_message_menu_message(
-            post_message_type).format(username),
+        text=MessageTexts.bot_post_message_menu_message(post_message_type).format(username),
         reply_markup=await InlinePostMessageMenuKeyboard.get_keyboard(
             bot_id, post_message_type, channel_id
         ),

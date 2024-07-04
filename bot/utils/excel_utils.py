@@ -1,17 +1,15 @@
 from typing import List
 
-import openpyxl
 from openpyxl import Workbook
 
 from io import BytesIO
 
-from bot.main import custom_bot_user_db, bot_db
+from bot.main import bot_db
 from bot.exceptions.exceptions import BotNotFound
-
-from database.models.custom_bot_user_model import CustomBotUser
 
 from custom_bots.multibot import main_bot
 
+from aiogram import Bot
 from aiogram.types import BufferedInputFile
 
 
@@ -37,9 +35,10 @@ async def send_ban_users_xlsx(users_list: List[int], bot_id: int):
         created_by = bot.created_by
     except BotNotFound:
         return
+    custom_bot = Bot(token=bot.token)
     wb_data = []
     for user in users_list:
-        chat = await main_bot.get_chat(user)
+        chat = await custom_bot.get_chat(user)
         username = chat.username
         wb_data.append(
             {"user_id": user, "username": username, }
@@ -51,5 +50,5 @@ async def send_ban_users_xlsx(users_list: List[int], bot_id: int):
     ban_users_file = BufferedInputFile(
         ban_users_buffer.read(), filename="ban_users.xlsx")
     await main_bot.send_document(created_by, document=ban_users_file,
-                                 caption='ban_users.xlsx')
+                                 caption="ban_users.xlsx")
     ban_users_buffer.close()

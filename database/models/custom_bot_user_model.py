@@ -1,8 +1,8 @@
 from pydantic import BaseModel, ConfigDict
 
+from sqlalchemy import BigInteger, Column, ForeignKey, insert, select, update, delete
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncEngine
-from sqlalchemy import BigInteger, Column, ForeignKey, insert, select, update, delete
 
 from bot.exceptions import InvalidParameterFormat, InstanceAlreadyExists
 
@@ -21,8 +21,7 @@ class CustomBotUserNotFound(Exception):
 class CustomBotUser(Base):
     __tablename__ = "custom_bot_users"
 
-    bot_id = Column(ForeignKey(Bot.bot_id, ondelete="CASCADE"),
-                    primary_key=True)
+    bot_id = Column(ForeignKey(Bot.bot_id, ondelete="CASCADE"), primary_key=True)
     user_id = Column(BigInteger, primary_key=True)
     balance = Column(BigInteger, default=0)
 
@@ -39,8 +38,7 @@ class CustomBotUserDao(Dao):
     def __init__(self, engine: AsyncEngine, logger) -> None:
         super().__init__(engine, logger)
 
-    # TODO write tests
-    async def get_custom_bot_user(self, bot_id: int, user_id: int) -> CustomBotUserSchema:
+    async def get_custom_bot_user(self, bot_id: int, user_id: int) -> CustomBotUserSchema:  # TODO write tests
         async with self.engine.begin() as conn:
             raw_res = await conn.execute(select(CustomBotUser).where(
                 CustomBotUser.bot_id == bot_id, CustomBotUser.user_id == user_id)
@@ -49,8 +47,7 @@ class CustomBotUserDao(Dao):
 
         res = raw_res.fetchone()
         if res is None:
-            raise CustomBotUserNotFound(
-                f"user with user_id = {user_id} of bot_id = {bot_id} not found in database")
+            raise CustomBotUserNotFound(f"user with user_id = {user_id} of bot_id = {bot_id} not found in database")
 
         res = CustomBotUserSchema.model_validate(res)
 
@@ -61,8 +58,7 @@ class CustomBotUserDao(Dao):
 
         return res
 
-    # TODO write tests
-    async def get_custom_bot_users(self, bot_id: int) -> list[CustomBotUserSchema]:
+    async def get_custom_bot_users(self, bot_id: int) -> list[CustomBotUserSchema]:  # TODO write tests
         async with self.engine.begin() as conn:
             raw_res = await conn.execute(select(CustomBotUser).where(CustomBotUser.bot_id == bot_id))
         await self.engine.dispose()
@@ -89,15 +85,13 @@ class CustomBotUserDao(Dao):
         self.logger.debug(
             f"user_id={updated_user.user_id}, bot_id={updated_user.bot_id}: "
             f"custom bot user {updated_user.user_id} is updated - {updated_user}",
-            extra=extra_params(user_id=updated_user.user_id,
-                               bot_id=updated_user.bot_id)
+            extra=extra_params(user_id=updated_user.user_id, bot_id=updated_user.bot_id)
         )
 
     # TODO write tests
     async def add_custom_bot_user(self, bot_id: int, user_id: int) -> None:
         if type(bot_id) != int or type(user_id) != int:
-            raise InvalidParameterFormat(
-                "user_id and bot_id must be type of int")
+            raise InvalidParameterFormat("user_id and bot_id must be type of int")
 
         async with self.engine.begin() as conn:
             try:
