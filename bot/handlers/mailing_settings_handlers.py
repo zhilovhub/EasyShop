@@ -60,7 +60,9 @@ async def send_post_messages(custom_bot, post_message, media_files, chat_id):
     # Generate xlsx file
     await send_ban_users_xlsx(banned_users_list, post_message.bot_id)
 
-    pass  # Remove banned users from db
+    # Delete users from custom bot users db
+    for user in banned_users_list:
+        await custom_bot_user_db.delete_custom_bot_user(post_message.bot_id, user)
 
     await bot.send_message(
         chat_id,
