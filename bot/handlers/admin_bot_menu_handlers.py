@@ -282,7 +282,7 @@ async def handle_callback(query: CallbackQuery, state: FSMContext):
                             "⚠️ Внимание, кол-во следующих товаров на складе равно 0.")
                         await msg.reply("\n".join([f"{p.name} [{p.id}]" for p in zero_products]))
 
-            await Bot(bot_token, default=DefaultBotProperties(
+            msg = await Bot(bot_token, default=DefaultBotProperties(
                 parse_mode=ParseMode.HTML)).send_message(
                 chat_id=callback_data.chat_id,
                 text=f"Новый статус заказа <b>#{order.id}</b>\n<b>{order.translate_order_status()}</b>")
@@ -290,6 +290,7 @@ async def handle_callback(query: CallbackQuery, state: FSMContext):
             if callback_data.a == callback_data.ActionEnum.FINISH:
                 await Bot(bot_token, default=DefaultBotProperties(
                     parse_mode=ParseMode.HTML)).send_message(
+                    reply_to_message_id=msg.message_id,
                     chat_id=callback_data.chat_id,
                     text=f"Вы можете оставить отзыв ❤️",
                     reply_markup=InlineCreateReviewKeyboard.get_keyboard(order_id=order.id, chat_id=callback_data.chat_id))

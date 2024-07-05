@@ -12,6 +12,7 @@ from database.models.category_model import CategoryDao
 from database.models.channel_post_model import ChannelPostDao
 from database.models.post_message_model import PostMessageDao
 from database.models.channel_user_model import ChannelUserDao
+from database.models.product_review_model import ProductReviewDao
 from database.models.custom_bot_user_model import CustomBotUserDao
 from database.models.post_message_media_files import PostMessageMediaFileDao
 from database.models import Base  # should be the last import from database.models
@@ -52,6 +53,7 @@ class Database:
         self.channel_post_dao = ChannelPostDao(self.engine, self.logger)
         self.custom_bot_user_dao = CustomBotUserDao(self.engine, self.logger)
         self.post_message_media_file_dao = PostMessageMediaFileDao(self.engine, self.logger)
+        self.product_review_dao = ProductReviewDao(self.engine, self.logger)
 
         self.logger.debug("Database class is initialized")
 
@@ -102,3 +104,6 @@ class Database:
 
     def get_post_message_media_file_dao(self) -> PostMessageMediaFileDao:
         return self.post_message_media_file_dao
+
+    def get_product_review_dao(self) -> ProductReviewDao:
+        return self.product_review_dao

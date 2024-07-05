@@ -1,16 +1,20 @@
 import time
 
-from aiogram.types import CallbackQuery
+from aiogram.types import CallbackQuery, Message
+from aiogram.filters import StateFilter
 from aiogram.fsm.context import FSMContext
 
+from bot.main import product_review_db
+from bot.exceptions.exceptions import BotNotFound
 from bot.keyboards.question_keyboards import ReplyBackQuestionMenuKeyboard
 from bot.keyboards.order_manage_keyboards import InlineOrderCancelKeyboard, \
     InlineOrderCustomBotKeyboard, InlineCreateReviewKeyboard, ReplyGetReviewMarkKeyboard
 
-from custom_bots.multibot import order_db, product_db, main_bot, PREV_ORDER_MSGS, CustomUserStates
+from custom_bots.multibot import order_db, product_db, main_bot, PREV_ORDER_MSGS, CustomUserStates, bot_db
 from custom_bots.handlers.routers import multi_bot_router
 
 from database.models.order_model import OrderStatusValues, OrderNotFound
+from database.models.product_review_model import ProductReviewSchemaWithoutID
 
 from logs.config import custom_bot_logger, extra_params
 
@@ -140,3 +144,70 @@ async def create_order_review(query: CallbackQuery, state: FSMContext):
     match callback_data.a:
         case callback_data.ActionEnum.CREATE_REVIEW:
             await query.message.answer(text="Оцените качество товаров ✔️", reply_markup=ReplyGetReviewMarkKeyboard.get_keyboard())
+            await query.answer()
+            await state.set_state(CustomUserStates.WAITING_FOR_REVIEW_MARK)
+            await state.set_state(
+                {
+                    "order_id": callback_data.order_id,
+                }
+            )
+
+
+@multi_bot_router.message(StateFilter(CustomUserStates.WAITING_FOR_REVIEW_MARK))
+async def get_review_mark(message: Message, state: FSMContext):
+    mark_value = 0
+    state_data = await state.get_data()
+    match message.text:
+        case ReplyGetReviewMarkKeyboard.Callback.ActionEnum.ONE.value:
+            mark_value = 1
+        case ReplyGetReviewMarkKeyboard.Callback.ActionEnum.TWO.value:
+            mark_value = 2
+        case ReplyGetReviewMarkKeyboard.Callback.ActionEnum.THREE.value:
+            mark_value = 3
+        case ReplyGetReviewMarkKeyboard.Callback.ActionEnum.FOUR.value:
+            mark_value = 4
+        case ReplyGetReviewMarkKeyboard.Callback.ActionEnum.FIVE.value:
+            mark_value = 5
+        case _:
+            return await message.answer("Чтобы оставить оценку, нажмите на кнопку ниже 👇")
+
+    await state.set_data(
+        {
+            "mark": mark_value,
+            "order_id": state_data.get("order_id")
+        }
+    )
+    await state.set_state(CustomUserStates.WAITING_FOR_REVIEW_TEXT)
+    await message.answer("Напишите комментарий к вашему отзыву 📨")
+
+
+@multi_bot_router.message(StateFilter(CustomUserStates.WAITING_FOR_REVIEW_TEXT))
+async def get_review_text(message: Message, state: FSMContext):
+    state_data = await state.get_data()
+    mark = state_data.get("mark", 0)
+    order_id = state_data.get("order_id")
+    try:
+        bot = await bot_db.get_bot_by_token(message.bot.token)
+    except BotNotFound:
+        custom_bot_logger.warning(
+            f"bot_token={message.bot.token}: this bot is not in db",
+            extra=extra_params(bot_token=message.bot.token)
+        )
+        return await message.answer("Бот не инициализирован")
+    try:
+        order = await order_db.get_order(order_id)
+    except OrderNotFound:
+        custom_bot_logger.warning(
+            f"user_id={message.from_user.id}: tried to ask the question regarding order by order_id={order_id} is not found",
+            extra=extra_params(user_id=message.from_user.id, order_id=order_id)
+        )
+        await message.answer("Ошибка при работе с заказом, возможно заказ был удалён")
+    await product_review_db.add_product_review(
+        ProductReviewSchemaWithoutID(
+            bot_id=bot.bot_id,
+            product_id=int(order.items.keys()[0]),
+            mark=mark,
+            review_text=message.text
+        )
+    )
+    await message.answer("Спасибо за отзыв")
