@@ -171,7 +171,7 @@ async def get_review_mark(message: Message, state: FSMContext):
 
     await state.set_data({
         "mark": mark_value,
-        "order_id": state_data.get("order_id")
+        "order_id": state_data["order_id"]
     })
     await state.set_state(CustomUserStates.WAITING_FOR_REVIEW_TEXT)
     await message.answer("Напишите комментарий к вашему отзыву 📨")
@@ -180,8 +180,8 @@ async def get_review_mark(message: Message, state: FSMContext):
 @multi_bot_router.message(StateFilter(CustomUserStates.WAITING_FOR_REVIEW_TEXT))
 async def get_review_text(message: Message, state: FSMContext):
     state_data = await state.get_data()
-    mark = state_data.get("mark", 0)
-    order_id = state_data.get("order_id")
+    mark = state_data["mark"]
+    order_id = state_data["order_id"]
     try:
         bot = await bot_db.get_bot_by_token(message.bot.token)
     except BotNotFound:
