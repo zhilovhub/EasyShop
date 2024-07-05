@@ -8,6 +8,7 @@ from database.models.product_model import ProductDao
 from database.models.channel_model import ChannelDao
 from database.models.payment_model import PaymentDao
 from database.models.mailing_model import MailingDao
+from database.models.contest_model import ContestDao
 from database.models.category_model import CategoryDao
 from database.models.channel_post_model import ChannelPostDao
 from database.models.post_message_model import PostMessageDao
@@ -45,6 +46,7 @@ class Database:
         self.order_dao = OrderDao(self.engine, self.logger)
         self.product_dao = ProductDao(self.engine, self.logger)
         self.mailing_dao = MailingDao(self.engine, self.logger)
+        self.contest_dao = ContestDao(self.engine, self.logger)
         self.payment_dao = PaymentDao(self.engine, self.logger)
         self.channel_dao = ChannelDao(self.engine, self.logger)
         self.category_dao = CategoryDao(self.engine, self.logger)
@@ -86,6 +88,9 @@ class Database:
 
     def get_mailing_dao(self) -> MailingDao:
         return self.mailing_dao
+
+    def get_contest_dao(self) -> ContestDao:
+        return self.contest_dao
 
     def get_category_dao(self) -> CategoryDao:
         return self.category_dao

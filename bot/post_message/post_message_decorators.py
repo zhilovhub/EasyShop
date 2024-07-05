@@ -49,10 +49,13 @@ def check_callback_conflicts(func):
             return
 
         custom_bot_token = (await bot_db.get_bot(bot_id)).token
+        print(callback_data)
         match post_message_type:
             case PostMessageType.MAILING:
                 username = (await Bot(custom_bot_token).get_me()).username
             case PostMessageType.CHANNEL_POST:
+                username = (await Bot(custom_bot_token).get_chat(callback_data.channel_id)).username
+            case PostMessageType.CONTEST:
                 username = (await Bot(custom_bot_token).get_chat(callback_data.channel_id)).username
             case _:
                 raise UnknownPostMessageType
@@ -65,7 +68,6 @@ def check_callback_conflicts(func):
                         InlinePostMessageAcceptDeletingKeyboard.Callback.ActionEnum.BACK_TO_POST_MESSAGE_MENU,
                         InlinePostMessageExtraSettingsKeyboard.Callback.ActionEnum.BACK_TO_POST_MESSAGE_MENU,
                         InlinePostMessageStartConfirmKeyboard.Callback.ActionEnum.BACK_TO_POST_MESSAGE_MENU,
-
                 ) and post_message.is_running:
                     await query.answer(
                         MessageTexts.bot_post_already_started_message(post_message_type),
@@ -77,7 +79,7 @@ def check_callback_conflicts(func):
                             bot_id,
                             post_message_type,
                             channel_id=callback_data.channel_id
-                            if post_message_type == PostMessageType.CHANNEL_POST else None
+                            if post_message_type in (PostMessageType.CHANNEL_POST, PostMessageType.CONTEST) else None
                         ),
                         parse_mode=ParseMode.HTML
                     )

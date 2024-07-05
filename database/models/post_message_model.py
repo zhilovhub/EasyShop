@@ -4,7 +4,7 @@ from typing import Optional
 from pydantic import BaseModel, Field, validate_call, ConfigDict
 
 from sqlalchemy import BigInteger, Column, ForeignKey, select, insert, delete, BOOLEAN, String, DateTime, update, \
-    TypeDecorator, Unicode, Dialect
+    TypeDecorator, Unicode, Dialect, and_, or_
 from sqlalchemy.ext.asyncio import AsyncEngine
 
 from bot.enums.post_message_type import PostMessageType
@@ -35,6 +35,8 @@ class PostMessageTypeModel(TypeDecorator):  # noqa
                 return PostMessageType.MAILING
             case PostMessageType.CHANNEL_POST.value:
                 return PostMessageType.CHANNEL_POST
+            case PostMessageType.CONTEST.value:
+                return PostMessageType.CONTEST
 
 
 class PostMessage(Base):
@@ -106,7 +108,7 @@ class PostMessageDao(Dao):  # TODO write tests
     async def get_post_message(self, post_message_id: int) -> PostMessageSchema:
         async with self.engine.begin() as conn:
             raw_res = await conn.execute(
-                select(PostMessage).where(PostMessage.post_message_id == post_message_id, PostMessage.is_sent == False)  # noqa: E712
+                select(PostMessage).where(and_(PostMessage.post_message_id == post_message_id, or_(PostMessage.is_sent == False, and_(PostMessage.is_sent == True, PostMessage.is_running == True))))  # noqa: E712
             )
         await self.engine.dispose()
 
@@ -129,8 +131,7 @@ class PostMessageDao(Dao):  # TODO write tests
             raw_res = await conn.execute(
                 select(PostMessage).where(
                     PostMessage.bot_id == bot_id,
-                    PostMessage.is_sent == False,
-                    PostMessage.post_message_type == post_message_type
+                    and_(PostMessage.post_message_type == post_message_type, or_(PostMessage.is_sent == False, and_(PostMessage.is_sent == True, PostMessage.is_running == True)))
                 )  # noqa: E712
             )
         await self.engine.dispose()

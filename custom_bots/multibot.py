@@ -28,6 +28,7 @@ from database.models.models import Database
 from database.models.bot_model import BotNotFound
 from database.models.user_model import UserDao
 from database.models.channel_model import ChannelDao
+from database.models.contest_model import ContestDao
 from database.models.channel_user_model import ChannelUserDao
 
 from subscription.scheduler import Scheduler
@@ -74,6 +75,7 @@ user_db: UserDao = db_engine.get_user_dao()
 channel_db: ChannelDao = db_engine.get_channel_dao()
 custom_bot_user_db = db_engine.get_custom_bot_user_db()
 channel_user_db: ChannelUserDao = db_engine.get_channel_user_dao()
+contest_db: ContestDao = db_engine.get_contest_dao()
 
 storage = AlchemyStorageAsync(db_url=getenv("CUSTOM_BOT_STORAGE_DB_URL"),
                               table_name=getenv("CUSTOM_BOT_STORAGE_TABLE_NAME"))

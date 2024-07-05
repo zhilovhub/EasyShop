@@ -50,7 +50,7 @@ async def get_post_message(
         match post_message_type:
             case PostMessageType.MAILING:
                 await query.answer("Рассылка уже завершена или удалена", show_alert=True)
-            case PostMessageType.CHANNEL_POST:
+            case PostMessageType.CHANNEL_POST | PostMessageType.CONTEST:
                 await query.answer("Запись в канал уже отправлена или удалена", show_alert=True)
             case _:
                 raise UnknownPostMessageType

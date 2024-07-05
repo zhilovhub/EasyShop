@@ -18,6 +18,9 @@ class States(StatesGroup):
     EDITING_POST_MEDIA_FILES = State()
     EDITING_POST_DELAY_DATE = State()
 
+    EDITING_CONTEST_WINNERS_COUNT = State()
+    EDITING_CONTEST_FINISH_DATE = State()
+
     IMPORT_PRODUCTS = State()
 
     GOODS_COUNT_MANAGE = State()

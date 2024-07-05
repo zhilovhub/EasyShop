@@ -4,7 +4,9 @@ from pydantic import ValidationError, Field, ConfigDict, BaseModel
 
 from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup, ReplyKeyboardMarkup, KeyboardButton
 
-from bot.utils.keyboard_utils import get_bot_channels, get_bot_username, get_bot_channel_post
+from bot.enums.post_message_type import PostMessageType
+from bot.utils.keyboard_utils import (get_bot_channels, get_bot_username, get_bot_channel_post, get_bot_contest,
+                                      get_bot_post_message)
 from bot.keyboards.keyboard_utils import callback_json_validator
 
 
@@ -110,6 +112,9 @@ class InlineChannelMenuKeyboard:
             EDIT_POST_MESSAGE = "epm"
             CREATE_POST_MESSAGE = "cpm"
 
+            EDIT_CONTEST = "ec"
+            CREATE_CONTEST = "cc"
+
             ANALYTICS = "an"
             LEAVE_CHANNEL = "lc"
 
@@ -174,6 +179,23 @@ class InlineChannelMenuKeyboard:
                 )
             )
 
+        channel_contest = await get_bot_contest(bot_id)
+        post_message = await get_bot_post_message(bot_id, PostMessageType.CONTEST)
+        if channel_contest and post_message:
+            channel_contest_button = InlineKeyboardButton(
+                text="Текущий конкурс",
+                callback_data=InlineChannelMenuKeyboard.callback_json(
+                    actions.EDIT_CONTEST, bot_id, channel_id
+                )
+            )
+        else:
+            channel_contest_button = InlineKeyboardButton(
+                text="Создать конкурс",
+                callback_data=InlineChannelMenuKeyboard.callback_json(
+                    actions.CREATE_CONTEST, bot_id, channel_id
+                )
+            )
+
         return InlineKeyboardMarkup(
             inline_keyboard=[
                 [
@@ -184,6 +206,9 @@ class InlineChannelMenuKeyboard:
                             actions.ANALYTICS, bot_id, channel_id
                         )
                     )
+                ],
+                [
+                    channel_contest_button
                 ],
                 [
                     InlineKeyboardButton(
@@ -207,3 +232,121 @@ class InlineChannelMenuKeyboard:
                 ]
             ],
         )
+
+
+class InlineContestTypeKeyboard:
+    class Callback(BaseModel):
+        class ActionEnum(Enum):
+            RANDOMIZER = "random"
+            BACK_TO_CHANNEL_MENU = "bk_ch_menu"
+
+        model_config = ConfigDict(from_attributes=True, populate_by_name=True)
+
+        n: str = Field(default="cl", frozen=True)
+        a: ActionEnum
+
+        bot_id: int
+        channel_id: int | None = Field(alias="ci")
+
+    @staticmethod
+    @callback_json_validator
+    def callback_json(
+            action: Callback.ActionEnum,
+            bot_id: int,
+            channel_id: int | None
+    ) -> str:
+        return InlineContestTypeKeyboard.Callback(
+            a=action,
+            bot_id=bot_id,
+            channel_id=channel_id
+        ).model_dump_json(by_alias=True)
+
+    @staticmethod
+    def callback_validator(json_string: str) -> bool:
+        try:
+            InlineContestTypeKeyboard.Callback.model_validate_json(json_string)
+            return True
+        except ValidationError:
+            return False
+
+    @staticmethod
+    async def get_keyboard(
+            bot_id: int,
+            channel_id: int,
+    ) -> InlineKeyboardMarkup:
+        actions = InlineContestTypeKeyboard.Callback.ActionEnum
+
+        return InlineKeyboardMarkup(inline_keyboard=[
+            [
+                InlineKeyboardButton(
+                    text="🎲 Рандомайзер",
+                    callback_data=InlineContestTypeKeyboard.callback_json(
+                        actions.RANDOMIZER, bot_id, channel_id
+                    )
+                )
+            ],
+            [
+                InlineKeyboardButton(
+                    text="🔙 Назад",
+                    callback_data=InlineContestTypeKeyboard.callback_json(
+                        actions.BACK_TO_CHANNEL_MENU, bot_id, channel_id
+                    )
+                ),
+            ],
+        ])
+
+
+class InlineJoinContestKeyboard:
+    class Callback(BaseModel):
+        class ActionEnum(Enum):
+            JOIN_CONTEST = "join"
+
+        model_config = ConfigDict(from_attributes=True, populate_by_name=True)
+
+        n: str = Field(default="cj", frozen=True)
+        a: ActionEnum
+
+        bot_id: int
+        post_message_id: int
+
+    @staticmethod
+    @callback_json_validator
+    def callback_json(
+            action: Callback.ActionEnum,
+            bot_id: int,
+            post_message_id: int,
+    ) -> str:
+        return InlineJoinContestKeyboard.Callback(
+            a=action,
+            bot_id=bot_id,
+            post_message_id=post_message_id,
+        ).model_dump_json(by_alias=True)
+
+    @staticmethod
+    def callback_validator(json_string: str) -> bool:
+        try:
+            InlineJoinContestKeyboard.Callback.model_validate_json(json_string)
+            return True
+        except ValidationError:
+            return False
+
+    @staticmethod
+    async def get_keyboard(
+            bot_id: int,
+            contest_members_count: int,
+            post_message_id: int,
+    ) -> InlineKeyboardMarkup:
+        actions = InlineJoinContestKeyboard.Callback.ActionEnum
+
+        return InlineKeyboardMarkup(
+                inline_keyboard=[
+                    [
+                        InlineKeyboardButton(
+                            text=f"Участвовать ({contest_members_count})",
+                            callback_data=InlineJoinContestKeyboard.callback_json(
+                                actions.JOIN_CONTEST, bot_id, post_message_id,
+                            )
+                        )
+                    ]
+                ]
+            )
