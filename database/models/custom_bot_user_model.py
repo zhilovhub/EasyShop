@@ -1,6 +1,6 @@
 from pydantic import BaseModel, ConfigDict
 
-from sqlalchemy import BigInteger, Column, ForeignKey, insert, select, update
+from sqlalchemy import BigInteger, Column, ForeignKey, insert, select, update, delete
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncEngine
 
@@ -88,7 +88,8 @@ class CustomBotUserDao(Dao):
             extra=extra_params(user_id=updated_user.user_id, bot_id=updated_user.bot_id)
         )
 
-    async def add_custom_bot_user(self, bot_id: int, user_id: int) -> None:  # TODO write tests
+    # TODO write tests
+    async def add_custom_bot_user(self, bot_id: int, user_id: int) -> None:
         if type(bot_id) != int or type(user_id) != int:
             raise InvalidParameterFormat("user_id and bot_id must be type of int")
 
@@ -102,5 +103,22 @@ class CustomBotUserDao(Dao):
 
         self.logger.debug(
             f"bot_id={bot_id}: user {user_id} is added",
+            extra=extra_params(user_id=user_id, bot_id=bot_id)
+        )
+
+    # TODO write tests
+    async def delete_custom_bot_user(self, bot_id: int, user_id: int) -> None:
+        if type(bot_id) != int or type(user_id) != int:
+            raise InvalidParameterFormat(
+                "user_id and bot_id must be type of int")
+
+        async with self.engine.begin() as conn:
+            await conn.execute(
+                delete(CustomBotUser).where(CustomBotUser.bot_id == bot_id, CustomBotUser.user_id == user_id)
+            )
+        await self.engine.dispose()
+
+        self.logger.debug(
+            f"bot_id={bot_id}: user {user_id} is deleted",
             extra=extra_params(user_id=user_id, bot_id=bot_id)
         )

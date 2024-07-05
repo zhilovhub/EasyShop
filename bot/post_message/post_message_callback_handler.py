@@ -507,7 +507,10 @@ async def _post_message_mailing(
             custom_users_length = len(await custom_bot_user_db.get_custom_bot_users(bot_id=bot_id))
 
             await query.answer(
-                text=f"Отправлено {post_message.sent_post_message_amount}/{custom_users_length} сообщений",
+                text=MessageTexts.show_mailing_info(
+                    sent_post_message_amount=post_message.sent_post_message_amount,
+                    custom_bot_users_len=custom_users_length,
+                ),
                 show_alert=True
             )
 
