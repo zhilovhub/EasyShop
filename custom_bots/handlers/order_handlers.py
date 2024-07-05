@@ -146,11 +146,9 @@ async def create_order_review(query: CallbackQuery, state: FSMContext):
             await query.message.answer(text="Оцените качество товаров ✔️", reply_markup=ReplyGetReviewMarkKeyboard.get_keyboard())
             await query.answer()
             await state.set_state(CustomUserStates.WAITING_FOR_REVIEW_MARK)
-            await state.set_state(
-                {
-                    "order_id": callback_data.order_id,
-                }
-            )
+            await state.set_data({
+                "order_id": callback_data.order_id,
+            })
 
 
 @multi_bot_router.message(StateFilter(CustomUserStates.WAITING_FOR_REVIEW_MARK))
@@ -171,12 +169,10 @@ async def get_review_mark(message: Message, state: FSMContext):
         case _:
             return await message.answer("Чтобы оставить оценку, нажмите на кнопку ниже 👇")
 
-    await state.set_data(
-        {
-            "mark": mark_value,
-            "order_id": state_data.get("order_id")
-        }
-    )
+    await state.set_data({
+        "mark": mark_value,
+        "order_id": state_data.get("order_id")
+    })
     await state.set_state(CustomUserStates.WAITING_FOR_REVIEW_TEXT)
     await message.answer("Напишите комментарий к вашему отзыву 📨")
 
