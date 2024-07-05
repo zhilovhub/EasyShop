@@ -221,5 +221,5 @@ async def get_review_text(message: Message, state: FSMContext):
                 user_id=message.from_user.id
             )
         )
-    await message.answer("Спасибо за отзыв")
+    await message.answer("Спасибо за отзыв 📬", reply_markup=ReplyCustomBotMenuKeyboard.get_keyboard(bot.bot_id))
     await state.clear()
