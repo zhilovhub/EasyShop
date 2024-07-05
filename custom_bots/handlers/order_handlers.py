@@ -9,6 +9,7 @@ from bot.exceptions.exceptions import BotNotFound
 from bot.keyboards.question_keyboards import ReplyBackQuestionMenuKeyboard
 from bot.keyboards.order_manage_keyboards import InlineOrderCancelKeyboard, \
     InlineOrderCustomBotKeyboard, InlineCreateReviewKeyboard, ReplyGetReviewMarkKeyboard, ReplyReviewBackKeyboard
+from bot.keyboards.custom_bot_menu_keyboards import ReplyCustomBotMenuKeyboard
 
 from custom_bots.multibot import order_db, product_db, main_bot, PREV_ORDER_MSGS, CustomUserStates, bot_db
 from custom_bots.handlers.routers import multi_bot_router
@@ -179,9 +180,6 @@ async def get_review_mark(message: Message, state: FSMContext):
 
 @multi_bot_router.message(StateFilter(CustomUserStates.WAITING_FOR_REVIEW_TEXT))
 async def get_review_text(message: Message, state: FSMContext):
-    state_data = await state.get_data()
-    mark = state_data["mark"]
-    order_id = state_data["order_id"]
     try:
         bot = await bot_db.get_bot_by_token(message.bot.token)
     except BotNotFound:
@@ -190,6 +188,11 @@ async def get_review_text(message: Message, state: FSMContext):
             extra=extra_params(bot_token=message.bot.token)
         )
         return await message.answer("Бот не инициализирован")
+    if message.text == "Назад 🔙":
+        return message.answer("Отправка отзыва отменена ✖️", reply_markup=ReplyCustomBotMenuKeyboard.get_keyboard(bot.bot_id))
+    state_data = await state.get_data()
+    mark = state_data["mark"]
+    order_id = state_data["order_id"]
     try:
         order = await order_db.get_order(order_id)
     except OrderNotFound:
@@ -209,3 +212,4 @@ async def get_review_text(message: Message, state: FSMContext):
             )
         )
     await message.answer("Спасибо за отзыв")
+    await state.clear()
