@@ -198,12 +198,13 @@ async def get_review_text(message: Message, state: FSMContext):
             extra=extra_params(user_id=message.from_user.id, order_id=order_id)
         )
         await message.answer("Ошибка при работе с заказом, возможно заказ был удалён")
-    await product_review_db.add_product_review(
-        ProductReviewSchemaWithoutID(
-            bot_id=bot.bot_id,
-            product_id=int(order.items.keys()[0]),
-            mark=mark,
-            review_text=message.text
+    for product in list(order.items.keys()):
+        await product_review_db.add_product_review(
+            ProductReviewSchemaWithoutID(
+                bot_id=bot.bot_id,
+                product_id=int(product),
+                mark=mark,
+                review_text=message.text
+            )
         )
-    )
     await message.answer("Спасибо за отзыв")
