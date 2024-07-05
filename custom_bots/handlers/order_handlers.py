@@ -5,7 +5,7 @@ from aiogram.fsm.context import FSMContext
 
 from bot.keyboards.question_keyboards import ReplyBackQuestionMenuKeyboard
 from bot.keyboards.order_manage_keyboards import InlineOrderCancelKeyboard, \
-    InlineOrderCustomBotKeyboard
+    InlineOrderCustomBotKeyboard, InlineCreateReviewKeyboard, ReplyGetReviewMarkKeyboard
 
 from custom_bots.multibot import order_db, product_db, main_bot, PREV_ORDER_MSGS, CustomUserStates
 from custom_bots.handlers.routers import multi_bot_router
@@ -120,3 +120,23 @@ async def handle_order_callback(query: CallbackQuery, state: FSMContext):
             )
             await state.set_state(CustomUserStates.WAITING_FOR_QUESTION)
             await state.set_data(state_data)
+
+
+@multi_bot_router.callback_query(lambda query: InlineCreateReviewKeyboard.callback_validator(query.data))
+async def create_order_review(query: CallbackQuery, state: FSMContext):
+    callback_data = InlineCreateReviewKeyboard.Callback.model_validate_json(query.data)
+    state_data = await state.get_data()
+    order_id = callback_data.order_id
+    user_id = query.from_user.id
+    try:
+        order = await order_db.get_order(order_id)
+    except OrderNotFound:
+        custom_bot_logger.warning(
+            f"user_id={user_id}: tried to ask the question regarding order by order_id={order_id} is not found",
+            extra=extra_params(user_id=user_id, order_id=order_id)
+        )
+        await query.answer("Ошибка при работе с заказом, возможно заказ был удалён", show_alert=True)
+        return await query.message.edit_reply_markup(None)
+    match callback_data.a:
+        case callback_data.ActionEnum.CREATE_REVIEW:
+            await query.message.answer(text="Оцените качество товаров ✔️", reply_markup=ReplyGetReviewMarkKeyboard.get_keyboard())

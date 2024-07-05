@@ -13,6 +13,7 @@ from sqlalchemy.exc import IntegrityError
 from aiogram.exceptions import TelegramUnauthorizedError
 from aiogram.fsm.context import FSMContext
 from aiogram.utils.token import validate_token, TokenValidationError
+from aiogram.client.default import DefaultBotProperties
 from aiogram.fsm.storage.base import StorageKey
 
 from bot.main import bot, user_db, product_db, order_db, custom_bot_user_db, QUESTION_MESSAGES, bot_db, mailing_db
@@ -27,7 +28,7 @@ from bot.keyboards.main_menu_keyboards import ReplyBotMenuKeyboard, InlineBotMen
 from bot.keyboards.stock_menu_keyboards import InlineStockMenuKeyboard
 from bot.keyboards.post_message_keyboards import InlinePostMessageMenuKeyboard
 from bot.keyboards.order_manage_keyboards import InlineOrderStatusesKeyboard, InlineOrderCancelKeyboard, \
-    InlineOrderCustomBotKeyboard
+    InlineOrderCustomBotKeyboard, InlineCreateReviewKeyboard
 from bot.post_message.post_message_create import post_message_create
 
 from custom_bots.multibot import storage as custom_bot_storage
@@ -247,7 +248,8 @@ async def handle_callback(query: CallbackQuery, state: FSMContext):
 
             products = [(await product_db.get_product(int(product_id)), product_item.amount, product_item.extra_options)
                         for product_id, product_item in order.items.items()]
-            await Bot(bot_token, parse_mode=ParseMode.HTML).edit_message_text(
+            await Bot(bot_token, default=DefaultBotProperties(
+                parse_mode=ParseMode.HTML)).edit_message_text(
                 order.convert_to_notification_text(products=products),
                 reply_markup=None if callback_data.a == callback_data.ActionEnum.FINISH else
                 InlineOrderCustomBotKeyboard.get_keyboard(order.id, callback_data.msg_id, callback_data.chat_id),
@@ -280,9 +282,17 @@ async def handle_callback(query: CallbackQuery, state: FSMContext):
                             "⚠️ Внимание, кол-во следующих товаров на складе равно 0.")
                         await msg.reply("\n".join([f"{p.name} [{p.id}]" for p in zero_products]))
 
-            await Bot(bot_token, parse_mode=ParseMode.HTML).send_message(
+            await Bot(bot_token, default=DefaultBotProperties(
+                parse_mode=ParseMode.HTML)).send_message(
                 chat_id=callback_data.chat_id,
                 text=f"Новый статус заказа <b>#{order.id}</b>\n<b>{order.translate_order_status()}</b>")
+
+            if callback_data.a == callback_data.ActionEnum.FINISH:
+                await Bot(bot_token, default=DefaultBotProperties(
+                    parse_mode=ParseMode.HTML)).send_message(
+                    chat_id=callback_data.chat_id,
+                    text=f"Вы можете оставить отзыв ❤️",
+                    reply_markup=InlineCreateReviewKeyboard.get_keyboard(order_id=order.id, chat_id=callback_data.chat_id))
 
 
 @admin_bot_menu_router.message(States.WAITING_FOR_TOKEN)

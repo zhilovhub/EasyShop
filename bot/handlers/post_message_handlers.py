@@ -189,7 +189,7 @@ async def _start_confirm(
                 await query.message.answer(
                     f"Рассылка начнется в {post_message.send_date}"
                     if post_message.is_delayed else "Рассылка началась"
-                )
+                )  # TODO BUG
                 await query.message.edit_text(
                     text=MessageTexts.BOT_MAILING_MENU_WHILE_RUNNING.value.format(custom_bot_username),
                     reply_markup=await InlinePostMessageMenuKeyboard.get_keyboard(

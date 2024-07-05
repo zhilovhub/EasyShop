@@ -2,7 +2,7 @@ from enum import Enum
 
 from pydantic import ValidationError, ConfigDict, Field, BaseModel
 
-from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
+from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup, ReplyKeyboardMarkup, KeyboardButton
 
 from bot.keyboards.keyboard_utils import callback_json_validator
 
@@ -230,3 +230,91 @@ class InlineOrderStatusesKeyboard:
                 )
             ]
         ])
+
+
+class InlineCreateReviewKeyboard:
+    class Callback(BaseModel):
+        class ActionEnum(Enum):
+            CREATE_REVIEW = "cr"
+
+        model_config = ConfigDict(from_attributes=True, populate_by_name=True)
+
+        n: str = Field(default="or", frozen=True)
+        a: ActionEnum
+
+        order_id: str = Field(alias="o")
+        chat_id: int = Field(default=0, alias="c")
+
+    @staticmethod
+    @callback_json_validator
+    def callback_json(
+            action: Callback.ActionEnum,
+            order_id: str,
+            chat_id: int
+    ) -> str:
+        return InlineCreateReviewKeyboard.Callback(
+            a=action,
+            order_id=order_id,
+            chat_id=chat_id,
+        ).model_dump_json(by_alias=True)
+
+    @staticmethod
+    def callback_validator(json_string: str) -> bool:
+        try:
+            InlineCreateReviewKeyboard.Callback.model_validate_json(json_string)
+            return True
+        except ValidationError:
+            return False
+
+    @staticmethod
+    def get_keyboard(
+            order_id: str,
+            chat_id: int = 0,
+    ) -> InlineKeyboardMarkup:
+        actions = InlineCreateReviewKeyboard.Callback.ActionEnum
+
+        return InlineKeyboardMarkup(inline_keyboard=[
+            [
+                InlineKeyboardButton(
+                    text="Оставить отзыв",
+                    callback_data=InlineCreateReviewKeyboard.callback_json(
+                        actions.CREATE_REVIEW, order_id, chat_id
+                    )
+                )
+            ],
+        ])
+
+
+class ReplyGetReviewMarkKeyboard:
+    class Callback(BaseModel):
+        class ActionEnum(Enum):
+            ONE = "1️⃣"
+            TWO = "2️⃣"
+            THREE = "3️⃣"
+            FOUR = "4️⃣"
+            FIVE = "5️⃣"
+            BACK = "Назад 🔙"
+
+        model_config = ConfigDict(from_attributes=True, populate_by_name=True)
+
+        n: str = Field(default="grm", frozen=True)
+        a: ActionEnum
+
+    @staticmethod
+    def get_keyboard() -> ReplyKeyboardMarkup:
+        actions = ReplyGetReviewMarkKeyboard.Callback.ActionEnum
+
+        return ReplyKeyboardMarkup(
+            keyboard=[
+                [
+                    KeyboardButton(text=actions.ONE.value),
+                    KeyboardButton(text=actions.TWO.value),
+                    KeyboardButton(text=actions.THREE.value),
+                    KeyboardButton(text=actions.FOUR.value),
+                    KeyboardButton(text=actions.FIVE.value),
+                ],
+                [
+                    KeyboardButton(text=actions.BACK.value),
+                ],
+            ], resize_keyboard=True, one_time_keyboard=False
+        )
