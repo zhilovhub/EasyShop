@@ -121,8 +121,12 @@ class MessageTexts(Enum):
                 return "В записи кнопка уже есть"
 
     @staticmethod
-    def show_mailing_info(sent_post_message_amount: int, custom_bot_users_len: int, banned_amount: int) -> str:
-        return f"Сообщений отправлено - \n" \
-            f"{sent_post_message_amount}/{custom_bot_users_len}\n" \
-            f"Забанили бота - \n" \
-            f"{banned_amount}"  # Probably can be rewritten to (sent_post_message_amount - custom_bot_users_len)
+    def show_mailing_info(sent_post_message_amount: int, custom_bot_users_len: int) -> str:
+        text = f"Сообщений отправлено:\n" \
+               f"<b>{sent_post_message_amount}/{custom_bot_users_len}</b>"
+
+        if sent_post_message_amount != custom_bot_users_len:
+            text += f"\n\n❗ Во время рассылки было обнаружено, что бота <u>забанило</u> " \
+                    f"<b>{custom_bot_users_len - sent_post_message_amount}<b> человек" \
+
+        return text

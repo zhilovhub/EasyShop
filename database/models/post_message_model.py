@@ -67,9 +67,6 @@ class PostMessage(Base):
     send_date = Column(DateTime, nullable=True)
     job_id = Column(String, nullable=True)
 
-    # Bot ban amount
-    banned_amount = Column(BigInteger, default=0)
-
 
 class PostMessageSchemaWithoutId(BaseModel):
     model_config = ConfigDict(from_attributes=True)
@@ -95,8 +92,6 @@ class PostMessageSchemaWithoutId(BaseModel):
     is_delayed: bool = False
     send_date: Optional[datetime.datetime | None] = None
     job_id: Optional[str | None] = None
-
-    banned_amount: int = 0
 
 
 class PostMessageSchema(PostMessageSchemaWithoutId):

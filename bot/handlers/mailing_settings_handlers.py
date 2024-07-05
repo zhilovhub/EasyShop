@@ -8,7 +8,6 @@ from aiogram.client.bot import DefaultBotProperties, Bot
 from bot.main import bot, custom_bot_user_db, post_message_db
 from bot.utils.excel_utils import send_ban_users_xlsx
 from bot.utils.message_texts import MessageTexts
-from bot.enums.post_message_type import PostMessageType
 from bot.post_message.post_message_editors import PostActionType, send_post_message
 
 from logs.config import logger
@@ -47,7 +46,6 @@ async def send_post_messages(custom_bot, post_message, media_files, chat_id):
             await post_message_db.update_post_message(post_message)
 
         except TelegramForbiddenError:
-            post_message.banned_amount += 1
             await post_message_db.update_post_message(post_message)
             banned_users_list.append(user.user_id)
             logger.info(
@@ -71,7 +69,6 @@ async def send_post_messages(custom_bot, post_message, media_files, chat_id):
         MessageTexts.show_mailing_info(
             sent_post_message_amount=post_message.sent_post_message_amount,
             custom_bot_users_len=len(all_custom_bot_users),
-            banned_amount=post_message.banned_amount
         )
     )
 

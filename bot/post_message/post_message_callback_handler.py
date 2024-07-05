@@ -510,7 +510,6 @@ async def _post_message_mailing(
                 text=MessageTexts.show_mailing_info(
                     sent_post_message_amount=post_message.sent_post_message_amount,
                     custom_bot_users_len=custom_users_length,
-                    banned_amount=post_message.banned_amount
                 ),
                 show_alert=True
             )

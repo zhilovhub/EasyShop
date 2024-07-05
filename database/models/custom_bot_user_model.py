@@ -113,7 +113,9 @@ class CustomBotUserDao(Dao):
                 "user_id and bot_id must be type of int")
 
         async with self.engine.begin() as conn:
-            await conn.execute(delete(CustomBotUser).where(CustomBotUser.bot_id == bot_id, CustomBotUser.user_id == user_id))
+            await conn.execute(
+                delete(CustomBotUser).where(CustomBotUser.bot_id == bot_id, CustomBotUser.user_id == user_id)
+            )
         await self.engine.dispose()
 
         self.logger.debug(
