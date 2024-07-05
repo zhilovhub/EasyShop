@@ -61,7 +61,8 @@ async def send_post_messages(custom_bot, post_message, media_files, chat_id):
         await asyncio.sleep(.05)
 
     # Generate xlsx file
-    await send_ban_users_xlsx(banned_users_list, post_message.bot_id)
+    if banned_users_list:
+        await send_ban_users_xlsx(banned_users_list, post_message.bot_id)
 
     # Delete users from custom bot users db
     for user in banned_users_list:
