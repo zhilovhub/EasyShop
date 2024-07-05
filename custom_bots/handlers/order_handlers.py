@@ -204,7 +204,8 @@ async def get_review_text(message: Message, state: FSMContext):
                 bot_id=bot.bot_id,
                 product_id=int(product),
                 mark=mark,
-                review_text=message.text
+                review_text=message.text,
+                user_id=message.from_user.id
             )
         )
     await message.answer("Спасибо за отзыв")
