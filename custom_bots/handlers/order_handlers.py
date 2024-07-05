@@ -8,7 +8,7 @@ from bot.main import product_review_db
 from bot.exceptions.exceptions import BotNotFound
 from bot.keyboards.question_keyboards import ReplyBackQuestionMenuKeyboard
 from bot.keyboards.order_manage_keyboards import InlineOrderCancelKeyboard, \
-    InlineOrderCustomBotKeyboard, InlineCreateReviewKeyboard, ReplyGetReviewMarkKeyboard
+    InlineOrderCustomBotKeyboard, InlineCreateReviewKeyboard, ReplyGetReviewMarkKeyboard, ReplyReviewBackKeyboard
 
 from custom_bots.multibot import order_db, product_db, main_bot, PREV_ORDER_MSGS, CustomUserStates, bot_db
 from custom_bots.handlers.routers import multi_bot_router
@@ -174,7 +174,7 @@ async def get_review_mark(message: Message, state: FSMContext):
         "mark": mark_value,
         "order_id": state_data["order_id"]
     })
-    await message.answer("Напишите комментарий к вашему отзыву 📨")
+    await message.answer("Напишите комментарий к вашему отзыву 📨", reply_markup=ReplyReviewBackKeyboard.get_keyboard())
 
 
 @multi_bot_router.message(StateFilter(CustomUserStates.WAITING_FOR_REVIEW_TEXT))

@@ -318,3 +318,26 @@ class ReplyGetReviewMarkKeyboard:
                 ],
             ], resize_keyboard=True, one_time_keyboard=False
         )
+
+
+class ReplyReviewBackKeyboard:
+    class Callback(BaseModel):
+        class ActionEnum(Enum):
+            BACK = "Назад 🔙"
+
+        model_config = ConfigDict(from_attributes=True, populate_by_name=True)
+
+        n: str = Field(default="rb", frozen=True)
+        a: ActionEnum
+
+    @staticmethod
+    def get_keyboard() -> ReplyKeyboardMarkup:
+        actions = ReplyReviewBackKeyboard.Callback.ActionEnum
+
+        return ReplyKeyboardMarkup(
+            keyboard=[
+                [
+                    KeyboardButton(text=actions.BACK.value),
+                ],
+            ], resize_keyboard=True, one_time_keyboard=False
+        )
