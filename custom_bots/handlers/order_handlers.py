@@ -154,6 +154,16 @@ async def create_order_review(query: CallbackQuery, state: FSMContext):
 
 @multi_bot_router.message(StateFilter(CustomUserStates.WAITING_FOR_REVIEW_MARK))
 async def get_review_mark(message: Message, state: FSMContext):
+    try:
+        bot = await bot_db.get_bot_by_token(message.bot.token)
+    except BotNotFound:
+        custom_bot_logger.warning(
+            f"bot_token={message.bot.token}: this bot is not in db",
+            extra=extra_params(bot_token=message.bot.token)
+        )
+        return await message.answer("Бот не инициализирован")
+    if message.text == "Назад 🔙":
+        return message.answer("Отправка отзыва отменена ✖️", reply_markup=ReplyCustomBotMenuKeyboard.get_keyboard(bot.bot_id))
     mark_value = 0
     state_data = await state.get_data()
     match message.text:
