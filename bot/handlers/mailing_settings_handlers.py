@@ -39,8 +39,11 @@ async def send_post_messages(custom_bot, post_message, media_files, chat_id):
                 message=None,
             )
             logger.info(
-                f"post_message with post_message_id {post_message_id} has "
-                f"sent to {ind}/{len(all_custom_bot_users)} with user_id {user.user_id}"
+                f"post_message_id={post_message_id}: "
+                f"sent to {ind}/{len(all_custom_bot_users)} with user_id={user.user_id}",
+                extra=extra_params(
+                    user_id=user.user_id, bot_id=post_message.bot_id, post_message_id=post_message_id
+                )
             )
             post_message.sent_post_message_amount += 1
             await post_message_db.update_post_message(post_message)
@@ -49,8 +52,8 @@ async def send_post_messages(custom_bot, post_message, media_files, chat_id):
             await post_message_db.update_post_message(post_message)
             banned_users_list.append(user.user_id)
             logger.info(
-                f"post_message with post_message_id {post_message_id}"
-                f"user with user_id {user.user_id} banned bot {post_message.bot_id}",
+                f"post_message_id={post_message_id}: "
+                f"user_id={user.user_id} banned bot_id={post_message.bot_id}",
                 extra=extra_params(post_message_id=post_message_id, user_id=user.user_id, bot_id=post_message.bot_id)
             )
 
