@@ -385,7 +385,7 @@ class InlinePickReviewProductKeyboard:
             product_buttons.append(
                 [InlineKeyboardButton(
                     text=f"{product.name}",
-                    callback_data=InlinePickReviewProductKeyboard.callback_json(actions.PICK_PRODUCT, product_id))]
+                    callback_data=InlinePickReviewProductKeyboard.callback_json(actions.PICK_PRODUCT, product_id)),]
             )
         return InlineKeyboardMarkup(
             inline_keyboard=product_buttons,
