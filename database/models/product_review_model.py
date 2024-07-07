@@ -14,6 +14,11 @@ from database.models.custom_bot_user_model import CustomBotUser
 from logs.config import extra_params
 
 
+class ProductReviewNotFound(Exception):
+    """Raised when provided product_review not found in database"""
+    pass
+
+
 class ProductReview(Base):
     __tablename__ = "product_reviews"
 
@@ -72,6 +77,9 @@ class ProductReviewDao(Dao):  # TODO write tests
                 select(ProductReview).where(ProductReview.user_id == user_id, ProductReview.product_id == product_id)
             )
         await self.engine.dispose()
+
+        if not raw_res:
+            raise ProductReviewNotFound
 
         res = raw_res.fetchone()
 

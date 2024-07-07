@@ -16,7 +16,7 @@ from aiogram.utils.token import validate_token, TokenValidationError
 from aiogram.client.default import DefaultBotProperties
 from aiogram.fsm.storage.base import StorageKey
 
-from bot.main import bot, user_db, product_db, order_db, custom_bot_user_db, QUESTION_MESSAGES, bot_db, mailing_db
+from bot.main import bot, user_db, product_db, order_db, custom_bot_user_db, QUESTION_MESSAGES, bot_db, mailing_db, product_review_db
 from bot.utils import MessageTexts
 from bot.exceptions import InstanceAlreadyExists
 from bot.states.states import States
@@ -28,7 +28,7 @@ from bot.keyboards.main_menu_keyboards import ReplyBotMenuKeyboard, InlineBotMen
 from bot.keyboards.stock_menu_keyboards import InlineStockMenuKeyboard
 from bot.keyboards.post_message_keyboards import InlinePostMessageMenuKeyboard
 from bot.keyboards.order_manage_keyboards import InlineOrderStatusesKeyboard, InlineOrderCancelKeyboard, \
-    InlineOrderCustomBotKeyboard, InlineCreateReviewKeyboard
+    InlineOrderCustomBotKeyboard, InlineCreateReviewKeyboard, InlineAcceptReviewKeyboard
 from bot.post_message.post_message_create import post_message_create
 
 from custom_bots.multibot import storage as custom_bot_storage
@@ -37,6 +37,7 @@ from database.models.bot_model import BotSchemaWithoutId
 from database.models.order_model import OrderSchema, OrderNotFound, OrderItem, OrderStatusValues
 from database.models.mailing_model import MailingNotFound
 from database.models.product_model import ProductWithoutId, NotEnoughProductsInStockToReduce
+from database.models.product_review_model import ProductReviewNotFound
 
 from logs.config import logger
 
@@ -206,6 +207,28 @@ async def handler_order_cancel_callback(query: CallbackQuery, state: FSMContext)
                 chat_id=callback_data.chat_id,
                 text=f"Новый статус заказа <b>#{order.id}</b>\n<b>{order.translate_order_status()}</b>"
             )
+
+
+@admin_bot_menu_router.callback_query(lambda query: InlineAcceptReviewKeyboard.callback_validator(query.data))
+async def handle_review_request(query: CallbackQuery, state: FSMContext):
+    callback_data = InlineAcceptReviewKeyboard.Callback.model_validate_json(query.data)
+    try:
+        review = await product_review_db.get_product_review(callback_data.product_review_id)
+    except ProductReviewNotFound:
+        await query.answer("Продукт уже удален", show_alert=True)
+    match callback_data.a:
+        case callback_data.ActionEnum.SAVE:
+            review.accepted = True
+            await product_review_db.update_product_review(review)
+            await query.answer("Отзыв сохранен", show_alert=True)
+            text = query.message.text + "\n\nСтатус: ✅"
+            await query.message.edit_text(text=text, reply_markup=None)
+
+        case callback_data.ActionEnum.IGNORE:
+            await product_review_db.delete_product_review(review.id)
+            await query.answer("Отзыв проигнорирован", show_alert=True)
+            text = query.message.text + "\n\nСтатус: ❌"
+            await query.message.edit_text(text=text, reply_markup=None)
 
 
 @admin_bot_menu_router.callback_query(lambda query: InlineOrderStatusesKeyboard.callback_validator(query.data))
