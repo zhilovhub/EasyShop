@@ -22,6 +22,7 @@ from database.models.mailing_model import MailingDao
 from database.models.post_message_model import PostMessageDao
 from database.models.channel_user_model import ChannelUserDao
 from database.models.channel_post_model import ChannelPostDao
+from database.models.product_review_model import ProductReviewDao
 from database.models.post_message_media_files import PostMessageMediaFileDao
 from database.models.custom_bot_user_model import CustomBotUserDao
 
@@ -49,6 +50,7 @@ mailing_db: MailingDao = db_engine.get_mailing_dao()
 post_message_db: PostMessageDao = db_engine.get_post_message_dao()
 channel_user_db: ChannelUserDao = db_engine.get_channel_user_dao()
 channel_post_db: ChannelPostDao = db_engine.get_channel_post_dao()
+product_review_db: ProductReviewDao = db_engine.get_product_review_dao()
 custom_bot_user_db: CustomBotUserDao = db_engine.get_custom_bot_user_db()
 post_message_media_file_db: PostMessageMediaFileDao = db_engine.get_post_message_media_file_dao()
 
