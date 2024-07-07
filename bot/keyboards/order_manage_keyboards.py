@@ -11,6 +11,8 @@ from bot.keyboards.keyboard_utils import callback_json_validator
 
 from database.models.order_model import OrderItem, OrderStatusValues
 
+from logs.config import custom_bot_logger, extra_params
+
 
 class InlineOrderCustomBotKeyboard:
     class Callback(BaseModel):
@@ -384,7 +386,9 @@ class InlinePickReviewProductKeyboard:
                     text=f"{product.name}",
                     callback_data=InlinePickReviewProductKeyboard.callback_json(actions.PICK_PRODUCT, product_id))]
             )
-        print(product_buttons)
+        custom_bot_logger.warning(
+            f"{product_buttons}"
+        )
         return InlineKeyboardMarkup(
             inline_keyboard=product_buttons,
         )
