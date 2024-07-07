@@ -248,7 +248,7 @@ async def get_review_text(message: Message, state: FSMContext):
     await message.answer("Спасибо за отзыв 📬", reply_markup=ReplyCustomBotMenuKeyboard.get_keyboard(bot.bot_id))
     try:
         product = await product_db.get_product(state_data["product_id"])
-        await main_bot.send_message(text=MessageTexts.show_product_review_info(mark, message.text, product.name),
+        await main_bot.send_message(chat_id=bot.created_by, text=MessageTexts.show_product_review_info(mark, message.text, product.name),
                                     reply_markup=InlineAcceptReviewKeyboard.get_keyboard(review_id))
         await state.set_state(CustomUserStates.MAIN_MENU)
     except ProductNotFound:
