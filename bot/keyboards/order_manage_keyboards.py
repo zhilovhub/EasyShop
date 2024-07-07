@@ -379,14 +379,15 @@ class InlinePickReviewProductKeyboard:
     async def get_keyboard(order_json: dict[int, OrderItem]) -> InlineKeyboardMarkup:
         actions = InlinePickReviewProductKeyboard.Callback.ActionEnum
         product_buttons = []
+        custom_bot_logger.info(f"{order_json}")
         for product_id in list(order_json.keys()):
             # product = await get_product_by_id(product_id)
             # custom_bot_logger.info(f"product {product}")
             product_buttons.append(
                 [InlineKeyboardButton(
                     text=f"test",
-                    callback_data=InlinePickReviewProductKeyboard.callback_json(actions.PICK_PRODUCT, product_id)),]
+                    callback_data=InlinePickReviewProductKeyboard.callback_json(actions.PICK_PRODUCT, product_id))]
             )
         return InlineKeyboardMarkup(
-            inline_keyboard=product_buttons,
+            inline_keyboard=product_buttons
         )
