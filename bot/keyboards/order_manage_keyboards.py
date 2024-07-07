@@ -421,7 +421,7 @@ class InlineAcceptReviewKeyboard:
             return False
 
     @staticmethod
-    async def get_keyboard(product_review_id: int) -> InlineKeyboardMarkup:
+    def get_keyboard(product_review_id: int) -> InlineKeyboardMarkup:
         actions = InlineAcceptReviewKeyboard.Callback.ActionEnum
 
         return InlineKeyboardMarkup(
