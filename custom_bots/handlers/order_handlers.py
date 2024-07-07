@@ -216,6 +216,7 @@ async def get_review_mark(message: Message, state: FSMContext):
 
 @multi_bot_router.message(StateFilter(CustomUserStates.WAITING_FOR_REVIEW_TEXT))
 async def get_review_text(message: Message, state: FSMContext):
+    state_data = await state.get_data()
     try:
         bot = await bot_db.get_bot_by_token(message.bot.token)
     except BotNotFound:
