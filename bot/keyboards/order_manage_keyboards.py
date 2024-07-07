@@ -380,11 +380,11 @@ class InlinePickReviewProductKeyboard:
         actions = InlinePickReviewProductKeyboard.Callback.ActionEnum
         product_buttons = []
         for product_id in list(order_json.keys()):
-            product = await get_product_by_id(product_id)
-            custom_bot_logger.info(f"product {product}")
+            # product = await get_product_by_id(product_id)
+            # custom_bot_logger.info(f"product {product}")
             product_buttons.append(
                 [InlineKeyboardButton(
-                    text=f"{product.name}",
+                    text=f"test",
                     callback_data=InlinePickReviewProductKeyboard.callback_json(actions.PICK_PRODUCT, product_id)),]
             )
         return InlineKeyboardMarkup(
