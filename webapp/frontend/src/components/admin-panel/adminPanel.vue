@@ -106,7 +106,20 @@
             <hr>
             <div>
               <span>Цена</span>
-            <span>{{item.price}}₽</span>
+              <span>{{item.price}}₽</span>
+            </div>
+            <hr>
+            <div style="justify-content: space-between">
+              <span style="width: 200px">Регулировка <br> количества товаров</span>
+              <div class="buttons">
+                <div style="height: 35px; justify-content: space-between" class="countDivBtn">
+                  <div @click="decrementCount(item)" style="height: 34px"
+                  >-</div>
+                  {{item.count}}
+                  <div @click="incrementCount(item)" style="height: 34px"
+                  >+</div>
+                </div>
+              </div>
             </div>
           </div>
             </Transition>
@@ -297,6 +310,49 @@ export default {
     },
     toggleAddProduct() {
       this.addProductComponentIsActive = !this.addProductComponentIsActive;
+    },
+    incrementCount(item) {
+      item.count++
+      this.isLoading = true;
+      this.$store.dispatch("editProduct", {
+        name: item.name,
+        category: item.categories,
+        description: item.description,
+        article: item.article,
+        price: item.price,
+        count: item.count,
+        pictures: item.pictures,
+        extra_options: item.extra_options,
+        id: item.id
+      }).then(() => {
+        this.isLoading = false;
+      }).catch(err => {
+        console.error(err);
+        item.count--;
+      });
+    },
+    decrementCount(item) {
+      if (item.count === 0) {
+        return
+      }
+      item.count--
+      this.isLoading = true;
+      this.$store.dispatch("editProduct", {
+        name: item.name,
+        category: item.categories,
+        description: item.description,
+        article: item.article,
+        price: item.price,
+        count: item.count,
+        pictures: item.pictures,
+        extra_options: item.extra_options,
+        id: item.id,
+      }).then(() => {
+        this.isLoading = false;
+      }).catch(err => {
+        console.error(err);
+        item.count++;
+      });
     }
   }
 }
@@ -404,7 +460,7 @@ svg {
     }
   }
   .block-footer {
-    height: 108px;
+    height: 150px;
     border-radius: 0 0 15px 15px;
     background-color: var(--app-card-background-color);
     transition: opacity 0.3s ease-in-out;
@@ -413,6 +469,7 @@ svg {
       justify-content: start;
       align-items: center;
       padding: 10px 10px;
+      height: 45px;
       span {
         font-weight: 550;
         text-align: center;
@@ -544,5 +601,41 @@ filter-component {
   position: absolute;
   left: 0;
   top: 0;
+}
+
+.buttons {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  .countDivBtn {
+    border-radius: 20px;
+    background-color: var(--app-background-color);
+    width: 126px;
+    display: flex;
+    font-weight: 400;
+    font-size: 20px;
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    -khtml-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+    div {
+      font-size: 36px;
+      font-weight: 500;
+      border-radius: 50px;
+      background-color: var(--app-background-color);
+      cursor: pointer;
+      -webkit-touch-callout: none;
+      -webkit-user-select: none;
+      -khtml-user-select: none;
+      -moz-user-select: none;
+      -ms-user-select: none;
+      user-select: none;
+      &:hover {
+        opacity: 0.7;
+      }
+    }
+  }
 }
 </style>
