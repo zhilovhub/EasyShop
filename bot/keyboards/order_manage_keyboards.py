@@ -390,3 +390,57 @@ class InlinePickReviewProductKeyboard:
         return InlineKeyboardMarkup(
             inline_keyboard=product_buttons
         )
+
+
+class InlineAcceptReviewKeyboard:
+    class Callback(BaseModel):
+        class ActionEnum(Enum):
+            SAVE = "sr"
+            IGNORE = "ir"
+
+        model_config = ConfigDict(from_attributes=True, populate_by_name=True)
+
+        n: str = Field(default="sir", frozen=True)
+        a: ActionEnum
+
+        product_review_id: int
+
+    @staticmethod
+    @callback_json_validator
+    def callback_json(action: Callback.ActionEnum, product_review_id: int) -> str:
+        return InlineAcceptReviewKeyboard.Callback(
+            a=action, product_review_id=product_review_id
+        ).model_dump_json(by_alias=True)
+
+    @staticmethod
+    def callback_validator(json_string: str) -> bool:
+        try:
+            InlineAcceptReviewKeyboard.Callback.model_validate_json(json_string)
+            return True
+        except ValidationError:
+            return False
+
+    @staticmethod
+    async def get_keyboard(product_review_id: int) -> InlineKeyboardMarkup:
+        actions = InlineAcceptReviewKeyboard.Callback.ActionEnum
+
+        return InlineKeyboardMarkup(
+            inline_keyboard=[
+                [
+                    InlineKeyboardButton(
+                        text="Сохранить",
+                        callback_data=InlineAcceptReviewKeyboard.callback_json(
+                            actions.SAVE, product_review_id
+                        )
+                    )
+                ],
+                [
+                    InlineKeyboardButton(
+                        text="Игнорироваь",
+                        callback_data=InlineAcceptReviewKeyboard.callback_json(
+                            actions.IGNORE, product_review_id
+                        )
+                    )
+                ]
+            ],
+        )

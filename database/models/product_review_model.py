@@ -1,6 +1,6 @@
 from pydantic import BaseModel, ConfigDict, Field, validate_call
 
-from sqlalchemy import Column, BigInteger, String, select, ForeignKey, insert, update, delete
+from sqlalchemy import BOOLEAN, Column, BigInteger, String, select, ForeignKey, insert, update, delete
 from sqlalchemy.ext.asyncio import AsyncEngine
 
 from bot.exceptions import InvalidParameterFormat
@@ -23,6 +23,7 @@ class ProductReview(Base):
     mark = Column(BigInteger, nullable=False)
     review_text = Column(String, nullable=True)
     user_id = Column(ForeignKey(CustomBotUser.user_id, ondelete="CASCADE"), nullable=False)
+    accepted = Column(BOOLEAN, default=False, nullable=False)
 
 
 class ProductReviewSchemaWithoutID(BaseModel):
@@ -33,6 +34,7 @@ class ProductReviewSchemaWithoutID(BaseModel):
     mark: int
     review_text: str | None = None
     user_id: int
+    accepted: bool = False
 
 
 class ProductReviewSchema(ProductReviewSchemaWithoutID):

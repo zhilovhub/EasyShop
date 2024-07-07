@@ -5,17 +5,19 @@ from aiogram.filters import StateFilter
 from aiogram.fsm.context import FSMContext
 
 from bot.main import product_review_db
+from bot.utils import MessageTexts
 from bot.exceptions.exceptions import BotNotFound
 from bot.keyboards.question_keyboards import ReplyBackQuestionMenuKeyboard
 from bot.keyboards.order_manage_keyboards import InlineOrderCancelKeyboard, \
     InlineOrderCustomBotKeyboard, InlineCreateReviewKeyboard, ReplyGetReviewMarkKeyboard, ReplyReviewBackKeyboard, \
-    InlinePickReviewProductKeyboard
+    InlinePickReviewProductKeyboard, InlineAcceptReviewKeyboard
 from bot.keyboards.custom_bot_menu_keyboards import ReplyCustomBotMenuKeyboard
 
 from custom_bots.multibot import order_db, product_db, main_bot, PREV_ORDER_MSGS, CustomUserStates, bot_db
 from custom_bots.handlers.routers import multi_bot_router
 
 from database.models.order_model import OrderStatusValues, OrderNotFound
+from database.models.product_model import ProductNotFound
 from database.models.product_review_model import ProductReviewSchemaWithoutID
 
 from logs.config import custom_bot_logger, extra_params
@@ -234,7 +236,7 @@ async def get_review_text(message: Message, state: FSMContext):
 
     state_data = await state.get_data()
     mark = state_data["mark"]
-    await product_review_db.add_product_review(
+    review_id = await product_review_db.add_product_review(
         ProductReviewSchemaWithoutID(
             bot_id=bot.bot_id,
             product_id=state_data["product_id"],
@@ -244,4 +246,10 @@ async def get_review_text(message: Message, state: FSMContext):
         )
     )
     await message.answer("Спасибо за отзыв 📬", reply_markup=ReplyCustomBotMenuKeyboard.get_keyboard(bot.bot_id))
-    await state.set_state(CustomUserStates.MAIN_MENU)
+    try:
+        product = await product_db.get_product(state_data["product_id"])
+        await main_bot.send_message(text=MessageTexts.show_product_review_info(mark, message.text, product.name),
+                                    reply_markup=InlineAcceptReviewKeyboard.get_keyboard(review_id))
+        await state.set_state(CustomUserStates.MAIN_MENU)
+    except ProductNotFound:
+        pass

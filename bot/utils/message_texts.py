@@ -130,3 +130,9 @@ class MessageTexts(Enum):
                     f"<b>{custom_bot_users_len - sent_post_message_amount}</b> человек" \
 
         return text
+
+    @staticmethod
+    def show_product_review_info(mark: int, review_text: str, product_name: str):
+        return f"Новый отзыв на продукт <b>{product_name}</b>\n\n" \
+            f"Оценка - {mark}\n\n" \
+            f"Отзыв - {review_text}"
