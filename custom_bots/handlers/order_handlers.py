@@ -165,7 +165,7 @@ async def get_product_id(query: CallbackQuery, state: FSMContext):
                         f"bot_token={query.message.bot.token}: this bot is not in db",
                         extra=extra_params(bot_token=query.message.bot.token)
                     )
-                await query.message.answer("Бот не инициализирован")
+                    await query.message.answer("Бот не инициализирован")
                 await query.message.answer("Вы уже оставили отзыв на этот продукт!", reply_markup=ReplyCustomBotMenuKeyboard.get_keyboard(bot.bot_id))
                 await state.clear()
                 return
