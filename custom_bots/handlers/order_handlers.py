@@ -144,7 +144,7 @@ async def create_order_review(query: CallbackQuery, state: FSMContext):
         return await query.message.edit_reply_markup(None)
     match callback_data.a:
         case callback_data.ActionEnum.CREATE_REVIEW:
-            await query.message.answer(text="Выберите товар 🪧", reply_markup=InlinePickReviewProductKeyboard.get_keyboard(order.items))
+            await query.message.answer(text="Выберите товар 🪧", reply_markup=await InlinePickReviewProductKeyboard.get_keyboard(order.items))
             await query.answer()
             await state.set_state(CustomUserStates.WAITING_FOR_REVIEW_PRODUCT)
 
