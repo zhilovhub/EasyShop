@@ -57,7 +57,7 @@ class ProductReviewDao(Dao):  # TODO write tests
             res.append(ProductReviewSchema.model_validate(product))
 
         self.logger.debug(
-            f"priduct_id={product_id}: has {len(res)} reviews",
+            f"product_id={product_id}: has {len(res)} reviews",
             extra=extra_params(product_id=product_id)
         )
 
@@ -108,7 +108,7 @@ class ProductReviewDao(Dao):  # TODO write tests
             review_id = (await conn.execute(insert(ProductReview).values(new_review.model_dump()))).inserted_primary_key[0]
 
         self.logger.debug(
-            f"product_review={review_id}: review {review_id} is added to database",
+            f"product_review_id={review_id}: review {review_id} is added to database",
             extra=extra_params(product_review=review_id)
         )
 
@@ -123,7 +123,7 @@ class ProductReviewDao(Dao):  # TODO write tests
             )
 
         self.logger.debug(
-            f"product_review={updated_review.id}: review {updated_review.id} is updated",
+            f"product_review_id={updated_review.id}: review {updated_review.id} is updated",
             extra=extra_params(product_review=updated_review.id)
         )
 
@@ -133,6 +133,6 @@ class ProductReviewDao(Dao):  # TODO write tests
             await conn.execute(delete(ProductReview).where(ProductReview.id == review_id))
 
         self.logger.debug(
-            f"product_review={review_id}: review {review_id} is deleted",
+            f"product_review_id={review_id}: review {review_id} is deleted",
             extra=extra_params(product_review=review_id)
         )

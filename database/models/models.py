@@ -51,9 +51,9 @@ class Database:
         self.post_message_dao = PostMessageDao(self.engine, self.logger)
         self.channel_user_dao = ChannelUserDao(self.engine, self.logger)
         self.channel_post_dao = ChannelPostDao(self.engine, self.logger)
+        self.product_review_dao = ProductReviewDao(self.engine, self.logger)
         self.custom_bot_user_dao = CustomBotUserDao(self.engine, self.logger)
         self.post_message_media_file_dao = PostMessageMediaFileDao(self.engine, self.logger)
-        self.product_review_dao = ProductReviewDao(self.engine, self.logger)
 
         self.logger.debug("Database class is initialized")
 
