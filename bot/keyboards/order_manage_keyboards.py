@@ -9,7 +9,7 @@ from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup, ReplyKeybo
 from bot.utils.keyboard_utils import get_product_by_id
 from bot.keyboards.keyboard_utils import callback_json_validator
 
-from database.models.order_model import OrderStatusValues
+from database.models.order_model import OrderItem, OrderStatusValues
 
 
 class InlineOrderCustomBotKeyboard:
@@ -374,7 +374,7 @@ class InlinePickReviewProductKeyboard:
             return False
 
     @staticmethod
-    async def get_keyboard(order_json: dict[int, Any]) -> InlineKeyboardMarkup:
+    async def get_keyboard(order_json: dict[int, OrderItem]) -> InlineKeyboardMarkup:
         actions = InlinePickReviewProductKeyboard.Callback.ActionEnum
         product_buttons = []
         for product_id in list(order_json.keys()):
@@ -385,7 +385,5 @@ class InlinePickReviewProductKeyboard:
                     callback_data=InlinePickReviewProductKeyboard.callback_json(actions.PICK_PRODUCT, product_id))]
             )
         return InlineKeyboardMarkup(
-            inline_keyboard=[
-                *product_buttons
-            ],
+            inline_keyboard=product_buttons,
         )
