@@ -98,36 +98,36 @@ class InlineStockMenuKeyboard:
                         )
                     ),
                 ],
-                [
-                    InlineKeyboardButton(
-                        text="📦 Управление остатками",
-                        callback_data=InlineStockMenuKeyboard.callback_json(
-                            actions.GOODS_COUNT_MANAGE, bot_id
-                        )
-                    ),
-                ],
-                [
-                    InlineKeyboardButton(
-                        text="⬇️ Импорт товаров",
-                        callback_data=InlineStockMenuKeyboard.callback_json(
-                            actions.IMPORT, bot_id
-                        )
-                    ),
-                    InlineKeyboardButton(
-                        text="⬆️ Экспорт товаров",
-                        callback_data=InlineStockMenuKeyboard.callback_json(
-                            actions.EXPORT, bot_id
-                        )
-                    ),
-                ],
-                [
-                    InlineKeyboardButton(
-                        text=f"{'✅' if auto_reduce else '❌'} Автоуменьшение на складе",
-                        callback_data=InlineStockMenuKeyboard.callback_json(
-                            actions.AUTO_REDUCE, bot_id
-                        )
-                    ),
-                ],
+                # [
+                #     InlineKeyboardButton(
+                #         text="📦 Управление остатками",
+                #         callback_data=InlineStockMenuKeyboard.callback_json(
+                #             actions.GOODS_COUNT_MANAGE, bot_id
+                #         )
+                #     ),
+                # ],
+                # [
+                #     InlineKeyboardButton(
+                #         text="⬇️ Импорт товаров",
+                #         callback_data=InlineStockMenuKeyboard.callback_json(
+                #             actions.IMPORT, bot_id
+                #         )
+                #     ),
+                #     InlineKeyboardButton(
+                #         text="⬆️ Экспорт товаров",
+                #         callback_data=InlineStockMenuKeyboard.callback_json(
+                #             actions.EXPORT, bot_id
+                #         )
+                #     ),
+                # ],
+                # [
+                #     InlineKeyboardButton(
+                #         text=f"{'✅' if auto_reduce else '❌'} Автоуменьшение на складе",
+                #         callback_data=InlineStockMenuKeyboard.callback_json(
+                #             actions.AUTO_REDUCE, bot_id
+                #         )
+                #     ),
+                # ],
                 [
                     InlineKeyboardButton(
                         text="🔙 Назад",
