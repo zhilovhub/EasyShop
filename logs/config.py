@@ -60,6 +60,8 @@ class LokiFilter(logging.Filter):
 
     def filter(self, record: LogRecord) -> bool:
         if hasattr(record, "tags"):
+            if hasattr(record, "product_review_id"):
+                record.tags["product_review_id"] = record.product_review_id
             if hasattr(record, "user_id"):
                 record.tags["user_id"] = record.user_id
             if hasattr(record, "bot_id"):

@@ -91,6 +91,8 @@ scheduler = Scheduler(getenv("SCHEDULER_URL"), "postgres", getenv("TIMEZONE"))
 class CustomUserStates(StatesGroup):
     MAIN_MENU = State()
     WAITING_FOR_QUESTION = State()
+    WAITING_FOR_REVIEW_MARK = State()
+    WAITING_FOR_REVIEW_TEXT = State()
 
 
 def format_locales(text: str, user: User, chat: Chat, reply_to_user: User = None) -> str:
