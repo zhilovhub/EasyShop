@@ -157,7 +157,7 @@ async def get_product_id(query: CallbackQuery, state: FSMContext):
         case callback_data.ActionEnum.PICK_PRODUCT:
             await query.message.answer(text="Оцените качество товаров ✔️", reply_markup=ReplyGetReviewMarkKeyboard.get_keyboard())
             await query.answer()
-            await state.set_state(CustomUserStates.WAITING_FOR_REVIEW_PRODUCT)
+            await state.set_state(CustomUserStates.WAITING_FOR_REVIEW_MARK)
             await state.set_data({
                 "product_id": callback_data.product_id
             })
