@@ -155,6 +155,20 @@ async def get_product_id(query: CallbackQuery, state: FSMContext):
     state_data = await state.get_data()
     match callback_data.a:
         case callback_data.ActionEnum.PICK_PRODUCT:
+            product = await product_review_db.get_product_review_by_user_id_and_product_id(
+                user_id=query.from_user.id, product_id=callback_data.product_id)
+            if product:
+                try:
+                    bot = await bot_db.get_bot_by_token(query.message.bot.token)
+                except BotNotFound:
+                    custom_bot_logger.warning(
+                        f"bot_token={query.message.bot.token}: this bot is not in db",
+                        extra=extra_params(bot_token=query.message.bot.token)
+                    )
+                await query.message.answer("Бот не инициализирован")
+                await query.message.answer("Вы уже оставили отзыв на этот продукт!", reply_markup=ReplyCustomBotMenuKeyboard.get_keyboard(bot.bot_id))
+                await state.clear()
+                return
             await query.message.answer(text="Оцените качество товаров ✔️", reply_markup=ReplyGetReviewMarkKeyboard.get_keyboard())
             await query.answer()
             await state.set_state(CustomUserStates.WAITING_FOR_REVIEW_MARK)

@@ -64,6 +64,24 @@ class ProductReviewDao(Dao):  # TODO write tests
         return res
 
     @validate_call(validate_return=True)
+    async def get_product_review_by_user_id_and_product_id(self, user_id: int, product_id: int) -> ProductReviewSchema:
+        async with self.engine.begin() as conn:
+            raw_res = await conn.execute(
+                select(ProductReview).where(ProductReview.user_id == user_id, ProductReview.product_id == product_id)
+            )
+        await self.engine.dispose()
+
+        res = raw_res.fetchone()
+
+        if res is not None:
+            self.logger.debug(
+                f"product_review with product_id={product_id} and user_id {user_id} is found",
+                extra=extra_params(product_id=product_id, user_id=user_id)
+            )
+
+        return res
+
+    @validate_call(validate_return=True)
     async def get_product_review(self, review_id: int) -> ProductReviewSchema:
         async with self.engine.begin() as conn:
             raw_res = await conn.execute(
