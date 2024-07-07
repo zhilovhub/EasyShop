@@ -64,7 +64,7 @@ class ProductReviewDao(Dao):  # TODO write tests
         return res
 
     @validate_call(validate_return=True)
-    async def get_product_review_by_user_id_and_product_id(self, user_id: int, product_id: int) -> ProductReviewSchema:
+    async def get_product_review_by_user_id_and_product_id(self, user_id: int, product_id: int) -> ProductReviewSchema | None:
         async with self.engine.begin() as conn:
             raw_res = await conn.execute(
                 select(ProductReview).where(ProductReview.user_id == user_id, ProductReview.product_id == product_id)
