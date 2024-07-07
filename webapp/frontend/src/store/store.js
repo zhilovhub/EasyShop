@@ -138,7 +138,6 @@ export const Store = new Vuex.Store({
       try {
         const { name , category, description, article, price, count, extra_options, images } = productInformation;
         const response = await fetch(`${Store.state.api_url}/api/products/add_product`, {
-
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -179,10 +178,36 @@ export const Store = new Vuex.Store({
         }  catch (error) {
           console.error('There was a problem with the fetch operation:', error);
         }
+      },
+      async editProduct({commit}, productInformation) {
+        console.log(productInformation);
+        try {
+          const { name , category, description, article, price, count, extra_options, pictures, id} = productInformation;
+          const response = await fetch(`${Store.state.api_url}/api/products/edit_product`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Access-Control-Allow-Origin': '*',
+              'authorization-data': tg.initData,
+            },
+            body: JSON.stringify({
+              "bot_id": parseInt(Store.state.bot_id),
+              "name": name,
+              "category": category,
+              "description": description,
+              "article": article,
+              "price": price || 0,
+              "count": count || 0,
+              "picture": pictures,
+              "extra_options": extra_options || {},
+              "id": id,
+            })
+          });
+        } catch (error) {
+          console.error('There was a problem with the fetch operation:', error);
+        }
       }
     },
   getters: {
 }
 });
-
-
