@@ -213,7 +213,6 @@ async def get_review_text(message: Message, state: FSMContext):
         return message.answer("Отправка отзыва отменена ✖️", reply_markup=ReplyCustomBotMenuKeyboard.get_keyboard(bot.bot_id))
     state_data = await state.get_data()
     mark = state_data["mark"]
-    order_id = state_data["order_id"]
     await product_review_db.add_product_review(
         ProductReviewSchemaWithoutID(
             bot_id=bot.bot_id,
