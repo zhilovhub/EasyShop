@@ -381,14 +381,12 @@ class InlinePickReviewProductKeyboard:
         product_buttons = []
         for product_id in list(order_json.keys()):
             product = await get_product_by_id(product_id)
+            custom_bot_logger.info(f"product {product}")
             product_buttons.append(
                 [InlineKeyboardButton(
                     text=f"{product.name}",
                     callback_data=InlinePickReviewProductKeyboard.callback_json(actions.PICK_PRODUCT, product_id))]
             )
-        custom_bot_logger.warning(
-            f"{product_buttons}"
-        )
         return InlineKeyboardMarkup(
             inline_keyboard=product_buttons,
         )
