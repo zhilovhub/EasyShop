@@ -1,6 +1,6 @@
 from pydantic import BaseModel, ConfigDict, Field, validate_call
 
-from sqlalchemy import Column, BigInteger, String, select, ForeignKey, insert, update, delete
+from sqlalchemy import BOOLEAN, Column, BigInteger, String, select, ForeignKey, insert, update, delete
 from sqlalchemy.ext.asyncio import AsyncEngine
 
 from bot.exceptions import InvalidParameterFormat
@@ -14,6 +14,11 @@ from database.models.custom_bot_user_model import CustomBotUser
 from logs.config import extra_params
 
 
+class ProductReviewNotFound(Exception):
+    """Raised when provided product_review not found in database"""
+    pass
+
+
 class ProductReview(Base):
     __tablename__ = "product_reviews"
 
@@ -23,6 +28,7 @@ class ProductReview(Base):
     mark = Column(BigInteger, nullable=False)
     review_text = Column(String, nullable=True)
     user_id = Column(ForeignKey(CustomBotUser.user_id, ondelete="CASCADE"), nullable=False)
+    accepted = Column(BOOLEAN, default=False, nullable=False)
 
 
 class ProductReviewSchemaWithoutID(BaseModel):
@@ -33,6 +39,7 @@ class ProductReviewSchemaWithoutID(BaseModel):
     mark: int
     review_text: str | None = None
     user_id: int
+    accepted: bool = False
 
 
 class ProductReviewSchema(ProductReviewSchemaWithoutID):
@@ -70,6 +77,9 @@ class ProductReviewDao(Dao):  # TODO write tests
                 select(ProductReview).where(ProductReview.user_id == user_id, ProductReview.product_id == product_id)
             )
         await self.engine.dispose()
+
+        if not raw_res:
+            raise ProductReviewNotFound
 
         res = raw_res.fetchone()
 
