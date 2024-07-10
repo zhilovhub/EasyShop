@@ -4,9 +4,9 @@ from sqlalchemy import BigInteger, Column, ForeignKey, insert, select, update, d
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncEngine
 
-from bot.exceptions import InvalidParameterFormat, InstanceAlreadyExists
 
 from database.models import Base
+from database.exceptions import InvalidParameterFormat, InstanceAlreadyExists
 from database.models.dao import Dao
 from database.models.bot_model import Bot
 

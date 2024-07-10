@@ -1,43 +1,45 @@
 import json
-import os
 import random
 import string
 from random import sample
 from aiohttp import ClientConnectorError
 from datetime import datetime
 
+from sqlalchemy.exc import IntegrityError
+
 from aiogram import F, Bot
 from aiogram.enums import ParseMode
 from aiogram.types import Message, CallbackQuery
-from sqlalchemy.exc import IntegrityError
 from aiogram.exceptions import TelegramUnauthorizedError
 from aiogram.fsm.context import FSMContext
 from aiogram.utils.token import validate_token, TokenValidationError
 from aiogram.client.default import DefaultBotProperties
 from aiogram.fsm.storage.base import StorageKey
 
-from bot.main import bot, user_db, product_db, order_db, custom_bot_user_db, QUESTION_MESSAGES, bot_db, mailing_db, \
-    product_review_db
+from bot.main import bot, QUESTION_MESSAGES
 from bot.utils import MessageTexts
-from bot.exceptions import InstanceAlreadyExists
 from bot.states.states import States
 from bot.handlers.routers import admin_bot_menu_router
 from bot.utils.custom_bot_api import start_custom_bot, stop_custom_bot
-from bot.enums.post_message_type import PostMessageType
 from bot.keyboards.channel_keyboards import InlineChannelsListKeyboard
-from bot.keyboards.main_menu_keyboards import ReplyBotMenuKeyboard, InlineBotMenuKeyboard, ReplyBackBotMenuKeyboard
+from bot.keyboards.main_menu_keyboards import ReplyBotMenuKeyboard, ReplyBackBotMenuKeyboard
 from bot.keyboards.stock_menu_keyboards import InlineStockMenuKeyboard, InlineWebStockKeyboard
 from bot.keyboards.post_message_keyboards import InlinePostMessageMenuKeyboard
-from bot.keyboards.order_manage_keyboards import InlineOrderStatusesKeyboard, InlineOrderCancelKeyboard, \
-    InlineOrderCustomBotKeyboard, InlineCreateReviewKeyboard, InlineAcceptReviewKeyboard
 from bot.post_message.post_message_create import post_message_create
 
-from custom_bots.multibot import storage as custom_bot_storage
+from common_utils.env_config import FILES_PATH
+from common_utils.keyboards.keyboards import InlineBotMenuKeyboard
+from common_utils.storage.custom_bot_storage import custom_bot_storage
+from common_utils.keyboards.order_manage_keyboards import InlineOrderCancelKeyboard, InlineOrderStatusesKeyboard, \
+    InlineAcceptReviewKeyboard, InlineOrderCustomBotKeyboard, InlineCreateReviewKeyboard
 
+from database.config import bot_db, product_db, order_db, product_review_db, user_db, custom_bot_user_db, mailing_db
+from database.exceptions import InstanceAlreadyExists
 from database.models.bot_model import BotSchemaWithoutId
 from database.models.order_model import OrderSchema, OrderNotFound, OrderItem, OrderStatusValues
 from database.models.mailing_model import MailingNotFound
 from database.models.product_model import ProductWithoutId, NotEnoughProductsInStockToReduce
+from database.models.post_message_model import PostMessageType
 from database.models.product_review_model import ProductReviewNotFound
 
 from logs.config import logger
@@ -404,7 +406,7 @@ async def bot_menu_photo_handler(message: Message, state: FSMContext):
     else:
         return await message.answer("Цена должна быть <b>целым числом</b>")
 
-    await bot.download(photo_file_id, destination=f"{os.getenv('FILES_PATH')}{filename}")
+    await bot.download(photo_file_id, destination=f"{FILES_PATH}{filename}")
 
     new_product = ProductWithoutId(bot_id=state_data['bot_id'],
                                    name=params[0],

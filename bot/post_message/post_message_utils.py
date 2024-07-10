@@ -1,10 +1,9 @@
 from aiogram.types import CallbackQuery
 
-from bot.main import post_message_db
-from bot.enums.post_message_type import PostMessageType
 from bot.keyboards.post_message_keyboards import UnknownPostMessageType
 
-from database.models.post_message_model import PostMessageSchema, PostMessageNotFound
+from database.config import post_message_db
+from database.models.post_message_model import PostMessageSchema, PostMessageNotFound, PostMessageType
 from database.models.post_message_media_files import PostMessageMediaFileSchema
 
 from logs.config import extra_params, logger

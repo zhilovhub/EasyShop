@@ -8,9 +8,9 @@ from sqlalchemy.ext.asyncio import AsyncEngine
 from sqlalchemy.dialects.postgresql import ARRAY
 from sqlalchemy.dialects.postgresql import insert as upsert
 
-from bot.exceptions import InvalidParameterFormat
 
 from database.models import Base
+from database.exceptions import InvalidParameterFormat
 from database.models.dao import Dao
 from database.models.bot_model import Bot
 

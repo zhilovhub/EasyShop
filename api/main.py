@@ -4,13 +4,12 @@ import datetime
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from dotenv import load_dotenv
-
-from api.loader import LOGS_PATH
 from api.files.router import router as files_router
 from api.orders.router import router as order_router
 from api.products.router import router as product_router
 from api.categories.router import router as category_router
+
+from common_utils.env_config import LOGS_PATH, API_PROTOCOL, API_HOST, SSL_KEY_PATH, SSL_CERT_PATH, API_PORT
 
 from logs.config import logger_configuration
 
@@ -49,8 +48,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-load_dotenv()
-
 
 @app.get(f"{ROOT_PATH}")
 async def read_root():
@@ -72,13 +69,12 @@ if __name__ == "__main__":
                       f'[{datetime.datetime.now()}]\n'
                       f'=============================\n')
 
-    protocol = os.getenv("API_PROTOCOL")
-    if protocol == "http":
-        uvicorn.run("main:app", host=os.getenv("API_HOST"), port=int(os.getenv("API_PORT")), log_level="info",
+    if API_PROTOCOL == "http":
+        uvicorn.run("main:app", host=API_HOST, port=API_PORT, log_level="info",
                     log_config=logger_configuration)
-    elif protocol == "https":
-        uvicorn.run("main:app", host=os.getenv("API_HOST"), port=int(os.getenv("API_PORT")), log_level="info",
-                    ssl_keyfile=os.getenv("SSL_KEY_PATH"), ssl_certfile=os.getenv("SSL_CERT_PATH"),
+    elif API_PROTOCOL == "https":
+        uvicorn.run("main:app", host=API_HOST, port=API_PORT, log_level="info",
+                    ssl_keyfile=SSL_KEY_PATH, ssl_certfile=SSL_CERT_PATH,
                     log_config=logger_configuration)
 
 # Start uvicorn from cli (no logs)

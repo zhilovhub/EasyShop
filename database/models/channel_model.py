@@ -4,9 +4,9 @@ from sqlalchemy import BigInteger, Column, ForeignKey, UniqueConstraint, \
     select, insert, delete, BOOLEAN, update
 from sqlalchemy.ext.asyncio import AsyncEngine
 
-from bot.exceptions import InvalidParameterFormat
 
 from database.models import Base
+from database.exceptions import InvalidParameterFormat
 from database.models.dao import Dao
 from database.models.bot_model import Bot
 

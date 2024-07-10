@@ -5,7 +5,7 @@ from pydantic import ValidationError, ConfigDict, Field, BaseModel
 
 from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 
-from bot.keyboards.keyboard_utils import callback_json_validator
+from common_utils.keyboards.keyboard_utils import callback_json_validator
 
 
 class InlineSubscriptionContinueKeyboard:

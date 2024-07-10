@@ -1,16 +1,14 @@
 from aiogram import Bot
 from aiogram.types import WebAppInfo
 
-from bot.main import bot_db, channel_db, post_message_db, mailing_db, channel_post_db, contest_db, product_db
-from bot.config import WEB_APP_URL, WEB_APP_PORT
-from bot.enums.post_message_type import PostMessageType
+from common_utils.env_config import WEB_APP_URL, WEB_APP_PORT
 
+from database.config import bot_db, channel_db, channel_post_db, contest_db, post_message_db, mailing_db
 from database.models.channel_model import ChannelSchema
 from database.models.mailing_model import MailingSchema, MailingNotFound
 from database.models.contest_model import ContestSchema, ContestNotFound
-from database.models.product_model import ProductSchema, ProductNotFound
 from database.models.channel_post_model import ChannelPostSchema, ChannelPostNotFound
-from database.models.post_message_model import PostMessageSchema, PostMessageNotFound
+from database.models.post_message_model import PostMessageSchema, PostMessageNotFound, PostMessageType
 
 from logs.config import logger, extra_params
 
@@ -82,13 +80,13 @@ async def get_bot_post_message(bot_id: int, post_message_type: PostMessageType) 
         return None
 
 
-async def get_product_by_id(product_id: int) -> ProductSchema | None:
-    try:
-        product = await product_db.get_product(product_id=product_id)
-        return product
-    except ProductNotFound:
-        logger.debug(
-            f"product_id={product_id}: not found",
-            extra=extra_params(product_id=product_id)
-        )
-        return None
+def callback_json_validator(func):
+    def wrapper_func(*args, **kwargs):
+        callback_json = func(*args, **kwargs)
+
+        if len(callback_json) > 64:
+            logger.warning(f"The callback {callback_json} has len ({len(callback_json)}) more than 64")
+
+        return callback_json
+
+    return wrapper_func

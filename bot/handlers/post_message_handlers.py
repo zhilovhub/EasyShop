@@ -6,25 +6,27 @@ from aiogram.types import Message, CallbackQuery
 from aiogram.filters import StateFilter
 from aiogram.fsm.context import FSMContext
 
-from bot.main import post_message_db, bot_db, post_message_media_file_db, _scheduler, contest_db
+from bot.main import _scheduler
 from bot.utils import MessageTexts
 from bot.states import States
 from bot.handlers.routers import post_message_router
-from bot.enums.post_message_type import PostMessageType
 from bot.keyboards.channel_keyboards import InlineChannelMenuKeyboard
-from bot.keyboards.main_menu_keyboards import InlineBotMenuKeyboard, ReplyBotMenuKeyboard
+from bot.keyboards.main_menu_keyboards import ReplyBotMenuKeyboard
 from bot.post_message.post_message_utils import is_post_message_valid
 from bot.keyboards.post_message_keyboards import InlinePostMessageStartConfirmKeyboard, InlinePostMessageMenuKeyboard, \
     InlinePostMessageExtraSettingsKeyboard, InlinePostMessageAcceptDeletingKeyboard, UnknownPostMessageType
 from bot.post_message.post_message_editors import edit_delay_date, edit_message, edit_button_text, edit_button_url, \
-    edit_media_files, send_post_message, PostActionType, edit_winners_count, edit_contest_finish_date
+    edit_media_files, send_post_message, PostActionType, edit_winners_count, edit_contest_finish_date, \
+    pre_finish_contest
 from bot.handlers.mailing_settings_handlers import send_post_messages
 from bot.post_message.post_message_decorators import check_callback_conflicts
 from bot.post_message.post_message_callback_handler import post_message_handler
 
-from database.models.post_message_model import PostMessageSchema
+from common_utils.keyboards.keyboards import InlineBotMenuKeyboard
 
-from bot.post_message.post_message_editors import pre_finish_contest
+from database.config import post_message_media_file_db, post_message_db, contest_db, bot_db
+from database.models.post_message_model import PostMessageSchema, PostMessageType
+
 
 from logs.config import logger, extra_params
 

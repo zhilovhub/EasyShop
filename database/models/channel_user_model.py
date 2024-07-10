@@ -6,9 +6,8 @@ from pydantic import BaseModel, Field, ConfigDict
 from sqlalchemy import ForeignKey, BOOLEAN, BigInteger, Column, DateTime, select, update, delete, insert
 from sqlalchemy.ext.asyncio import AsyncEngine
 
-from bot.exceptions.exceptions import *
-
 from database.models import Base
+from database.exceptions import InvalidParameterFormat, ChannelUserNotFound, InstanceAlreadyExists
 from database.models.dao import Dao
 from database.models.channel_model import Channel
 

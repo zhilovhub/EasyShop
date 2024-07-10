@@ -8,19 +8,19 @@ from openpyxl.styles import PatternFill, Border, Side, Alignment, Font
 
 from io import BytesIO
 
-from bot.main import bot_db, contest_db, category_db
-from bot.config import FILES_PATH
-from bot.exceptions.exceptions import BotNotFound
-
-from logs.config import logger, extra_params
-
-from custom_bots.multibot import main_bot
-
 from aiogram import Bot
 from aiogram.types import BufferedInputFile
 
+from common_utils.env_config import FILES_PATH
+
+from database.config import bot_db, contest_db, category_db
+from database.exceptions import BotNotFound
 from database.models.contest_model import ContestUserSchema, ContestNotFound
 from database.models.product_model import ProductSchema
+
+from bot.main import bot as main_bot
+
+from logs.config import logger, extra_params
 
 
 def _create_zip_buffer(images) -> BufferedInputFile:

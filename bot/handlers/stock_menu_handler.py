@@ -5,15 +5,19 @@ from aiogram.enums import ParseMode
 from aiogram.types import CallbackQuery, Message, FSInputFile
 from aiogram.fsm.context import FSMContext
 
-from bot.main import stock_manager, bot, product_db, bot_db
+from bot.main import stock_manager, bot
 from bot.utils import MessageTexts
 from bot.states import States
-from bot.config import FILES_PATH
 from bot.handlers.routers import stock_menu_router
 from bot.utils.excel_utils import send_products_info_xlsx
-from bot.keyboards.main_menu_keyboards import InlineBotMenuKeyboard, ReplyBotMenuKeyboard
+from bot.keyboards.main_menu_keyboards import ReplyBotMenuKeyboard
 from bot.keyboards.stock_menu_keyboards import InlineStockMenuKeyboard, ReplyBackStockMenuKeyboard, \
     InlineStockImportMenuKeyboard
+
+from common_utils.env_config import FILES_PATH
+from common_utils.keyboards.keyboards import InlineBotMenuKeyboard
+
+from database.config import product_db, bot_db
 
 from logs.config import logger, extra_params
 

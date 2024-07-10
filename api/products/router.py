@@ -7,18 +7,17 @@ from pydantic import BaseModel, Field
 from sqlalchemy.exc import IntegrityError
 
 from api.utils import check_admin_authorization
-from api.loader import db_engine, PROJECT_ROOT
+from common_utils.env_config import FILES_PATH
 
+from database.config import product_db, category_db
 from database.models.product_model import (
     ProductSchema,
     ProductNotFound,
     ProductWithoutId,
-    ProductDao,
     ProductFilter,
     ProductFilterWithoutBot,
     FilterNotFound,
     PRODUCT_FILTERS)
-from database.models.category_model import CategoryDao
 
 from logs.config import api_logger, extra_params
 
@@ -28,8 +27,6 @@ router = APIRouter(
     tags=["products"],
     responses={404: {"description": "Product not found"}},
 )
-product_db: ProductDao = db_engine.get_product_db()
-category_db: CategoryDao = db_engine.get_category_dao()
 
 
 class SearchWordMustNotBeEmpty(Exception):
@@ -209,7 +206,6 @@ async def create_file(bot_id: int,
                     string.digits +
                     string.ascii_letters,
                     15))
-            files_path = f"{PROJECT_ROOT}Files/"
             photo_path = f"{bot_id}_{random_string}.{file.filename.split('.')[-1]}"
 
             api_logger.debug(
@@ -217,7 +213,7 @@ async def create_file(bot_id: int,
                 extra=extra_params(bot_id=bot_id, product_id=product_id)
             )
 
-            with open(files_path + photo_path, "wb") as photo:
+            with open(FILES_PATH + photo_path, "wb") as photo:
                 photo.write(await file.read())
 
             if not product.picture:

@@ -1,6 +1,6 @@
 import pytest
 
-from bot.exceptions import InvalidParameterFormat, BotNotFound, InstanceAlreadyExists
+from database.exceptions import InvalidParameterFormat, BotNotFound, InstanceAlreadyExists
 from database.models.bot_model import BotDao
 from tests.schemas import bot_schema_1, bot_schema_2, bot_schema_without_id_1, bot_schema_without_id_2
 

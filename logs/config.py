@@ -2,19 +2,17 @@ import logging  # noqa
 import logging.config
 import logging_loki  # noqa
 
-from dotenv import load_dotenv
 from re import compile, sub, UNICODE
 import os
 
 from logging import LogRecord
 
-load_dotenv()
+from common_utils.env_config import LOGS_PATH, FROM, LOG_TO_GRAFANA, GRAFANA_URL
 
-LOG_TO_GRAFANA = bool(int(os.getenv("LOG_TO_GRAFANA")))
-
-LOGS_PATH = os.getenv("PROJECT_ROOT") + "logs/"
-GRAFANA_URL = os.getenv("GRAFANA_URL")
-FROM = os.getenv("FROM")
+try:
+    os.mkdir(LOGS_PATH)
+except FileExistsError:
+    pass
 
 if not FROM:
     raise Exception("В .env присвойте переменной FROM Ваше имя, чтобы в логах можно было фильтроваться")

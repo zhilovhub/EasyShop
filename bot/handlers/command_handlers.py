@@ -5,23 +5,23 @@ from aiogram.types import Message, ReplyKeyboardRemove
 from aiogram.filters import CommandStart
 from aiogram.fsm.context import FSMContext
 
-from bot.main import bot, cache_resources_file_id_store, user_db, adv_db, subscription, bot_db
+from bot.main import bot, cache_resources_file_id_store, subscription
 from bot.utils import MessageTexts
 from bot.states.states import States
 from bot.handlers.routers import commands_router
-from bot.utils.admin_group import send_event, EventTypes, success_event
-from bot.exceptions.exceptions import *
 from bot.utils.send_instructions import send_instructions
 from bot.utils.check_subscription import check_subscription
-from bot.keyboards.main_menu_keyboards import InlineBotMenuKeyboard
+from bot.subscription.subscription import UserHasAlreadyStartedTrial
 from bot.handlers.subscription_handlers import send_subscription_expire_notify, send_subscription_end_notify
 from bot.keyboards.subscription_keyboards import InlineSubscriptionContinueKeyboard
-from bot.middlewaries.subscription_middleware import CheckSubscriptionMiddleware
 
+from common_utils.keyboards.keyboards import InlineBotMenuKeyboard
+from common_utils.broadcasting.broadcasting import send_event, EventTypes, success_event
+
+from database.config import user_db, adv_db, bot_db
+from database.exceptions import *
 from database.models.adv_model import EmptyAdvTable, AdvSchemaWithoutId
 from database.models.user_model import UserSchema, UserStatusValues
-
-from subscription.subscription import UserHasAlreadyStartedTrial
 
 from logs.config import logger, adv_logger, extra_params
 
@@ -146,4 +146,4 @@ async def _start_trial(message: Message, state: FSMContext):
         MessageTexts.FREE_TRIAL_MESSAGE.value,
         reply_markup=ReplyKeyboardRemove()
     )
-    await success_event(message.from_user, admin_message, EventTypes.STARTED_TRIAL)
+    await success_event(message.from_user, bot, admin_message, EventTypes.STARTED_TRIAL)

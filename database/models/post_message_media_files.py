@@ -3,10 +3,10 @@ from pydantic import BaseModel, Field, validate_call, ConfigDict
 from sqlalchemy import BigInteger, Column, ForeignKey, select, insert, delete, String, update
 from sqlalchemy.ext.asyncio import AsyncEngine
 
-from bot.exceptions import InvalidParameterFormat
 
 from database.models import Base
 from database.models.dao import Dao
+from database.exceptions import InvalidParameterFormat
 from database.models.post_message_model import PostMessage
 
 from logs.config import extra_params

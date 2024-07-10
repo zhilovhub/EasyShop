@@ -1,10 +1,11 @@
 import asyncio
-import os
 import sys
 
 import pytest
-from dotenv import load_dotenv
 
+from bot.subscription.subscription import Subscription
+from common_utils.env_config import DB_FOR_TESTS, SCHEDULER_FOR_TESTS
+from common_utils.scheduler.scheduler import Scheduler
 from database.models.bot_model import BotDao
 from database.models.models import Base
 from database.models.models import Database
@@ -12,17 +13,13 @@ from database.models.order_model import OrderDao
 from database.models.payment_model import PaymentDao
 from database.models.product_model import ProductDao
 from database.models.user_model import UserDao
-from stoke.stoke import Stoke
-from subscription.scheduler import Scheduler
-from subscription.subscription import Subscription
+from bot.stoke.stoke import Stoke
 from tests.schemas import bot_schema_without_id_1, bot_schema_without_id_2, user_schema_1, user_schema_2
-
-load_dotenv()
 
 
 @pytest.fixture
 async def database() -> Database:
-    database = Database(sqlalchemy_url=os.environ["DB_FOR_TESTS"])
+    database = Database(sqlalchemy_url=DB_FOR_TESTS)
     async with database.engine.begin() as conn:
         await conn.run_sync(Base.metadata.drop_all)
     await database.connect()
@@ -39,7 +36,7 @@ def stoke(database: Database) -> Stoke:
 
 @pytest.fixture
 async def subscription(database: Database) -> Subscription:
-    _scheduler = Scheduler(os.getenv("SCHEDULER_FOR_TESTS"), "postgres", "Europe/Moscow")
+    _scheduler = Scheduler(SCHEDULER_FOR_TESTS, "postgres", "Europe/Moscow")
     subscription = Subscription(database, _scheduler)
     await _scheduler.start()
     yield subscription

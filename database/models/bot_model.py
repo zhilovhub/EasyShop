@@ -13,9 +13,22 @@ from database.models import Base
 from database.models.dao import Dao
 from database.models.user_model import User
 
-from bot.exceptions.exceptions import *
-
 from logs.config import extra_params
+
+
+class BotNotFound(Exception):
+    """Raised when provided bot not found in database"""
+    pass
+
+
+class InvalidParameterFormat(Exception):
+    """Raised when provided invalid data format to function"""
+    pass
+
+
+class InstanceAlreadyExists(Exception):
+    """Raised when trying to add already existed db instance"""
+    pass
 
 
 class Bot(Base):

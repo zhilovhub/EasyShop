@@ -5,19 +5,20 @@ from aiogram.types import ChatMemberUpdated, ChatMemberLeft, ChatMemberAdministr
 from aiogram.filters import IS_MEMBER, IS_NOT_MEMBER, ChatMemberUpdatedFilter
 from aiogram.enums.chat_type import ChatType
 
-from bot.utils import MessageTexts
-from bot.keyboards.main_menu_keyboards import InlineBotMenuKeyboard
+from common_utils.keyboards.keyboards import InlineBotMenuKeyboard
+from common_utils.keyboards.channel_keyboards import InlineJoinContestKeyboard
 
-from custom_bots.multibot import bot_db, main_bot, channel_db, channel_user_db, contest_db
+from custom_bots.multibot import bot_db, main_bot
 from custom_bots.handlers.routers import multi_bot_channel_router
+from custom_bots.utils.custom_message_texts import CustomMessageTexts
 
+from database.config import channel_user_db, channel_db, contest_db
+from database.exceptions import ChannelUserNotFound
 from database.models.channel_model import ChannelSchema
 from database.models.contest_model import ContestUserNotFound, ContestNotFound
-from database.models.channel_user_model import ChannelUserNotFound, ChannelUserSchemaWithoutId
+from database.models.channel_user_model import ChannelUserSchemaWithoutId
 
 from logs.config import custom_bot_logger, extra_params
-
-from bot.keyboards.channel_keyboards import InlineJoinContestKeyboard
 
 
 @multi_bot_channel_router.chat_member(ChatMemberUpdatedFilter(IS_NOT_MEMBER >> IS_MEMBER))
@@ -115,7 +116,7 @@ async def my_chat_member_handler(my_chat_member: ChatMemberUpdated) -> Any:
 
         await main_bot.send_message(
             chat_id=custom_bot.created_by,
-            text=MessageTexts.BOT_ADDED_TO_CHANNEL_MESSAGE.value.format(
+            text=CustomMessageTexts.BOT_ADDED_TO_CHANNEL_MESSAGE.value.format(
                 custom_bot_username, channel_username),
             reply_markup=await InlineBotMenuKeyboard.get_keyboard(custom_bot.bot_id)
         )
@@ -127,7 +128,7 @@ async def my_chat_member_handler(my_chat_member: ChatMemberUpdated) -> Any:
 
         await main_bot.send_message(
             chat_id=custom_bot.created_by,
-            text=MessageTexts.BOT_REMOVED_FROM_CHANNEL_MESSAGE.value.format(
+            text=CustomMessageTexts.BOT_REMOVED_FROM_CHANNEL_MESSAGE.value.format(
                 custom_bot_username, channel_username),
             reply_markup=await InlineBotMenuKeyboard.get_keyboard(custom_bot.bot_id)
         )

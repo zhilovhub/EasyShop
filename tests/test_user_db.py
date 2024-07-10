@@ -1,6 +1,6 @@
 import pytest
 
-from bot.exceptions import InvalidParameterFormat, UserNotFound, InstanceAlreadyExists
+from database.exceptions import InvalidParameterFormat, UserNotFound, InstanceAlreadyExists
 from database.models.user_model import UserDao, UserStatusValues
 from database.models.order_model import OrderStatusValues
 

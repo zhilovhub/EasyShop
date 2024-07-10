@@ -1,12 +1,10 @@
 from datetime import datetime
 
-from bot.main import post_message_db, mailing_db, channel_post_db, contest_db
-from bot.enums.post_message_type import PostMessageType
-
+from database.config import post_message_db, mailing_db, channel_post_db, contest_db
 from database.models.contest_model import ContestSchemaWithoutId
 from database.models.mailing_model import MailingSchemaWithoutId
 from database.models.channel_post_model import ChannelPostSchemaWithoutId
-from database.models.post_message_model import PostMessageSchemaWithoutId
+from database.models.post_message_model import PostMessageSchemaWithoutId, PostMessageType
 
 
 async def post_message_create(bot_id: int,

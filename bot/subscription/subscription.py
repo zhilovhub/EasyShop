@@ -1,12 +1,13 @@
-import os
 from datetime import datetime, timedelta
+
+from bot.subscription import config
 
 from database.models.models import Database
 from database.models.user_model import UserStatusValues
 from database.models.payment_model import PaymentSchemaWithoutId
 
-from subscription import config
-from subscription.scheduler import Scheduler
+from common_utils.env_config import DESTINATION_PHONE_NUMBER, TIMEZONE, DB_FOR_TESTS
+from common_utils.scheduler.scheduler import Scheduler
 
 from logs.config import logger, extra_params
 
@@ -156,11 +157,10 @@ class Subscription:
     @staticmethod
     def get_destination_phone_number() -> str:
         """Returns the phone number to pay to"""
-        phone_number = config.DESTINATION_PHONE_NUMBER
         logger.debug(
-            f"returned phone_number={phone_number}"
+            f"returned phone_number={DESTINATION_PHONE_NUMBER}"
         )
-        return phone_number
+        return DESTINATION_PHONE_NUMBER
 
     async def start_scheduler(self) -> None:
         """Starts the scheduler"""
@@ -181,20 +181,18 @@ class Subscription:
                f"• Стоимость подписки: <b>{config.SUBSCRIPTION_PRICE}₽</b>\n\n" \
                f"• Оплачивайте подписку удобным способом, " \
                f"через qr код. Либо на карту сбербанка по номеру телефона: " \
-               f"<code>{config.DESTINATION_PHONE_NUMBER}</code>\n\n" \
+               f"<code>{DESTINATION_PHONE_NUMBER}</code>\n\n" \
                f"• После оплаты пришлите боту чек (скрин или пдфку) с подтверждением оплаты.\n\n" \
                f"• В подписи к фото <b>напишите Ваши контакты для связи</b> с " \
                f"Вами в случае возникновения вопросов по оплате.",
 
 
 if __name__ == '__main__':
-    from bot import config
-
     from database.models.models import Database
 
-    scheduler = Scheduler('postgres', config.TIMEZONE)
+    scheduler = Scheduler('postgres', TIMEZONE)
 
     subscription = Subscription(
-        database=Database(sqlalchemy_url=os.getenv("DB_FOR_TESTS")),
+        database=Database(sqlalchemy_url=DB_FOR_TESTS),
         custom_scheduler=scheduler
     )

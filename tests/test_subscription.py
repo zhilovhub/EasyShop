@@ -4,9 +4,10 @@ from datetime import datetime, timedelta
 
 import pytest
 
+from bot.subscription.subscription import Subscription, UserHasAlreadyStartedTrial
+from common_utils.env_config import PROJECT_ROOT
 from database.models.payment_model import PaymentDao
 from database.models.user_model import UserDao, UserStatusValues
-from subscription.subscription import Subscription, UserHasAlreadyStartedTrial
 
 from tests.schemas import user_schema_2, user_schema_1
 
@@ -117,7 +118,7 @@ class TestSubscription:
         """Subscription.get_subscribe_instructions"""
         excepted_qr_code_filename = "sbp_qr.png"
         subscribe_instructions = subscription.get_subscribe_instructions()
-        assert os.path.exists(os.getenv("PROJECT_ROOT") + "resources/" + excepted_qr_code_filename)
+        assert os.path.exists(PROJECT_ROOT + "resources/" + excepted_qr_code_filename)
         assert subscribe_instructions[0] == excepted_qr_code_filename and \
                subscribe_instructions[1] == """• Стоимость подписки: <b>1990₽</b>
 

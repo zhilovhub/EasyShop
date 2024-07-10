@@ -1,9 +1,9 @@
 import pytest
 
-from bot.exceptions import InvalidParameterFormat
+from database.exceptions import InvalidParameterFormat
 from database.models.product_model import ProductDao, ProductNotFound
-from tests.schemas import product_schema_without_id_1, product_schema_without_id_2, product_schema_1, product_schema_2, \
-    BOT_ID
+from tests.schemas import product_schema_without_id_1, product_schema_without_id_2, product_schema_1, \
+    product_schema_2, BOT_ID
 
 
 @pytest.fixture

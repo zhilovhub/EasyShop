@@ -4,7 +4,7 @@ from pydantic import ConfigDict, Field, BaseModel
 
 from aiogram.types import ReplyKeyboardMarkup, KeyboardButton, InlineKeyboardButton, InlineKeyboardMarkup
 
-from bot.utils.keyboard_utils import make_webapp_info
+from common_utils.keyboards.keyboard_utils import make_webapp_info
 
 
 class ReplyCustomBotMenuKeyboard:

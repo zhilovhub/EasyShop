@@ -3,10 +3,10 @@ import random
 from typing import Callable
 from datetime import datetime
 
-from bot import config
-
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.jobstores.sqlalchemy import SQLAlchemyJobStore
+
+from common_utils.env_config import TIMEZONE
 
 from logs.config import logger, extra_params
 
@@ -27,7 +27,7 @@ class Scheduler:
 
     def __init__(self, scheduler_url: str, jobstore_alias: str, timezone: str):
         self.scheduler = AsyncIOScheduler(
-            {'apscheduler.timezone': config.TIMEZONE},
+            {'apscheduler.timezone': TIMEZONE},
             jobstores={jobstore_alias: SQLAlchemyJobStore(url=scheduler_url)}
         )
         self.jobstore_alias = jobstore_alias

@@ -1,6 +1,6 @@
 from aiogram.types import WebAppInfo
 
-from bot.config import WEB_APP_URL, WEB_APP_PORT
+from common_utils.env_config import WEB_APP_URL, WEB_APP_PORT
 
 
 def make_admin_panel_webapp_info(bot_id: int) -> WebAppInfo:

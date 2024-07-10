@@ -18,10 +18,6 @@ from database.models.custom_bot_user_model import CustomBotUserDao
 from database.models.post_message_media_files import PostMessageMediaFileDao
 from database.models import Base  # should be the last import from database.models
 
-from dotenv import load_dotenv
-
-load_dotenv()
-
 
 def singleton(class_):
     instances = {}
@@ -107,8 +103,8 @@ class Database:
     def get_custom_bot_user_db(self) -> CustomBotUserDao:
         return self.custom_bot_user_dao
 
-    def get_post_message_media_file_dao(self) -> PostMessageMediaFileDao:
-        return self.post_message_media_file_dao
-
     def get_product_review_dao(self) -> ProductReviewDao:
         return self.product_review_dao
+
+    def get_post_message_media_file_dao(self) -> PostMessageMediaFileDao:
+        return self.post_message_media_file_dao

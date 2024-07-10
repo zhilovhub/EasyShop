@@ -1,27 +1,26 @@
 from aiogram import Bot
 from aiogram.enums import ParseMode
-from aiogram.fsm.context import FSMContext
 from aiogram.types import CallbackQuery, FSInputFile
+from aiogram.fsm.context import FSMContext
 
-from bot.main import post_message_db, bot, post_message_media_file_db, custom_bot_user_db, _scheduler, bot_db, \
-    contest_db
+from bot.main import bot, _scheduler
 from bot.utils import MessageTexts
-from bot.config import WEB_APP_URL, WEB_APP_PORT
 from bot.states import States
-from bot.enums.post_message_type import PostMessageType
 from bot.keyboards.channel_keyboards import InlineChannelMenuKeyboard
-from bot.keyboards.main_menu_keyboards import ReplyBotMenuKeyboard, InlineBotMenuKeyboard
+from bot.keyboards.main_menu_keyboards import ReplyBotMenuKeyboard
 from bot.post_message.post_message_utils import is_post_message_valid
 from bot.keyboards.post_message_keyboards import InlinePostMessageMenuKeyboard, ReplyBackPostMessageMenuKeyboard, \
     ReplyConfirmMediaFilesKeyboard, InlinePostMessageAcceptDeletingKeyboard, InlinePostMessageExtraSettingsKeyboard, \
     InlinePostMessageStartConfirmKeyboard, UnknownPostMessageType
-from bot.post_message.post_message_editors import send_post_message, PostActionType
+from bot.post_message.post_message_editors import send_post_message, pre_finish_contest, PostActionType
 
-from database.models.post_message_model import PostMessageSchema
+from common_utils.env_config import WEB_APP_URL, WEB_APP_PORT
+from common_utils.keyboards.keyboards import InlineBotMenuKeyboard
+
+from database.config import custom_bot_user_db, bot_db, post_message_db, contest_db, post_message_media_file_db
+from database.models.post_message_model import PostMessageSchema, PostMessageType
 
 from logs.config import extra_params, logger
-
-from .post_message_editors import pre_finish_contest
 
 from graphs import generate_contest_users_graph
 

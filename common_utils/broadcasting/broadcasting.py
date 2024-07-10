@@ -4,7 +4,7 @@ from aiogram import Bot
 from aiogram.enums import ParseMode
 from aiogram.types import Message, User
 
-from bot.main import bot, config
+from common_utils.env_config import ADMIN_GROUP_ID, TELEGRAM_TOKEN
 
 from logs.config import logger
 
@@ -30,7 +30,12 @@ class EventTypes(Enum):
                      None)
 
 
-async def send_event(user: User, event_type: EventTypes, event_bot: Bot = bot, err_msg: str = 'Не указано') -> Message:
+async def send_event(
+        user: User,
+        event_type: EventTypes,
+        event_bot: Bot = Bot(TELEGRAM_TOKEN),
+        err_msg: str = 'Не указано'
+) -> Message:
     try:
         bot_username = (await event_bot.get_me()).username
         message_text = ""
@@ -45,8 +50,8 @@ async def send_event(user: User, event_type: EventTypes, event_bot: Bot = bot, e
                                                       '@' + user.username if user.username else user.full_name,
                                                       user.id,
                                                       err_msg)
-        return await bot.send_message(
-            chat_id=config.ADMIN_GROUP_ID,
+        return await event_bot.send_message(
+            chat_id=ADMIN_GROUP_ID,
             text=message_text
         )
     except Exception as e:
@@ -55,9 +60,9 @@ async def send_event(user: User, event_type: EventTypes, event_bot: Bot = bot, e
         )
 
 
-async def success_event(user: User, message: Message, event_type: EventTypes):
+async def success_event(user: User, event_bot: Bot, message: Message, event_type: EventTypes):
     try:
-        bot_username = (await bot.get_me()).username
+        bot_username = (await event_bot.get_me()).username
         message_text = ""
         event_type_text = event_type.value[1]
         match event_type:

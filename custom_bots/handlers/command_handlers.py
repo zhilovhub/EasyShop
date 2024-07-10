@@ -3,12 +3,12 @@ from aiogram.types import Message
 from aiogram.filters import CommandStart
 from aiogram.fsm.context import FSMContext
 
-from bot.keyboards.custom_bot_menu_keyboards import ReplyCustomBotMenuKeyboard, InlineShopCustomBotKeyboard
-
-from custom_bots.multibot import bot_db, custom_bot_user_db, CustomUserStates, format_locales
+from custom_bots.multibot import CustomUserStates, format_locales
 from custom_bots.handlers.routers import multi_bot_router
 from custom_bots.utils.custom_bot_options import get_option
+from custom_bots.keyboards.custom_bot_menu_keyboards import ReplyCustomBotMenuKeyboard, InlineShopCustomBotKeyboard
 
+from database.config import custom_bot_user_db, bot_db
 from database.models.bot_model import BotNotFound
 from database.models.custom_bot_user_model import CustomBotUserNotFound
 
