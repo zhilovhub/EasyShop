@@ -6,7 +6,7 @@ from aiogram.types import Message, CallbackQuery
 from aiogram.filters import StateFilter
 from aiogram.fsm.context import FSMContext
 
-from bot.main import post_message_db, bot_db, post_message_media_file_db, _scheduler
+from bot.main import post_message_db, bot_db, post_message_media_file_db, _scheduler, contest_db
 from bot.utils import MessageTexts
 from bot.states import States
 from bot.handlers.routers import post_message_router
@@ -23,6 +23,10 @@ from bot.post_message.post_message_decorators import check_callback_conflicts
 from bot.post_message.post_message_callback_handler import post_message_handler
 
 from database.models.post_message_model import PostMessageSchema
+
+from bot.post_message.post_message_editors import finish_contest
+
+from logs.config import logger, extra_params
 
 
 def get_channel_id(callback_data, post_message_type):
@@ -229,7 +233,25 @@ async def _start_confirm(
                     await post_message_db.update_post_message(post_message)
 
             case PostMessageType.CHANNEL_POST | PostMessageType.CONTEST:
-                channel_username = (await Bot(custom_bot.token).get_chat(channel_id)).username
+                if post_message_type == PostMessageType.CONTEST:
+                    contest = await contest_db.get_contest_by_bot_id(bot_id=post_message.bot_id)
+                    if contest.finish_job_id:
+                        try:
+                            await _scheduler.del_job(contest.finish_job_id)
+                        except Exception as e:
+                            logger.warning(
+                                f"user_id={query.message.chat.id}: Job ID {post_message.job_id} not found",
+                                extra=extra_params(
+                                    user_id=query.message.chat.id,
+                                    bot_id=post_message.bot_id,
+                                    post_message_id=post_message.post_message_id
+                                ),
+                                exc_info=e
+                            )
+
+                    job_id = await _scheduler.add_scheduled_job(finish_contest, contest.finish_date, [contest.contest_id])
+                    contest.finish_job_id = job_id
+                    channel_username = (await Bot(custom_bot.token).get_chat(channel_id)).username
 
                 await query.message.answer(
                     f"Запись отправится в {post_message.send_date}"

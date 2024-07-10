@@ -546,23 +546,6 @@ async def _contest_finish_date_save(
 
     contest.finish_date = datetime_obj
 
-    if contest.finish_job_id:
-        try:
-            await _scheduler.del_job(contest.finish_job_id)
-        except Exception as e:
-            logger.warning(
-                f"user_id={message.chat.id}: Job ID {post_message.job_id} not found",
-                extra=extra_params(
-                    user_id=message.chat.id,
-                    bot_id=post_message.bot_id,
-                    post_message_id=post_message.post_message_id
-                ),
-                exc_info=e
-            )
-
-    job_id = await _scheduler.add_scheduled_job(finish_contest, datetime_obj, [contest.contest_id])
-    contest.finish_job_id = job_id
-
     await contest_db.update_contest(contest)
 
     await message.reply(
