@@ -2,6 +2,9 @@ from aiogram import Bot
 from aiogram.enums import ParseMode
 from aiogram.types import CallbackQuery
 
+
+from logs.config import logger, extra_params
+
 from bot.main import channel_user_db, bot_db, channel_post_db, contest_db
 from bot.utils import MessageTexts
 from bot.handlers.routers import channel_menu_router
@@ -163,3 +166,6 @@ async def contest_type_callback_handler(query: CallbackQuery):
                     channel_id=channel_id
                 )
             )
+        case _:
+            logger.warning("Unknown callback in contest type select kb",
+                           extra_params(bot_id=bot_id, user_id=query.from_user.id))

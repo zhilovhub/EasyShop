@@ -186,3 +186,7 @@ async def channel_menu_callback_handler(query: CallbackQuery):
                 return await query.answer("Теперь вы участвуете в конкурсе.", show_alert=True)
             else:
                 return await query.answer("Вы уже участвуете в этом конкурсе.", show_alert=True)
+        case _:
+            custom_bot_logger.warning("Unknown callback in channel contest kb",
+                                      extra_params(bot_id=bot_id, contest_id=contest.contest_id,
+                                                   user_id=query.from_user.id))

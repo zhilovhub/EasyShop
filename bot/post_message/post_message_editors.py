@@ -26,6 +26,13 @@ from database.models.post_message_media_files import PostMessageMediaFileSchema
 from logs.config import extra_params
 
 
+def get_channel_id(state_data, post_message_type):
+    if post_message_type in (PostMessageType.CHANNEL_POST, PostMessageType.CONTEST):
+        return state_data["channel_id"]
+    else:
+        return None
+
+
 class PostActionType(Enum):
     DEMO = "demo"  # Демо сообщение с главного бота
     # Демо сообщение с главного бота (но немного другой функионал для отправки)
@@ -55,8 +62,7 @@ async def edit_media_files(
                 state,
                 bot_id,
                 post_message_type,
-                channel_id=state_data["channel_id"] if post_message_type in (
-                    PostMessageType.CHANNEL_POST, PostMessageType.CONTEST) else None
+                channel_id=get_channel_id(state_data, post_message_type)
             )
 
         case ReplyConfirmMediaFilesKeyboard.Callback.ActionEnum.CLEAR.value:
@@ -71,8 +77,7 @@ async def edit_media_files(
                     state,
                     bot_id,
                     post_message_type,
-                    channel_id=state_data["channel_id"] if post_message_type in (
-                        PostMessageType.CHANNEL_POST, PostMessageType.CONTEST) else None
+                    channel_id=get_channel_id(state_data, post_message_type)
                 )
 
 
@@ -193,8 +198,7 @@ async def edit_button_text(
             state,
             bot_id,
             post_message_type,
-            channel_id=state_data["channel_id"] if post_message_type in (
-                PostMessageType.CHANNEL_POST, PostMessageType.CONTEST) else None
+            channel_id=get_channel_id(state_data, post_message_type)
         )
 
     if message_text:
@@ -203,16 +207,14 @@ async def edit_button_text(
                 message,
                 bot_id,
                 post_message_type,
-                channel_id=state_data["channel_id"] if post_message_type in (
-                    PostMessageType.CHANNEL_POST, PostMessageType.CONTEST) else None
+                channel_id=get_channel_id(state_data, post_message_type)
             )
         else:
             await _button_text_save(
                 message,
                 post_message,
                 post_message_type,
-                channel_id=state_data["channel_id"] if post_message_type in (
-                    PostMessageType.CHANNEL_POST, PostMessageType.CONTEST) else None
+                channel_id=get_channel_id(state_data, post_message_type)
             )
 
         await state.set_state(States.BOT_MENU)
@@ -282,16 +284,14 @@ async def edit_message(
                 message,
                 bot_id,
                 post_message_type,
-                channel_id=state_data["channel_id"] if post_message_type in (PostMessageType.CHANNEL_POST,
-                                                                             PostMessageType.CONTEST) else None
+                channel_id=get_channel_id(state_data, post_message_type)
             )
         else:
             await _message_save(
                 message,
                 post_message,
                 post_message_type,
-                channel_id=state_data["channel_id"] if post_message_type in (PostMessageType.CHANNEL_POST,
-                                                                             PostMessageType.CONTEST) else None
+                channel_id=get_channel_id(state_data, post_message_type)
             )
 
         await state.set_state(States.BOT_MENU)
@@ -322,8 +322,7 @@ async def edit_winners_count(
                 message,
                 bot_id,
                 post_message_type,
-                channel_id=state_data["channel_id"] if post_message_type in (PostMessageType.CHANNEL_POST,
-                                                                             PostMessageType.CONTEST) else None
+                channel_id=get_channel_id(state_data, post_message_type)
             )
         else:
             try:
@@ -334,8 +333,7 @@ async def edit_winners_count(
                 message,
                 post_message,
                 post_message_type,
-                channel_id=state_data["channel_id"] if post_message_type in (PostMessageType.CHANNEL_POST,
-                                                                             PostMessageType.CONTEST) else None
+                channel_id=get_channel_id(state_data, post_message_type)
             )
 
         await state.set_state(States.BOT_MENU)
@@ -439,8 +437,7 @@ async def edit_delay_date(
                 message,
                 bot_id,
                 post_message_type,
-                channel_id=state_data["channel_id"] if post_message_type in (
-                    PostMessageType.CHANNEL_POST, PostMessageType.CONTEST) else None
+                channel_id=get_channel_id(state_data, post_message_type)
             )
         else:
             try:
@@ -448,8 +445,7 @@ async def edit_delay_date(
                     message,
                     post_message,
                     post_message_type,
-                    channel_id=state_data["channel_id"] if post_message_type in (
-                        PostMessageType.CHANNEL_POST, PostMessageType.CONTEST) else None
+                    channel_id=get_channel_id(state_data, post_message_type)
                 )
                 await state.set_state(States.BOT_MENU)
                 await state.set_data(state_data)
@@ -479,8 +475,7 @@ async def edit_contest_finish_date(
                 message,
                 bot_id,
                 post_message_type,
-                channel_id=state_data["channel_id"] if post_message_type in (
-                    PostMessageType.CHANNEL_POST, PostMessageType.CONTEST) else None
+                channel_id=get_channel_id(state_data, post_message_type)
             )
         else:
             try:
@@ -488,8 +483,7 @@ async def edit_contest_finish_date(
                     message,
                     post_message,
                     post_message_type,
-                    channel_id=state_data["channel_id"] if post_message_type in (
-                        PostMessageType.CHANNEL_POST, PostMessageType.CONTEST) else None
+                    channel_id=get_channel_id(state_data, post_message_type)
                 )
                 await state.set_state(States.BOT_MENU)
                 await state.set_data(state_data)
@@ -652,8 +646,7 @@ async def edit_button_url(
             state,
             bot_id,
             post_message_type,
-            channel_id=state_data["channel_id"] if post_message_type in (
-                PostMessageType.CHANNEL_POST, PostMessageType.CONTEST) else None
+            channel_id=get_channel_id(state_data, post_message_type)
         )
 
     if message_text:
@@ -662,8 +655,7 @@ async def edit_button_url(
                 message,
                 bot_id,
                 post_message_type,
-                channel_id=state_data["channel_id"] if post_message_type in (
-                    PostMessageType.CHANNEL_POST, PostMessageType.CONTEST) else None
+                channel_id=get_channel_id(state_data, post_message_type)
             )
         else:
             pattern = r"(?i)\b((?:https?://|www\d{0,3}[.]|[a-z0-9.\-]+[.][a-z]{2,4}/)(?:[^\s()<>]+|\(([^\s()<>]+" \
@@ -678,8 +670,7 @@ async def edit_button_url(
                 message,
                 post_message,
                 post_message_type,
-                channel_id=state_data["channel_id"] if post_message_type in (PostMessageType.CHANNEL_POST,
-                                                                             PostMessageType.CONTEST) else None
+                channel_id=get_channel_id(state_data, post_message_type)
             )
 
         await state.set_state(States.BOT_MENU)

@@ -24,6 +24,17 @@ from logs.config import extra_params, logger
 from .post_message_editors import finish_contest
 
 
+class ContestMessageDontNeedButton(Exception):
+    pass
+
+
+def get_channel_id(callback_data, post_message_type):
+    if post_message_type in (PostMessageType.CHANNEL_POST, PostMessageType.CONTEST):
+        return callback_data.channel_id
+    else:
+        return None
+
+
 async def _cancel_send(
         query: CallbackQuery,
         post_message: PostMessageSchema,
@@ -51,20 +62,6 @@ async def _cancel_send(
 
     post_message.job_id = None
 
-    if post_message_type == PostMessageType.CONTEST:
-        await post_message_db.update_post_message(post_message)
-        contest = await contest_db.get_contest_by_bot_id(bot_id=post_message.bot_id)
-        contest.is_finished = True
-        if contest.finish_job_id:
-            try:
-                await _scheduler.del_job(contest.finish_job_id)
-            except:  # noqa
-                pass
-        await contest_db.update_contest(contest)
-    else:
-        contest = None
-        await post_message_db.delete_post_message(post_message.post_message_id)
-
     custom_bot_token = (await bot_db.get_bot(post_message.bot_id)).token
     custom_bot_username = (await Bot(custom_bot_token).get_me()).username
 
@@ -80,6 +77,7 @@ async def _cancel_send(
                 reply_markup=await InlineBotMenuKeyboard.get_keyboard(post_message.bot_id),
                 parse_mode=ParseMode.HTML
             )
+            await post_message_db.delete_post_message(post_message.post_message_id)
         case PostMessageType.CHANNEL_POST:
             username = (await Bot(custom_bot_token).get_chat(channel_id)).username
             await query.message.answer(
@@ -91,7 +89,17 @@ async def _cancel_send(
                 reply_markup=await InlineChannelMenuKeyboard.get_keyboard(post_message.bot_id, channel_id),
                 parse_mode=ParseMode.HTML
             )
+            await post_message_db.delete_post_message(post_message.post_message_id)
         case PostMessageType.CONTEST:
+            await post_message_db.update_post_message(post_message)
+            contest = await contest_db.get_contest_by_bot_id(bot_id=post_message.bot_id)
+            contest.is_finished = True
+            if contest.finish_job_id:
+                try:
+                    await _scheduler.del_job(contest.finish_job_id)
+                except:  # noqa
+                    pass
+            await contest_db.update_contest(contest)
             username = (await Bot(custom_bot_token).get_chat(channel_id)).username
             if contest_pre_finish:
                 await finish_contest(contest.contest_id, pre_finish=True)
@@ -616,8 +624,7 @@ async def _post_message_union(
                 post_message,
                 post_message_type,
                 user_id,
-                channel_id=callback_data.channel_id if post_message_type in (
-                    PostMessageType.CHANNEL_POST, PostMessageType.CONTEST) else None
+                channel_id=get_channel_id(callback_data, post_message_type)
             )
 
         # NOT RUNNING ACTIONS
@@ -626,8 +633,7 @@ async def _post_message_union(
                 query,
                 post_message,
                 post_message_type,
-                channel_id=callback_data.channel_id if post_message_type in (
-                    PostMessageType.CHANNEL_POST, PostMessageType.CONTEST) else None
+                channel_id=get_channel_id(callback_data, post_message_type)
             )
 
         case callback_data.ActionEnum.BUTTON_URL:
@@ -636,8 +642,7 @@ async def _post_message_union(
                 state,
                 post_message,
                 post_message_type,
-                channel_id=callback_data.channel_id if post_message_type in (
-                    PostMessageType.CHANNEL_POST, PostMessageType.CONTEST) else None
+                channel_id=get_channel_id(callback_data, post_message_type)
             )
 
         case callback_data.ActionEnum.BUTTON_TEXT:
@@ -646,8 +651,7 @@ async def _post_message_union(
                 state,
                 post_message,
                 post_message_type,
-                channel_id=callback_data.channel_id if post_message_type in (
-                    PostMessageType.CHANNEL_POST, PostMessageType.CONTEST) else None
+                channel_id=get_channel_id(callback_data, post_message_type)
             )
 
         case callback_data.ActionEnum.BUTTON_DELETE:
@@ -655,8 +659,7 @@ async def _post_message_union(
                 query,
                 post_message,
                 post_message_type,
-                channel_id=callback_data.channel_id if post_message_type in (
-                    PostMessageType.CHANNEL_POST, PostMessageType.CONTEST) else None
+                channel_id=get_channel_id(callback_data, post_message_type)
             )
 
         case callback_data.ActionEnum.POST_MESSAGE_TEXT:
@@ -665,8 +668,7 @@ async def _post_message_union(
                 state,
                 post_message,
                 post_message_type,
-                channel_id=callback_data.channel_id if post_message_type in (
-                    PostMessageType.CHANNEL_POST, PostMessageType.CONTEST) else None
+                channel_id=get_channel_id(callback_data, post_message_type)
             )
 
         case callback_data.ActionEnum.POST_MESSAGE_MEDIA:
@@ -675,8 +677,7 @@ async def _post_message_union(
                 state,
                 post_message,
                 post_message_type,
-                channel_id=callback_data.channel_id if post_message_type in (
-                    PostMessageType.CHANNEL_POST, PostMessageType.CONTEST) else None
+                channel_id=get_channel_id(callback_data, post_message_type)
             )
 
         case callback_data.ActionEnum.START:
@@ -684,8 +685,7 @@ async def _post_message_union(
                 query,
                 post_message,
                 post_message_type,
-                channel_id=callback_data.channel_id if post_message_type in (
-                    PostMessageType.CHANNEL_POST, PostMessageType.CONTEST) else None
+                channel_id=get_channel_id(callback_data, post_message_type)
             )
 
         case callback_data.ActionEnum.DEMO:
@@ -693,8 +693,7 @@ async def _post_message_union(
                 query,
                 post_message,
                 post_message_type,
-                channel_id=callback_data.channel_id if post_message_type in (
-                    PostMessageType.CHANNEL_POST, PostMessageType.CONTEST) else None
+                channel_id=get_channel_id(callback_data, post_message_type)
             )
 
         case callback_data.ActionEnum.DELETE_POST_MESSAGE:
@@ -702,8 +701,7 @@ async def _post_message_union(
                 query,
                 post_message,
                 post_message_type,
-                channel_id=callback_data.channel_id if post_message_type in (
-                    PostMessageType.CHANNEL_POST, PostMessageType.CONTEST) else None
+                channel_id=get_channel_id(callback_data, post_message_type)
             )
 
         case callback_data.ActionEnum.EXTRA_SETTINGS:
@@ -711,8 +709,7 @@ async def _post_message_union(
                 query,
                 post_message,
                 post_message_type,
-                channel_id=callback_data.channel_id if post_message_type in (
-                    PostMessageType.CHANNEL_POST, PostMessageType.CONTEST) else None
+                channel_id=get_channel_id(callback_data, post_message_type)
             )
 
         case callback_data.ActionEnum.DELAY:
@@ -721,8 +718,7 @@ async def _post_message_union(
                 state,
                 post_message,
                 post_message_type,
-                channel_id=callback_data.channel_id if post_message_type in (
-                    PostMessageType.CHANNEL_POST, PostMessageType.CONTEST) else None
+                channel_id=get_channel_id(callback_data, post_message_type)
             )
 
         case callback_data.ActionEnum.REMOVE_DELAY:
@@ -730,8 +726,7 @@ async def _post_message_union(
                 query,
                 post_message,
                 post_message_type,
-                channel_id=callback_data.channel_id if post_message_type in (
-                    PostMessageType.CHANNEL_POST, PostMessageType.CONTEST) else None
+                channel_id=get_channel_id(callback_data, post_message_type)
             )
 
         case callback_data.ActionEnum.BACK:
@@ -739,8 +734,7 @@ async def _post_message_union(
                 query,
                 post_message,
                 post_message_type,
-                channel_id=callback_data.channel_id if post_message_type in (
-                    PostMessageType.CHANNEL_POST, PostMessageType.CONTEST) else None
+                channel_id=get_channel_id(callback_data, post_message_type)
             )
 
         # CONTEST ACTIONS
@@ -750,8 +744,7 @@ async def _post_message_union(
                 state,
                 post_message,
                 post_message_type,
-                channel_id=callback_data.channel_id if post_message_type in (
-                    PostMessageType.CHANNEL_POST, PostMessageType.CONTEST) else None
+                channel_id=get_channel_id(callback_data, post_message_type)
             )
 
         case callback_data.ActionEnum.CONTEST_FINISH_DATE:
@@ -760,8 +753,7 @@ async def _post_message_union(
                 state,
                 post_message,
                 post_message_type,
-                channel_id=callback_data.channel_id if post_message_type in (
-                    PostMessageType.CHANNEL_POST, PostMessageType.CONTEST) else None
+                channel_id=get_channel_id(callback_data, post_message_type)
             )
 
         case callback_data.ActionEnum.PRE_FINISH:
@@ -816,9 +808,11 @@ async def _inline_no_button(
         case PostMessageType.MAILING:
             username = (await Bot(custom_bot_token).get_me()).username
             text = "В этом рассылочном сообщении кнопки нет"
-        case PostMessageType.CHANNEL_POST | PostMessageType.CONTEST:
+        case PostMessageType.CHANNEL_POST:
             username = (await Bot(custom_bot_token).get_chat(channel_id)).username
             text = "В этой записи для канала кнопки нет"
+        case PostMessageType.CONTEST:
+            raise ContestMessageDontNeedButton
         case _:
             raise UnknownPostMessageType
 

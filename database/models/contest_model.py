@@ -1,6 +1,7 @@
 from pydantic import BaseModel, Field, validate_call, ConfigDict
 
 from sqlalchemy import BigInteger, Column, ForeignKey, select, insert, delete, update, Boolean, DateTime, String
+
 from sqlalchemy.ext.asyncio import AsyncEngine
 from sqlalchemy.exc import IntegrityError
 

@@ -23,7 +23,7 @@ async def post_message_create(bot_id: int,
     match post_message_type:
         case PostMessageType.MAILING:
             await mailing_db.add_mailing(MailingSchemaWithoutId.model_validate(data))
-        case PostMessageType.CONTEST:
-            await contest_db.add_contest(ContestSchemaWithoutId.model_validate(data))
         case PostMessageType.CHANNEL_POST:
             await channel_post_db.add_channel_post(ChannelPostSchemaWithoutId.model_validate(data))
+        case PostMessageType.CONTEST:
+            await contest_db.add_contest(ContestSchemaWithoutId.model_validate(data))

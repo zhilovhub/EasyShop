@@ -5,9 +5,9 @@ from pydantic import ValidationError, Field, ConfigDict, BaseModel
 from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup, ReplyKeyboardMarkup, KeyboardButton
 
 from bot.enums.post_message_type import PostMessageType
+from bot.keyboards.keyboard_utils import callback_json_validator
 from bot.utils.keyboard_utils import (get_bot_channels, get_bot_username, get_bot_channel_post, get_bot_contest,
                                       get_bot_post_message)
-from bot.keyboards.keyboard_utils import callback_json_validator
 
 
 class ReplyBackChannelMenuKeyboard:
@@ -242,18 +242,18 @@ class InlineContestTypeKeyboard:
 
         model_config = ConfigDict(from_attributes=True, populate_by_name=True)
 
-        n: str = Field(default="cl", frozen=True)
+        n: str = Field(default="cts", frozen=True)
         a: ActionEnum
 
         bot_id: int
-        channel_id: int | None = Field(alias="ci")
+        channel_id: int = Field(alias="ci")
 
     @staticmethod
     @callback_json_validator
     def callback_json(
             action: Callback.ActionEnum,
             bot_id: int,
-            channel_id: int | None
+            channel_id: int
     ) -> str:
         return InlineContestTypeKeyboard.Callback(
             a=action,

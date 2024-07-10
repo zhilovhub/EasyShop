@@ -49,7 +49,6 @@ def check_callback_conflicts(func):
             return
 
         custom_bot_token = (await bot_db.get_bot(bot_id)).token
-        print(callback_data)
         match post_message_type:
             case PostMessageType.MAILING:
                 username = (await Bot(custom_bot_token).get_me()).username
