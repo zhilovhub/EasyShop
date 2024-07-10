@@ -7,12 +7,24 @@ from io import BytesIO
 from bot.main import bot_db, contest_db
 from bot.exceptions.exceptions import BotNotFound
 
+from logs.config import logger, extra_params
+
 from custom_bots.multibot import main_bot
 
 from aiogram import Bot
 from aiogram.types import BufferedInputFile
 
-from database.models.contest_model import ContestUserSchema
+from database.models.contest_model import ContestUserSchema, ContestNotFound
+
+
+def _make_xlsx_buffer(name: str, wb_data) -> BufferedInputFile:
+    wb = create_excel(wb_data, name, name)
+    buffer = BytesIO()
+    wb.save(buffer)
+    buffer.seek(0)
+    buffer_file = BufferedInputFile(buffer.read(), filename=f"{name}.xlsx")
+    buffer.close()
+    return buffer_file
 
 
 def create_excel(data, sheet_name, table_type):
@@ -42,6 +54,8 @@ async def send_ban_users_xlsx(users_list: List[int], bot_id: int):
         bot = await bot_db.get_bot(bot_id=bot_id)
         created_by = bot.created_by
     except BotNotFound:
+        logger.error(f"Provided to excel function bot not found bot_id={bot_id}",
+                     extra_params(bot_id=bot_id))
         return
     custom_bot = Bot(token=bot.token)
     wb_data = []
@@ -51,15 +65,9 @@ async def send_ban_users_xlsx(users_list: List[int], bot_id: int):
         wb_data.append(
             {"user_id": user, "username": username, }
         )
-    ban_users_wb = create_excel(wb_data, "Banned", "banned")
-    ban_users_buffer = BytesIO()
-    ban_users_wb.save(ban_users_buffer)
-    ban_users_buffer.seek(0)
-    ban_users_file = BufferedInputFile(
-        ban_users_buffer.read(), filename="ban_users.xlsx")
-    await main_bot.send_document(created_by, document=ban_users_file,
+    buffered_file = _make_xlsx_buffer("banned", wb_data)
+    await main_bot.send_document(created_by, document=buffered_file,
                                  caption="ban_users.xlsx")
-    ban_users_buffer.close()
 
 
 async def send_contest_results_xlsx(users: list[ContestUserSchema], contest_id: int):
@@ -67,7 +75,13 @@ async def send_contest_results_xlsx(users: list[ContestUserSchema], contest_id: 
         contest = await contest_db.get_contest_by_contest_id(contest_id)
         bot = await bot_db.get_bot(bot_id=contest.bot_id)
         created_by = bot.created_by
+    except ContestNotFound:
+        logger.error(f"Provided to excel function contest not found contest_id={contest_id}",
+                     extra_params(contest_id=contest_id))
+        return
     except BotNotFound:
+        logger.error(f"Provided to excel function bot not found bot_id={contest.bot_id}",
+                     extra_params(bot_id=contest.bot_id))
         return
 
     wb_data = []
@@ -76,12 +90,6 @@ async def send_contest_results_xlsx(users: list[ContestUserSchema], contest_id: 
             {"user_id": user.user_id, "username": "@" + str(user.username), "full_name": user.full_name,
              "took part time": user.join_date, "won": user.is_won}
         )
-    contest_users_wb = create_excel(wb_data, "Contest", "contest")
-    contest_users_buffer = BytesIO()
-    contest_users_wb.save(contest_users_buffer)
-    contest_users_buffer.seek(0)
-    contest_users_file = BufferedInputFile(
-        contest_users_buffer.read(), filename="contest_users.xlsx")
-    await main_bot.send_document(created_by, document=contest_users_file,
+    buffered_file = _make_xlsx_buffer("contest", wb_data)
+    await main_bot.send_document(created_by, document=buffered_file,
                                  caption="Список участников конкурса.")
-    contest_users_buffer.close()
