@@ -16,7 +16,8 @@ from aiogram.utils.token import validate_token, TokenValidationError
 from aiogram.client.default import DefaultBotProperties
 from aiogram.fsm.storage.base import StorageKey
 
-from bot.main import bot, user_db, product_db, order_db, custom_bot_user_db, QUESTION_MESSAGES, bot_db, mailing_db, product_review_db
+from bot.main import bot, user_db, product_db, order_db, custom_bot_user_db, QUESTION_MESSAGES, bot_db, mailing_db, \
+    product_review_db
 from bot.utils import MessageTexts
 from bot.exceptions import InstanceAlreadyExists
 from bot.states.states import States
@@ -210,12 +211,13 @@ async def handler_order_cancel_callback(query: CallbackQuery, state: FSMContext)
 
 
 @admin_bot_menu_router.callback_query(lambda query: InlineAcceptReviewKeyboard.callback_validator(query.data))
-async def handle_review_request(query: CallbackQuery, state: FSMContext):
+async def handle_review_request(query: CallbackQuery):
     callback_data = InlineAcceptReviewKeyboard.Callback.model_validate_json(query.data)
     try:
         review = await product_review_db.get_product_review(callback_data.product_review_id)
     except ProductReviewNotFound:
-        await query.answer("Продукт уже удален", show_alert=True)
+        return await query.answer("Продукт уже удален", show_alert=True)
+
     match callback_data.a:
         case callback_data.ActionEnum.SAVE:
             review.accepted = True
@@ -311,12 +313,14 @@ async def handle_callback(query: CallbackQuery, state: FSMContext):
                 text=f"Новый статус заказа <b>#{order.id}</b>\n<b>{order.translate_order_status()}</b>")
 
             if callback_data.a == callback_data.ActionEnum.FINISH:
-                await Bot(bot_token, default=DefaultBotProperties(
-                    parse_mode=ParseMode.HTML)).send_message(
+                await Bot(bot_token, default=DefaultBotProperties(parse_mode=ParseMode.HTML)).send_message(
                     reply_to_message_id=msg.message_id,
                     chat_id=callback_data.chat_id,
                     text=f"Вы можете оставить отзыв ❤️",
-                    reply_markup=InlineCreateReviewKeyboard.get_keyboard(order_id=order.id, chat_id=callback_data.chat_id))
+                    reply_markup=InlineCreateReviewKeyboard.get_keyboard(
+                        order_id=order.id, chat_id=callback_data.chat_id
+                    )
+                )
 
 
 @admin_bot_menu_router.message(States.WAITING_FOR_TOKEN)

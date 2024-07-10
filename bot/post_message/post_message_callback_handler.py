@@ -58,7 +58,7 @@ async def _cancel_send(
         if contest.finish_job_id:
             try:
                 await _scheduler.del_job(contest.finish_job_id)
-            except:
+            except:  # noqa
                 pass
         await contest_db.update_contest(contest)
     else:
@@ -617,7 +617,7 @@ async def _post_message_union(
                 post_message_type,
                 user_id,
                 channel_id=callback_data.channel_id if post_message_type in (
-                PostMessageType.CHANNEL_POST, PostMessageType.CONTEST) else None
+                    PostMessageType.CHANNEL_POST, PostMessageType.CONTEST) else None
             )
 
         # NOT RUNNING ACTIONS
@@ -627,7 +627,7 @@ async def _post_message_union(
                 post_message,
                 post_message_type,
                 channel_id=callback_data.channel_id if post_message_type in (
-                PostMessageType.CHANNEL_POST, PostMessageType.CONTEST) else None
+                    PostMessageType.CHANNEL_POST, PostMessageType.CONTEST) else None
             )
 
         case callback_data.ActionEnum.BUTTON_URL:
@@ -637,7 +637,7 @@ async def _post_message_union(
                 post_message,
                 post_message_type,
                 channel_id=callback_data.channel_id if post_message_type in (
-                PostMessageType.CHANNEL_POST, PostMessageType.CONTEST) else None
+                    PostMessageType.CHANNEL_POST, PostMessageType.CONTEST) else None
             )
 
         case callback_data.ActionEnum.BUTTON_TEXT:
@@ -647,7 +647,7 @@ async def _post_message_union(
                 post_message,
                 post_message_type,
                 channel_id=callback_data.channel_id if post_message_type in (
-                PostMessageType.CHANNEL_POST, PostMessageType.CONTEST) else None
+                    PostMessageType.CHANNEL_POST, PostMessageType.CONTEST) else None
             )
 
         case callback_data.ActionEnum.BUTTON_DELETE:
@@ -656,7 +656,7 @@ async def _post_message_union(
                 post_message,
                 post_message_type,
                 channel_id=callback_data.channel_id if post_message_type in (
-                PostMessageType.CHANNEL_POST, PostMessageType.CONTEST) else None
+                    PostMessageType.CHANNEL_POST, PostMessageType.CONTEST) else None
             )
 
         case callback_data.ActionEnum.POST_MESSAGE_TEXT:
@@ -666,7 +666,7 @@ async def _post_message_union(
                 post_message,
                 post_message_type,
                 channel_id=callback_data.channel_id if post_message_type in (
-                PostMessageType.CHANNEL_POST, PostMessageType.CONTEST) else None
+                    PostMessageType.CHANNEL_POST, PostMessageType.CONTEST) else None
             )
 
         case callback_data.ActionEnum.POST_MESSAGE_MEDIA:
@@ -676,7 +676,7 @@ async def _post_message_union(
                 post_message,
                 post_message_type,
                 channel_id=callback_data.channel_id if post_message_type in (
-                PostMessageType.CHANNEL_POST, PostMessageType.CONTEST) else None
+                    PostMessageType.CHANNEL_POST, PostMessageType.CONTEST) else None
             )
 
         case callback_data.ActionEnum.START:
@@ -685,7 +685,7 @@ async def _post_message_union(
                 post_message,
                 post_message_type,
                 channel_id=callback_data.channel_id if post_message_type in (
-                PostMessageType.CHANNEL_POST, PostMessageType.CONTEST) else None
+                    PostMessageType.CHANNEL_POST, PostMessageType.CONTEST) else None
             )
 
         case callback_data.ActionEnum.DEMO:
@@ -694,7 +694,7 @@ async def _post_message_union(
                 post_message,
                 post_message_type,
                 channel_id=callback_data.channel_id if post_message_type in (
-                PostMessageType.CHANNEL_POST, PostMessageType.CONTEST) else None
+                    PostMessageType.CHANNEL_POST, PostMessageType.CONTEST) else None
             )
 
         case callback_data.ActionEnum.DELETE_POST_MESSAGE:
@@ -703,7 +703,7 @@ async def _post_message_union(
                 post_message,
                 post_message_type,
                 channel_id=callback_data.channel_id if post_message_type in (
-                PostMessageType.CHANNEL_POST, PostMessageType.CONTEST) else None
+                    PostMessageType.CHANNEL_POST, PostMessageType.CONTEST) else None
             )
 
         case callback_data.ActionEnum.EXTRA_SETTINGS:
@@ -712,7 +712,7 @@ async def _post_message_union(
                 post_message,
                 post_message_type,
                 channel_id=callback_data.channel_id if post_message_type in (
-                PostMessageType.CHANNEL_POST, PostMessageType.CONTEST) else None
+                    PostMessageType.CHANNEL_POST, PostMessageType.CONTEST) else None
             )
 
         case callback_data.ActionEnum.DELAY:
@@ -722,7 +722,7 @@ async def _post_message_union(
                 post_message,
                 post_message_type,
                 channel_id=callback_data.channel_id if post_message_type in (
-                PostMessageType.CHANNEL_POST, PostMessageType.CONTEST) else None
+                    PostMessageType.CHANNEL_POST, PostMessageType.CONTEST) else None
             )
 
         case callback_data.ActionEnum.REMOVE_DELAY:
@@ -731,7 +731,7 @@ async def _post_message_union(
                 post_message,
                 post_message_type,
                 channel_id=callback_data.channel_id if post_message_type in (
-                PostMessageType.CHANNEL_POST, PostMessageType.CONTEST) else None
+                    PostMessageType.CHANNEL_POST, PostMessageType.CONTEST) else None
             )
 
         case callback_data.ActionEnum.BACK:
@@ -740,7 +740,7 @@ async def _post_message_union(
                 post_message,
                 post_message_type,
                 channel_id=callback_data.channel_id if post_message_type in (
-                PostMessageType.CHANNEL_POST, PostMessageType.CONTEST) else None
+                    PostMessageType.CHANNEL_POST, PostMessageType.CONTEST) else None
             )
 
         # CONTEST ACTIONS

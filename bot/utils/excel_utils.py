@@ -14,8 +14,6 @@ from aiogram.types import BufferedInputFile
 
 from database.models.contest_model import ContestUserSchema
 
-from bot.config import FILES_PATH
-
 
 def create_excel(data, sheet_name, table_type):
     wb = Workbook()
@@ -72,7 +70,6 @@ async def send_contest_results_xlsx(users: list[ContestUserSchema], contest_id: 
     except BotNotFound:
         return
 
-    custom_bot = Bot(token=bot.token)
     wb_data = []
     for user in users:
         wb_data.append(

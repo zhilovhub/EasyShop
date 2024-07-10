@@ -106,8 +106,9 @@ class ContestDao(Dao):  # TODO write tests
     @validate_call(validate_return=True)
     async def get_contest_by_post_message_id(self, post_message_id: int) -> ContestSchema:
         async with self.engine.begin() as conn:
-            raw_res = await conn.execute(select(Contest).where(Contest.post_message_id == post_message_id,
-                                                               Contest.is_finished == False))
+            raw_res = await conn.execute(
+                select(Contest).where(Contest.post_message_id == post_message_id, Contest.is_finished == False)  # noqa
+            )
         await self.engine.dispose()
 
         raw_res = raw_res.fetchone()
@@ -126,8 +127,9 @@ class ContestDao(Dao):  # TODO write tests
     @validate_call(validate_return=True)
     async def get_contest_by_bot_id(self, bot_id: int) -> ContestSchema:
         async with self.engine.begin() as conn:
-            raw_res = await conn.execute(select(Contest).where(Contest.bot_id == bot_id,
-                                                               Contest.is_finished == False))
+            raw_res = await conn.execute(
+                select(Contest).where(Contest.bot_id == bot_id, Contest.is_finished == False)  # noqa
+            )
         await self.engine.dispose()
 
         raw_res = raw_res.fetchone()
@@ -240,11 +242,12 @@ class ContestDao(Dao):  # TODO write tests
 
         res = raw_res.fetchone()
         if res is None:
-            raise ContestUserNotFound(f"contest_id={contest_id}, user_id={user_id}: contest user not found in database.")
+            raise ContestUserNotFound(f"contest_id={contest_id}, user_id={user_id}: "
+                                      f"contest user not found in database.")
 
         self.logger.debug(
             f"contest_id={contest_id}: user {user_id} is found",
-            extra=extra_params(contest_id=contest_id)
+            extra=extra_params(user_id=user_id, contest_id=contest_id)
         )
 
         return ContestUserSchema.model_validate(res)

@@ -94,21 +94,24 @@ async def post_message_extra_settings_callback_handler(
                 query,
                 post_message,
                 post_message_type,
-                channel_id=callback_data.channel_id if post_message_type in (PostMessageType.CHANNEL_POST, PostMessageType.CONTEST) else None
+                channel_id=callback_data.channel_id
+                if post_message_type in (PostMessageType.CHANNEL_POST, PostMessageType.CONTEST) else None
             )
         case callback_data.ActionEnum.NOTIFICATION_SOUND:
             await _notification_sound(
                 query,
                 post_message,
                 post_message_type,
-                channel_id=callback_data.channel_id if post_message_type in (PostMessageType.CHANNEL_POST, PostMessageType.CONTEST) else None
+                channel_id=callback_data.channel_id
+                if post_message_type in (PostMessageType.CHANNEL_POST, PostMessageType.CONTEST) else None
             )
         case callback_data.ActionEnum.BACK_TO_POST_MESSAGE_MENU:
             await _inline_back_to_post_message_menu(
                 query,
                 bot_id,
                 post_message_type,
-                channel_id=callback_data.channel_id if post_message_type in (PostMessageType.CHANNEL_POST, PostMessageType.CONTEST) else None
+                channel_id=callback_data.channel_id
+                if post_message_type in (PostMessageType.CHANNEL_POST, PostMessageType.CONTEST) else None
             )
 
 
@@ -130,14 +133,16 @@ async def post_message_confirm_start_callback_handler(
                 query,
                 post_message,
                 post_message_type,
-                channel_id=callback_data.channel_id if post_message_type in (PostMessageType.CHANNEL_POST, PostMessageType.CONTEST) else None
+                channel_id=callback_data.channel_id
+                if post_message_type in (PostMessageType.CHANNEL_POST, PostMessageType.CONTEST) else None
             )
         case callback_data.ActionEnum.BACK_TO_POST_MESSAGE_MENU:
             await _inline_back_to_post_message_menu(
                 query,
                 bot_id,
                 post_message_type,
-                channel_id=callback_data.channel_id if post_message_type in (PostMessageType.CHANNEL_POST, PostMessageType.CONTEST) else None
+                channel_id=callback_data.channel_id
+                if post_message_type in (PostMessageType.CHANNEL_POST, PostMessageType.CONTEST) else None
             )
 
 
@@ -159,14 +164,16 @@ async def post_message_accept_deleting_callback_handler(
                 query,
                 post_message,
                 post_message_type,
-                channel_id=callback_data.channel_id if post_message_type in (PostMessageType.CHANNEL_POST, PostMessageType.CONTEST) else None
+                channel_id=callback_data.channel_id
+                if post_message_type in (PostMessageType.CHANNEL_POST, PostMessageType.CONTEST) else None
             )
         case callback_data.ActionEnum.BACK_TO_POST_MESSAGE_MENU:
             await _inline_back_to_post_message_menu(
                 query,
                 bot_id,
                 post_message_type,
-                channel_id=callback_data.channel_id if post_message_type in (PostMessageType.CHANNEL_POST, PostMessageType.CONTEST) else None
+                channel_id=callback_data.channel_id
+                if post_message_type in (PostMessageType.CHANNEL_POST, PostMessageType.CONTEST) else None
             )
 
 

@@ -131,7 +131,13 @@ class PostMessageDao(Dao):  # TODO write tests
             raw_res = await conn.execute(
                 select(PostMessage).where(
                     PostMessage.bot_id == bot_id,
-                    and_(PostMessage.post_message_type == post_message_type, or_(PostMessage.is_sent == False, and_(PostMessage.is_sent == True, PostMessage.is_running == True)))
+                    and_(
+                        PostMessage.post_message_type == post_message_type,
+                        or_(
+                            PostMessage.is_sent == False,
+                            and_(PostMessage.is_sent == True, PostMessage.is_running == True)
+                        )
+                    )
                 )  # noqa: E712
             )
         await self.engine.dispose()

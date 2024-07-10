@@ -104,7 +104,7 @@ async def channel_menu_callback_handler(query: CallbackQuery):
             )
         case callback_data.ActionEnum.CREATE_CONTEST | callback_data.ActionEnum.EDIT_CONTEST:
             try:
-                channel_contest = await contest_db.get_contest_by_bot_id(bot_id=bot_id)
+                await contest_db.get_contest_by_bot_id(bot_id=bot_id)
                 if callback_data.a == callback_data.ActionEnum.CREATE_CONTEST:
                     await query.answer("В канале уже есть активный конкурс", show_alert=True)
                 await query.message.edit_text(
@@ -117,16 +117,14 @@ async def channel_menu_callback_handler(query: CallbackQuery):
                 )
                 return
             except ContestNotFound:
-                channel_contest = None
-
-            if not channel_contest and callback_data.a == callback_data.ActionEnum.CREATE_CONTEST:
-                return await query.message.edit_text(
-                    MessageTexts.SELECT_CONTEST_TYPE.value,
-                    reply_markup=await InlineContestTypeKeyboard.get_keyboard(
-                        bot_id=bot_id,
-                        channel_id=channel_id
+                if callback_data.a == callback_data.ActionEnum.CREATE_CONTEST:
+                    return await query.message.edit_text(
+                        MessageTexts.SELECT_CONTEST_TYPE.value,
+                        reply_markup=await InlineContestTypeKeyboard.get_keyboard(
+                            bot_id=bot_id,
+                            channel_id=channel_id
+                        )
                     )
-                )
 
 
 @channel_menu_router.callback_query(lambda query: InlineContestTypeKeyboard.callback_validator(query.data))

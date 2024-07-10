@@ -5,7 +5,7 @@ from enum import Enum
 
 from aiogram import Bot
 from aiogram.types import Message, LinkPreviewOptions, InputMediaDocument, InputMediaAudio, \
-    InputMediaVideo, InputMediaPhoto, BufferedInputFile, InlineKeyboardMarkup, InlineKeyboardButton, FSInputFile
+    InputMediaVideo, InputMediaPhoto, BufferedInputFile, InlineKeyboardMarkup, InlineKeyboardButton
 from aiogram.fsm.context import FSMContext
 
 from bot.main import post_message_db, bot, post_message_media_file_db, bot_db, contest_db, _scheduler, logger
@@ -18,12 +18,11 @@ from bot.keyboards.main_menu_keyboards import ReplyBotMenuKeyboard
 from bot.keyboards.channel_keyboards import InlineJoinContestKeyboard
 from bot.keyboards.post_message_keyboards import InlinePostMessageMenuKeyboard, ReplyBackPostMessageMenuKeyboard, \
     ReplyConfirmMediaFilesKeyboard, UnknownPostMessageType
-from bot.config import FILES_PATH
 
 from database.models.bot_model import BotSchema
-from database.models.contest_model import ContestUserSchema
 from database.models.post_message_model import PostMessageSchema
 from database.models.post_message_media_files import PostMessageMediaFileSchema
+
 from logs.config import extra_params
 
 

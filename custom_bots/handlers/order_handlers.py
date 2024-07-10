@@ -131,7 +131,7 @@ async def handle_order_callback(query: CallbackQuery, state: FSMContext):
 
 
 @multi_bot_router.callback_query(lambda query: InlineCreateReviewKeyboard.callback_validator(query.data))
-async def create_order_review(query: CallbackQuery, state: FSMContext):
+async def create_order_review(query: CallbackQuery):
     callback_data = InlineCreateReviewKeyboard.Callback.model_validate_json(query.data)
     order_id = callback_data.order_id
     user_id = query.from_user.id
@@ -146,14 +146,17 @@ async def create_order_review(query: CallbackQuery, state: FSMContext):
         return await query.message.edit_reply_markup(None)
     match callback_data.a:
         case callback_data.ActionEnum.CREATE_REVIEW:
-            await query.message.edit_text(text="Выберите товар 🪧", reply_markup=await InlinePickReviewProductKeyboard.get_keyboard(order.items))
+            await query.message.edit_text(
+                text="Выберите товар 🪧",
+                reply_markup=await InlinePickReviewProductKeyboard.get_keyboard(order.items)
+            )
             await query.answer()
 
 
 @multi_bot_router.callback_query(lambda query: InlinePickReviewProductKeyboard.callback_validator(query.data))
 async def get_product_id(query: CallbackQuery, state: FSMContext):
     callback_data = InlinePickReviewProductKeyboard.Callback.model_validate_json(query.data)
-    state_data = await state.get_data()
+
     match callback_data.a:
         case callback_data.ActionEnum.PICK_PRODUCT:
             product = await product_review_db.get_product_review_by_user_id_and_product_id(
@@ -166,13 +169,22 @@ async def get_product_id(query: CallbackQuery, state: FSMContext):
                         f"bot_token={query.message.bot.token}: this bot is not in db",
                         extra=extra_params(bot_token=query.message.bot.token)
                     )
-                    await query.message.answer("Бот не инициализирован")
-                await query.message.answer("Вы уже оставили отзыв на этот продукт!", reply_markup=ReplyCustomBotMenuKeyboard.get_keyboard(bot.bot_id))
+                    return await query.message.answer("Бот не инициализирован")
+
+                await query.message.answer(
+                    "Вы уже оставили отзыв на этот продукт!",
+                    reply_markup=ReplyCustomBotMenuKeyboard.get_keyboard(bot.bot_id)
+                )
                 await query.answer()
                 await state.set_state(CustomUserStates.MAIN_MENU)
                 return
-            await query.message.answer(text="Оцените качество товаров ✔️", reply_markup=ReplyGetReviewMarkKeyboard.get_keyboard())
+
+            await query.message.answer(
+                text="Оцените качество товаров ✔️",
+                reply_markup=ReplyGetReviewMarkKeyboard.get_keyboard()
+            )
             await query.answer()
+
             await state.set_state(CustomUserStates.WAITING_FOR_REVIEW_MARK)
             await state.set_data({
                 "product_id": callback_data.product_id
@@ -189,10 +201,14 @@ async def get_review_mark(message: Message, state: FSMContext):
             extra=extra_params(bot_token=message.bot.token)
         )
         return await message.answer("Бот не инициализирован")
+
     if message.text == "Назад 🔙":
         await state.set_state(CustomUserStates.MAIN_MENU)
-        return message.answer("Отправка отзыва отменена ✖️", reply_markup=ReplyCustomBotMenuKeyboard.get_keyboard(bot.bot_id))
-    mark_value = 0
+        return message.answer(
+            "Отправка отзыва отменена ✖️",
+            reply_markup=ReplyCustomBotMenuKeyboard.get_keyboard(bot.bot_id)
+        )
+
     state_data = await state.get_data()
     match message.text:
         case ReplyGetReviewMarkKeyboard.Callback.ActionEnum.ONE.value:
@@ -232,7 +248,8 @@ async def get_review_text(message: Message, state: FSMContext):
         await state.set_data({
             "product_id": state_data["product_id"]
         })
-        return message.answer(text="Оцените качество товаров ✔️", reply_markup=ReplyGetReviewMarkKeyboard.get_keyboard())
+        return message.answer(text="Оцените качество товаров ✔️",
+                              reply_markup=ReplyGetReviewMarkKeyboard.get_keyboard())
 
     state_data = await state.get_data()
     mark = state_data["mark"]
@@ -248,8 +265,11 @@ async def get_review_text(message: Message, state: FSMContext):
     await message.answer("Спасибо за отзыв 📬", reply_markup=ReplyCustomBotMenuKeyboard.get_keyboard(bot.bot_id))
     try:
         product = await product_db.get_product(state_data["product_id"])
-        await main_bot.send_message(chat_id=bot.created_by, text=MessageTexts.show_product_review_info(mark, message.text, product.name),
-                                    reply_markup=InlineAcceptReviewKeyboard.get_keyboard(review_id))
+        await main_bot.send_message(
+            chat_id=bot.created_by,
+            text=MessageTexts.show_product_review_info(mark, message.text, product.name),
+            reply_markup=InlineAcceptReviewKeyboard.get_keyboard(review_id)
+        )
         await state.set_state(CustomUserStates.MAIN_MENU)
     except ProductNotFound:
         pass
