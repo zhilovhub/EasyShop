@@ -498,7 +498,7 @@ async def edit_contest_finish_date(
                 )
 
 
-async def finish_contest(contest_id: int, pre_finish: bool = False):
+async def pre_finish_contest(contest_id: int):
     contest = await contest_db.get_contest_by_contest_id(contest_id)
     db_bot = await bot_db.get_bot(contest.bot_id)
     contest_users = await contest_db.get_contest_users(contest_id)
@@ -506,12 +506,11 @@ async def finish_contest(contest_id: int, pre_finish: bool = False):
     logger.info(f"finishing contest..., contest_id={contest_id}",
                 extra_params(contest_id=contest_id, bot_id=db_bot.bot_id))
 
-    if pre_finish:
-        await bot.send_message(db_bot.created_by, "Досрочно завершаю конкурс...")
+    await bot.send_message(db_bot.created_by, "Досрочно завершаю конкурс...")
 
     if not contest_users:
         await bot.send_message(db_bot.created_by,
-                               ":( К сожалению в созданном конкурсе не было участников, "
+                               "К сожалению в созданном конкурсе не было участников, "
                                "конкурс завершен без результатов.")
     else:
         if len(contest_users) <= contest.winners_count:
@@ -532,6 +531,7 @@ async def finish_contest(contest_id: int, pre_finish: bool = False):
     await contest_db.update_contest(contest)
 
     await excel_utils.send_contest_results_xlsx(contest_users, contest_id)
+    await post_message_db.delete_post_message(contest.post_message_id)
 
 
 async def _contest_finish_date_save(

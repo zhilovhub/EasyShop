@@ -21,7 +21,7 @@ from database.models.post_message_model import PostMessageSchema
 
 from logs.config import extra_params, logger
 
-from .post_message_editors import finish_contest
+from .post_message_editors import pre_finish_contest
 
 
 class ContestMessageDontNeedButton(Exception):
@@ -92,7 +92,6 @@ async def _cancel_send(
                 parse_mode=ParseMode.HTML
             )
         case PostMessageType.CONTEST:
-            await post_message_db.update_post_message(post_message)
             contest = await contest_db.get_contest_by_bot_id(bot_id=post_message.bot_id)
             contest.is_finished = True
             if contest.finish_job_id:
@@ -100,11 +99,12 @@ async def _cancel_send(
                     await _scheduler.del_job(contest.finish_job_id)
                 except:  # noqa
                     pass
-            await contest_db.update_contest(contest)
+
             username = (await Bot(custom_bot_token).get_chat(channel_id)).username
             if contest_pre_finish:
-                await finish_contest(contest.contest_id, pre_finish=True)
+                await pre_finish_contest(contest.contest_id)
             else:
+                await post_message_db.delete_post_message(post_message.post_message_id)
                 await query.message.answer(
                     f"Конкурс отменен",
                     reply_markup=ReplyBotMenuKeyboard.get_keyboard(post_message.bot_id)

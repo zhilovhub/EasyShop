@@ -24,7 +24,7 @@ from bot.post_message.post_message_callback_handler import post_message_handler
 
 from database.models.post_message_model import PostMessageSchema
 
-from bot.post_message.post_message_editors import finish_contest
+from bot.post_message.post_message_editors import pre_finish_contest
 
 from logs.config import logger, extra_params
 
@@ -258,7 +258,7 @@ async def _start_confirm(
                             )
 
                     job_id = await _scheduler.add_scheduled_job(
-                        finish_contest, contest.finish_date, [contest.contest_id]
+                        pre_finish_contest, contest.finish_date, [contest.contest_id]
                     )
                     contest.finish_job_id = job_id
                     await contest_db.update_contest(contest)
