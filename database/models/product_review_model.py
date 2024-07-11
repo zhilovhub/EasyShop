@@ -8,8 +8,8 @@ from bot.exceptions import InvalidParameterFormat
 from database.models import Base
 from database.models.dao import Dao
 from database.models.bot_model import Bot
+from database.models.user_model import User
 from database.models.product_model import Product
-from database.models.custom_bot_user_model import CustomBotUser
 
 from logs.config import extra_params
 
@@ -27,7 +27,7 @@ class ProductReview(Base):
     product_id = Column(ForeignKey(Product.id, ondelete="CASCADE"), nullable=False)
     mark = Column(BigInteger, nullable=False)
     review_text = Column(String, nullable=True)
-    user_id = Column(ForeignKey(CustomBotUser.user_id, ondelete="CASCADE"), nullable=False)
+    user_id = Column(ForeignKey(User.user_id, ondelete="CASCADE"), nullable=False)
     accepted = Column(BOOLEAN, default=False, nullable=False)
 
 

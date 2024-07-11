@@ -9,6 +9,7 @@ from bot.exceptions import InvalidParameterFormat, InstanceAlreadyExists
 from database.models import Base
 from database.models.dao import Dao
 from database.models.bot_model import Bot
+from database.models.user_model import User
 
 from logs.config import extra_params
 
@@ -22,7 +23,7 @@ class CustomBotUser(Base):
     __tablename__ = "custom_bot_users"
 
     bot_id = Column(ForeignKey(Bot.bot_id, ondelete="CASCADE"), primary_key=True)
-    user_id = Column(BigInteger, primary_key=True)
+    user_id = Column(ForeignKey(User.user_id, ondelete="CASCADE"), primary_key=True)
     balance = Column(BigInteger, default=0)
 
 
