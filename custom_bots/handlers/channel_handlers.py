@@ -1,19 +1,23 @@
 from typing import Any
 from datetime import datetime
 
-from aiogram.types import ChatMemberUpdated, ChatMemberLeft, ChatMemberAdministrator, ChatMemberBanned
+from aiogram.types import ChatMemberUpdated, ChatMemberLeft, ChatMemberAdministrator, ChatMemberBanned, CallbackQuery
 from aiogram.filters import IS_MEMBER, IS_NOT_MEMBER, ChatMemberUpdatedFilter
+from aiogram.enums.chat_type import ChatType
 
 from bot.utils import MessageTexts
 from bot.keyboards.main_menu_keyboards import InlineBotMenuKeyboard
 
-from custom_bots.multibot import bot_db, main_bot, channel_db, channel_user_db
+from custom_bots.multibot import bot_db, main_bot, channel_db, channel_user_db, contest_db
 from custom_bots.handlers.routers import multi_bot_channel_router
 
 from database.models.channel_model import ChannelSchema
+from database.models.contest_model import ContestUserNotFound, ContestNotFound
 from database.models.channel_user_model import ChannelUserNotFound, ChannelUserSchemaWithoutId
 
 from logs.config import custom_bot_logger, extra_params
+
+from bot.keyboards.channel_keyboards import InlineJoinContestKeyboard
 
 
 @multi_bot_channel_router.chat_member(ChatMemberUpdatedFilter(IS_NOT_MEMBER >> IS_MEMBER))
@@ -148,3 +152,41 @@ async def my_chat_member_handler(my_chat_member: ChatMemberUpdated) -> Any:
             text=final_message_text,
             reply_markup=await InlineBotMenuKeyboard.get_keyboard(custom_bot.bot_id)
         )
+
+
+@multi_bot_channel_router.callback_query(lambda query: InlineJoinContestKeyboard.callback_validator(query.data))
+async def channel_menu_callback_handler(query: CallbackQuery):
+    callback_data = InlineJoinContestKeyboard.Callback.model_validate_json(query.data)
+
+    bot_id = callback_data.bot_id
+
+    custom_bot = await bot_db.get_bot(bot_id)
+
+    if query.message.chat.type == ChatType.PRIVATE.value:
+        return await query.answer("Работает только в канале.", show_alert=True)
+
+    try:
+        contest = await contest_db.get_contest_by_post_message_id(callback_data.post_message_id)
+    except ContestNotFound:
+        return await query.answer("Конкурс уже завершен.", show_alert=True)
+
+    match callback_data.a:
+        case callback_data.ActionEnum.JOIN_CONTEST:
+            try:
+                await contest_db.get_contest_user(contest.contest_id, query.from_user.id)
+            except ContestUserNotFound:
+                await contest_db.add_contest_user(contest.contest_id,
+                                                  query.from_user.id,
+                                                  query.from_user.full_name,
+                                                  query.from_user.username)
+                contest_members = await contest_db.get_contest_users(contest.contest_id)
+                await query.message.edit_reply_markup(reply_markup=await InlineJoinContestKeyboard.get_keyboard(
+                    custom_bot.bot_id, len(contest_members), callback_data.post_message_id
+                ))
+                return await query.answer("Теперь вы участвуете в конкурсе.", show_alert=True)
+            else:
+                return await query.answer("Вы уже участвуете в этом конкурсе.", show_alert=True)
+        case _:
+            custom_bot_logger.warning("Unknown callback in channel contest kb",
+                                      extra_params(bot_id=bot_id, contest_id=contest.contest_id,
+                                                   user_id=query.from_user.id))

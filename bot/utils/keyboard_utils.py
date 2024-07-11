@@ -1,12 +1,13 @@
 from aiogram import Bot
 from aiogram.types import WebAppInfo
 
-from bot.main import bot_db, channel_db, post_message_db, mailing_db, channel_post_db, product_db
+from bot.main import bot_db, channel_db, post_message_db, mailing_db, channel_post_db, contest_db, product_db
 from bot.config import WEB_APP_URL, WEB_APP_PORT
 from bot.enums.post_message_type import PostMessageType
 
 from database.models.channel_model import ChannelSchema
 from database.models.mailing_model import MailingSchema, MailingNotFound
+from database.models.contest_model import ContestSchema, ContestNotFound
 from database.models.product_model import ProductSchema, ProductNotFound
 from database.models.channel_post_model import ChannelPostSchema, ChannelPostNotFound
 from database.models.post_message_model import PostMessageSchema, PostMessageNotFound
@@ -52,6 +53,18 @@ async def get_bot_mailing(bot_id: int) -> MailingSchema | None:
     except MailingNotFound:
         logger.debug(
             f"bot_id={bot_id}: there is no mailings",
+            extra=extra_params(bot_id=bot_id),
+        )
+        return None
+
+
+async def get_bot_contest(bot_id: int) -> ContestSchema | None:
+    try:
+        contest = await contest_db.get_contest_by_bot_id(bot_id=bot_id)
+        return contest
+    except ContestNotFound:
+        logger.debug(
+            f"bot_id={bot_id}: there is no contests",
             extra=extra_params(bot_id=bot_id),
         )
         return None

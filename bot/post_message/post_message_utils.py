@@ -52,6 +52,8 @@ async def get_post_message(
                 await query.answer("Рассылка уже завершена или удалена", show_alert=True)
             case PostMessageType.CHANNEL_POST:
                 await query.answer("Запись в канал уже отправлена или удалена", show_alert=True)
+            case PostMessageType.CONTEST:
+                await query.answer("Конкурс в канал уже отправлен или удалён", show_alert=True)
             case _:
                 raise UnknownPostMessageType
 

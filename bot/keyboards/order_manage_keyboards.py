@@ -1,7 +1,5 @@
 from enum import Enum
 
-from typing import Any
-
 from pydantic import ValidationError, ConfigDict, Field, BaseModel
 
 from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup, ReplyKeyboardMarkup, KeyboardButton
@@ -11,7 +9,7 @@ from bot.keyboards.keyboard_utils import callback_json_validator
 
 from database.models.order_model import OrderItem, OrderStatusValues
 
-from logs.config import custom_bot_logger, extra_params, logger
+from logs.config import custom_bot_logger
 
 
 class InlineOrderCustomBotKeyboard:

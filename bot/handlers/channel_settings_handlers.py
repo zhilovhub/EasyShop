@@ -2,15 +2,20 @@ from aiogram import Bot
 from aiogram.enums import ParseMode
 from aiogram.types import CallbackQuery
 
-from bot.main import channel_user_db, bot_db, channel_post_db
+
+from logs.config import logger, extra_params
+
+from bot.main import channel_user_db, bot_db, channel_post_db, contest_db
 from bot.utils import MessageTexts
 from bot.handlers.routers import channel_menu_router
 from bot.enums.post_message_type import PostMessageType
-from bot.keyboards.channel_keyboards import InlineChannelsListKeyboard, InlineChannelMenuKeyboard
+from bot.keyboards.channel_keyboards import (InlineChannelsListKeyboard, InlineChannelMenuKeyboard,
+                                             InlineContestTypeKeyboard)
 from bot.keyboards.main_menu_keyboards import InlineBotMenuKeyboard
 from bot.keyboards.post_message_keyboards import InlinePostMessageMenuKeyboard
 from bot.post_message.post_message_create import post_message_create
 
+from database.models.contest_model import ContestNotFound
 from database.models.channel_post_model import ChannelPostNotFound
 
 
@@ -100,3 +105,67 @@ async def channel_menu_callback_handler(query: CallbackQuery):
                 text=MessageTexts.BOT_CHANNELS_LIST_MESSAGE.value.format(custom_bot_username),
                 reply_markup=await InlineChannelsListKeyboard.get_keyboard(bot_id)
             )
+        case callback_data.ActionEnum.CREATE_CONTEST | callback_data.ActionEnum.EDIT_CONTEST:
+            try:
+                await contest_db.get_contest_by_bot_id(bot_id=bot_id)
+                if callback_data.a == callback_data.ActionEnum.CREATE_CONTEST:
+                    await query.answer("В канале уже есть активный конкурс", show_alert=True)
+                await query.message.edit_text(
+                    MessageTexts.bot_post_message_menu_message(PostMessageType.CONTEST).format(channel_username),
+                    reply_markup=await InlinePostMessageMenuKeyboard.get_keyboard(
+                        bot_id=bot_id,
+                        post_message_type=PostMessageType.CONTEST,
+                        channel_id=channel_id
+                    )
+                )
+                return
+            except ContestNotFound:
+                if callback_data.a == callback_data.ActionEnum.CREATE_CONTEST:
+                    return await query.message.edit_text(
+                        MessageTexts.SELECT_CONTEST_TYPE.value,
+                        reply_markup=await InlineContestTypeKeyboard.get_keyboard(
+                            bot_id=bot_id,
+                            channel_id=channel_id
+                        )
+                    )
+
+
+@channel_menu_router.callback_query(lambda query: InlineContestTypeKeyboard.callback_validator(query.data))
+async def contest_type_callback_handler(query: CallbackQuery):
+    callback_data = InlineContestTypeKeyboard.Callback.model_validate_json(query.data)
+
+    bot_id = callback_data.bot_id
+    channel_id = callback_data.channel_id
+
+    custom_bot = await bot_db.get_bot(bot_id)
+    custom_tg_bot = Bot(custom_bot.token)
+
+    channel_username = (await custom_tg_bot.get_chat(channel_id)).username
+
+    match callback_data.a:
+        case callback_data.ActionEnum.BACK_TO_CHANNEL_MENU:
+            await query.message.edit_text(
+                MessageTexts.BOT_CHANNEL_MENU_MESSAGE.value.format(
+                    channel_username,
+                    (await custom_tg_bot.get_me()).username
+                ),
+                reply_markup=await InlineChannelMenuKeyboard.get_keyboard(custom_bot.bot_id, channel_id)
+            )
+        case callback_data.ActionEnum.RANDOMIZER:
+            try:
+                await contest_db.get_contest_by_bot_id(bot_id=bot_id)
+                return await query.answer("В канале уже есть активный конкурс", show_alert=True)
+            except ContestNotFound:
+                await post_message_create(bot_id, PostMessageType.CONTEST, contest_winners_count=1)
+
+            await query.message.edit_text(
+                MessageTexts.bot_post_message_menu_message(PostMessageType.CONTEST).format(channel_username),
+                reply_markup=await InlinePostMessageMenuKeyboard.get_keyboard(
+                    bot_id=bot_id,
+                    post_message_type=PostMessageType.CONTEST,
+                    channel_id=channel_id
+                )
+            )
+        case _:
+            logger.warning("Unknown callback in contest type select kb",
+                           extra_params(bot_id=bot_id, user_id=query.from_user.id))

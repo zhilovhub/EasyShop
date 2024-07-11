@@ -28,6 +28,7 @@ from database.models.models import Database
 from database.models.bot_model import BotNotFound
 from database.models.user_model import UserDao
 from database.models.channel_model import ChannelDao
+from database.models.contest_model import ContestDao
 from database.models.channel_user_model import ChannelUserDao
 
 from subscription.scheduler import Scheduler
@@ -47,6 +48,11 @@ main_router = Router()
 WEBHOOK_SERVER_URL = getenv("WEBHOOK_URL")
 WEBHOOK_SERVER_HOST = getenv("WEBHOOK_HOST")
 WEBHOOK_SERVER_PORT = int(getenv("WEBHOOK_PORT"))
+try:
+    WEBHOOK_SERVER_PORT_TO_REDIRECT = int(getenv("WEBHOOK_SERVER_PORT_TO_REDIRECT"))
+except TypeError as e:
+    custom_bot_logger.warning("WEBHOOK_SERVER_PORT_TO_REDIRECT = None, setting it to WEBHOOK_SERVER_PORT")
+    WEBHOOK_SERVER_PORT_TO_REDIRECT = WEBHOOK_SERVER_PORT
 
 BASE_URL = f"{WEBHOOK_SERVER_URL}:{WEBHOOK_SERVER_PORT}"
 OTHER_BOTS_PATH = "/webhook/bot/{bot_token}"
@@ -72,6 +78,7 @@ order_db = db_engine.get_order_dao()
 product_db = db_engine.get_product_db()
 user_db: UserDao = db_engine.get_user_dao()
 channel_db: ChannelDao = db_engine.get_channel_dao()
+contest_db: ContestDao = db_engine.get_contest_dao()
 custom_bot_user_db = db_engine.get_custom_bot_user_db()
 channel_user_db: ChannelUserDao = db_engine.get_channel_user_dao()
 
@@ -228,7 +235,8 @@ async def main():
     custom_bot_logger.debug(
         f"[3/3] Setting up local api server on {LOCAL_API_SERVER_HOST}:{LOCAL_API_SERVER_PORT}")
     custom_bot_logger.info(
-        f"[3/3] Setting up webhook server on {WEBHOOK_SERVER_HOST}:{WEBHOOK_SERVER_PORT}")
+        f"[3/3] Setting up webhook server on {WEBHOOK_SERVER_HOST}:{WEBHOOK_SERVER_PORT_TO_REDIRECT} "
+        f"<- {WEBHOOK_SERVER_PORT}")
 
     await scheduler.start()
 
@@ -243,7 +251,7 @@ async def main():
         web._run_app(  # noqa
             app,
             host=WEBHOOK_SERVER_HOST,
-            port=WEBHOOK_SERVER_PORT,
+            port=WEBHOOK_SERVER_PORT_TO_REDIRECT,
             ssl_context=ssl_context,
             access_log=custom_bot_logger,
             print=custom_bot_logger.debug

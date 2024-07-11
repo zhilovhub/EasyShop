@@ -76,6 +76,10 @@ class MessageTexts(Enum):
     DATE_RULES = "Пожалуйста, отправьте дату и время <b>начала отправки сообщения</b> в следующем формате: " \
                  "<b>ДД.ММ.ГГГГ ЧЧ:ММ</b>\nНапример, <code>25.12.2024 14:30</code>"
 
+    DATE_RULES_CONTEST_FINISH = ("Пожалуйста, отправьте дату и время <b>завершения конкурса</b> "
+                                 "в следующем формате: \n"
+                                 "<b>ДД.ММ.ГГГГ ЧЧ:ММ</b>\n\nНапример: <code>25.12.2024 14:30</code>")
+
     BOT_CHANNEL_POST_MENU_ACCEPT_START = "Управление записью для канала <b>@{}</b>\n\n" \
         "<b>Подтверждение начала отправления записи в канал</b>"
 
@@ -92,11 +96,17 @@ class MessageTexts(Enum):
                              "2.<b>При совпадении артикулов - перезаписать</b>\n"
                              "3.<b>При совпадении артикулов - оставить старое</b>\n")
 
+    SELECT_CONTEST_TYPE = "Выберите тип конкурса:"
+
     @staticmethod
     def bot_post_message_menu_message(post_message_type: PostMessageType) -> str:
         match post_message_type:
             case PostMessageType.MAILING:
                 return "Управление текущей рассылки для бота <b>@{}</b>\n\n" \
+                       "❗️Перед запуcком нажмите <b>Проверить</b>, чтобы убедиться в правильности составленного " \
+                       "сообщения"
+            case PostMessageType.CONTEST:
+                return "Управление конкурсом для канала <b>@{}</b>\n\n" \
                        "❗️Перед запуcком нажмите <b>Проверить</b>, чтобы убедиться в правильности составленного " \
                        "сообщения"
             case PostMessageType.CHANNEL_POST:
@@ -126,8 +136,8 @@ class MessageTexts(Enum):
                f"<b>{sent_post_message_amount}/{custom_bot_users_len}</b>"
 
         if sent_post_message_amount != custom_bot_users_len:
-            text += f"\n\n❗ Во время рассылки было обнаружено, что бота <u>забанило</u> " \
-                    f"<b>{custom_bot_users_len - sent_post_message_amount}</b> человек" \
+            text += f"\n\n❗ Во время рассылки было обнаружено, что бота забанило " \
+                    f"{custom_bot_users_len - sent_post_message_amount} человек" \
 
         return text
 

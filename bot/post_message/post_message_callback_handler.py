@@ -3,7 +3,8 @@ from aiogram.enums import ParseMode
 from aiogram.types import CallbackQuery
 from aiogram.fsm.context import FSMContext
 
-from bot.main import post_message_db, bot, post_message_media_file_db, custom_bot_user_db, _scheduler, bot_db
+from bot.main import post_message_db, bot, post_message_media_file_db, custom_bot_user_db, _scheduler, bot_db, \
+    contest_db
 from bot.utils import MessageTexts
 from bot.config import WEB_APP_URL, WEB_APP_PORT
 from bot.states import States
@@ -20,13 +21,27 @@ from database.models.post_message_model import PostMessageSchema
 
 from logs.config import extra_params, logger
 
+from .post_message_editors import pre_finish_contest
+
+
+class ContestMessageDontNeedButton(Exception):
+    pass
+
+
+def get_channel_id(callback_data, post_message_type):
+    if post_message_type in (PostMessageType.CHANNEL_POST, PostMessageType.CONTEST):
+        return callback_data.channel_id
+    else:
+        return None
+
 
 async def _cancel_send(
         query: CallbackQuery,
         post_message: PostMessageSchema,
         post_message_type: PostMessageType,
         user_id: int,
-        channel_id: int | None
+        channel_id: int | None,
+        contest_pre_finish: bool = False,
 ):
     custom_users_length = len(await custom_bot_user_db.get_custom_bot_users(bot_id=post_message.bot_id))
 
@@ -47,13 +62,13 @@ async def _cancel_send(
 
     post_message.job_id = None
 
-    await post_message_db.delete_post_message(post_message.post_message_id)
-
-    custom_bot_token = (await bot_db.get_bot(post_message.bot_id)).token
+    custom_bot = await bot_db.get_bot(post_message.bot_id)
+    custom_bot_token = custom_bot.token
     custom_bot_username = (await Bot(custom_bot_token).get_me()).username
 
     match post_message_type:
         case PostMessageType.MAILING:
+            await post_message_db.delete_post_message(post_message.post_message_id)
             await query.message.answer(
                 f"Рассылка остановлена\nСообщений разослано - "
                 f"{post_message.sent_post_message_amount}/{custom_users_length}",
@@ -65,11 +80,37 @@ async def _cancel_send(
                 parse_mode=ParseMode.HTML
             )
         case PostMessageType.CHANNEL_POST:
+            await post_message_db.delete_post_message(post_message.post_message_id)
+
             username = (await Bot(custom_bot_token).get_chat(channel_id)).username
             await query.message.answer(
                 f"Отправка записи отменена",
                 reply_markup=ReplyBotMenuKeyboard.get_keyboard(post_message.bot_id)
             )
+            await query.message.edit_text(
+                MessageTexts.BOT_CHANNEL_MENU_MESSAGE.value.format(username, custom_bot_username),
+                reply_markup=await InlineChannelMenuKeyboard.get_keyboard(post_message.bot_id, channel_id),
+                parse_mode=ParseMode.HTML
+            )
+        case PostMessageType.CONTEST:
+            contest = await contest_db.get_contest_by_bot_id(bot_id=post_message.bot_id)
+            contest.is_finished = True
+            if contest.finish_job_id:
+                try:
+                    await _scheduler.del_job(contest.finish_job_id)
+                except:  # noqa
+                    pass
+
+            username = (await Bot(custom_bot_token).get_chat(channel_id)).username
+            if contest_pre_finish:
+                await bot.send_message(custom_bot.created_by, "Досрочно завершаю конкурс...")
+                await pre_finish_contest(contest.contest_id)
+            else:
+                await post_message_db.delete_post_message(post_message.post_message_id)
+                await query.message.answer(
+                    f"Конкурс отменен",
+                    reply_markup=ReplyBotMenuKeyboard.get_keyboard(post_message.bot_id)
+                )
             await query.message.edit_text(
                 MessageTexts.BOT_CHANNEL_MENU_MESSAGE.value.format(username, custom_bot_username),
                 reply_markup=await InlineChannelMenuKeyboard.get_keyboard(post_message.bot_id, channel_id),
@@ -90,7 +131,7 @@ async def _button_add(
     match post_message_type:
         case PostMessageType.MAILING:
             username = (await Bot(custom_bot_token).get_me()).username
-        case PostMessageType.CHANNEL_POST:
+        case PostMessageType.CHANNEL_POST | PostMessageType.CONTEST:
             username = (await Bot(custom_bot_token).get_chat(channel_id)).username
         case _:
             raise UnknownPostMessageType
@@ -225,7 +266,7 @@ async def _button_delete(
         match post_message_type:
             case PostMessageType.MAILING:
                 username = (await Bot(custom_bot_token).get_me()).username
-            case PostMessageType.CHANNEL_POST:
+            case PostMessageType.CHANNEL_POST | PostMessageType.CONTEST:
                 username = (await Bot(custom_bot_token).get_chat(channel_id)).username
             case _:
                 raise UnknownPostMessageType
@@ -250,6 +291,8 @@ async def _post_message_text(
             text = "Введите текст, который будет отображаться в рассылочном сообщении"
         case PostMessageType.CHANNEL_POST:
             text = "Введите текст, который будет отображаться в записи для канала"
+        case PostMessageType.CONTEST:
+            text = "Введите текст, который будет отображаться в сообщении конкурса в канале"
         case _:
             raise UnknownPostMessageType
 
@@ -268,6 +311,54 @@ async def _post_message_text(
     })
 
 
+async def _contest_winners_count(
+        query: CallbackQuery,
+        state: FSMContext,
+        post_message: PostMessageSchema,
+        post_message_type: PostMessageType,
+        channel_id: int
+):
+    text = "Введите количество победителей конкурса. (необходимо отправить целое число)"
+
+    await query.message.answer(
+        text,
+        reply_markup=ReplyBackPostMessageMenuKeyboard.get_keyboard()
+    )
+    await query.answer()
+
+    await state.set_state(States.EDITING_CONTEST_WINNERS_COUNT)
+    await state.set_data({
+        "bot_id": post_message.bot_id,
+        "channel_id": channel_id,
+        "post_message_id": post_message.post_message_id,
+        "post_message_type": post_message_type.value
+    })
+
+
+async def _contest_finish_date(
+        query: CallbackQuery,
+        state: FSMContext,
+        post_message: PostMessageSchema,
+        post_message_type: PostMessageType,
+        channel_id: int
+):
+    text = MessageTexts.DATE_RULES_CONTEST_FINISH.value
+
+    await query.message.answer(
+        text,
+        reply_markup=ReplyBackPostMessageMenuKeyboard.get_keyboard()
+    )
+    await query.answer()
+
+    await state.set_state(States.EDITING_CONTEST_FINISH_DATE)
+    await state.set_data({
+        "bot_id": post_message.bot_id,
+        "channel_id": channel_id,
+        "post_message_id": post_message.post_message_id,
+        "post_message_type": post_message_type.value
+    })
+
+
 async def _post_message_media(
         query: CallbackQuery,
         state: FSMContext,
@@ -278,14 +369,17 @@ async def _post_message_media(
     match post_message_type:
         case PostMessageType.MAILING:
             text = "Отправьте одним сообщение медиафайлы для рассылочного сообщения\n\n" \
-                    "❗ Старые медиафайлы к этому рассылочному сообщению <b>перезапишутся</b>\n\n" \
-                    "❗❗ Обратите внимание, что к сообщению нельзя будет прикрепить кнопку, " \
-                    "если медиафайлов <b>больше одного</b>"
+                   "❗ Старые медиафайлы к этому рассылочному сообщению <b>перезапишутся</b>\n\n" \
+                   "❗❗ Обратите внимание, что к сообщению нельзя будет прикрепить кнопку, " \
+                   "если медиафайлов <b>больше одного</b>"
         case PostMessageType.CHANNEL_POST:
             text = "Отправьте одним сообщение медиафайлы для записи в канал\n\n" \
                    "❗ Старые медиафайлы к этой записи в канал <b>перезапишутся</b>\n\n" \
                    "❗❗ Обратите внимание, что к сообщению нельзя будет прикрепить кнопку, " \
                    "если медиафайлов <b>больше одного</b>"
+        case PostMessageType.CONTEST:
+            text = "Отправьте одним сообщением <b>один</b> медиафайл для сообщения с конкурсом\n\n" \
+                   "❗ Старый медиафайл к этой записи в канал <b>перезапишется</b>\n\n"
         case _:
             raise UnknownPostMessageType
 
@@ -324,6 +418,9 @@ async def _start(
             case PostMessageType.CHANNEL_POST:
                 username = (await Bot(custom_bot_token).get_chat(channel_id)).username
                 text = MessageTexts.BOT_CHANNEL_POST_MENU_ACCEPT_START.value.format(username)
+            case PostMessageType.CONTEST:
+                username = (await Bot(custom_bot_token).get_chat(channel_id)).username
+                text = MessageTexts.BOT_CHANNEL_POST_MENU_ACCEPT_START.value.format(username)
             case _:
                 raise UnknownPostMessageType
 
@@ -354,7 +451,7 @@ async def _demo(
         match post_message_type:
             case PostMessageType.MAILING:
                 username = (await Bot(custom_bot_token).get_me()).username
-            case PostMessageType.CHANNEL_POST:
+            case PostMessageType.CHANNEL_POST | PostMessageType.CONTEST:
                 username = (await Bot(custom_bot_token).get_chat(channel_id)).username
             case _:
                 raise UnknownPostMessageType
@@ -387,7 +484,7 @@ async def _delete_post_message(
         case PostMessageType.MAILING:
             username = (await Bot(custom_bot_token).get_me()).username
             text = MessageTexts.BOT_MAILINGS_MENU_ACCEPT_DELETING_MESSAGE.value.format(username)
-        case PostMessageType.CHANNEL_POST:
+        case PostMessageType.CHANNEL_POST | PostMessageType.CONTEST:
             username = (await Bot(custom_bot_token).get_chat(channel_id)).username
             text = MessageTexts.BOT_CHANNEL_POST_MENU_ACCEPT_DELETING_MESSAGE.value.format(username)
         case _:
@@ -482,7 +579,7 @@ async def _back(
                 reply_markup=await InlineBotMenuKeyboard.get_keyboard(bot_id),
                 parse_mode=ParseMode.HTML
             )
-        case PostMessageType.CHANNEL_POST:
+        case PostMessageType.CHANNEL_POST | PostMessageType.CONTEST:
             custom_bot = await bot_db.get_bot(bot_id)
 
             username = (await Bot(custom_bot.token).get_chat(channel_id)).username
@@ -522,7 +619,6 @@ async def _post_message_union(
         user_id: int,
         post_message: PostMessageSchema,
         post_message_type: PostMessageType):
-
     match callback_data.a:
         # RUNNING ACTIONS
         case callback_data.ActionEnum.CANCEL:
@@ -531,7 +627,7 @@ async def _post_message_union(
                 post_message,
                 post_message_type,
                 user_id,
-                channel_id=callback_data.channel_id if post_message_type == PostMessageType.CHANNEL_POST else None
+                channel_id=get_channel_id(callback_data, post_message_type)
             )
 
         # NOT RUNNING ACTIONS
@@ -540,7 +636,7 @@ async def _post_message_union(
                 query,
                 post_message,
                 post_message_type,
-                channel_id=callback_data.channel_id if post_message_type == PostMessageType.CHANNEL_POST else None
+                channel_id=get_channel_id(callback_data, post_message_type)
             )
 
         case callback_data.ActionEnum.BUTTON_URL:
@@ -549,7 +645,7 @@ async def _post_message_union(
                 state,
                 post_message,
                 post_message_type,
-                channel_id=callback_data.channel_id if post_message_type == PostMessageType.CHANNEL_POST else None
+                channel_id=get_channel_id(callback_data, post_message_type)
             )
 
         case callback_data.ActionEnum.BUTTON_TEXT:
@@ -558,7 +654,7 @@ async def _post_message_union(
                 state,
                 post_message,
                 post_message_type,
-                channel_id=callback_data.channel_id if post_message_type == PostMessageType.CHANNEL_POST else None
+                channel_id=get_channel_id(callback_data, post_message_type)
             )
 
         case callback_data.ActionEnum.BUTTON_DELETE:
@@ -566,7 +662,7 @@ async def _post_message_union(
                 query,
                 post_message,
                 post_message_type,
-                channel_id=callback_data.channel_id if post_message_type == PostMessageType.CHANNEL_POST else None
+                channel_id=get_channel_id(callback_data, post_message_type)
             )
 
         case callback_data.ActionEnum.POST_MESSAGE_TEXT:
@@ -575,7 +671,7 @@ async def _post_message_union(
                 state,
                 post_message,
                 post_message_type,
-                channel_id=callback_data.channel_id if post_message_type == PostMessageType.CHANNEL_POST else None
+                channel_id=get_channel_id(callback_data, post_message_type)
             )
 
         case callback_data.ActionEnum.POST_MESSAGE_MEDIA:
@@ -584,7 +680,7 @@ async def _post_message_union(
                 state,
                 post_message,
                 post_message_type,
-                channel_id=callback_data.channel_id if post_message_type == PostMessageType.CHANNEL_POST else None
+                channel_id=get_channel_id(callback_data, post_message_type)
             )
 
         case callback_data.ActionEnum.START:
@@ -592,7 +688,7 @@ async def _post_message_union(
                 query,
                 post_message,
                 post_message_type,
-                channel_id=callback_data.channel_id if post_message_type == PostMessageType.CHANNEL_POST else None
+                channel_id=get_channel_id(callback_data, post_message_type)
             )
 
         case callback_data.ActionEnum.DEMO:
@@ -600,7 +696,7 @@ async def _post_message_union(
                 query,
                 post_message,
                 post_message_type,
-                channel_id=callback_data.channel_id if post_message_type == PostMessageType.CHANNEL_POST else None
+                channel_id=get_channel_id(callback_data, post_message_type)
             )
 
         case callback_data.ActionEnum.DELETE_POST_MESSAGE:
@@ -608,7 +704,7 @@ async def _post_message_union(
                 query,
                 post_message,
                 post_message_type,
-                channel_id=callback_data.channel_id if post_message_type == PostMessageType.CHANNEL_POST else None
+                channel_id=get_channel_id(callback_data, post_message_type)
             )
 
         case callback_data.ActionEnum.EXTRA_SETTINGS:
@@ -616,7 +712,7 @@ async def _post_message_union(
                 query,
                 post_message,
                 post_message_type,
-                channel_id=callback_data.channel_id if post_message_type == PostMessageType.CHANNEL_POST else None
+                channel_id=get_channel_id(callback_data, post_message_type)
             )
 
         case callback_data.ActionEnum.DELAY:
@@ -625,7 +721,7 @@ async def _post_message_union(
                 state,
                 post_message,
                 post_message_type,
-                channel_id=callback_data.channel_id if post_message_type == PostMessageType.CHANNEL_POST else None
+                channel_id=get_channel_id(callback_data, post_message_type)
             )
 
         case callback_data.ActionEnum.REMOVE_DELAY:
@@ -633,7 +729,7 @@ async def _post_message_union(
                 query,
                 post_message,
                 post_message_type,
-                channel_id=callback_data.channel_id if post_message_type == PostMessageType.CHANNEL_POST else None
+                channel_id=get_channel_id(callback_data, post_message_type)
             )
 
         case callback_data.ActionEnum.BACK:
@@ -641,7 +737,36 @@ async def _post_message_union(
                 query,
                 post_message,
                 post_message_type,
-                channel_id=callback_data.channel_id if post_message_type == PostMessageType.CHANNEL_POST else None
+                channel_id=get_channel_id(callback_data, post_message_type)
+            )
+
+        # CONTEST ACTIONS
+        case callback_data.ActionEnum.WINNERS_COUNT:
+            await _contest_winners_count(
+                query,
+                state,
+                post_message,
+                post_message_type,
+                channel_id=get_channel_id(callback_data, post_message_type)
+            )
+
+        case callback_data.ActionEnum.CONTEST_FINISH_DATE:
+            await _contest_finish_date(
+                query,
+                state,
+                post_message,
+                post_message_type,
+                channel_id=get_channel_id(callback_data, post_message_type)
+            )
+
+        case callback_data.ActionEnum.PRE_FINISH:
+            await _cancel_send(
+                query,
+                post_message,
+                post_message_type,
+                user_id,
+                channel_id=callback_data.channel_id,
+                contest_pre_finish=True
             )
 
 
@@ -689,6 +814,8 @@ async def _inline_no_button(
         case PostMessageType.CHANNEL_POST:
             username = (await Bot(custom_bot_token).get_chat(channel_id)).username
             text = "В этой записи для канала кнопки нет"
+        case PostMessageType.CONTEST:
+            raise ContestMessageDontNeedButton
         case _:
             raise UnknownPostMessageType
 

@@ -6,7 +6,7 @@ from aiogram.types import Message, CallbackQuery
 from aiogram.filters import StateFilter
 from aiogram.fsm.context import FSMContext
 
-from bot.main import post_message_db, bot_db, post_message_media_file_db, _scheduler
+from bot.main import post_message_db, bot_db, post_message_media_file_db, _scheduler, contest_db
 from bot.utils import MessageTexts
 from bot.states import States
 from bot.handlers.routers import post_message_router
@@ -17,12 +17,23 @@ from bot.post_message.post_message_utils import is_post_message_valid
 from bot.keyboards.post_message_keyboards import InlinePostMessageStartConfirmKeyboard, InlinePostMessageMenuKeyboard, \
     InlinePostMessageExtraSettingsKeyboard, InlinePostMessageAcceptDeletingKeyboard, UnknownPostMessageType
 from bot.post_message.post_message_editors import edit_delay_date, edit_message, edit_button_text, edit_button_url, \
-    edit_media_files, send_post_message, PostActionType
+    edit_media_files, send_post_message, PostActionType, edit_winners_count, edit_contest_finish_date
 from bot.handlers.mailing_settings_handlers import send_post_messages
 from bot.post_message.post_message_decorators import check_callback_conflicts
 from bot.post_message.post_message_callback_handler import post_message_handler
 
 from database.models.post_message_model import PostMessageSchema
+
+from bot.post_message.post_message_editors import pre_finish_contest
+
+from logs.config import logger, extra_params
+
+
+def get_channel_id(callback_data, post_message_type):
+    if post_message_type in (PostMessageType.CHANNEL_POST, PostMessageType.CONTEST):
+        return callback_data.channel_id
+    else:
+        return None
 
 
 @post_message_router.callback_query(lambda query: InlinePostMessageMenuKeyboard.callback_validator(query.data))
@@ -42,6 +53,8 @@ async def post_message_menu_callback_handler(
     States.EDITING_POST_BUTTON_URL,
     States.EDITING_POST_MEDIA_FILES,
     States.EDITING_POST_DELAY_DATE,
+    States.EDITING_CONTEST_FINISH_DATE,
+    States.EDITING_CONTEST_WINNERS_COUNT,
 ))
 async def editing_post_message_handler(message: Message, state: FSMContext):
     state_data = await state.get_data()
@@ -52,6 +65,8 @@ async def editing_post_message_handler(message: Message, state: FSMContext):
             post_message_type = PostMessageType.MAILING
         case PostMessageType.CHANNEL_POST.value:
             post_message_type = PostMessageType.CHANNEL_POST
+        case PostMessageType.CONTEST.value:
+            post_message_type = PostMessageType.CONTEST
         case _:
             raise UnknownPostMessageType
 
@@ -66,6 +81,10 @@ async def editing_post_message_handler(message: Message, state: FSMContext):
             await edit_button_url(message, state, post_message_type)
         case States.EDITING_POST_MEDIA_FILES:
             await edit_media_files(message, state, post_message_type)
+        case States.EDITING_CONTEST_WINNERS_COUNT:
+            await edit_winners_count(message, state, post_message_type)
+        case States.EDITING_CONTEST_FINISH_DATE:
+            await edit_contest_finish_date(message, state, post_message_type)
 
 
 @post_message_router.callback_query(
@@ -86,21 +105,21 @@ async def post_message_extra_settings_callback_handler(
                 query,
                 post_message,
                 post_message_type,
-                channel_id=callback_data.channel_id if post_message_type == PostMessageType.CHANNEL_POST else None
+                channel_id=get_channel_id(callback_data, post_message_type)
             )
         case callback_data.ActionEnum.NOTIFICATION_SOUND:
             await _notification_sound(
                 query,
                 post_message,
                 post_message_type,
-                channel_id=callback_data.channel_id if post_message_type == PostMessageType.CHANNEL_POST else None
+                channel_id=get_channel_id(callback_data, post_message_type)
             )
         case callback_data.ActionEnum.BACK_TO_POST_MESSAGE_MENU:
             await _inline_back_to_post_message_menu(
                 query,
                 bot_id,
                 post_message_type,
-                channel_id=callback_data.channel_id if post_message_type == PostMessageType.CHANNEL_POST else None
+                channel_id=get_channel_id(callback_data, post_message_type)
             )
 
 
@@ -122,14 +141,14 @@ async def post_message_confirm_start_callback_handler(
                 query,
                 post_message,
                 post_message_type,
-                channel_id=callback_data.channel_id if post_message_type == PostMessageType.CHANNEL_POST else None
+                channel_id=get_channel_id(callback_data, post_message_type)
             )
         case callback_data.ActionEnum.BACK_TO_POST_MESSAGE_MENU:
             await _inline_back_to_post_message_menu(
                 query,
                 bot_id,
                 post_message_type,
-                channel_id=callback_data.channel_id if post_message_type == PostMessageType.CHANNEL_POST else None
+                channel_id=get_channel_id(callback_data, post_message_type)
             )
 
 
@@ -151,14 +170,14 @@ async def post_message_accept_deleting_callback_handler(
                 query,
                 post_message,
                 post_message_type,
-                channel_id=callback_data.channel_id if post_message_type == PostMessageType.CHANNEL_POST else None
+                channel_id=get_channel_id(callback_data, post_message_type)
             )
         case callback_data.ActionEnum.BACK_TO_POST_MESSAGE_MENU:
             await _inline_back_to_post_message_menu(
                 query,
                 bot_id,
                 post_message_type,
-                channel_id=callback_data.channel_id if post_message_type == PostMessageType.CHANNEL_POST else None
+                channel_id=get_channel_id(callback_data, post_message_type)
             )
 
 
@@ -189,17 +208,17 @@ async def _start_confirm(
                 await query.message.answer(
                     f"Рассылка начнется в {post_message.send_date}"
                     if post_message.is_delayed else "Рассылка началась"
-                )  # TODO BUG
-                await query.message.edit_text(
-                    text=MessageTexts.BOT_MAILING_MENU_WHILE_RUNNING.value.format(custom_bot_username),
-                    reply_markup=await InlinePostMessageMenuKeyboard.get_keyboard(
-                        post_message.bot_id, post_message_type, channel_id
-                    ),
-                    parse_mode=ParseMode.HTML
                 )
 
                 if not post_message.is_delayed:
                     await post_message_db.update_post_message(post_message)
+                    await query.message.edit_text(
+                        text=MessageTexts.BOT_MAILING_MENU_WHILE_RUNNING.value.format(custom_bot_username),
+                        reply_markup=await InlinePostMessageMenuKeyboard.get_keyboard(
+                            post_message.bot_id, post_message_type, channel_id
+                        ),
+                        parse_mode=ParseMode.HTML
+                    )
                     await send_post_messages(
                         custom_bot,
                         post_message,
@@ -213,19 +232,42 @@ async def _start_confirm(
                     post_message.job_id = job_id
                     await post_message_db.update_post_message(post_message)
 
-            case PostMessageType.CHANNEL_POST:
+                    await query.message.edit_text(
+                        text=MessageTexts.BOT_MAILING_MENU_WHILE_RUNNING.value.format(custom_bot_username),
+                        reply_markup=await InlinePostMessageMenuKeyboard.get_keyboard(
+                            post_message.bot_id, post_message_type, channel_id
+                        ),
+                        parse_mode=ParseMode.HTML
+                    )
+
+            case PostMessageType.CHANNEL_POST | PostMessageType.CONTEST:
+                if post_message_type == PostMessageType.CONTEST:
+                    contest = await contest_db.get_contest_by_bot_id(bot_id=post_message.bot_id)
+                    if contest.finish_job_id:
+                        try:
+                            await _scheduler.del_job(contest.finish_job_id)
+                        except Exception as e:
+                            logger.warning(
+                                f"user_id={query.message.chat.id}: Job ID {post_message.job_id} not found",
+                                extra=extra_params(
+                                    user_id=query.message.chat.id,
+                                    bot_id=post_message.bot_id,
+                                    post_message_id=post_message.post_message_id
+                                ),
+                                exc_info=e
+                            )
+
+                    job_id = await _scheduler.add_scheduled_job(
+                        pre_finish_contest, contest.finish_date, [contest.contest_id]
+                    )
+                    contest.finish_job_id = job_id
+                    await contest_db.update_contest(contest)
+
                 channel_username = (await Bot(custom_bot.token).get_chat(channel_id)).username
 
                 await query.message.answer(
                     f"Запись отправится в {post_message.send_date}"
                     if post_message.is_delayed else "Запись отправлена!"
-                )
-                await query.message.edit_text(
-                    text=MessageTexts.BOT_CHANNEL_MENU_MESSAGE.value.format(channel_username, custom_bot_username),
-                    reply_markup=await InlineChannelMenuKeyboard.get_keyboard(
-                        post_message.bot_id, channel_id
-                    ),
-                    parse_mode=ParseMode.HTML
                 )
 
                 if not post_message.is_delayed:
@@ -236,7 +278,27 @@ async def _start_confirm(
                         media_files,
                         PostActionType.RELEASE
                     )
-                    await post_message_db.delete_post_message(post_message.post_message_id)
+                    if post_message_type == PostMessageType.CONTEST:
+                        post_message.is_sent = True
+                        await post_message_db.update_post_message(post_message)
+                        await query.message.edit_text(
+                            text=MessageTexts.BOT_CHANNEL_POST_MENU_WHILE_RUNNING.value.format(channel_username),
+                            reply_markup=await InlinePostMessageMenuKeyboard.get_keyboard(
+                                post_message.bot_id, post_message_type, channel_id
+                            ),
+                            parse_mode=ParseMode.HTML
+                        )
+                    else:
+                        await post_message_db.delete_post_message(post_message.post_message_id)
+                        await query.message.edit_text(
+                            text=MessageTexts.BOT_CHANNEL_MENU_MESSAGE.value.format(
+                                channel_username, custom_bot_username
+                            ),
+                            reply_markup=await InlineChannelMenuKeyboard.get_keyboard(
+                                post_message.bot_id, channel_id
+                            ),
+                            parse_mode=ParseMode.HTML
+                        )
 
                 else:
                     job_id = await _scheduler.add_scheduled_job(
@@ -244,6 +306,14 @@ async def _start_confirm(
                         args=[custom_bot, channel_id, post_message, media_files, PostActionType.RELEASE])
                     post_message.job_id = job_id
                     await post_message_db.update_post_message(post_message)
+
+                    await query.message.edit_text(
+                        text=MessageTexts.BOT_CHANNEL_POST_MENU_WHILE_RUNNING.value.format(channel_username),
+                        reply_markup=await InlinePostMessageMenuKeyboard.get_keyboard(
+                            post_message.bot_id, post_message_type, channel_id
+                        ),
+                        parse_mode=ParseMode.HTML
+                    )
 
             case _:
                 raise UnknownPostMessageType
@@ -278,7 +348,7 @@ async def _delete_post_message(
                 parse_mode=ParseMode.HTML
             )
 
-        case PostMessageType.CHANNEL_POST:
+        case PostMessageType.CHANNEL_POST | PostMessageType.CONTEST:
             channel_username = (await Bot(custom_bot.token).get_chat(channel_id)).username
             keyboard = await InlineChannelMenuKeyboard.get_keyboard(post_message.bot_id, channel_id)
 
@@ -354,7 +424,7 @@ async def _inline_back_to_post_message_menu(
     match post_message_type:
         case PostMessageType.MAILING:
             username = (await Bot(custom_bot_token).get_me()).username
-        case PostMessageType.CHANNEL_POST:
+        case PostMessageType.CHANNEL_POST | PostMessageType.CONTEST:
             username = (await Bot(custom_bot_token).get_chat(channel_id)).username
         case _:
             raise UnknownPostMessageType
