@@ -1,3 +1,4 @@
+import asyncio
 import random
 import re
 from datetime import datetime
@@ -45,11 +46,13 @@ async def edit_media_files(
         message: Message,
         state: FSMContext,
         post_message_type: PostMessageType):
+    await asyncio.sleep(0.5)
+
     state_data = await state.get_data()
 
     if "first" in state_data and post_message_type == PostMessageType.CONTEST:
         return await message.answer(
-            "❗ Внимание, для конкурса было выбрано только <b>первый</b> медиафайл\n\n"
+            "❗ Внимание, для конкурса был выбран только <b>первый</b> медиафайл\n\n"
             "Телеграм не позволяет отправлять кнопку, если в сообщении больше одного медиафайла"
         )
 
