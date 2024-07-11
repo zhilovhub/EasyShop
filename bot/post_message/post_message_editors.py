@@ -1,4 +1,3 @@
-import asyncio
 import random
 import re
 from datetime import datetime
@@ -47,12 +46,6 @@ async def edit_media_files(
         state: FSMContext,
         post_message_type: PostMessageType):
     state_data = await state.get_data()
-
-    if "first" in state_data and post_message_type == PostMessageType.CONTEST:
-        return await message.answer(
-            "❗ Внимание, для конкурса был выбран только <b>первый</b> медиафайл\n\n"
-            "Телеграм не позволяет отправлять кнопку, если в сообщении больше одного медиафайла"
-        )
 
     bot_id = state_data["bot_id"]
     post_message = await post_message_db.get_post_message_by_bot_id(bot_id, post_message_type)
@@ -171,6 +164,11 @@ async def _media_save(
             reply_markup=ReplyConfirmMediaFilesKeyboard.get_keyboard()
         )
         return None
+
+    if post_message_type == PostMessageType.CONTEST and \
+            len(await post_message_media_file_db.get_all_post_message_media_files(post_message_id)) > 0:
+        return "❗ Внимание, для конкурса был выбран только <b>один</b> медиафайл\n\n" \
+               "Телеграм не позволяет отправлять кнопку, если в сообщении больше одного медиафайла"
 
     await post_message_media_file_db.add_post_message_media_file(PostMessageMediaFileSchema.model_validate(
         {"post_message_id": post_message_id, "file_id_main_bot": file_id,
