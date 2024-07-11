@@ -208,17 +208,17 @@ async def _start_confirm(
                 await query.message.answer(
                     f"Рассылка начнется в {post_message.send_date}"
                     if post_message.is_delayed else "Рассылка началась"
-                )  # TODO BUG
-                await query.message.edit_text(
-                    text=MessageTexts.BOT_MAILING_MENU_WHILE_RUNNING.value.format(custom_bot_username),
-                    reply_markup=await InlinePostMessageMenuKeyboard.get_keyboard(
-                        post_message.bot_id, post_message_type, channel_id
-                    ),
-                    parse_mode=ParseMode.HTML
                 )
 
                 if not post_message.is_delayed:
                     await post_message_db.update_post_message(post_message)
+                    await query.message.edit_text(
+                        text=MessageTexts.BOT_MAILING_MENU_WHILE_RUNNING.value.format(custom_bot_username),
+                        reply_markup=await InlinePostMessageMenuKeyboard.get_keyboard(
+                            post_message.bot_id, post_message_type, channel_id
+                        ),
+                        parse_mode=ParseMode.HTML
+                    )
                     await send_post_messages(
                         custom_bot,
                         post_message,
@@ -231,6 +231,14 @@ async def _start_confirm(
                         args=[custom_bot, post_message, media_files, query.from_user.id])
                     post_message.job_id = job_id
                     await post_message_db.update_post_message(post_message)
+
+                    await query.message.edit_text(
+                        text=MessageTexts.BOT_MAILING_MENU_WHILE_RUNNING.value.format(custom_bot_username),
+                        reply_markup=await InlinePostMessageMenuKeyboard.get_keyboard(
+                            post_message.bot_id, post_message_type, channel_id
+                        ),
+                        parse_mode=ParseMode.HTML
+                    )
 
             case PostMessageType.CHANNEL_POST | PostMessageType.CONTEST:
                 if post_message_type == PostMessageType.CONTEST:
@@ -260,13 +268,6 @@ async def _start_confirm(
                     f"Запись отправится в {post_message.send_date}"
                     if post_message.is_delayed else "Запись отправлена!"
                 )
-                await query.message.edit_text(
-                    text=MessageTexts.BOT_CHANNEL_MENU_MESSAGE.value.format(channel_username, custom_bot_username),
-                    reply_markup=await InlineChannelMenuKeyboard.get_keyboard(
-                        post_message.bot_id, channel_id
-                    ),
-                    parse_mode=ParseMode.HTML
-                )
 
                 if not post_message.is_delayed:
                     await send_post_message(
@@ -278,10 +279,25 @@ async def _start_confirm(
                     )
                     if post_message_type == PostMessageType.CONTEST:
                         post_message.is_sent = True
-                        post_message.is_running = True
                         await post_message_db.update_post_message(post_message)
+                        await query.message.edit_text(
+                            text=MessageTexts.BOT_CHANNEL_POST_MENU_WHILE_RUNNING.value.format(channel_username),
+                            reply_markup=await InlinePostMessageMenuKeyboard.get_keyboard(
+                                post_message.bot_id, post_message_type, channel_id
+                            ),
+                            parse_mode=ParseMode.HTML
+                        )
                     else:
                         await post_message_db.delete_post_message(post_message.post_message_id)
+                        await query.message.edit_text(
+                            text=MessageTexts.BOT_CHANNEL_MENU_MESSAGE.value.format(
+                                channel_username, custom_bot_username
+                            ),
+                            reply_markup=await InlineChannelMenuKeyboard.get_keyboard(
+                                post_message.bot_id, channel_id
+                            ),
+                            parse_mode=ParseMode.HTML
+                        )
 
                 else:
                     job_id = await _scheduler.add_scheduled_job(
@@ -289,6 +305,14 @@ async def _start_confirm(
                         args=[custom_bot, channel_id, post_message, media_files, PostActionType.RELEASE])
                     post_message.job_id = job_id
                     await post_message_db.update_post_message(post_message)
+
+                    await query.message.edit_text(
+                        text=MessageTexts.BOT_CHANNEL_POST_MENU_WHILE_RUNNING.value.format(channel_username),
+                        reply_markup=await InlinePostMessageMenuKeyboard.get_keyboard(
+                            post_message.bot_id, post_message_type, channel_id
+                        ),
+                        parse_mode=ParseMode.HTML
+                    )
 
             case _:
                 raise UnknownPostMessageType

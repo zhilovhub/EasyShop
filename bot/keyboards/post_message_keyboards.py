@@ -252,48 +252,57 @@ class InlinePostMessageMenuKeyboard:
             )
 
         if post_message.is_running:
-            if post_message_type != PostMessageType.CONTEST:
-                return InlineKeyboardMarkup(
-                    inline_keyboard=[
-                        [
-                            InlineKeyboardButton(
+            statistic_button = InlineKeyboardButton(
                                 text="Статистика",
                                 callback_data=InlinePostMessageMenuKeyboard.callback_json(
                                     actions.STATISTICS, bot_id, post_message_id, post_message_type
                                 )
                             )
-                        ],
-                        [
-                            InlineKeyboardButton(
+            cancel_button = InlineKeyboardButton(
                                 text="Отменить",
                                 callback_data=InlinePostMessageMenuKeyboard.callback_json(
                                     actions.CANCEL, bot_id, post_message_id, post_message_type, channel_id
                                 )
                             )
-                        ]
-                    ]
-                )
-            else:
-                return InlineKeyboardMarkup(
-                    inline_keyboard=[
-                        [
-                            InlineKeyboardButton(
+            contest_button = InlineKeyboardButton(
                                 text="Досрочно завершить",
                                 callback_data=InlinePostMessageMenuKeyboard.callback_json(
                                     actions.PRE_FINISH, bot_id, post_message_id, post_message_type, channel_id
                                 )
                             )
-                        ],
-                        [
-                            InlineKeyboardButton(
-                                text="Отменить",
-                                callback_data=InlinePostMessageMenuKeyboard.callback_json(
-                                    actions.CANCEL, bot_id, post_message_id, post_message_type, channel_id
-                                )
-                            )
+            match post_message_type:
+                case PostMessageType.MAILING:
+                    return InlineKeyboardMarkup(
+                        inline_keyboard=[
+                            [
+                                statistic_button
+                            ],
+                            [
+                                cancel_button
+                            ]
                         ]
-                    ]
-                )
+                    )
+                case PostMessageType.CHANNEL_POST:
+                    return InlineKeyboardMarkup(
+                        inline_keyboard=[
+                            [
+                                cancel_button
+                            ]
+                        ]
+                    )
+                case PostMessageType.CONTEST:
+                    return InlineKeyboardMarkup(
+                        inline_keyboard=[
+                            [
+                                contest_button
+                            ],
+                            [
+                                cancel_button
+                            ]
+                        ]
+                    )
+                case _:
+                    raise UnknownPostMessageType
         else:
             if post_message.has_button:
                 button_buttons = [
