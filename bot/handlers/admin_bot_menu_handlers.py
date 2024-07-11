@@ -392,6 +392,10 @@ async def bot_menu_photo_handler(message: Message, state: FSMContext):
     if len(params) != 2:
         return await message.answer("Чтобы добавить товар, прикрепите его картинку и отправьте сообщение в виде:"
                                     "\n\nНазвание\nЦена в рублях")
+
+    if len(params[0]) > 100:
+        return await message.answer(f"🚫 Название товара должно быть максимум из 100 символов. Вы ввели {len(params[0])}")
+
     if params[-1].isdigit():
         price = int(params[-1])
     else:
