@@ -8,7 +8,7 @@ from aiogram.types import Message, LinkPreviewOptions, InputMediaDocument, Input
     InputMediaVideo, InputMediaPhoto, BufferedInputFile, InlineKeyboardMarkup, InlineKeyboardButton
 from aiogram.fsm.context import FSMContext
 
-from bot.main import post_message_db, bot, post_message_media_file_db, bot_db, contest_db, _scheduler, logger
+from bot.main import post_message_db, bot, post_message_media_file_db, bot_db, contest_db, logger
 from bot.utils import MessageTexts, excel_utils
 from bot.config import WEB_APP_URL, WEB_APP_PORT
 from bot.states import States

@@ -249,9 +249,12 @@ async def _start_confirm(
                                 exc_info=e
                             )
 
-                    job_id = await _scheduler.add_scheduled_job(finish_contest, contest.finish_date, [contest.contest_id])
+                    job_id = await _scheduler.add_scheduled_job(
+                        finish_contest, contest.finish_date, [contest.contest_id]
+                    )
                     contest.finish_job_id = job_id
-                    channel_username = (await Bot(custom_bot.token).get_chat(channel_id)).username
+
+                channel_username = (await Bot(custom_bot.token).get_chat(channel_id)).username
 
                 await query.message.answer(
                     f"Запись отправится в {post_message.send_date}"

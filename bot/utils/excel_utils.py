@@ -73,12 +73,14 @@ async def send_ban_users_xlsx(users_list: List[int], bot_id: int):
 async def send_contest_results_xlsx(users: list[ContestUserSchema], contest_id: int):
     try:
         contest = await contest_db.get_contest_by_contest_id(contest_id)
-        bot = await bot_db.get_bot(bot_id=contest.bot_id)
-        created_by = bot.created_by
     except ContestNotFound:
         logger.error(f"Provided to excel function contest not found contest_id={contest_id}",
                      extra_params(contest_id=contest_id))
         return
+
+    try:
+        bot = await bot_db.get_bot(bot_id=contest.bot_id)
+        created_by = bot.created_by
     except BotNotFound:
         logger.error(f"Provided to excel function bot not found bot_id={contest.bot_id}",
                      extra_params(bot_id=contest.bot_id))

@@ -48,6 +48,7 @@ main_router = Router()
 WEBHOOK_SERVER_URL = getenv("WEBHOOK_URL")
 WEBHOOK_SERVER_HOST = getenv("WEBHOOK_HOST")
 WEBHOOK_SERVER_PORT = int(getenv("WEBHOOK_PORT"))
+WEBHOOK_SERVER_PORT_TO_REDIRECT = int(getenv("WEBHOOK_SERVER_PORT_TO_REDIRECT"))
 
 BASE_URL = f"{WEBHOOK_SERVER_URL}:{WEBHOOK_SERVER_PORT}"
 OTHER_BOTS_PATH = "/webhook/bot/{bot_token}"
@@ -230,7 +231,7 @@ async def main():
     custom_bot_logger.debug(
         f"[3/3] Setting up local api server on {LOCAL_API_SERVER_HOST}:{LOCAL_API_SERVER_PORT}")
     custom_bot_logger.info(
-        f"[3/3] Setting up webhook server on {WEBHOOK_SERVER_HOST}:{WEBHOOK_SERVER_PORT}")
+        f"[3/3] Setting up webhook server on {WEBHOOK_SERVER_HOST}:{WEBHOOK_SERVER_PORT_TO_REDIRECT}")
 
     await scheduler.start()
 
