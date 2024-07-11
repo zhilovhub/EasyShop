@@ -47,6 +47,12 @@ async def edit_media_files(
         post_message_type: PostMessageType):
     state_data = await state.get_data()
 
+    if "first" in state_data and post_message_type == PostMessageType.CONTEST:
+        return await message.answer(
+            "❗ Внимание, для конкурса было выбрано только <b>первый</b> медиафайл\n\n"
+            "Телеграм не позволяет отправлять кнопку, если в сообщении больше одного медиафайла"
+        )
+
     bot_id = state_data["bot_id"]
     post_message = await post_message_db.get_post_message_by_bot_id(bot_id, post_message_type)
     post_message_id = post_message.post_message_id
@@ -71,14 +77,6 @@ async def edit_media_files(
             answer_text = await _media_save(message, post_message_id, post_message_type)
             if answer_text:
                 await message.answer(answer_text)
-            if post_message_type == PostMessageType.CONTEST:
-                return await _media_confirm(
-                    message,
-                    state,
-                    bot_id,
-                    post_message_type,
-                    channel_id=get_channel_id(state_data, post_message_type)
-                )
 
 
 async def _media_confirm(
@@ -92,6 +90,7 @@ async def _media_confirm(
     await _back_to_post_message_menu(message, bot_id, post_message_type, channel_id)
     await state.set_state(States.BOT_MENU)
 
+    state_data.pop("first", None)
     return await state.set_data(state_data)
 
 
@@ -715,7 +714,7 @@ async def send_post_message(
 
     if post_message_schema.has_button:
         if post_message_schema.button_url == f"{WEB_APP_URL}:{WEB_APP_PORT}" \
-                f"/products-page/?bot_id={post_message_schema.bot_id}":
+                                             f"/products-page/?bot_id={post_message_schema.bot_id}":
             button = InlineKeyboardButton(
                 text=post_message_schema.button_text,
                 web_app=make_webapp_info(bot_id=post_message_schema.bot_id)
