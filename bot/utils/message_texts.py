@@ -136,8 +136,8 @@ class MessageTexts(Enum):
                f"<b>{sent_post_message_amount}/{custom_bot_users_len}</b>"
 
         if sent_post_message_amount != custom_bot_users_len:
-            text += f"\n\n❗ Во время рассылки было обнаружено, что бота <u>забанило</u> " \
-                    f"<b>{custom_bot_users_len - sent_post_message_amount}</b> человек" \
+            text += f"\n\n❗ Во время рассылки было обнаружено, что бота забанило " \
+                    f"{custom_bot_users_len - sent_post_message_amount} человек" \
 
         return text
 

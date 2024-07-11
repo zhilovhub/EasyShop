@@ -67,6 +67,7 @@ async def _cancel_send(
 
     match post_message_type:
         case PostMessageType.MAILING:
+            await post_message_db.delete_post_message(post_message.post_message_id)
             await query.message.answer(
                 f"Рассылка остановлена\nСообщений разослано - "
                 f"{post_message.sent_post_message_amount}/{custom_users_length}",
@@ -77,8 +78,9 @@ async def _cancel_send(
                 reply_markup=await InlineBotMenuKeyboard.get_keyboard(post_message.bot_id),
                 parse_mode=ParseMode.HTML
             )
-            await post_message_db.delete_post_message(post_message.post_message_id)
         case PostMessageType.CHANNEL_POST:
+            await post_message_db.delete_post_message(post_message.post_message_id)
+
             username = (await Bot(custom_bot_token).get_chat(channel_id)).username
             await query.message.answer(
                 f"Отправка записи отменена",
@@ -89,7 +91,6 @@ async def _cancel_send(
                 reply_markup=await InlineChannelMenuKeyboard.get_keyboard(post_message.bot_id, channel_id),
                 parse_mode=ParseMode.HTML
             )
-            await post_message_db.delete_post_message(post_message.post_message_id)
         case PostMessageType.CONTEST:
             await post_message_db.update_post_message(post_message)
             contest = await contest_db.get_contest_by_bot_id(bot_id=post_message.bot_id)
