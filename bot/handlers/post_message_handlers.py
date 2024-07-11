@@ -261,6 +261,7 @@ async def _start_confirm(
                         finish_contest, contest.finish_date, [contest.contest_id]
                     )
                     contest.finish_job_id = job_id
+                    await contest_db.update_contest(contest)
 
                 channel_username = (await Bot(custom_bot.token).get_chat(channel_id)).username
 
