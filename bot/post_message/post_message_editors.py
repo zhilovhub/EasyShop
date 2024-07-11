@@ -46,8 +46,6 @@ async def edit_media_files(
         message: Message,
         state: FSMContext,
         post_message_type: PostMessageType):
-    await asyncio.sleep(0.5)
-
     state_data = await state.get_data()
 
     if "first" in state_data and post_message_type == PostMessageType.CONTEST:

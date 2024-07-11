@@ -1,3 +1,4 @@
+import asyncio
 from datetime import datetime, timedelta
 
 from aiogram import Bot
@@ -80,6 +81,7 @@ async def editing_post_message_handler(message: Message, state: FSMContext):
         case States.EDITING_POST_BUTTON_URL:
             await edit_button_url(message, state, post_message_type)
         case States.EDITING_POST_MEDIA_FILES:
+            await asyncio.sleep(0.5)
             await edit_media_files(message, state, post_message_type)
         case States.EDITING_CONTEST_WINNERS_COUNT:
             await edit_winners_count(message, state, post_message_type)
