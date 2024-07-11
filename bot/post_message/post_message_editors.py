@@ -437,6 +437,8 @@ async def edit_delay_date(
                 post_message_type,
                 channel_id=get_channel_id(state_data, post_message_type)
             )
+            await state.set_state(States.BOT_MENU)
+            await state.set_data(state_data)
         else:
             try:
                 await _delay_save(
@@ -475,6 +477,8 @@ async def edit_contest_finish_date(
                 post_message_type,
                 channel_id=get_channel_id(state_data, post_message_type)
             )
+            await state.set_state(States.BOT_MENU)
+            await state.set_data(state_data)
         else:
             try:
                 await _contest_finish_date_save(
