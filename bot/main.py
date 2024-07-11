@@ -99,7 +99,7 @@ async def on_start():
 
 if __name__ == "__main__":
     from bot.handlers import (admin_bot_menu_router, channel_menu_router, custom_bot_editing_router, commands_router,
-                              subscribe_router, stock_menu_router, post_message_router)
+                              subscribe_router, stock_menu_router, post_message_router, empty_router)
     dp.include_router(commands_router)  # should be first
     dp.include_router(admin_bot_menu_router)
     dp.include_router(stock_menu_router)
@@ -107,6 +107,7 @@ if __name__ == "__main__":
     dp.include_router(subscribe_router)
     dp.include_router(custom_bot_editing_router)
     dp.include_router(post_message_router)
+    dp.include_router(empty_router)  # should be last
 
     for log_file in ('all.log', 'err.log'):
         with open(config.LOGS_PATH + log_file, 'a') as log:

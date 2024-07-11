@@ -3,7 +3,7 @@ import random
 import string
 from datetime import datetime
 
-from aiogram import F
+from aiogram import F, Bot
 from aiogram.types import Message
 
 from bot.keyboards.order_manage_keyboards import InlineOrderStatusesKeyboard, InlineOrderCustomBotKeyboard
@@ -149,6 +149,7 @@ async def main_menu_handler(message: Message):
             f"bot_token={message.bot.token}: this bot is not in db",
             extra=extra_params(bot_token=message.bot.token)
         )
+        await Bot(message.bot.token).delete_webhook()
         return await message.answer("Бот не инициализирован")
 
     match message.text:

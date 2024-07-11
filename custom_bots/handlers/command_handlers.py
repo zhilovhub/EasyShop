@@ -1,3 +1,4 @@
+from aiogram import Bot
 from aiogram.types import Message
 from aiogram.filters import CommandStart
 from aiogram.fsm.context import FSMContext
@@ -36,6 +37,7 @@ async def start_cmd(message: Message, state: FSMContext):
             )
             await custom_bot_user_db.add_custom_bot_user(bot.bot_id, user_id)
     except BotNotFound:
+        await Bot(message.bot.token).delete_webhook()
         return await message.answer("Бот не инициализирован")
 
     await message.answer(
