@@ -127,6 +127,7 @@ async def _button_add(
         channel_id: int | None
 ):
     custom_bot_token = (await bot_db.get_bot(post_message.bot_id)).token
+    custom_bot = Bot(custom_bot_token)
 
     match post_message_type:
         case PostMessageType.MAILING:
@@ -154,7 +155,15 @@ async def _button_add(
         )
     else:
         post_message.button_text = "Shop"
-        post_message.button_url = f"{WEB_APP_URL}:{WEB_APP_PORT}/products-page/?bot_id={post_message.bot_id}"
+        match post_message_type:
+            case PostMessageType.MAILING:
+                post_message.button_url = f"{WEB_APP_URL}:{WEB_APP_PORT}/products-page/?bot_id={post_message.bot_id}"
+            case PostMessageType.CHANNEL_POST:
+                post_message.button_url = f"{(await custom_bot.get_me()).url}/?start=web_app"
+            case PostMessageType.CONTEST:
+                raise ContestMessageDontNeedButton
+            case _:
+                raise UnknownPostMessageType
         post_message.has_button = True
 
         await post_message_db.update_post_message(post_message)

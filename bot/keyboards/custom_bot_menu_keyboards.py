@@ -2,7 +2,7 @@ from enum import Enum
 
 from pydantic import ConfigDict, Field, BaseModel
 
-from aiogram.types import ReplyKeyboardMarkup, KeyboardButton
+from aiogram.types import ReplyKeyboardMarkup, KeyboardButton, InlineKeyboardButton, InlineKeyboardMarkup
 
 from bot.utils.keyboard_utils import make_webapp_info
 
@@ -29,4 +29,29 @@ class ReplyCustomBotMenuKeyboard:
                         web_app=make_webapp_info(bot_id))
                 ],
             ], resize_keyboard=True, one_time_keyboard=False
+        )
+
+
+class InlineShopCustomBotKeyboard:
+    class Callback(BaseModel):
+        class ActionEnum(Enum):
+            SHOP = "🛍 Открыть магазин"
+
+        model_config = ConfigDict(from_attributes=True, populate_by_name=True)
+
+        n: str = Field(default="custom_bot_web_app", frozen=True)
+        a: ActionEnum
+
+    @staticmethod
+    def get_keyboard(bot_id: int) -> InlineKeyboardMarkup:
+        actions = InlineShopCustomBotKeyboard.Callback.ActionEnum
+
+        return InlineKeyboardMarkup(
+            inline_keyboard=[
+                [
+                    InlineKeyboardButton(
+                        text=actions.SHOP.value,
+                        web_app=make_webapp_info(bot_id))
+                ],
+            ]
         )
