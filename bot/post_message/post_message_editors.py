@@ -441,14 +441,15 @@ async def edit_delay_date(
             await state.set_data(state_data)
         else:
             try:
-                await _delay_save(
+                result = await _delay_save(
                     message,
                     post_message,
                     post_message_type,
                     channel_id=get_channel_id(state_data, post_message_type)
                 )
-                await state.set_state(States.BOT_MENU)
-                await state.set_data(state_data)
+                if result:
+                    await state.set_state(States.BOT_MENU)
+                    await state.set_data(state_data)
             except ValueError:
                 return await message.reply(
                     "Некорректный формат. Пожалуйста, "
@@ -481,14 +482,15 @@ async def edit_contest_finish_date(
             await state.set_data(state_data)
         else:
             try:
-                await _contest_finish_date_save(
+                result = await _contest_finish_date_save(
                     message,
                     post_message,
                     post_message_type,
                     channel_id=get_channel_id(state_data, post_message_type)
                 )
-                await state.set_state(States.BOT_MENU)
-                await state.set_data(state_data)
+                if result:
+                    await state.set_state(States.BOT_MENU)
+                    await state.set_data(state_data)
             except ValueError:
                 return await message.reply(
                     "Некорректный формат. Пожалуйста, "
@@ -537,12 +539,13 @@ async def _contest_finish_date_save(
         post_message: PostMessageSchema,
         post_message_type: PostMessageType,
         channel_id: int | None
-):
+) -> bool:
     datetime_obj = datetime.strptime(message.text, "%d.%m.%Y %H:%M")
     datetime_obj.replace(tzinfo=None)
 
     if datetime.now() > datetime_obj:
-        return await message.reply("Введенное время уже прошло. Введите, пожалуйста, <b>будущее</b> время")
+        await message.reply("Введенное время уже прошло. Введите, пожалуйста, <b>будущее</b> время")
+        return False
 
     contest = await contest_db.get_contest_by_bot_id(bot_id=post_message.bot_id)
 
@@ -571,18 +574,21 @@ async def _contest_finish_date_save(
         )
     )
 
+    return True
+
 
 async def _delay_save(
         message: Message,
         post_message: PostMessageSchema,
         post_message_type: PostMessageType,
         channel_id: int | None
-):
+) -> bool:
     datetime_obj = datetime.strptime(message.text, "%d.%m.%Y %H:%M")
     datetime_obj.replace(tzinfo=None)
 
     if datetime.now() > datetime_obj:
-        return await message.reply("Введенное время уже прошло. Введите, пожалуйста, <b>будущее</b> время")
+        await message.reply("Введенное время уже прошло. Введите, пожалуйста, <b>будущее</b> время")
+        return False
 
     post_message.is_delayed = True
     post_message.send_date = datetime_obj
@@ -610,6 +616,8 @@ async def _delay_save(
             post_message.bot_id, post_message_type, channel_id
         )
     )
+
+    return True
 
 
 async def edit_button_url(
