@@ -159,7 +159,7 @@ async def _button_add(
             case PostMessageType.MAILING:
                 post_message.button_url = f"{WEB_APP_URL}:{WEB_APP_PORT}/products-page/?bot_id={post_message.bot_id}"
             case PostMessageType.CHANNEL_POST:
-                post_message.button_url = f"{(await custom_bot.get_me()).url}/?start=web_app"
+                post_message.button_url = f"t.me/{(await custom_bot.get_me()).username}/?start=web_app"
             case PostMessageType.CONTEST:
                 raise ContestMessageDontNeedButton
             case _:
