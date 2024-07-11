@@ -62,7 +62,8 @@ async def _cancel_send(
 
     post_message.job_id = None
 
-    custom_bot_token = (await bot_db.get_bot(post_message.bot_id)).token
+    custom_bot = await bot_db.get_bot(post_message.bot_id)
+    custom_bot_token = custom_bot.token
     custom_bot_username = (await Bot(custom_bot_token).get_me()).username
 
     match post_message_type:
@@ -102,6 +103,7 @@ async def _cancel_send(
 
             username = (await Bot(custom_bot_token).get_chat(channel_id)).username
             if contest_pre_finish:
+                await bot.send_message(custom_bot.created_by, "Досрочно завершаю конкурс...")
                 await pre_finish_contest(contest.contest_id)
             else:
                 await post_message_db.delete_post_message(post_message.post_message_id)

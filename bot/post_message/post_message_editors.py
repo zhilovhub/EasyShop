@@ -506,8 +506,6 @@ async def pre_finish_contest(contest_id: int):
     logger.info(f"finishing contest..., contest_id={contest_id}",
                 extra_params(contest_id=contest_id, bot_id=db_bot.bot_id))
 
-    await bot.send_message(db_bot.created_by, "Досрочно завершаю конкурс...")
-
     if not contest_users:
         await bot.send_message(db_bot.created_by,
                                "К сожалению в созданном конкурсе не было участников, "
