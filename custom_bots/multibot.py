@@ -231,7 +231,8 @@ async def main():
     custom_bot_logger.debug(
         f"[3/3] Setting up local api server on {LOCAL_API_SERVER_HOST}:{LOCAL_API_SERVER_PORT}")
     custom_bot_logger.info(
-        f"[3/3] Setting up webhook server on {WEBHOOK_SERVER_HOST}:{WEBHOOK_SERVER_PORT_TO_REDIRECT}")
+        f"[3/3] Setting up webhook server on {WEBHOOK_SERVER_HOST}:{WEBHOOK_SERVER_PORT_TO_REDIRECT} "
+        f"<- {WEBHOOK_SERVER_PORT}")
 
     await scheduler.start()
 
@@ -246,7 +247,7 @@ async def main():
         web._run_app(  # noqa
             app,
             host=WEBHOOK_SERVER_HOST,
-            port=WEBHOOK_SERVER_PORT,
+            port=WEBHOOK_SERVER_PORT_TO_REDIRECT,
             ssl_context=ssl_context,
             access_log=custom_bot_logger,
             print=custom_bot_logger.debug
