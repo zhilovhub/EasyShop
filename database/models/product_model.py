@@ -69,7 +69,7 @@ class Product(Base):
     id = Column(BigInteger, primary_key=True)
     bot_id = Column(ForeignKey(Bot.bot_id, ondelete="CASCADE"), nullable=False)
 
-    name = Column(String(55), unique=True, nullable=False)  # TODO add test for unique name
+    name = Column(String(100), unique=True, nullable=False)  # TODO add test for unique name
     category = Column(ARRAY(BigInteger))
     description = Column(String(255), nullable=False)
     article = Column(String)
@@ -84,7 +84,7 @@ class ProductWithoutId(BaseModel):
 
     bot_id: int = Field(frozen=True)
 
-    name: str = Field(max_length=55)
+    name: str = Field(max_length=100)
     category: list[int] | None = None
     description: str = Field(max_length=255)
     article: Optional[str | None] = None

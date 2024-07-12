@@ -27,6 +27,8 @@ from logs.config import logger
 async def continue_subscription_callback(query: CallbackQuery, state: FSMContext):
     callback_data = InlineSubscriptionContinueKeyboard.Callback.model_validate_json(query.data)
 
+    state_data = await state.get_data()
+
     if callback_data.bot_id is not None:
         await state.set_data({"bot_id": callback_data.bot_id})
 
@@ -44,6 +46,7 @@ async def continue_subscription_callback(query: CallbackQuery, state: FSMContext
         reply_markup=ReplyBackBotMenuKeyboard.get_keyboard()
     )
     await state.set_state(States.WAITING_PAYMENT_PAY)
+    await state.set_data(state_data)
 
 
 async def send_subscription_expire_notify(user: UserSchema) -> None:
