@@ -23,7 +23,7 @@ class CustomBotUser(Base):
     __tablename__ = "custom_bot_users"
 
     bot_id = Column(ForeignKey(Bot.bot_id, ondelete="CASCADE"), primary_key=True)
-    user_id = Column(ForeignKey(User.user_id, ondelete="CASCADE"), primary_key=True)
+    user_id = Column(BigInteger, primary_key=True)
     balance = Column(BigInteger, default=0)
 
 
