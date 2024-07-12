@@ -40,7 +40,7 @@ async def start_cmd(message: Message, state: FSMContext):
         await Bot(message.bot.token).delete_webhook()
         return await message.answer("Бот не инициализирован")
 
-    params = message.text.strip().strip()
+    params = message.text.strip().split()
     if len(params) > 1:
         match params[-1]:
             case "web_app":
@@ -50,9 +50,11 @@ async def start_cmd(message: Message, state: FSMContext):
                     reply_markup=InlineShopCustomBotKeyboard.get_keyboard(bot.bot_id)
                 )
             case _:
-                custom_bot_logger.warning(f"provided unknown start command param ({params[-1]}) "
-                                          f"in bot (bot_id={bot.bot_id}) by user (user_id={user_id})",
-                                          extra_params(bot_id=bot.bot_id, user_id=user_id))
+                custom_bot_logger.warning(
+                    f"user_id={user_id}: provided unknown start command param ({params[-1]}) "
+                    f"in bot (bot_id={bot.bot_id}) by user (user_id={user_id})",
+                    extra_params(bot_id=bot.bot_id, user_id=user_id)
+                )
 
     await message.answer(
         format_locales(start_msg, message.from_user, message.chat),

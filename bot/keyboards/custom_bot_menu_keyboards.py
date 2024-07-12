@@ -51,7 +51,8 @@ class InlineShopCustomBotKeyboard:
                 [
                     InlineKeyboardButton(
                         text=actions.SHOP.value,
-                        web_app=make_webapp_info(bot_id))
+                        web_app=make_webapp_info(bot_id)
+                    )
                 ],
             ]
         )
