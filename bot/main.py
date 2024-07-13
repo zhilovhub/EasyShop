@@ -70,6 +70,11 @@ QUESTION_MESSAGES = JsonStore(
     json_store_name="QUESTION_MESSAGES"
 )
 
+MAINTENANCE = JsonStore(
+    file_path=config.RESOURCES_PATH.format("maintenance.json"),
+    json_store_name="MAINTENANCE"
+)
+
 
 async def on_start():
     logger.info("onStart called")
@@ -99,7 +104,11 @@ async def on_start():
 
 if __name__ == "__main__":
     from bot.handlers import (admin_bot_menu_router, channel_menu_router, custom_bot_editing_router, commands_router,
-                              subscribe_router, stock_menu_router, post_message_router, empty_router)
+                              subscribe_router, stock_menu_router, post_message_router, admin_group_commands_router,
+                              empty_router)
+
+    dp.include_router(admin_group_commands_router)  # не знаю почему не работает если ставить не первым
+
     dp.include_router(commands_router)  # should be first
     dp.include_router(admin_bot_menu_router)
     dp.include_router(stock_menu_router)

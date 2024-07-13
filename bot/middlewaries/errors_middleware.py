@@ -6,13 +6,14 @@ from aiogram.types import CallbackQuery, Message, ChatMemberUpdated
 from aiogram.exceptions import TelegramAPIError, TelegramRetryAfter
 
 from bot.main import bot
+from bot.utils import MessageTexts
 from bot.utils.admin_group import send_event, EventTypes
 
 from logs.config import logger
 
 
 async def notify_about_error(event: CallbackQuery | Message | ChatMemberUpdated, error_message: str):
-    await bot.send_message(event.from_user.id, ":( Произошла неизвестная ошибка")
+    await bot.send_message(event.from_user.id, MessageTexts.UNKNOWN_ERROR_MESSAGE)
     await send_event(event.from_user, EventTypes.UNKNOWN_ERROR, event.bot, err_msg=error_message)
 
 

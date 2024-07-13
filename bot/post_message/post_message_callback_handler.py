@@ -351,7 +351,7 @@ async def _contest_finish_date(
         post_message_type: PostMessageType,
         channel_id: int
 ):
-    text = MessageTexts.DATE_RULES_CONTEST_FINISH.value
+    text = MessageTexts.show_date_rules(name="завершения конкурса")
 
     await query.message.answer(
         text,
@@ -541,7 +541,7 @@ async def _delay(
         channel_id: int | None
 ):
     await query.message.answer(
-        MessageTexts.DATE_RULES.value,
+        MessageTexts.show_date_rules(name="начала отправки сообщения"),
         reply_markup=ReplyBackPostMessageMenuKeyboard.get_keyboard()
     )
     await query.answer()
