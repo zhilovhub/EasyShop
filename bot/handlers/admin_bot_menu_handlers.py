@@ -449,7 +449,7 @@ async def bot_menu_callback_handler(query: CallbackQuery, state: FSMContext):
         case callback_data.ActionEnum.BOT_EDIT_POST_ORDER_MESSAGE:
             await query.message.answer(
                 "Введите текст, который будет отображаться у пользователей Вашего бота "
-                "после <b>любом</b> оформления ими заказа:\n\n"
+                "после <b>оформления ими заказа:</b>\n\n"
                 "❗️<b>Совет</b>: введите туда, куда пользователи должны отправлять Вам деньги",
                 reply_markup=ReplyBackBotMenuKeyboard.get_keyboard())
             await query.answer()
