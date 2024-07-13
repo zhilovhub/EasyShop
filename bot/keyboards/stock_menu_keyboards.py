@@ -98,6 +98,14 @@ class InlineStockMenuKeyboard:
                         )
                     ),
                 ],
+                [
+                    InlineKeyboardButton(
+                        text="⬆️ Экспорт товаров",
+                        callback_data=InlineStockMenuKeyboard.callback_json(
+                            actions.EXPORT, bot_id
+                        )
+                    ),
+                ],
                 # [
                 #     InlineKeyboardButton(
                 #         text="📦 Управление остатками",
@@ -113,13 +121,7 @@ class InlineStockMenuKeyboard:
                 #             actions.IMPORT, bot_id
                 #         )
                 #     ),
-                #     InlineKeyboardButton(
-                #         text="⬆️ Экспорт товаров",
-                #         callback_data=InlineStockMenuKeyboard.callback_json(
-                #             actions.EXPORT, bot_id
-                #         )
-                #     ),
-                # ],
+
                 # [
                 #     InlineKeyboardButton(
                 #         text=f"{'✅' if auto_reduce else '❌'} Автоуменьшение на складе",

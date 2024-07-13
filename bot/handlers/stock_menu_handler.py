@@ -11,6 +11,7 @@ from bot.utils import MessageTexts
 from bot.states import States
 from bot.config import FILES_PATH
 from bot.handlers.routers import stock_menu_router
+from bot.utils.excel_utils import send_products_info_xlsx
 from bot.keyboards.main_menu_keyboards import InlineBotMenuKeyboard, ReplyBotMenuKeyboard
 from bot.keyboards.stock_menu_keyboards import InlineStockMenuKeyboard, ReplyBackStockMenuKeyboard, \
     InlineStockImportMenuKeyboard
@@ -87,16 +88,21 @@ async def stock_menu_handler(query: CallbackQuery, state: FSMContext):
             else:
                 button_data = True
 
-            xlsx_path, photo_path = await stock_manager.export_xlsx(bot_id=bot_id)
-            json_path, photo_path = await stock_manager.export_json(bot_id=bot_id)
-            csv_path, photo_path = await stock_manager.export_csv(bot_id=bot_id)
+            # xlsx_path, photo_path = await stock_manager.export_xlsx(bot_id=bot_id)
+            # json_path, photo_path = await stock_manager.export_json(bot_id=bot_id)
+            # csv_path, photo_path = await stock_manager.export_csv(bot_id=bot_id)
 
-            media_group = MediaGroupBuilder()
-            media_group.add_document(media=FSInputFile(xlsx_path), caption="Excel таблица")
-            media_group.add_document(media=FSInputFile(json_path), caption="JSON файл")
-            media_group.add_document(media=FSInputFile(csv_path), caption="CSV таблица")
+            # media_group = MediaGroupBuilder()
+            # media_group.add_document(media=FSInputFile(xlsx_path), caption="Excel таблица")
+            # media_group.add_document(media=FSInputFile(json_path), caption="JSON файл")
+            # media_group.add_document(media=FSInputFile(csv_path), caption="CSV таблица")
 
-            await bot.send_media_group(chat_id=query.message.chat.id, media=media_group.build())
+            # await bot.send_media_group(chat_id=query.message.chat.id, media=media_group.build())
+            products = await product_db.get_all_products(bot_id)
+            if len(products) == 0:
+                await query.message.answer("Товаров на складе нет")
+            else:
+                await send_products_info_xlsx(products)
             await query.message.answer(
                 "Меню склада:",
                 reply_markup=await InlineStockMenuKeyboard.get_keyboard(bot_id, button_data)

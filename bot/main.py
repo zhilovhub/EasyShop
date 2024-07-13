@@ -20,12 +20,13 @@ from database.models.product_model import ProductDao
 from database.models.channel_model import ChannelDao
 from database.models.mailing_model import MailingDao
 from database.models.contest_model import ContestDao
+from database.models.category_model import CategoryDao
 from database.models.post_message_model import PostMessageDao
 from database.models.channel_user_model import ChannelUserDao
 from database.models.channel_post_model import ChannelPostDao
 from database.models.product_review_model import ProductReviewDao
-from database.models.post_message_media_files import PostMessageMediaFileDao
 from database.models.custom_bot_user_model import CustomBotUserDao
+from database.models.post_message_media_files import PostMessageMediaFileDao
 
 from subscription.subscription import Subscription
 from subscription.scheduler import Scheduler
@@ -55,6 +56,7 @@ channel_post_db: ChannelPostDao = db_engine.get_channel_post_dao()
 product_review_db: ProductReviewDao = db_engine.get_product_review_dao()
 custom_bot_user_db: CustomBotUserDao = db_engine.get_custom_bot_user_db()
 post_message_media_file_db: PostMessageMediaFileDao = db_engine.get_post_message_media_file_dao()
+category_db: CategoryDao = db_engine.get_category_dao()
 
 stock_manager = Stoke(db_engine)
 
