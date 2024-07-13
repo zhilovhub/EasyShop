@@ -97,7 +97,7 @@ async def editing_default_message_handler(message: Message, state: FSMContext):
 
 @custom_bot_editing_router.message(States.EDITING_POST_ORDER_MESSAGE)
 async def editing_post_order_message_handler(message: Message, state: FSMContext):
-    message_text = message.text
+    message_text = message.html_text
     if message_text:
         state_data = await state.get_data()
         custom_bot = await bot_db.get_bot(state_data['bot_id'])
