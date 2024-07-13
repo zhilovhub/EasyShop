@@ -77,6 +77,7 @@ class InlineBotMenuKeyboard:
 
             BOT_EDIT_HELLO_TEXT = "start_text"
             BOT_EDIT_EXPLANATION_TEXT = "explain_text"
+            BOT_EDIT_POST_ORDER_MESSAGE = "pom"
 
             BOT_STOP = "stop_bot"
             BOT_START = "start_bot"
@@ -149,6 +150,14 @@ class InlineBotMenuKeyboard:
                         text="🗣 Текст объяснения",
                         callback_data=InlineBotMenuKeyboard.callback_json(
                             actions.BOT_EDIT_EXPLANATION_TEXT, bot_id
+                        )
+                    )
+                ],
+                [
+                    InlineKeyboardButton(
+                        text="💳 Платежная информация",
+                        callback_data=InlineBotMenuKeyboard.callback_json(
+                            actions.BOT_EDIT_POST_ORDER_MESSAGE, bot_id
                         )
                     )
                 ],

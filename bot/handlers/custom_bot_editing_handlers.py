@@ -95,6 +95,46 @@ async def editing_default_message_handler(message: Message, state: FSMContext):
         await message.answer("Сообщение-затычка должна содержать текст")
 
 
+@custom_bot_editing_router.message(States.EDITING_POST_ORDER_MESSAGE)
+async def editing_post_order_message_handler(message: Message, state: FSMContext):
+    message_text = message.text
+    if message_text:
+        state_data = await state.get_data()
+        custom_bot = await bot_db.get_bot(state_data['bot_id'])
+
+        match message_text:
+            case ReplyBackBotMenuKeyboard.Callback.ActionEnum.BACK_TO_BOT_MENU.value:
+                await message.answer(
+                    "Возвращаемся в главное меню...",
+                    reply_markup=ReplyBotMenuKeyboard.get_keyboard(bot_id=state_data["bot_id"])
+                )
+                await message.answer(
+                    MessageTexts.BOT_MENU_MESSAGE.value.format((await Bot(custom_bot.token).get_me()).username),
+                    reply_markup=await InlineBotMenuKeyboard.get_keyboard(custom_bot.bot_id)
+                )
+                await state.set_state(States.BOT_MENU)
+                await state.set_data(state_data)
+            case _:
+                if custom_bot.settings:
+                    custom_bot.settings["post_order_msg"] = message_text
+                else:
+                    custom_bot.settings = {"post_order_msg": message_text}
+                await bot_db.update_bot(custom_bot)
+
+                await message.answer(
+                    "Сообщение после заказа изменено!",
+                    reply_markup=ReplyBotMenuKeyboard.get_keyboard(bot_id=state_data["bot_id"])
+                )
+                await message.answer(
+                    MessageTexts.BOT_MENU_MESSAGE.value.format((await Bot(custom_bot.token).get_me()).username),
+                    reply_markup=await InlineBotMenuKeyboard.get_keyboard(custom_bot.bot_id)
+                )
+                await state.set_state(States.BOT_MENU)
+                await state.set_data(state_data)
+    else:
+        await message.answer("Сообщение должно содержать текст")
+
+
 @custom_bot_editing_router.message(States.DELETE_BOT)
 async def delete_bot_handler(message: Message, state: FSMContext):
     message_text = message.text

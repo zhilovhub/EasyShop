@@ -10,6 +10,7 @@ class States(StatesGroup):
     BOT_MENU = State()
     EDITING_START_MESSAGE = State()
     EDITING_DEFAULT_MESSAGE = State()
+    EDITING_POST_ORDER_MESSAGE = State()
     DELETE_BOT = State()
 
     EDITING_POST_TEXT = State()

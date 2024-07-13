@@ -446,6 +446,15 @@ async def bot_menu_callback_handler(query: CallbackQuery, state: FSMContext):
             await query.answer()
             await state.set_state(States.EDITING_DEFAULT_MESSAGE)
             await state.set_data(state_data)
+        case callback_data.ActionEnum.BOT_EDIT_POST_ORDER_MESSAGE:
+            await query.message.answer(
+                "Введите текст, который будет отображаться у пользователей Вашего бота "
+                "после <b>любом</b> оформления ими заказа:\n\n"
+                "❗️<b>Совет</b>: введите туда, куда пользователи должны отправлять Вам деньги",
+                reply_markup=ReplyBackBotMenuKeyboard.get_keyboard())
+            await query.answer()
+            await state.set_state(States.EDITING_POST_ORDER_MESSAGE)
+            await state.set_data(state_data)
         case callback_data.ActionEnum.BOT_START:
             await start_custom_bot(bot_id)
             await query.message.edit_text(

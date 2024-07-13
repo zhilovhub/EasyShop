@@ -4,6 +4,7 @@ import string
 from datetime import datetime
 
 from aiogram import F, Bot
+from aiogram.enums import ParseMode
 from aiogram.types import Message
 
 from bot.keyboards.order_manage_keyboards import InlineOrderStatusesKeyboard, InlineOrderCustomBotKeyboard
@@ -101,6 +102,14 @@ async def process_web_app_request(event: Message):
                 False
             ), reply_markup=InlineOrderCustomBotKeyboard.get_keyboard(order.id)
         )
+        post_order_text = await get_option("post_order_msg", event.bot.token)
+        if post_order_text:
+            await event.bot.send_message(
+                chat_id=user_id,
+                text=post_order_text,
+                parse_mode=ParseMode.HTML
+            )
+
         await main_bot.edit_message_reply_markup(
             main_msg.chat.id,
             main_msg.message_id,
