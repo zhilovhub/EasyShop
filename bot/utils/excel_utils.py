@@ -1,8 +1,10 @@
+import os
 from typing import List
 
 from openpyxl import Workbook
 from openpyxl.utils import get_column_letter
 from openpyxl.styles import PatternFill, Border, Side, Alignment, Font
+from openpyxl.styles.colors import Color
 
 from io import BytesIO
 
@@ -18,6 +20,19 @@ from aiogram.types import BufferedInputFile
 
 from database.models.contest_model import ContestUserSchema, ContestNotFound
 from database.models.product_model import ProductSchema
+from zipfile import ZipFile
+
+
+def create_zip_buffer(images) -> BufferedInputFile:
+    zip_buffer = BytesIO()
+    with ZipFile(zip_buffer, 'w') as zip_file:
+        for file_path in images:
+            file_name = os.path.basename(file_path)
+            with open(file_path, 'rb') as file:
+                zip_file.writestr(file_name, file.read())
+    zip_buffer.seek(0)
+    buffer_file = BufferedInputFile(zip_buffer.read(), filename="images.zip")
+    return buffer_file
 
 
 def _make_xlsx_buffer(name: str, wb_data) -> BufferedInputFile:
@@ -46,14 +61,17 @@ def create_excel(data, sheet_name, table_type):
             ws.append(headers)
 
         case "product_export":
-            headers = ["id", "Имя", "Описание", "Цена", "Остаток", "Артикул", "Категория"]
+            headers = ["id", "Имя", "Описание", "Цена", "Остаток", "Артикул", "Категория", "Картинки товара"]
             ws.append(headers)
             for product in data:
                 ws.append([product[header] for header in headers])
 
-            header_fill = PatternFill(start_color="FFCCFFCC", end_color="FFCCFFCC", fill_type="solid")
-            even_fill = PatternFill(start_color="FFE6FFCC", end_color="FFE6FFCC", fill_type="solid")
-            odd_fill = PatternFill(start_color="FFFFF2CC", end_color="FFFFF2CC", fill_type="solid")
+            # header_fill = PatternFill(start_color="FFCCFFCC", end_color="FFCCFFCC", fill_type="solid")
+            # even_fill = PatternFill(start_color="FFE6FFCC", end_color="FFE6FFCC", fill_type="solid")
+            # odd_fill = PatternFill(start_color="FFFFF2CC", end_color="FFFFF2CC", fill_type="solid")
+            header_fill = PatternFill(fgColor="FFCCFFCC", patternType="solid", fill_type="solid")
+            even_fill = PatternFill(fgColor="FFE6FFCC", patternType="solid", fill_type="solid")
+            odd_fill = PatternFill(fgColor="FFFFF2CC", patternType="solid", fill_type="solid")
             thin_border = Border(left=Side(style='thin'), right=Side(style='thin'),
                                  top=Side(style='thin'), bottom=Side(style='thin'))
             bold_font = Font(bold=True)
@@ -85,7 +103,6 @@ def create_excel(data, sheet_name, table_type):
                         max_length = max(max_length, len(str(cell.value)))
                 adjusted_width = (max_length + 2)
                 ws.column_dimensions[column].width = adjusted_width
-
         case _:
             headers = ["user_id", "username"]
             ws.append(headers)
@@ -148,6 +165,8 @@ async def send_contest_results_xlsx(users: list[ContestUserSchema], contest_id: 
 
 async def send_products_info_xlsx(products: list[ProductSchema]):
     wb_data = []
+    files_path = os.environ["FILES_PATH"]
+    images = []
     try:
         bot = await bot_db.get_bot(bot_id=products[0].bot_id)
         created_by = bot.created_by
@@ -164,11 +183,21 @@ async def send_products_info_xlsx(products: list[ProductSchema]):
             categories_text = "/".join(categories)
         else:
             categories_text = "Категория не задана"
+
+        if product.picture:
+            images_text = "/".join(product.picture)
+            images.extend([files_path + prod for prod in product.picture])
+        else:
+            images_text = "Картинки не найдены"
         wb_data.append(
             {"id": product.id, "Имя": product.name, "Описание": product.description,
              "Цена": product.price, "Остаток": product.count, "Артикул": product.article,
-             "Категория": categories_text}
+             "Категория": categories_text, "Картинки товара": images_text}
         )
+
+    if len(images) != 0:
+        buffered_zip_file = create_zip_buffer(images)
+        await main_bot.send_document(created_by, document=buffered_zip_file, caption="Картинки ваших товаров")
     buffered_file = _make_xlsx_buffer("product_export", wb_data)
     await main_bot.send_document(created_by, document=buffered_file,
                                  caption="Список товаров загруженных в систему")

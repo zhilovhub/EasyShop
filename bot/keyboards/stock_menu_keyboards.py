@@ -35,6 +35,21 @@ class ReplyBackStockMenuKeyboard:
         )
 
 
+class InlineWebStockKeyboard:
+    @staticmethod
+    async def get_keyboard(bot_id: int) -> InlineKeyboardMarkup:
+        return InlineKeyboardMarkup(
+            inline_keyboard=[
+                [
+                    InlineKeyboardButton(
+                        text="📋 Список товаров",
+                        web_app=make_admin_panel_webapp_info(bot_id)
+                    )
+                ]
+            ]
+        )
+
+
 class InlineStockMenuKeyboard:
     class Callback(BaseModel):
         class ActionEnum(Enum):

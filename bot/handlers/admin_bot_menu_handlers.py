@@ -26,7 +26,7 @@ from bot.utils.custom_bot_api import start_custom_bot, stop_custom_bot
 from bot.enums.post_message_type import PostMessageType
 from bot.keyboards.channel_keyboards import InlineChannelsListKeyboard
 from bot.keyboards.main_menu_keyboards import ReplyBotMenuKeyboard, InlineBotMenuKeyboard, ReplyBackBotMenuKeyboard
-from bot.keyboards.stock_menu_keyboards import InlineStockMenuKeyboard
+from bot.keyboards.stock_menu_keyboards import InlineStockMenuKeyboard, InlineWebStockKeyboard
 from bot.keyboards.post_message_keyboards import InlinePostMessageMenuKeyboard
 from bot.keyboards.order_manage_keyboards import InlineOrderStatusesKeyboard, InlineOrderCancelKeyboard, \
     InlineOrderCustomBotKeyboard, InlineCreateReviewKeyboard, InlineAcceptReviewKeyboard
@@ -419,7 +419,9 @@ async def bot_menu_photo_handler(message: Message, state: FSMContext):
         await product_db.add_product(new_product)
     except IntegrityError:
         return await message.answer("Товар с таким названием уже есть в боте.")
-    await message.answer("Товар добавлен. Можно добавить ещё")
+    await message.answer("✅ Товар добавлен. Можно добавить ещё\n\n"
+                         "Более подробное управление товарами и гибкое добавление их \n👇",
+                         reply_markup=await InlineWebStockKeyboard.get_keyboard(state_data['bot_id']))
 
 
 @admin_bot_menu_router.callback_query(lambda query: InlineBotMenuKeyboard.callback_validator(query.data))
