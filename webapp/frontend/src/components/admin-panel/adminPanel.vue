@@ -1,6 +1,6 @@
 <template>
   <FilterComponent @close="closeFilterComponent" v-if="filterComponentIsActive"/>
-  <AddProduct @close="closeAddProductComponent" v-else-if="addProductComponentIsActive" />
+  <AddProduct :item-edit-data="this.editItemData" @close="closeAddProductComponent" @closeAndEdit="clearItemEditData" v-else-if="addProductComponentIsActive" />
   <div v-else>
     <div class="wrapper">
       <Transition v-if="this.inputIsActive">
@@ -87,7 +87,7 @@
                   <img @click="toggleSelected(item)" @click.stop="toggleFooter(item)" v-else src="@/assets/circle.png" alt="circle png">
                   <div class="item-name">{{shortenName(item.name)}}</div>
                   <span class="span-id">{{item.id}}</span>
-                  <span style="max-width: 10px;"> {{item.count}} </span>
+                  <span :class="getColorCountClass(item.count)" style="max-width: 10px;"> {{item.count}} </span>
                   <svg v-if="item.isActive" width="19" height="9" viewBox="0 0 19 9" fill="none" xmlns="http://www.w3.org/2000/svg">
                     <path d="M-0.000309349 8.19291C-0.000910159 8.08872 0.0190579 7.98544 0.0584561 7.88898C0.0978524 7.79253 0.155903 7.7048 0.229276 7.63082L6.69719 1.16291C7.06489 0.794283 7.50169 0.501819 7.98259 0.302268C8.46349 0.102717 8.97903 -4.38158e-07 9.49969 -4.154e-07C10.0203 -3.92641e-07 10.5359 0.102717 11.0168 0.302268C11.4977 0.501819 11.9345 0.794283 12.3022 1.16291L18.7701 7.63083C18.8439 7.70464 18.9025 7.79227 18.9424 7.88871C18.9824 7.98516 19.0029 8.08852 19.0029 8.19291C19.0029 8.2973 18.9824 8.40066 18.9424 8.49711C18.9025 8.59355 18.8439 8.68118 18.7701 8.75499C18.6963 8.82881 18.6087 8.88736 18.5122 8.92731C18.4158 8.96725 18.3124 8.98781 18.208 8.98781C18.1036 8.98781 18.0003 8.96725 17.9038 8.92731C17.8074 8.88736 17.7198 8.82881 17.6459 8.75499L11.178 2.28708C10.7327 1.84232 10.1291 1.5925 9.49969 1.5925C8.87031 1.5925 8.26667 1.84232 7.82136 2.28708L1.35344 8.75499C1.27984 8.82919 1.19229 8.88809 1.09582 8.92828C0.999343 8.96847 0.895868 8.98917 0.791359 8.98917C0.686849 8.98917 0.583374 8.96847 0.486902 8.92828C0.39043 8.88809 0.302871 8.82919 0.229276 8.75499C0.155902 8.68102 0.0978523 8.59329 0.058456 8.49683C0.0190579 8.40038 -0.000910168 8.2971 -0.000309349 8.19291Z" fill="currentColor"/>
                   </svg>
@@ -97,7 +97,7 @@
                 </div>
             </Transition>
             <Transition>
-          <div class="block-footer" v-show="item.isActive">
+          <div @click="editItem(item)" class="block-footer" v-show="item.isActive">
             <hr>
             <div>
               <span>Категория <br>товара</span>
@@ -174,7 +174,8 @@ export default {
       mainCircleIsActive: false,
       deleteModelWindowIsActive: false,
       inputIsActive: false,
-      inputValue: ''
+      inputValue: '',
+      editItemData: {}
     }
   },
   components: { AddProduct, FilterComponent },
@@ -353,6 +354,18 @@ export default {
         console.error(err);
         item.count++;
       });
+    },
+    getColorCountClass(count) {
+      return count >= 0 && count < 5 ? 'count-red' :
+        count >= 5 && count < 15 ? 'count-yellow' :
+          'count-green';
+    },
+    editItem(item) {
+      this.editItemData = item;
+      this.addProductComponentIsActive = true;
+    },
+    clearItemEditData() {
+      this.editItemData = {};
     }
   }
 }
@@ -610,7 +623,7 @@ filter-component {
   .countDivBtn {
     border-radius: 20px;
     background-color: var(--app-background-color);
-    width: 126px;
+    width: 115px;
     display: flex;
     font-weight: 400;
     font-size: 20px;
@@ -637,5 +650,17 @@ filter-component {
       }
     }
   }
+}
+
+.count-red {
+  color: #FF0000;
+}
+
+.count-yellow {
+  color: #FF8A00;
+}
+
+.count-green {
+  color: #00BB1E;
 }
 </style>

@@ -14,10 +14,9 @@
     <div class="text">{{productObject.name}}</div>
     <div class="text">{{priceRub(productObject.price)}}</div>
     <div v-for="(option, type) in productObject.extra_options">
-      <div class="block extra-options">
+      <div v-if="option.optionType === 'block-option'" class="block extra-options">
         <div class="span-block">
-          <h1>{{type}}</h1>
-<!--        <span class="src">Размерная сетка</span>-->
+          <h1>{{option.name}}</h1>
         </div>
         <swiper
           :slidesPerView="4.5"
@@ -25,16 +24,24 @@
           class="swiper-container"
         >
           <swiper-slide
-            v-for="(value, key) in option"
+            v-for="(value, key) in option.blocks"
             :key="key"
             :modules="modules"
             class="option-block"
             @click="chooseOption($event.target)"
           >
-          {{ key }}
+          {{ value }}
         </swiper-slide>
       </swiper>
     </div>
+      <div v-else-if="option.optionType === 'text-option'" class="block" style="height: auto">
+        <div class="span-block">
+          <h1>{{option.name}}</h1>
+        </div>
+        <div>
+          <span>{{option.text}}</span>
+        </div>
+      </div>
   </div>
   <div @click="toggleDescription" class="block block-description" :style="{ height: descriptionVisible ? 'auto' : '68.27px' }">
     <div class="span-block">
@@ -167,6 +174,7 @@ export default {
 
     tg.MainButton.text = "Добавить";  // сначала назначаем цвета и текст кнопкам
     tg.MainButton.textColor = "#0C0C0C";
+
 
     tg.onEvent('mainButtonClicked', this.addToShoppingCart);  // затем навешиваем листенеры
     tg.onEvent('backButtonClicked', this.backButtonMethod);
