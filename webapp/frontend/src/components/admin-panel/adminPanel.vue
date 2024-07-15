@@ -1,6 +1,6 @@
 <template>
   <FilterComponent @close="closeFilterComponent" v-if="filterComponentIsActive"/>
-  <AddProduct @close="closeAddProductComponent" v-else-if="addProductComponentIsActive" />
+  <AddProduct :item-edit-data="this.editItemData" @close="closeAddProductComponent" @closeAndEdit="clearItemEditData" v-else-if="addProductComponentIsActive" />
   <div v-else>
     <div class="wrapper">
       <Transition v-if="this.inputIsActive">
@@ -97,7 +97,7 @@
                 </div>
             </Transition>
             <Transition>
-          <div class="block-footer" v-show="item.isActive">
+          <div @click="editItem(item)" class="block-footer" v-show="item.isActive">
             <hr>
             <div>
               <span>Категория <br>товара</span>
@@ -174,7 +174,8 @@ export default {
       mainCircleIsActive: false,
       deleteModelWindowIsActive: false,
       inputIsActive: false,
-      inputValue: ''
+      inputValue: '',
+      editItemData: {}
     }
   },
   components: { AddProduct, FilterComponent },
@@ -358,6 +359,13 @@ export default {
       return count >= 0 && count < 5 ? 'count-red' :
         count >= 5 && count < 15 ? 'count-yellow' :
           'count-green';
+    },
+    editItem(item) {
+      this.editItemData = item;
+      this.addProductComponentIsActive = true;
+    },
+    clearItemEditData() {
+      this.editItemData = {};
     }
   }
 }
