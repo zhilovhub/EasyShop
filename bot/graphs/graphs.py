@@ -3,18 +3,17 @@ import matplotlib.pyplot as plt
 from matplotlib.dates import ConciseDateFormatter
 from matplotlib.ticker import MaxNLocator
 
+import asyncio
 import numpy as np
 
 from datetime import datetime, timedelta
 
+from common_utils.env_config import FILES_PATH
+
+from database.config import contest_db
 from database.models.contest_model import ContestUserSchema
 
-from bot.main import contest_db
-from bot.config import FILES_PATH
-
 from logs.config import logger, extra_params
-
-import asyncio
 
 
 def _generate_simple_line_plot(numbers_x, numbers_y, int_y: bool = True):

@@ -6,6 +6,7 @@ from aiogram.fsm.context import FSMContext
 from bot.main import bot, _scheduler
 from bot.utils import MessageTexts
 from bot.states import States
+from bot.graphs.graphs import generate_contest_users_graph
 from bot.keyboards.channel_keyboards import InlineChannelMenuKeyboard
 from bot.keyboards.main_menu_keyboards import ReplyBotMenuKeyboard
 from bot.post_message.post_message_utils import is_post_message_valid
@@ -21,8 +22,6 @@ from database.config import custom_bot_user_db, bot_db, post_message_db, contest
 from database.models.post_message_model import PostMessageSchema, PostMessageType
 
 from logs.config import extra_params, logger
-
-from graphs import generate_contest_users_graph
 
 
 class ContestMessageDontNeedButton(Exception):
