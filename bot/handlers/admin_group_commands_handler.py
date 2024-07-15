@@ -37,9 +37,9 @@ async def bot_status_command_handler(message: Message) -> None:
 
 
 @admin_group_commands_router.message(Command("on_maintenance"))
-async def on_maintenance_command_handler(command_object: CommandObject, message: Message) -> None:
+async def on_maintenance_command_handler(command: CommandObject, message: Message) -> None:
     data = _get_maintenance_data()
-    params = command_object.args.strip().split(maxsplit=1)
+    params = command.args.strip().split(maxsplit=1)
     if len(params) == 1:
         maintenance_text = None
         text = "✓ Обслуживание бота <b>включено</b> с <u>дефолтным</u> текстом для пользователей."
