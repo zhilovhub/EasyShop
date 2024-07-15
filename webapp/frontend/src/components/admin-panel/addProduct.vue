@@ -10,6 +10,11 @@ export default {
     },
   },
   components: { SwiperSlide, Swiper },
+  props: {
+    itemEditData: {
+      type: Object,
+    }
+  },
   data() {
     return {
       productName: '',
@@ -38,13 +43,31 @@ export default {
     };
   },
   mounted() {
-    tg.MainButton.show();
-    tg.BackButton.show();
-    tg.MainButton.text = "Добавить товар";
-    tg.MainButton.textColor = "#0C0C0C";
-
-    tg.onEvent('mainButtonClicked', this.addProduct);
-    tg.onEvent('backButtonClicked', this.closingComponent);
+    if (this.itemEditData && this.itemEditData.id) {
+      this.productName = this.itemEditData.name;
+      this.productDescription = this.itemEditData.description;
+      this.productArticle = this.itemEditData.article;
+      this.productPrice = this.itemEditData.price;
+      this.productCount = this.itemEditData.count;
+      this.options = this.itemEditData.extra_options;
+      this.chosenCategory = this.itemEditData.category;
+      this.imagePreviews = this.itemEditData.picture;
+      this.imageFiles = this.itemEditData.picture;
+      this.chooseCategory({}, this.itemEditData);
+      tg.MainButton.show();
+      tg.BackButton.show();
+      tg.MainButton.text = "Изменить товар";
+      tg.MainButton.textColor = "#0C0C0C";
+      tg.onEvent('mainButtonClicked', this.editProduct);
+      tg.onEvent('backButtonClicked', this.closingComponent);
+    } else {
+      tg.MainButton.show();
+      tg.BackButton.show();
+      tg.MainButton.text = "Добавить товар";
+      tg.MainButton.textColor = "#0C0C0C";
+      tg.onEvent('mainButtonClicked', this.addProduct);
+      tg.onEvent('backButtonClicked', this.closingComponent);
+    }
 
     setTimeout(() => {
       this.isMounted = true;
@@ -71,7 +94,7 @@ export default {
           article: this.productArticle,
           price: this.productPrice,
           count: this.productCount,
-          options: this.options,
+          extra_options: this.options,
           images: this.imageFiles
         }).then(() => {
           this.isMounted = false;
@@ -90,16 +113,36 @@ export default {
         })
       }
     },
+    editProduct() {
+      this.$store.dispatch("editProduct", {
+        name: this.productName,
+        category: [this.chosenCategory.id],
+        description: this.productDescription,
+        article: this.productArticle,
+        price: this.productPrice,
+        count: this.productCount,
+        pictures: this.imageFiles,
+        extra_options: this.options,
+        id: this.itemEditData.id
+      })
+    },
     closingComponent() {
-      this.isMounted = false;
-      setTimeout(() => {
-        this.$emit("close");
-      }, 100);
+      if (this.itemEditData && this.itemEditData.id) {
+        this.isMounted = false;
+        setTimeout(() => {
+          this.$emit("close");
+        }, 100);
+      } else {
+        this.isMounted = false;
+        setTimeout(() => {
+          this.$emit("closeAndEdit");
+        }, 100);
+      }
     },
     handleFileUpload(event) {
       const files = event.target.files;
       for (let i = 0; i < files.length; i++) {
-        if (this.imageFiles.length < 3) {
+        if (this.imageFiles && this.imageFiles.length < 3) {
           const file = files[i];
           this.imageFiles.push(file);
           this.imagePreviews.push(URL.createObjectURL(file));
@@ -107,7 +150,7 @@ export default {
       }
     },
     addOption() {
-      if (this.permChosenOption === 'block-option') {
+      if (this.permChosenOption === 'block-option' && this.options) {
         this.options.push({
           name: '',
           blocks: {
@@ -200,7 +243,8 @@ export default {
 <template>
 <div class="wrapper" :style="{ opacity: isMounted ? 1 : 0 }">
   <div class="header">
-    <span>Добавление товара</span>
+    <span v-if="this.itemEditData && this.itemEditData.id">Изменение товара</span>
+    <span v-else>Добавление товара</span>
   </div>
   <div class="main">
     <div class="card">
@@ -291,7 +335,7 @@ export default {
     <div class="card">
       <h1>Фото товара</h1>
       <div class="upload-image-block">
-        <div class="image-preview-block" v-if="imagePreviews.length>0">
+        <div class="image-preview-block" v-if="imagePreviews && imagePreviews.length>0">
           <swiper
             :slidesPerView="1"
             :scrollbar="{ hide: false }"
@@ -299,7 +343,8 @@ export default {
             class="swiper-container"
           >
             <swiper-slide v-for="(preview, index) in imagePreviews" :key="index" class="swiper-slide">
-              <img :src="preview" alt="Uploaded image" class="image-preview"/>
+              <img v-if="this.itemEditData && this.itemEditData.id" :src="`${this.$store.state.api_url}/files/`+ preview" alt="Uploaded image" class="image-preview"/>
+              <img v-else :src="preview" alt="Uploaded image" class="image-preview"/>
             </swiper-slide>
           </swiper>
           <input type="file" id="images-input" name="avatar" accept="image/png, image/jpeg" @change="handleFileUpload"/>
@@ -333,7 +378,7 @@ export default {
       </div>
     </div>
   </div>
-  <div v-if="options.length>0" class="options">
+  <div v-if="options && options.length>0" class="options">
     <div style="margin: 10px 0; width: 100%" v-for="(option, index) in options">
       <span style="padding-left: 15px; font-weight: 550">Дополнительная опция №{{index+1}}</span>
       <input style="height: 35px" v-model="option.name" placeholder="Название опции">
