@@ -176,6 +176,8 @@ async def send_products_info_xlsx(bot_id: int, products: list[ProductSchema]):
         categories = []
         if product.category:
             for cat in product.category:
+                if not cat:
+                    continue
                 cat_obj = await category_db.get_category(cat)
                 categories.append(cat_obj.name)
             categories_text = "/".join(categories)
