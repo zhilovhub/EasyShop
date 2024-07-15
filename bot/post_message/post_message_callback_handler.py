@@ -122,7 +122,7 @@ async def _cancel_send(
             )
             if contest_users:
                 await query.message.answer_photo(FSInputFile(path_to_graph),
-                                                 caption="📈 График количества участников конкурса от времени.")
+                                                 caption="📈 График количества участников конкурса от времени")
         case _:
             raise UnknownPostMessageType
 
@@ -649,10 +649,14 @@ async def _post_message_union(
             match post_message_type:
                 case PostMessageType.CONTEST:
                     contest = await contest_db.get_contest_by_post_message_id(post_message.post_message_id)
-                    path = await generate_contest_users_graph(contest.contest_id)
-                    await query.message.answer_photo(FSInputFile(path),
-                                                     caption="📈 График количества участников конкурса от времени.")
-                    await query.answer()
+                    contest_users = await contest_db.get_contest_users(contest.contest_id)
+                    if contest_users:
+                        path = await generate_contest_users_graph(contest.contest_id)
+                        await query.message.answer_photo(FSInputFile(path),
+                                                         caption="📈 График количества участников конкурса от времени.")
+                        await query.answer()
+                    else:
+                        await query.answer("В конкурсе никто ещё не принял участие")
 
         # NOT RUNNING ACTIONS
         case callback_data.ActionEnum.BUTTON_ADD:
