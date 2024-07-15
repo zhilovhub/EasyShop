@@ -1,10 +1,15 @@
+import os
 from typing import List
+from zipfile import ZipFile
 
 from openpyxl import Workbook
+from openpyxl.utils import get_column_letter
+from openpyxl.styles import PatternFill, Border, Side, Alignment, Font
 
 from io import BytesIO
 
-from bot.main import bot_db, contest_db
+from bot.main import bot_db, contest_db, category_db
+from bot.config import FILES_PATH
 from bot.exceptions.exceptions import BotNotFound
 
 from logs.config import logger, extra_params
@@ -15,6 +20,19 @@ from aiogram import Bot
 from aiogram.types import BufferedInputFile
 
 from database.models.contest_model import ContestUserSchema, ContestNotFound
+from database.models.product_model import ProductSchema
+
+
+def _create_zip_buffer(images) -> BufferedInputFile:
+    zip_buffer = BytesIO()
+    with ZipFile(zip_buffer, 'w') as zip_file:
+        for file_path in images:
+            file_name = os.path.basename(file_path)
+            with open(file_path, 'rb') as file:
+                zip_file.writestr(file_name, file.read())
+    zip_buffer.seek(0)
+    buffer_file = BufferedInputFile(zip_buffer.read(), filename="images.zip")
+    return buffer_file
 
 
 def _make_xlsx_buffer(name: str, wb_data) -> BufferedInputFile:
@@ -36,15 +54,60 @@ def create_excel(data, sheet_name, table_type):
     match table_type:
         case "banned":
             headers = ["user_id", "username"]
+            ws.append(headers)
+
         case "contest":
             headers = ["user_id", "username", "full_name", "took part time", "won"]
+            ws.append(headers)
+
+        case "product_export":
+            headers = ["id", "Имя", "Описание", "Цена", "Остаток", "Артикул", "Категория", "Картинки товара"]
+            ws.append(headers)
+            for product in data:
+                ws.append([product[header] for header in headers])
+
+            header_fill = PatternFill(fgColor="FFCCFFCC", patternType="solid", fill_type="solid")
+            even_fill = PatternFill(fgColor="FFE6FFCC", patternType="solid", fill_type="solid")
+            odd_fill = PatternFill(fgColor="FFFFF2CC", patternType="solid", fill_type="solid")
+            thin_border = Border(left=Side(style='thin'), right=Side(style='thin'),
+                                 top=Side(style='thin'), bottom=Side(style='thin'))
+            bold_font = Font(bold=True)
+            alignment = Alignment(horizontal="center", vertical="center")
+            for col in range(1, len(headers) + 1):
+                cell = ws.cell(row=1, column=col)
+                cell.fill = header_fill
+                cell.font = bold_font
+                cell.alignment = alignment
+                cell.border = thin_border
+
+            # Применяем стили к остальным строкам
+            for row in range(2, len(data) + 2):  # Начинаем с 2-й строки до последней строки данных
+                for col in range(1, len(headers) + 1):
+                    cell = ws.cell(row=row, column=col)
+                    if row % 2 == 0:
+                        cell.fill = even_fill
+                    else:
+                        cell.fill = odd_fill
+                    cell.alignment = alignment
+                    cell.border = thin_border
+
+            # Устанавливаем ширину колонок
+            for col in range(1, len(headers) + 1):
+                max_length = 0
+                column = get_column_letter(col)
+                for cell in ws[column]:
+                    if cell.value:
+                        max_length = max(max_length, len(str(cell.value)))
+                adjusted_width = (max_length + 2)
+                ws.column_dimensions[column].width = adjusted_width
         case _:
             headers = ["user_id", "username"]
-    ws.append(headers)
+            ws.append(headers)
 
     # Добавляем данные
-    for user in data:
-        ws.append([user[header] for header in headers])
+    if table_type != "product_export":
+        for user in data:
+            ws.append([user[header] for header in headers])
 
     return wb
 
@@ -95,3 +158,45 @@ async def send_contest_results_xlsx(users: list[ContestUserSchema], contest_id: 
     buffered_file = _make_xlsx_buffer("contest", wb_data)
     await main_bot.send_document(created_by, document=buffered_file,
                                  caption="Список участников конкурса.")
+
+
+async def send_products_info_xlsx(bot_id: int, products: list[ProductSchema]):
+    wb_data = []
+    images = []
+
+    try:
+        bot = await bot_db.get_bot(bot_id=bot_id)
+        created_by = bot.created_by
+    except BotNotFound:
+        logger.error(f"bot_id={bot_id}: Provided to excel function bot not found bot_id={bot_id}",
+                     extra_params(bot_id=bot_id))
+        return
+
+    for product in products:
+        categories = []
+        if product.category:
+            for cat in product.category:
+                cat_obj = await category_db.get_category(cat)
+                categories.append(cat_obj.name)
+            categories_text = "/".join(categories)
+        else:
+            categories_text = "Категория не задана"
+
+        if product.picture:
+            images_text = "/".join(product.picture)
+            images.extend([FILES_PATH + prod for prod in product.picture])
+        else:
+            images_text = "Картинки не найдены"
+        wb_data.append(
+            {"id": product.id, "Имя": product.name, "Описание": product.description,
+             "Цена": product.price, "Остаток": product.count, "Артикул": product.article,
+             "Категория": categories_text, "Картинки товара": images_text}
+        )
+
+    if len(images) != 0:
+        buffered_zip_file = _create_zip_buffer(images)
+        await main_bot.send_document(created_by, document=buffered_zip_file, caption="Картинки ваших товаров")
+
+    buffered_file = _make_xlsx_buffer("product_export", wb_data)
+    await main_bot.send_document(created_by, document=buffered_file,
+                                 caption="Список товаров загруженных в систему")
