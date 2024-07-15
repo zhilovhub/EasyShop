@@ -13,7 +13,6 @@ from database.models.bot_model import Bot
 from database.models.post_message_model import PostMessage
 
 from bot.exceptions.exceptions import InstanceAlreadyExists
-from database.models.user_model import User
 
 from logs.config import extra_params
 
@@ -47,7 +46,7 @@ class Contest(Base):
 class ContestUser(Base):
     __tablename__ = "contest_users"
     contest_id = Column(ForeignKey(Contest.contest_id, ondelete="CASCADE"), primary_key=True)
-    user_id = Column(ForeignKey(User.user_id), nullable=False, primary_key=True)
+    user_id = Column(BigInteger, nullable=False, primary_key=True)
     join_date = Column(DateTime)
     is_won = Column(Boolean, default=False)
     full_name = Column(String, nullable=True)

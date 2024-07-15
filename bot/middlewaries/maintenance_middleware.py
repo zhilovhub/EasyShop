@@ -1,7 +1,7 @@
 from typing import Callable, Dict, Any, Awaitable
 
 from aiogram import BaseMiddleware
-from aiogram.types import CallbackQuery, Message, ChatMemberUpdated
+from aiogram.types import CallbackQuery, Message
 
 from bot.main import MAINTENANCE
 
@@ -32,7 +32,7 @@ class MaintenanceMiddleware(BaseMiddleware):
 
         if json_data['maintenance']['maintenance_status']:
             if not json_data['maintenance']['maintenance_reason']:
-                json_data['maintenance']['maintenance_reason'] = "🛠 Бот находится в режиме обслуживания."
+                json_data['maintenance']['maintenance_reason'] = "🛠 Бот находится в режиме обслуживания"  # noqa
                 MAINTENANCE.update_data(json_data)
             if isinstance(event, Message):
                 await event.answer(json_data['maintenance']['maintenance_reason'])

@@ -4,7 +4,7 @@ from datetime import datetime
 
 from aiogram import Bot, Dispatcher
 from aiogram.enums import ParseMode
-from aiogram.types import BotCommand
+from aiogram.types import BotCommand, BotCommandScopeChatAdministrators, BotCommandScopeAllPrivateChats
 from aiogram.client.bot import DefaultBotProperties
 
 from bot import config
@@ -84,11 +84,17 @@ async def on_start():
         BotCommand(command="check_subscription",
                    description="Проверить подписку"),
     ]
+    admin_commands = [
+        BotCommand(command="bot_status", description="Статус бота"),
+        BotCommand(command="on_maintenance", description="Включить тех обсл"),
+        BotCommand(command="off_maintenance", description="Выключить тех обсл"),
+    ]
 
     if config.BOT_DEBUG_MODE:
         commands.append(BotCommand(command="clear", description="Снести себя"))
 
-    await bot.set_my_commands(commands)
+    await bot.set_my_commands(commands, scope=BotCommandScopeAllPrivateChats())
+    await bot.set_my_commands(admin_commands, scope=BotCommandScopeChatAdministrators(chat_id=config.ADMIN_GROUP_ID))
 
     await storage.connect()
     await db_engine.connect()

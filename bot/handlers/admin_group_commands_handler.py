@@ -1,6 +1,5 @@
-from aiogram import F
-from aiogram.types import Message, ReplyKeyboardRemove
-from aiogram.fsm.context import FSMContext
+from aiogram.filters import Command, CommandObject
+from aiogram.types import Message
 
 from bot.main import MAINTENANCE
 from bot.handlers.routers import admin_group_commands_router
@@ -23,23 +22,24 @@ def _get_maintenance_data() -> dict:
     return json_data['maintenance']
 
 
-@admin_group_commands_router.message(F.text == "/bot_status")
-async def bot_status_command_handler(message: Message, state: FSMContext) -> None:
+@admin_group_commands_router.message(Command("bot_status"))
+async def bot_status_command_handler(message: Message) -> None:
     data = _get_maintenance_data()
     text = "<b><i>Статус бота:</i></b>\n"
     if data['maintenance_status']:
         text += "\n🟡 <b>Обслуживание в процессе.</b>\n"
-        maintenance_text = data['maintenance_reason'] if data['maintenance_reason'] else "🛠 Бот находится в режиме обслуживания."
+        maintenance_text = data['maintenance_reason'] \
+            if data['maintenance_reason'] else "🛠 Бот находится в режиме обслуживания."
         text += f"\n<b>Текст для пользователей:</b>\n<pre>{maintenance_text}</pre>"
     else:
         text += "\n🟢 <b>Бот работает в обычном режиме.</b>"
     await message.answer(text)
 
 
-@admin_group_commands_router.message(lambda m: m.text.startswith("/on_maintenance"))
-async def on_maintenance_command_handler(message: Message, state: FSMContext) -> None:
+@admin_group_commands_router.message(Command("on_maintenance"))
+async def on_maintenance_command_handler(message: Message, command_object: CommandObject) -> None:
     data = _get_maintenance_data()
-    params = message.text.strip().split(maxsplit=1)
+    params = command_object.args.strip().split(maxsplit=1)
     if len(params) == 1:
         maintenance_text = None
         text = "✓ Обслуживание бота <b>включено</b> с <u>дефолтным</u> текстом для пользователей."
@@ -52,8 +52,8 @@ async def on_maintenance_command_handler(message: Message, state: FSMContext) ->
     await message.reply(text)
 
 
-@admin_group_commands_router.message(F.text == "/off_maintenance")
-async def off_maintenance_command_handler(message: Message, state: FSMContext) -> None:
+@admin_group_commands_router.message(Command("off_maintenance"))
+async def off_maintenance_command_handler(message: Message) -> None:
     data = _get_maintenance_data()
     if data['maintenance_status']:
         data['maintenance_status'] = False

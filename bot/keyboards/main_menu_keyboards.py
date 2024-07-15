@@ -198,7 +198,7 @@ class InlineBotMenuKeyboard:
                 ],
                 [
                     InlineKeyboardButton(
-                        text="🤝 Партнерства",
+                        text="🤝 Партнерство",
                         callback_data=InlineBotMenuKeyboard.callback_json(
                             actions.PARTNERSHIP, bot_id
                         )
