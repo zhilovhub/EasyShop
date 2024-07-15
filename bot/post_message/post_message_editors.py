@@ -508,7 +508,7 @@ async def pre_finish_contest(contest_id: int):
 
     if not contest_users:
         await bot.send_message(db_bot.created_by,
-                               "К сожалению в созданном конкурсе не было участников, "
+                               "😞 К сожалению в созданном конкурсе не было участников, "
                                "конкурс завершен без результатов.")
     else:
         if len(contest_users) <= contest.winners_count:
@@ -524,11 +524,10 @@ async def pre_finish_contest(contest_id: int):
             for user in winner_users:
                 user.is_won = True
                 await contest_db.update_contest_user(user)
+        await excel_utils.send_contest_results_xlsx(contest_users, contest_id)
 
     contest.is_finished = True
     await contest_db.update_contest(contest)
-
-    await excel_utils.send_contest_results_xlsx(contest_users, contest_id)
     await post_message_db.delete_post_message(contest.post_message_id)
 
 

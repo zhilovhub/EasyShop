@@ -255,7 +255,7 @@ class InlinePostMessageMenuKeyboard:
             statistic_button = InlineKeyboardButton(
                                 text="Статистика",
                                 callback_data=InlinePostMessageMenuKeyboard.callback_json(
-                                    actions.STATISTICS, bot_id, post_message_id, post_message_type
+                                    actions.STATISTICS, bot_id, post_message_id, post_message_type, channel_id
                                 )
                             )
             cancel_button = InlineKeyboardButton(
@@ -293,6 +293,9 @@ class InlinePostMessageMenuKeyboard:
                 case PostMessageType.CONTEST:
                     return InlineKeyboardMarkup(
                         inline_keyboard=[
+                            [
+                                statistic_button
+                            ],
                             [
                                 contest_button
                             ],

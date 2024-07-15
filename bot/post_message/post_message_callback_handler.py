@@ -1,7 +1,7 @@
 from aiogram import Bot
 from aiogram.enums import ParseMode
-from aiogram.types import CallbackQuery
 from aiogram.fsm.context import FSMContext
+from aiogram.types import CallbackQuery, FSInputFile
 
 from bot.main import post_message_db, bot, post_message_media_file_db, custom_bot_user_db, _scheduler, bot_db, \
     contest_db
@@ -22,6 +22,8 @@ from database.models.post_message_model import PostMessageSchema
 from logs.config import extra_params, logger
 
 from .post_message_editors import pre_finish_contest
+
+from graphs import generate_contest_users_graph
 
 
 class ContestMessageDontNeedButton(Exception):
@@ -94,7 +96,9 @@ async def _cancel_send(
             )
         case PostMessageType.CONTEST:
             contest = await contest_db.get_contest_by_bot_id(bot_id=post_message.bot_id)
+            contest_users = await contest_db.get_contest_users(contest.contest_id)
             contest.is_finished = True
+            path_to_graph = await generate_contest_users_graph(contest.contest_id)
             if contest.finish_job_id:
                 try:
                     await _scheduler.del_job(contest.finish_job_id)
@@ -116,6 +120,9 @@ async def _cancel_send(
                 reply_markup=await InlineChannelMenuKeyboard.get_keyboard(post_message.bot_id, channel_id),
                 parse_mode=ParseMode.HTML
             )
+            if contest_users:
+                await query.message.answer_photo(FSInputFile(path_to_graph),
+                                                 caption="📈 График количества участников конкурса от времени")
         case _:
             raise UnknownPostMessageType
 
@@ -638,6 +645,18 @@ async def _post_message_union(
                 user_id,
                 channel_id=get_channel_id(callback_data, post_message_type)
             )
+        case callback_data.ActionEnum.STATISTICS:
+            match post_message_type:
+                case PostMessageType.CONTEST:
+                    contest = await contest_db.get_contest_by_post_message_id(post_message.post_message_id)
+                    contest_users = await contest_db.get_contest_users(contest.contest_id)
+                    if contest_users:
+                        path = await generate_contest_users_graph(contest.contest_id)
+                        await query.message.answer_photo(FSInputFile(path),
+                                                         caption="📈 График количества участников конкурса от времени.")
+                        await query.answer()
+                    else:
+                        await query.answer("В конкурсе никто ещё не принял участие")
 
         # NOT RUNNING ACTIONS
         case callback_data.ActionEnum.BUTTON_ADD:
