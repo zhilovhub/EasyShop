@@ -103,8 +103,13 @@ class OrderSchema(BaseModel):
             case _:
                 return "❓ Неизвестен"
 
-    def convert_to_notification_text(self, products: list[tuple[ProductSchema, int, dict]], username: str = '@username',
+    def convert_to_notification_text(self, products: list[tuple[ProductSchema, int, dict | None]],
+                                     username: str = '@username',
                                      is_admin: bool = False) -> str:
+        """
+        :param list products:
+        [ProductSchema, amount, {"extra_option1": "selected_variant", ... } | None]
+        """
         products_converted = []
         total_price = 0
         for ind, product_item in enumerate(products, start=1):
