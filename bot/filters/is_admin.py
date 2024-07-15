@@ -1,7 +1,7 @@
 from aiogram.types import Message, CallbackQuery
 from aiogram.filters import BaseFilter
 
-from bot.config import TECH_ADMINS
+from common_utils.env_config import TECH_ADMINS
 
 from logs.config import logger, extra_params
 
