@@ -471,6 +471,8 @@ async def bot_menu_callback_handler(query: CallbackQuery, state: FSMContext):
                 reply_markup=await InlineBotMenuKeyboard.get_keyboard(bot_id)
             )
             await query.answer("Ваш бот приостановлен ❌", show_alert=True)
+        case callback_data.ActionEnum.PARTNERSHIP:
+            await query.answer("⚒ В разработке.")
         case callback_data.ActionEnum.BOT_DELETE:
             await query.message.answer(
                 "Бот удалится вместе со всей базой продуктов безвозвратно.\n"

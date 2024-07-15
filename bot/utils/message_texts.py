@@ -1,3 +1,4 @@
+from datetime import datetime
 from enum import Enum
 
 from bot.enums.post_message_type import PostMessageType
@@ -87,16 +88,9 @@ class MessageTexts(Enum):
     BOT_MAILING_MENU_WHILE_RUNNING = "Сейчас идет рассылка для бота <b>@{}</b>\n\n"
 
     CONTACTS = f"Генеральный директор:\n" \
-               f"Тг: <b>@maxzim398</b>\n\n" \
-               f"Технический директор:\n" \
-               f"Тг: <b>@Ilyyasha</b>"
-
-    DATE_RULES = "Пожалуйста, отправьте дату и время <b>начала отправки сообщения</b> в следующем формате: " \
-                 "<b>ДД.ММ.ГГГГ ЧЧ:ММ</b>\nНапример, <code>25.12.2024 14:30</code>"
-
-    DATE_RULES_CONTEST_FINISH = ("Пожалуйста, отправьте дату и время <b>завершения конкурса</b> "
-                                 "в следующем формате: \n"
-                                 "<b>ДД.ММ.ГГГГ ЧЧ:ММ</b>\n\nНапример: <code>25.12.2024 14:30</code>")
+        f"Тг: <b>@maxzim398</b>\n\n" \
+        f"Технический директор:\n" \
+        f"Тг: <b>@Ilyyasha</b>"
 
     BOT_CHANNEL_POST_MENU_ACCEPT_START = "Управление записью для канала <b>@{}</b>\n\n" \
         "<b>Подтверждение начала отправления записи в канал</b>"
@@ -106,18 +100,30 @@ class MessageTexts(Enum):
 
     BOT_CHANNEL_POST_MENU_WHILE_RUNNING = "Сейчас в очереди запись в канал <b>@{}</b>\n\n"
 
-    GOODS_COUNT_MESSAGE = ("Вы перешли в состояние обновления кол-ва товаров на складе, все отправленные .xlsx файлы "
-                           "в этом состоянии обновят кол-во товаров.\n\n⬇️ Ниже отправлена таблица с актуальным списком"
-                           " товаров и их кол-вом на складе.")
+    GOODS_COUNT_MESSAGE = (
+        "Вы перешли в состояние обновления кол-ва товаров на складе, все отправленные .xlsx файлы "
+        "в этом состоянии обновят кол-во товаров.\n\n⬇️ Ниже отправлена таблица с актуальным списком"
+        " товаров и их кол-вом на складе.")
 
-    STOCK_IMPORT_COMMANDS = ("1.<b>Перезаписать всё новым содержимым</b>\n"
-                             "2.<b>При совпадении артикулов - перезаписать</b>\n"
-                             "3.<b>При совпадении артикулов - оставить старое</b>\n")
+    STOCK_IMPORT_COMMANDS = (
+        "1.<b>Перезаписать всё новым содержимым</b>\n"
+        "2.<b>При совпадении артикулов - перезаписать</b>\n"
+        "3.<b>При совпадении артикулов - оставить старое</b>\n")
 
     SELECT_CONTEST_TYPE = "Выберите тип конкурса:"
 
+    UNKNOWN_ERROR_MESSAGE = """
+❗️Произошла ошибка при обработке запроса
+
+🏃‍♂️ Информация моментально подана администраторам, не пройдет и 24 часа, как мы все решим и сделаем продукт для Вас чуточку идеальнее, чем он был до этого момента 🫡
+
+📌 Если что-то срочное или есть какие-то технические вопросы:
+СТО: @Ilyyasha
+    """
+
     @staticmethod
-    def bot_post_message_menu_message(post_message_type: PostMessageType) -> str:
+    def bot_post_message_menu_message(
+            post_message_type: PostMessageType) -> str:
         match post_message_type:
             case PostMessageType.MAILING:
                 return "Управление текущей рассылки для бота <b>@{}</b>\n\n" \
@@ -133,7 +139,8 @@ class MessageTexts(Enum):
                        "чтобы убедиться в правильности составленного сообщения"
 
     @staticmethod
-    def bot_post_already_started_message(post_message_type: PostMessageType) -> str:
+    def bot_post_already_started_message(
+            post_message_type: PostMessageType) -> str:
         match post_message_type:
             case PostMessageType.MAILING:
                 return "Рассылка уже запущена"
@@ -141,7 +148,8 @@ class MessageTexts(Enum):
                 return "Запись уже запущена"
 
     @staticmethod
-    def bot_post_button_already_exists_message(post_message_type: PostMessageType) -> str:
+    def bot_post_button_already_exists_message(
+            post_message_type: PostMessageType) -> str:
         match post_message_type:
             case PostMessageType.MAILING:
                 return "В рассылочном сообщении кнопка уже есть"
@@ -149,18 +157,30 @@ class MessageTexts(Enum):
                 return "В записи кнопка уже есть"
 
     @staticmethod
-    def show_mailing_info(sent_post_message_amount: int, custom_bot_users_len: int) -> str:
+    def show_mailing_info(
+            sent_post_message_amount: int,
+            custom_bot_users_len: int) -> str:
         text = f"Сообщений отправлено:\n" \
-               f"<b>{sent_post_message_amount}/{custom_bot_users_len}</b>"
+            f"<b>{sent_post_message_amount}/{custom_bot_users_len}</b>"
 
         if sent_post_message_amount != custom_bot_users_len:
             text += f"\n\n❗ Во время рассылки было обнаружено, что бота забанило " \
-                    f"{custom_bot_users_len - sent_post_message_amount} человек" \
+                f"{custom_bot_users_len - sent_post_message_amount} человек"
 
         return text
 
     @staticmethod
-    def show_product_review_info(mark: int, review_text: str, product_name: str):
+    def show_product_review_info(
+            mark: int,
+            review_text: str,
+            product_name: str):
         return f"Новый отзыв на продукт <b>{product_name}</b>\n\n" \
             f"Оценка - {mark}\n\n" \
             f"Отзыв - {review_text}"
+
+    @staticmethod
+    def show_date_rules(name: str):
+        date_now = datetime.now().strftime("%d.%m.%Y %H:%M")
+        return f"📅 Пожалуйста, отправьте дату и время <b>{name}</b> в следующем формате: " \
+            f"\n<b>ДД.ММ.ГГГГ ЧЧ:ММ</b>\n\nНапример: <code>{date_now}</code>" \
+            f"\n\n<i>* нажмите на дату в примере ☝️ чтобы её скопировать.</i>"
