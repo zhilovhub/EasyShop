@@ -108,13 +108,16 @@ class OrderSchema(BaseModel):
                                      is_admin: bool = False) -> str:
         """
         :param list products:
+        :param username:
+        :param is_admin:
         [ProductSchema, amount, {"extra_option1": "selected_variant", ... } | None]
         """
         products_converted = []
         total_price = 0
         for ind, product_item in enumerate(products, start=1):
             products_converted.append(
-                f"{ind}. {product_item[0].convert_to_notification_text(product_item[1])}"
+                f"{ind}. "
+                f"{product_item[0].convert_to_notification_text(product_item[1], used_extra_options=product_item[2])}"
             )
             total_price += product_item[0].price * product_item[1]
 
@@ -122,19 +125,19 @@ class OrderSchema(BaseModel):
 
         return f"Ваш заказ <b>#{self.id}</b>\n\n" \
                f"Список товаров:\n\n" \
-               f"{products_text}\n" \
+               f"{products_text}\n\n" \
                f"Итого: <b>{total_price}₽</b>\n\n" \
-               f"Адрес: <b>{self.address}</b>\n" \
-               f"Комментарий: <b>{self.comment}</b>\n\n" \
+               f"🛤 Адрес: <b>{self.address}</b>\n" \
+               f"💌 Комментарий: <b>{self.comment}</b>\n\n" \
                f"Статус: <b>{self.translate_order_status()}</b>" if not is_admin \
             else f"Новый заказ <b>#{self.id}</b>\n" \
                  f"от пользователя " \
                  f"<b>{username}</b>\n\n" \
                  f"Список товаров:\n\n" \
-                 f"{products_text}\n" \
+                 f"{products_text}\n\n" \
                  f"Итого: <b>{total_price}₽</b>\n\n" \
-                 f"Адрес: <b>{self.address}</b>\n" \
-                 f"Комментарий: <b>{self.comment}</b>\n\n" \
+                 f"🛤 Адрес: <b>{self.address}</b>\n" \
+                 f"💌 Комментарий: <b>{self.comment}</b>\n\n" \
                  f"Статус: <b>{self.translate_order_status()}</b>"
 
 
