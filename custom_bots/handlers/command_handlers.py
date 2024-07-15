@@ -3,7 +3,7 @@ from aiogram.types import Message
 from aiogram.filters import CommandStart
 from aiogram.fsm.context import FSMContext
 
-from bot.keyboards.custom_bot_menu_keyboards import ReplyCustomBotMenuKeyboard
+from bot.keyboards.custom_bot_menu_keyboards import ReplyCustomBotMenuKeyboard, InlineShopCustomBotKeyboard
 
 from custom_bots.multibot import bot_db, custom_bot_user_db, CustomUserStates, format_locales
 from custom_bots.handlers.routers import multi_bot_router
