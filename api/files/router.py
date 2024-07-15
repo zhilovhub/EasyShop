@@ -24,9 +24,10 @@ async def get_file(file_name: str) -> FileResponse:
             pass
     except FileNotFoundError:
         raise HTTPException(status_code=404, detail="provided file name not found")
-    except Exception:
+    except Exception as e:
         api_logger.error(
-            "Error while execute get_file"
+            "Error while execute get_file",
+            exc_info=e
         )
         raise HTTPException(status_code=500, detail="Internal error.")
     return FileResponse(path=FILES_ROOT + file_name, status_code=200)

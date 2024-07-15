@@ -120,10 +120,11 @@ async def get_all_products_api(payload: GetProductsRequest = Depends(
             detail="'search' filter is provided, search_word must not be empty")
     # except CategoryFilterNotFound as ex:
     #     raise HTTPException(status_code=400, detail=ex.message)
-    except Exception:
+    except Exception as e:
         api_logger.error(
             f"bot_id={payload.bot_id}: Error while execute get_all_products db_method",
-            extra=extra_params(bot_id=payload.bot_id)
+            extra=extra_params(bot_id=payload.bot_id),
+            exc_info=e
         )
         raise HTTPException(status_code=500, detail="Internal error.")
 
@@ -140,17 +141,19 @@ async def get_product_api(bot_id: int, product_id: int) -> ProductSchema:
     try:
         product = await product_db.get_product(product_id)
 
-    except ProductNotFound:
+    except ProductNotFound as e:
         api_logger.error(
             f"bot_id={bot_id}: product_id={product_id} is not found in database",
-            extra=extra_params(bot_id=bot_id, product_id=product_id)
+            extra=extra_params(bot_id=bot_id, product_id=product_id),
+            exc_info=e
         )
         raise HTTPException(status_code=404, detail="Product not found.")
 
-    except Exception:
+    except Exception as e:
         api_logger.error(
             f"bot_id={bot_id}: Error while execute get_product db_method with product_id={product_id}",
-            extra=extra_params(bot_id=bot_id, product_id=product_id)
+            extra=extra_params(bot_id=bot_id, product_id=product_id),
+            exc_info=e
         )
         raise HTTPException(status_code=500, detail="Internal error.")
 
@@ -175,14 +178,16 @@ async def add_product_api(
         api_logger.error(
             f"bot_id={new_product.bot_id}: "
             f"IntegrityError while execute add_product db_method with product={new_product}",
-            extra=extra_params(bot_id=new_product.bot_id)
+            extra=extra_params(bot_id=new_product.bot_id),
+            exc_info=ex
         )
         raise HTTPException(status_code=409, detail=str(ex))
 
-    except Exception:
+    except Exception as e:
         api_logger.error(
             f"bot_id={new_product.bot_id}: Error while execute add_product db_method with product={new_product}",
-            extra=extra_params(bot_id=new_product.bot_id)
+            extra=extra_params(bot_id=new_product.bot_id),
+            exc_info=e
         )
         raise HTTPException(status_code=500, detail="Internal error.")
 
@@ -225,17 +230,19 @@ async def create_file(bot_id: int,
             product.picture.append(photo_path)
         await product_db.update_product(product)
 
-    except ProductNotFound:
+    except ProductNotFound as e:
         api_logger.error(
             f"bot_id={bot_id}: product_id={product_id} is not found in database",
-            extra=extra_params(bot_id=bot_id, product_id=product_id)
+            extra=extra_params(bot_id=bot_id, product_id=product_id),
+            exc_info=e
         )
         return HTTPException(status_code=404,
                              detail="Product with provided id not found")
-    except BaseException:
+    except BaseException as e:
         api_logger.error(
             f"bot_id={bot_id}: Error while adding photos to product_id={product_id}",
-            extra=extra_params(bot_id=bot_id, product_id=product_id)
+            extra=extra_params(bot_id=bot_id, product_id=product_id),
+            exc_info=e
         )
         raise
 
@@ -255,10 +262,11 @@ async def edit_product_api(
 
     try:
         await product_db.update_product(product)
-    except Exception:
+    except Exception as e:
         api_logger.error(
             f"bot_id={product.bot_id}: Error while execute update_product db_method with product={product}",
-            extra=extra_params(bot_id=product.bot_id, product_id=product.id)
+            extra=extra_params(bot_id=product.bot_id, product_id=product.id),
+            exc_info=e
         )
         raise HTTPException(status_code=500, detail="Internal error.")
 
@@ -279,16 +287,18 @@ async def delete_product_api(
 
     try:
         await product_db.delete_product(product_id)
-    except ProductNotFound:
+    except ProductNotFound as e:
         api_logger.error(
             f"bot_id={bot_id}: product_id={product_id} is not found in database",
-            extra=extra_params(bot_id=bot_id, product_id=product_id)
+            extra=extra_params(bot_id=bot_id, product_id=product_id),
+            exc_info=e
         )
         raise HTTPException(status_code=404, detail="Product not found.")
-    except Exception:
+    except Exception as e:
         api_logger.error(
             f"bot_id={bot_id}: Error while execute delete_product db_method with product_id={product_id}",
-            extra=extra_params(bot_id=bot_id, product_id=product_id)
+            extra=extra_params(bot_id=bot_id, product_id=product_id),
+            exc_info=e
         )
         raise HTTPException(status_code=500, detail="Internal error.")
 
@@ -313,8 +323,8 @@ async def send_product_csv_api(
     await check_admin_authorization(payload.bot_id, authorization_data)
     try:
         api_logger.info(f"get new csv file from api method bytes: {payload.file}")
-    except Exception:
-        api_logger.error("Error while execute send_product_csv api method", exc_info=True)
+    except Exception as e:
+        api_logger.error("Error while execute send_product_csv api method", exc_info=e)
         raise HTTPException(status_code=500, detail="Internal error.")
     return True
 
@@ -326,7 +336,7 @@ async def get_product_csv_api(
     try:
         # get csv logic
         pass
-    except Exception:
-        api_logger.error("Error while execute get_product_csv api method", exc_info=True)
+    except Exception as e:
+        api_logger.error("Error while execute get_product_csv api method", exc_info=e)
         raise HTTPException(status_code=500, detail="Internal error.")
     return bytes(200)
