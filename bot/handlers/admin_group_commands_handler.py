@@ -1,5 +1,5 @@
-from aiogram.filters import Command, CommandObject
 from aiogram.types import Message
+from aiogram.filters import Command, CommandObject
 
 from bot.main import MAINTENANCE
 from bot.handlers.routers import admin_group_commands_router
