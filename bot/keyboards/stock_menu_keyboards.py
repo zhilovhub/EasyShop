@@ -35,6 +35,32 @@ class ReplyBackStockMenuKeyboard:
         )
 
 
+class InlineWebStockKeyboard:
+    class Callback(BaseModel):
+        class ActionEnum(Enum):
+            GOOD_LIST = "📋 Список товаров"
+
+        model_config = ConfigDict(from_attributes=True, populate_by_name=True)
+
+        n: str = Field(default="gl", frozen=True)
+        a: ActionEnum
+
+    @staticmethod
+    async def get_keyboard(bot_id: int) -> InlineKeyboardMarkup:
+        actions = InlineWebStockKeyboard.Callback.ActionEnum
+
+        return InlineKeyboardMarkup(
+            inline_keyboard=[
+                [
+                    InlineKeyboardButton(
+                        text=actions.GOOD_LIST.value,
+                        web_app=make_admin_panel_webapp_info(bot_id)
+                    )
+                ]
+            ]
+        )
+
+
 class InlineStockMenuKeyboard:
     class Callback(BaseModel):
         class ActionEnum(Enum):
@@ -98,6 +124,14 @@ class InlineStockMenuKeyboard:
                         )
                     ),
                 ],
+                [
+                    InlineKeyboardButton(
+                        text="⬆️ Экспорт товаров",
+                        callback_data=InlineStockMenuKeyboard.callback_json(
+                            actions.EXPORT, bot_id
+                        )
+                    ),
+                ],
                 # [
                 #     InlineKeyboardButton(
                 #         text="📦 Управление остатками",
@@ -113,13 +147,7 @@ class InlineStockMenuKeyboard:
                 #             actions.IMPORT, bot_id
                 #         )
                 #     ),
-                #     InlineKeyboardButton(
-                #         text="⬆️ Экспорт товаров",
-                #         callback_data=InlineStockMenuKeyboard.callback_json(
-                #             actions.EXPORT, bot_id
-                #         )
-                #     ),
-                # ],
+
                 # [
                 #     InlineKeyboardButton(
                 #         text=f"{'✅' if auto_reduce else '❌'} Автоуменьшение на складе",
