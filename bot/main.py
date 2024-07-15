@@ -96,7 +96,7 @@ async def on_start():
         commands.append(BotCommand(command="clear", description="Снести себя"))
 
     await bot.set_my_commands(commands, scope=BotCommandScopeAllPrivateChats())
-    await bot.set_my_commands(admin_commands, scope=BotCommandScopeChatAdministr  ators(chat_id=config.ADMIN_GROUP_ID))
+    await bot.set_my_commands(admin_commands, scope=BotCommandScopeChatAdministrators(chat_id=config.ADMIN_GROUP_ID))
 
     await storage.connect()
     await db_engine.connect()
