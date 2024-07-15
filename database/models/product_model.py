@@ -97,12 +97,10 @@ class ProductWithoutId(BaseModel):
 class ProductSchema(ProductWithoutId):
     id: int
 
-    def convert_to_notification_text(self, count: int) -> str:
-        # if extra_options is not None:
-        #     options = "\n" + "".join([f"{title} : {opt}" for title, opt in extra_options.items()]) + "\n"
-        # else:
-        #     options = ""
-        # return f"<b>{self.name} <i>{options}</i> {self.price}₽ x {count}шт</b>"
+    def convert_to_notification_text(self, count: int, used_extra_options: dict = None) -> str:
+        if used_extra_options is not None:
+            options = "\n" + "".join([f"{title} : {opt}" for title, opt in used_extra_options.items()]) + "\n"
+            return f"<b>{self.name} <i>{options}</i> {self.price}₽ x {count}шт</b>"
         return f"<b>{self.name} {self.price}₽ x {count}шт</b>"
 
 
