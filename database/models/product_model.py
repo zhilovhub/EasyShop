@@ -100,8 +100,8 @@ class ProductSchema(ProductWithoutId):
     def convert_to_notification_text(self, count: int, used_extra_options: dict) -> str:
         text = f"<b>{self.name} {self.price}₽ x {count}шт</b>"
         if used_extra_options:
-            options = "\n" + "".join([f"{title} : {opt}" for title, opt in used_extra_options.items()]) + "\n"
-            text += f"<i>{options}</i>"
+            options = "\n".join([f"{title} : {opt}" for title, opt in used_extra_options.items()])
+            text += f"\n<i>{options}</i>"
         return text
 
 
