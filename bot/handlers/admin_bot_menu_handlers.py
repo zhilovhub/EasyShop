@@ -420,7 +420,7 @@ async def bot_menu_photo_handler(message: Message, state: FSMContext):
     except IntegrityError:
         return await message.answer("Товар с таким названием уже есть в боте.")
     await message.answer("✅ Товар добавлен. Можно добавить ещё\n\n"
-                         "Более подробное управление товарами и гибкое добавление их \n👇",
+                         "<i>* Более подробное управление товарами и гибкое добавление их</i> 👇",
                          reply_markup=await InlineWebStockKeyboard.get_keyboard(state_data['bot_id']))
 
 

@@ -1,14 +1,15 @@
 import os
 from typing import List
+from zipfile import ZipFile
 
 from openpyxl import Workbook
 from openpyxl.utils import get_column_letter
 from openpyxl.styles import PatternFill, Border, Side, Alignment, Font
-from openpyxl.styles.colors import Color
 
 from io import BytesIO
 
 from bot.main import bot_db, contest_db, category_db
+from bot.config import FILES_PATH
 from bot.exceptions.exceptions import BotNotFound
 
 from logs.config import logger, extra_params
@@ -20,10 +21,9 @@ from aiogram.types import BufferedInputFile
 
 from database.models.contest_model import ContestUserSchema, ContestNotFound
 from database.models.product_model import ProductSchema
-from zipfile import ZipFile
 
 
-def create_zip_buffer(images) -> BufferedInputFile:
+def _create_zip_buffer(images) -> BufferedInputFile:
     zip_buffer = BytesIO()
     with ZipFile(zip_buffer, 'w') as zip_file:
         for file_path in images:
@@ -66,9 +66,6 @@ def create_excel(data, sheet_name, table_type):
             for product in data:
                 ws.append([product[header] for header in headers])
 
-            # header_fill = PatternFill(start_color="FFCCFFCC", end_color="FFCCFFCC", fill_type="solid")
-            # even_fill = PatternFill(start_color="FFE6FFCC", end_color="FFE6FFCC", fill_type="solid")
-            # odd_fill = PatternFill(start_color="FFFFF2CC", end_color="FFFFF2CC", fill_type="solid")
             header_fill = PatternFill(fgColor="FFCCFFCC", patternType="solid", fill_type="solid")
             even_fill = PatternFill(fgColor="FFE6FFCC", patternType="solid", fill_type="solid")
             odd_fill = PatternFill(fgColor="FFFFF2CC", patternType="solid", fill_type="solid")
@@ -163,17 +160,18 @@ async def send_contest_results_xlsx(users: list[ContestUserSchema], contest_id: 
                                  caption="Список участников конкурса.")
 
 
-async def send_products_info_xlsx(products: list[ProductSchema]):
+async def send_products_info_xlsx(bot_id: int, products: list[ProductSchema]):
     wb_data = []
-    files_path = os.environ["FILES_PATH"]
     images = []
+
     try:
-        bot = await bot_db.get_bot(bot_id=products[0].bot_id)
+        bot = await bot_db.get_bot(bot_id=bot_id)
         created_by = bot.created_by
     except BotNotFound:
-        logger.error(f"Provided to excel function bot not found bot_id={products[0].bot_id}",
-                     extra_params(bot_id=products[0].bot_id))
+        logger.error(f"bot_id={bot_id}: Provided to excel function bot not found bot_id={bot_id}",
+                     extra_params(bot_id=bot_id))
         return
+
     for product in products:
         categories = []
         if product.category:
@@ -186,7 +184,7 @@ async def send_products_info_xlsx(products: list[ProductSchema]):
 
         if product.picture:
             images_text = "/".join(product.picture)
-            images.extend([files_path + prod for prod in product.picture])
+            images.extend([FILES_PATH + prod for prod in product.picture])
         else:
             images_text = "Картинки не найдены"
         wb_data.append(
@@ -196,8 +194,9 @@ async def send_products_info_xlsx(products: list[ProductSchema]):
         )
 
     if len(images) != 0:
-        buffered_zip_file = create_zip_buffer(images)
+        buffered_zip_file = _create_zip_buffer(images)
         await main_bot.send_document(created_by, document=buffered_zip_file, caption="Картинки ваших товаров")
+
     buffered_file = _make_xlsx_buffer("product_export", wb_data)
     await main_bot.send_document(created_by, document=buffered_file,
                                  caption="Список товаров загруженных в систему")

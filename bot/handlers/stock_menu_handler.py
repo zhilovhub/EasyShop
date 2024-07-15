@@ -4,7 +4,6 @@ from aiogram import Bot
 from aiogram.enums import ParseMode
 from aiogram.types import CallbackQuery, Message, FSInputFile
 from aiogram.fsm.context import FSMContext
-from aiogram.utils.media_group import MediaGroupBuilder
 
 from bot.main import stock_manager, bot, product_db, bot_db
 from bot.utils import MessageTexts
@@ -102,7 +101,7 @@ async def stock_menu_handler(query: CallbackQuery, state: FSMContext):
             if len(products) == 0:
                 await query.message.answer("Товаров на складе нет")
             else:
-                await send_products_info_xlsx(products)
+                await send_products_info_xlsx(bot_id, products)
             await query.message.answer(
                 "Меню склада:",
                 reply_markup=await InlineStockMenuKeyboard.get_keyboard(bot_id, button_data)
