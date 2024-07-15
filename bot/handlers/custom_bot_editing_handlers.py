@@ -7,9 +7,11 @@ from bot.utils import MessageTexts
 from bot.states.states import States
 from bot.handlers.routers import custom_bot_editing_router
 from bot.utils.send_instructions import send_instructions
-from bot.keyboards.main_menu_keyboards import ReplyBotMenuKeyboard, InlineBotMenuKeyboard, ReplyBackBotMenuKeyboard
+from bot.keyboards.main_menu_keyboards import ReplyBotMenuKeyboard, ReplyBackBotMenuKeyboard
 
-from custom_bots.multibot import bot_db
+from common_utils.keyboards.keyboards import InlineBotMenuKeyboard
+
+from database.config import bot_db
 
 from logs.config import logger
 

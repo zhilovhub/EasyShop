@@ -8,9 +8,9 @@ from pydantic import BaseModel, Field, ConfigDict, field_validator
 
 from database.models import Base
 from database.models.dao import Dao
+from database.exceptions import *
 from database.models.user_model import User
 
-from bot.exceptions.exceptions import *
 
 from logs.config import extra_params
 

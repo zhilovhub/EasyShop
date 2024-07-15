@@ -1,11 +1,10 @@
 from fastapi import HTTPException, APIRouter, Header
 
-from database.models.product_model import ProductDao
-from database.models.category_model import CategorySchema, CategoryDao, CategorySchemaWithoutId, \
+from database.config import category_db
+from database.models.category_model import CategorySchema, CategorySchemaWithoutId, \
     SameCategoryNameAlreadyExists
 
 from api.utils import check_admin_authorization
-from api.loader import db_engine
 
 from logs.config import api_logger, extra_params
 
@@ -15,8 +14,6 @@ router = APIRouter(
     tags=["categories"],
     responses={404: {"description": "Category not found"}},
 )
-product_db: ProductDao = db_engine.get_product_db()
-category_db: CategoryDao = db_engine.get_category_dao()
 
 
 @router.get("/get_all_categories/{bot_id}")

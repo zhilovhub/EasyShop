@@ -1,16 +1,17 @@
-from logs.config import extra_params
 import asyncio
 
 from aiogram.enums import ParseMode
 from aiogram.exceptions import TelegramForbiddenError
 from aiogram.client.bot import DefaultBotProperties, Bot
 
-from bot.main import bot, custom_bot_user_db, post_message_db
+from bot.main import bot
 from bot.utils.excel_utils import send_ban_users_xlsx
 from bot.utils.message_texts import MessageTexts
 from bot.post_message.post_message_editors import PostActionType, send_post_message
 
-from logs.config import logger
+from database.config import custom_bot_user_db, post_message_db
+
+from logs.config import logger, extra_params
 
 
 async def send_post_messages(custom_bot, post_message, media_files, chat_id):

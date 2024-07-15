@@ -7,17 +7,20 @@ from aiogram.types import ReplyKeyboardRemove, InlineKeyboardMarkup, InlineKeybo
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.storage.base import StorageKey
 
-from bot import config
-from bot.main import subscription, bot, dp, cache_resources_file_id_store, user_db, bot_db
+from bot.main import subscription, bot, dp, cache_resources_file_id_store
 from bot.utils import MessageTexts
 from bot.states import States
 from bot.handlers.routers import subscribe_router
-from bot.utils.admin_group import EventTypes, send_event, success_event
 from bot.utils.custom_bot_api import stop_custom_bot
 from bot.utils.send_instructions import send_instructions
-from bot.keyboards.main_menu_keyboards import ReplyBotMenuKeyboard, InlineBotMenuKeyboard, ReplyBackBotMenuKeyboard
+from bot.keyboards.main_menu_keyboards import ReplyBotMenuKeyboard, ReplyBackBotMenuKeyboard
 from bot.keyboards.subscription_keyboards import InlineSubscriptionContinueKeyboard
 
+from common_utils.env_config import RESOURCES_PATH, SBP_URL, ADMINS
+from common_utils.keyboards.keyboards import InlineBotMenuKeyboard
+from common_utils.broadcasting.broadcasting import send_event, EventTypes, success_event
+
+from database.config import user_db, bot_db
 from database.models.user_model import UserSchema, UserStatusValues
 
 from logs.config import logger
@@ -34,11 +37,11 @@ async def continue_subscription_callback(query: CallbackQuery, state: FSMContext
 
     photo_name, instruction = subscription.get_subscribe_instructions()
     await query.message.answer_photo(
-        photo=FSInputFile(config.RESOURCES_PATH.format(photo_name)),
+        photo=FSInputFile(RESOURCES_PATH.format(photo_name)),
         caption=instruction,
         reply_markup=InlineKeyboardMarkup(inline_keyboard=[
             [
-                InlineKeyboardButton(text="Перейти на страницу оплаты", url=config.SBP_URL)
+                InlineKeyboardButton(text="Перейти на страницу оплаты", url=SBP_URL)
             ]
         ]))
     await query.message.answer(
@@ -115,7 +118,7 @@ async def waiting_payment_pay_handler(message: Message, state: FSMContext):
             "В подписи к файлу или фото укажите Ваши контактные данные и отправьте чек повторно",
             reply_markup=ReplyBackBotMenuKeyboard.get_keyboard()
         )
-    for admin in config.ADMINS:
+    for admin in ADMINS:
         try:
             msg: Message = await message.send_copy(admin)
             await bot.send_message(
@@ -242,7 +245,7 @@ async def approve_pay_callback(query: CallbackQuery):
         )
     await query.answer("Оплата подтверждена", show_alert=True)
 
-    await success_event(user_to_approve, admin_message, EventTypes.SUBSCRIBED)
+    await success_event(user_to_approve, bot, admin_message, EventTypes.SUBSCRIBED)
 
 
 @subscribe_router.callback_query(lambda q: q.data.startswith("cancel_pay"))

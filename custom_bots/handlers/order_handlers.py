@@ -4,18 +4,19 @@ from aiogram.types import CallbackQuery, Message
 from aiogram.filters import StateFilter
 from aiogram.fsm.context import FSMContext
 
-from bot.main import product_review_db
-from bot.utils import MessageTexts
-from bot.exceptions.exceptions import BotNotFound
-from bot.keyboards.question_keyboards import ReplyBackQuestionMenuKeyboard
-from bot.keyboards.order_manage_keyboards import InlineOrderCancelKeyboard, \
-    InlineOrderCustomBotKeyboard, InlineCreateReviewKeyboard, ReplyGetReviewMarkKeyboard, ReplyReviewBackKeyboard, \
-    InlinePickReviewProductKeyboard, InlineAcceptReviewKeyboard
-from bot.keyboards.custom_bot_menu_keyboards import ReplyCustomBotMenuKeyboard
-
-from custom_bots.multibot import order_db, product_db, main_bot, PREV_ORDER_MSGS, CustomUserStates, bot_db
+from custom_bots.multibot import main_bot, PREV_ORDER_MSGS, CustomUserStates
 from custom_bots.handlers.routers import multi_bot_router
+from custom_bots.utils.custom_message_texts import CustomMessageTexts
+from custom_bots.keyboards.question_keyboards import ReplyBackQuestionMenuKeyboard
+from custom_bots.keyboards.order_manage_keyboards import InlinePickReviewProductKeyboard, ReplyGetReviewMarkKeyboard, \
+    ReplyReviewBackKeyboard
+from custom_bots.keyboards.custom_bot_menu_keyboards import ReplyCustomBotMenuKeyboard
 
+from common_utils.keyboards.order_manage_keyboards import InlineOrderCancelKeyboard, InlineOrderCustomBotKeyboard, \
+    InlineCreateReviewKeyboard, InlineAcceptReviewKeyboard
+
+from database.config import product_review_db, order_db, product_db, bot_db
+from database.exceptions import BotNotFound
 from database.models.order_model import OrderStatusValues, OrderNotFound
 from database.models.product_model import ProductNotFound
 from database.models.product_review_model import ProductReviewSchemaWithoutID
@@ -51,8 +52,11 @@ async def handle_cancel_order_callback(query: CallbackQuery):
 
             await order_db.update_order(order)
 
-            products = [(await product_db.get_product(int(product_id)), product_item.amount, product_item.used_extra_options)
-                        for product_id, product_item in order.items.items()]
+            products = [
+                (await product_db.get_product(
+                    int(product_id)), product_item.amount, product_item.used_extra_options
+                 ) for product_id, product_item in order.items.items()
+            ]
             await query.message.edit_text(order.convert_to_notification_text(products=products), reply_markup=None)
             msg_id_data = PREV_ORDER_MSGS.get_data()
 
@@ -267,7 +271,7 @@ async def get_review_text(message: Message, state: FSMContext):
         product = await product_db.get_product(state_data["product_id"])
         await main_bot.send_message(
             chat_id=bot.created_by,
-            text=MessageTexts.show_product_review_info(mark, message.text, product.name),
+            text=CustomMessageTexts.show_product_review_info(mark, message.text, product.name),
             reply_markup=InlineAcceptReviewKeyboard.get_keyboard(review_id)
         )
         await state.set_state(CustomUserStates.MAIN_MENU)

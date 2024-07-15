@@ -4,18 +4,19 @@ from aiogram import F, Bot
 from aiogram.enums import ParseMode
 from aiogram.types import Message
 
-from bot.keyboards.order_manage_keyboards import InlineOrderStatusesKeyboard, InlineOrderCustomBotKeyboard
-from bot.keyboards.custom_bot_menu_keyboards import ReplyCustomBotMenuKeyboard
-from bot.order_utils.order_type import OrderType
-from bot.order_utils.order_utils import create_order
-
-from custom_bots.multibot import order_db, product_db, bot_db, main_bot, PREV_ORDER_MSGS, \
+from custom_bots.multibot import bot_db, main_bot, PREV_ORDER_MSGS, \
     CustomUserStates, format_locales
 from custom_bots.handlers.routers import multi_bot_router
+from common_utils.order_utils.order_type import OrderType
 from custom_bots.utils.custom_bot_options import get_option
+from common_utils.order_utils.order_utils import create_order
+from custom_bots.keyboards.custom_bot_menu_keyboards import ReplyCustomBotMenuKeyboard
 
+from database.config import product_db, order_db
 from database.models.bot_model import BotNotFound
 from database.models.product_model import NotEnoughProductsInStockToReduce
+
+from common_utils.keyboards.order_manage_keyboards import InlineOrderStatusesKeyboard, InlineOrderCustomBotKeyboard
 
 from logs.config import custom_bot_logger, extra_params
 

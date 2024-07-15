@@ -7,8 +7,8 @@ from pydantic import ValidationError
 from fastapi import APIRouter, HTTPException, Depends, Header
 
 from api.utils import check_admin_authorization
-from api.loader import db_engine
 
+from database.config import order_db
 from database.models.order_model import OrderNotFound, OrderSchema
 
 from logs.config import api_logger, extra_params
@@ -20,8 +20,6 @@ router = APIRouter(
     responses={404: {"description": "Order not found"}},
 )
 
-db = db_engine.get_order_dao()
-
 
 @router.get("/generate_order_id")
 async def generate_order_id_api() -> str:
@@ -30,7 +28,7 @@ async def generate_order_id_api() -> str:
     order_id = date + random_string
 
     try:
-        await db.get_order(order_id)
+        await order_db.get_order(order_id)
     except OrderNotFound:
         api_logger.debug(
             f"order_id={random_string}: order_id has been generated",
@@ -46,7 +44,7 @@ async def generate_order_id_api() -> str:
 async def get_all_orders_api(bot_id: int, authorization_data: str = Header()) -> list[OrderSchema]:
     await check_admin_authorization(bot_id, authorization_data)
     try:
-        orders = await db.get_all_orders(bot_id)
+        orders = await order_db.get_all_orders(bot_id)
     except ValidationError as ex:
         api_logger.error(
             f"bot_id={bot_id}: validation error",
@@ -75,7 +73,7 @@ async def add_order_api(new_order: OrderSchema = Depends(), authorization_data: 
     await check_admin_authorization(new_order.bot_id, authorization_data)
     try:
         new_order.ordered_at = new_order.ordered_at.replace(tzinfo=None)
-        await db.add_order(new_order)
+        await order_db.add_order(new_order)
 
         api_logger.debug(
             f"bot_id={new_order.bot_id}: order {new_order} has been added",

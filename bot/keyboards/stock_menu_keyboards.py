@@ -4,8 +4,8 @@ from pydantic import BaseModel, ValidationError, ConfigDict, Field
 
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton, ReplyKeyboardMarkup, KeyboardButton
 
-from bot.utils import make_admin_panel_webapp_info
-from bot.keyboards.keyboard_utils import callback_json_validator
+from common_utils.make_webapp_info import make_admin_panel_webapp_info
+from common_utils.keyboards.keyboard_utils import callback_json_validator
 
 
 class ReplyBackStockMenuKeyboard:

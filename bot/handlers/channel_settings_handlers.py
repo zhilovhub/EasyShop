@@ -2,21 +2,21 @@ from aiogram import Bot
 from aiogram.enums import ParseMode
 from aiogram.types import CallbackQuery
 
+from common_utils.keyboards.keyboards import InlineBotMenuKeyboard
 
-from logs.config import logger, extra_params
-
-from bot.main import channel_user_db, bot_db, channel_post_db, contest_db
 from bot.utils import MessageTexts
 from bot.handlers.routers import channel_menu_router
-from bot.enums.post_message_type import PostMessageType
 from bot.keyboards.channel_keyboards import (InlineChannelsListKeyboard, InlineChannelMenuKeyboard,
                                              InlineContestTypeKeyboard)
-from bot.keyboards.main_menu_keyboards import InlineBotMenuKeyboard
 from bot.keyboards.post_message_keyboards import InlinePostMessageMenuKeyboard
 from bot.post_message.post_message_create import post_message_create
 
+from database.config import bot_db, channel_user_db, channel_post_db, contest_db
 from database.models.contest_model import ContestNotFound
 from database.models.channel_post_model import ChannelPostNotFound
+from database.models.post_message_model import PostMessageType
+
+from logs.config import logger, extra_params
 
 
 @channel_menu_router.callback_query(lambda query: InlineChannelsListKeyboard.callback_validator(query.data))

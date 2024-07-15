@@ -1,4 +1,5 @@
 import datetime
+from enum import Enum
 from typing import Optional
 
 from pydantic import BaseModel, Field, validate_call, ConfigDict
@@ -7,14 +8,19 @@ from sqlalchemy import BigInteger, Column, ForeignKey, select, insert, delete, B
     TypeDecorator, Unicode, Dialect, and_, or_
 from sqlalchemy.ext.asyncio import AsyncEngine
 
-from bot.enums.post_message_type import PostMessageType
-from bot.exceptions import InvalidParameterFormat
-
 from database.models import Base
+from database.exceptions import InvalidParameterFormat
 from database.models.dao import Dao
 from database.models.bot_model import Bot
 
 from logs.config import extra_params
+
+
+class PostMessageType(Enum):
+    """For what is post message?"""
+    MAILING = "1"
+    CHANNEL_POST = "2"
+    CONTEST = "3"
 
 
 class PostMessageNotFound(Exception):

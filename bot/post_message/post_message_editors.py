@@ -8,22 +8,23 @@ from aiogram.types import Message, LinkPreviewOptions, InputMediaDocument, Input
     InputMediaVideo, InputMediaPhoto, BufferedInputFile, InlineKeyboardMarkup, InlineKeyboardButton
 from aiogram.fsm.context import FSMContext
 
-from bot.main import post_message_db, bot, post_message_media_file_db, bot_db, contest_db, logger
+from bot.main import bot
 from bot.utils import MessageTexts, excel_utils
-from bot.config import WEB_APP_URL, WEB_APP_PORT
 from bot.states import States
-from bot.utils.keyboard_utils import make_webapp_info
-from bot.enums.post_message_type import PostMessageType
 from bot.keyboards.main_menu_keyboards import ReplyBotMenuKeyboard
-from bot.keyboards.channel_keyboards import InlineJoinContestKeyboard
 from bot.keyboards.post_message_keyboards import InlinePostMessageMenuKeyboard, ReplyBackPostMessageMenuKeyboard, \
     ReplyConfirmMediaFilesKeyboard, UnknownPostMessageType
 
+from common_utils.env_config import WEB_APP_URL, WEB_APP_PORT
+from common_utils.keyboards.keyboard_utils import make_webapp_info
+from common_utils.keyboards.channel_keyboards import InlineJoinContestKeyboard
+
+from database.config import post_message_db, post_message_media_file_db, bot_db, contest_db
 from database.models.bot_model import BotSchema
-from database.models.post_message_model import PostMessageSchema
+from database.models.post_message_model import PostMessageSchema, PostMessageType
 from database.models.post_message_media_files import PostMessageMediaFileSchema
 
-from logs.config import extra_params
+from logs.config import logger, extra_params
 
 
 def get_channel_id(state_data, post_message_type):

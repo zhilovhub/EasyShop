@@ -6,3 +6,6 @@ starlette
 sqlalchemy
 sqlalchemy-filters
 pillow
+python-logging-loki
+python-dotenv
+asyncpg

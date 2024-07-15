@@ -7,17 +7,16 @@ from urllib.parse import unquote, parse_qsl
 
 from fastapi import HTTPException
 
-from api.loader import db_engine, DEBUG, MAIN_BOT_TOKEN
+from common_utils.env_config import API_DEBUG_MODE, TELEGRAM_TOKEN
 
-from database.models.bot_model import BotDao, BotNotFound
-
-bot_db: BotDao = db_engine.get_bot_dao()
+from database.config import bot_db
+from database.models.bot_model import BotNotFound
 
 
 async def check_admin_authorization(bot_id: int, data_string: str) -> bool:
+    if API_DEBUG_MODE and data_string == "DEBUG":
+        return True
     if data_string:
-        if DEBUG and data_string == "DEBUG":
-            return True
         try:
             parsed_data = dict(parse_qsl(unquote(data_string), strict_parsing=True))
         except ValueError:
@@ -43,7 +42,7 @@ async def check_admin_authorization(bot_id: int, data_string: str) -> bool:
             f"{k}={v}" for k, v in sorted(parsed_data.items(), key=itemgetter(0))
         )
         secret_key = hmac.new(
-            key=b"WebAppData", msg=MAIN_BOT_TOKEN.encode(), digestmod=hashlib.sha256
+            key=b"WebAppData", msg=TELEGRAM_TOKEN.encode(), digestmod=hashlib.sha256
         )
         calculated_hash = hmac.new(
             key=secret_key.digest(), msg=data_check_string.encode(), digestmod=hashlib.sha256
@@ -51,27 +50,3 @@ async def check_admin_authorization(bot_id: int, data_string: str) -> bool:
         if calculated_hash == data_hash:
             return True
     raise HTTPException(status_code=401, detail="Unauthorized for that API method")
-
-
-# def check_admin_headers_auth(func):
-#     @wraps(func)
-#     def wrapper(request, *args, **kwargs):
-#         print(*args)
-#         print(**kwargs)
-#         # if request.headers.get("SECRET", None) != SECRET_KEY:
-#         #     raise HTTPException(status_code=401, detail="Invalid client secret")
-#         return func(request, *args, **kwargs)
-#     return wrapper
-#
-#
-# def auth_required(func):
-#     @wraps(func)
-#     async def wrapper(request, *args, **kwargs):
-#         await check_admin_authorization(bot_id=0,
-#                                         data_string=request.headers.get("authorization-data", None),
-#                                         data_hash=request.headers.get("authorization-data", None))
-#         print(args)
-#         print(kwargs)
-#         return await func(request, *args, **kwargs)
-#
-#     return wrapper

@@ -1,10 +1,8 @@
 import asyncio
 import ssl
 
-from os import getenv
 from typing import Any, Dict, Union
 
-from dotenv import load_dotenv
 from aiohttp import web
 
 from aiogram import Bot, Dispatcher, Router
@@ -20,20 +18,19 @@ from aiogram.webhook.aiohttp_server import (
     setup_application,
 )
 
-from bot import config
-from bot.utils import JsonStore, send_start_message_to_admins
-from bot.utils.storage import AlchemyStorageAsync
+from common_utils.env_config import TIMEZONE, SCHEDULER_URL, WEBHOOK_URL, WEBHOOK_PORT, TELEGRAM_TOKEN, WEB_APP_URL, \
+    WEB_APP_PORT, RESOURCES_PATH, SSL_CERT_PATH, \
+    SSL_KEY_PATH, TECH_ADMINS, LOCAL_API_SERVER_HOST, LOCAL_API_SERVER_PORT, WEBHOOK_HOST, \
+    WEBHOOK_SERVER_PORT_TO_REDIRECT
+from common_utils.start_message import send_start_message_to_admins
+from common_utils.scheduler.scheduler import Scheduler
+from common_utils.cache_json.cache_json import JsonStore
+from common_utils.storage.custom_bot_storage import custom_bot_storage
 
-from database.models.models import Database
+from database.config import bot_db
 from database.models.bot_model import BotNotFound
-from database.models.user_model import UserDao
-from database.models.channel_model import ChannelDao
-from database.models.contest_model import ContestDao
-from database.models.channel_user_model import ChannelUserDao
 
-from subscription.scheduler import Scheduler
-
-from logs.config import custom_bot_logger, db_logger, extra_params
+from logs.config import custom_bot_logger, extra_params
 
 app = web.Application()
 
@@ -41,58 +38,28 @@ local_app = web.Application(logger=custom_bot_logger)
 
 routes = web.RouteTableDef()
 
-load_dotenv()
-
 main_router = Router()
 
-WEBHOOK_SERVER_URL = getenv("WEBHOOK_URL")
-WEBHOOK_SERVER_HOST = getenv("WEBHOOK_HOST")
-WEBHOOK_SERVER_PORT = int(getenv("WEBHOOK_PORT"))
-try:
-    WEBHOOK_SERVER_PORT_TO_REDIRECT = int(getenv("WEBHOOK_SERVER_PORT_TO_REDIRECT"))
-except TypeError as e:
-    custom_bot_logger.warning("WEBHOOK_SERVER_PORT_TO_REDIRECT = None, setting it to WEBHOOK_SERVER_PORT")
-    WEBHOOK_SERVER_PORT_TO_REDIRECT = WEBHOOK_SERVER_PORT
-
-BASE_URL = f"{WEBHOOK_SERVER_URL}:{WEBHOOK_SERVER_PORT}"
+BASE_URL = f"{WEBHOOK_URL}:{WEBHOOK_PORT}"
 OTHER_BOTS_PATH = "/webhook/bot/{bot_token}"
 
 session = AiohttpSession()
 bot_settings = {"parse_mode": ParseMode.HTML}
 
-MAIN_TELEGRAM_TOKEN = getenv("TELEGRAM_TOKEN")
-main_bot = Bot(MAIN_TELEGRAM_TOKEN, default=DefaultBotProperties(
-    **bot_settings), session=session)
+main_bot = Bot(TELEGRAM_TOKEN, default=DefaultBotProperties(**bot_settings), session=session)
 
 OTHER_BOTS_URL = f"{BASE_URL}{OTHER_BOTS_PATH}"
 
-WEB_APP_URL = f"{getenv('WEB_APP_URL')}:{getenv('WEB_APP_PORT')}/products-page/?bot_id=[bot_id]"
-
-LOCAL_API_SERVER_HOST = getenv("WEBHOOK_LOCAL_API_URL")
-LOCAL_API_SERVER_PORT = int(getenv("WEBHOOK_LOCAL_API_PORT"))
-
-db_engine: Database = Database(
-    sqlalchemy_url=getenv("SQLALCHEMY_URL"), logger=db_logger)
-bot_db = db_engine.get_bot_dao()
-order_db = db_engine.get_order_dao()
-product_db = db_engine.get_product_db()
-user_db: UserDao = db_engine.get_user_dao()
-channel_db: ChannelDao = db_engine.get_channel_dao()
-contest_db: ContestDao = db_engine.get_contest_dao()
-custom_bot_user_db = db_engine.get_custom_bot_user_db()
-channel_user_db: ChannelUserDao = db_engine.get_channel_user_dao()
-
-storage = AlchemyStorageAsync(db_url=getenv("CUSTOM_BOT_STORAGE_DB_URL"),
-                              table_name=getenv("CUSTOM_BOT_STORAGE_TABLE_NAME"))
+FULL_WEB_APP_URL = f"{WEB_APP_URL}:{WEB_APP_PORT}/products-page/?bot_id=[bot_id]"
 
 PREV_ORDER_MSGS = JsonStore(
     file_path="prev_orders_msg_id.json", json_store_name="PREV_ORDER_MSGS")
 QUESTION_MESSAGES = JsonStore(
-    file_path=config.RESOURCES_PATH.format("question_messages.json"),
+    file_path=RESOURCES_PATH.format("question_messages.json"),
     json_store_name="QUESTION_MESSAGES"
 )
 
-scheduler = Scheduler(getenv("SCHEDULER_URL"), "postgres", getenv("TIMEZONE"))
+scheduler = Scheduler(SCHEDULER_URL, "postgres", TIMEZONE)
 
 
 class CustomUserStates(StatesGroup):
@@ -204,7 +171,7 @@ def is_bot_token(value: str) -> Union[bool, Dict[str, Any]]:
 async def main():
     from custom_bots.handlers import multi_bot_router, multi_bot_channel_router
 
-    multibot_dispatcher = Dispatcher(storage=storage)
+    multibot_dispatcher = Dispatcher(storage=custom_bot_storage)
 
     multibot_dispatcher.include_router(multi_bot_channel_router)
     multibot_dispatcher.include_router(multi_bot_router)
@@ -224,19 +191,18 @@ async def main():
     loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)
 
-    ssl_context = ssl.create_default_context(ssl.Purpose.CLIENT_AUTH)
-    ssl_context.load_cert_chain(
-        getenv('SSL_CERT_PATH'), getenv('SSL_KEY_PATH'))
+    ssl_context = ssl.create_default_context(ssl.Purpose.CLIENT_AUTH)  # noqa
+    ssl_context.load_cert_chain(SSL_CERT_PATH, SSL_KEY_PATH)
 
     custom_bot_logger.debug("[2/3] SSL certificates are downloaded")
 
-    await storage.connect()
+    await custom_bot_storage.connect()
 
     custom_bot_logger.debug(
         f"[3/3] Setting up local api server on {LOCAL_API_SERVER_HOST}:{LOCAL_API_SERVER_PORT}")
     custom_bot_logger.info(
-        f"[3/3] Setting up webhook server on {WEBHOOK_SERVER_HOST}:{WEBHOOK_SERVER_PORT_TO_REDIRECT} "
-        f"<- {WEBHOOK_SERVER_PORT}")
+        f"[3/3] Setting up webhook server on {WEBHOOK_HOST}:{WEBHOOK_SERVER_PORT_TO_REDIRECT} "
+        f"<- {WEBHOOK_PORT}")
 
     await scheduler.start()
 
@@ -250,13 +216,13 @@ async def main():
         ),
         web._run_app(  # noqa
             app,
-            host=WEBHOOK_SERVER_HOST,
+            host=WEBHOOK_HOST,
             port=WEBHOOK_SERVER_PORT_TO_REDIRECT,
             ssl_context=ssl_context,
             access_log=custom_bot_logger,
             print=custom_bot_logger.debug
         ),
-        send_start_message_to_admins(Bot(MAIN_TELEGRAM_TOKEN), config.TECH_ADMINS, "Custom bots started!")
+        send_start_message_to_admins(Bot(TELEGRAM_TOKEN), TECH_ADMINS, "Custom bots started!")
     )
 
 

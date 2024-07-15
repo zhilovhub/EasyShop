@@ -3,14 +3,15 @@ from aiogram.enums import ParseMode
 from aiogram.types import CallbackQuery
 from aiogram.fsm.context import FSMContext
 
-from bot.enums.post_message_type import PostMessageType
+from bot.utils import MessageTexts
 from bot.keyboards.post_message_keyboards import InlinePostMessageMenuKeyboard, UnknownPostMessageType, \
     InlinePostMessageExtraSettingsKeyboard, InlinePostMessageStartConfirmKeyboard, \
     InlinePostMessageAcceptDeletingKeyboard
-from bot.main import bot_db
 from bot.post_message.post_message_utils import get_post_message
-from bot.utils import MessageTexts
-from database.models.post_message_model import PostMessageNotFound
+
+from database.config import bot_db
+from database.models.post_message_model import PostMessageNotFound, PostMessageType
+
 from logs.config import logger, extra_params
 
 

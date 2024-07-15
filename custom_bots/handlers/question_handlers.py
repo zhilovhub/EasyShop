@@ -4,12 +4,12 @@ from aiogram.types import Message, CallbackQuery
 from aiogram.exceptions import TelegramAPIError
 from aiogram.fsm.context import FSMContext
 
-from bot.keyboards.question_keyboards import InlineOrderQuestionKeyboard, ReplyBackQuestionMenuKeyboard
-from bot.keyboards.custom_bot_menu_keyboards import ReplyCustomBotMenuKeyboard
-
-from custom_bots.multibot import order_db, bot_db, main_bot, CustomUserStates, QUESTION_MESSAGES
+from custom_bots.multibot import main_bot, CustomUserStates, QUESTION_MESSAGES
 from custom_bots.handlers.routers import multi_bot_router
+from custom_bots.keyboards.question_keyboards import InlineOrderQuestionKeyboard, ReplyBackQuestionMenuKeyboard
+from custom_bots.keyboards.custom_bot_menu_keyboards import ReplyCustomBotMenuKeyboard
 
+from database.config import bot_db, order_db
 from database.models.order_model import OrderNotFound
 
 from logs.config import custom_bot_logger, extra_params
