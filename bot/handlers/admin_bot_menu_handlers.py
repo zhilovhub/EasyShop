@@ -35,7 +35,7 @@ from bot.post_message.post_message_create import post_message_create
 from custom_bots.multibot import storage as custom_bot_storage
 
 from database.models.bot_model import BotSchemaWithoutId
-from database.models.order_model import OrderSchema, OrderNotFound, OrderStatusValues
+from database.models.order_model import OrderSchema, OrderNotFound, OrderStatusValues, OrderItemExtraOption
 from database.models.mailing_model import MailingNotFound
 from database.models.product_model import ProductWithoutId, NotEnoughProductsInStockToReduce
 from database.models.product_review_model import ProductReviewNotFound
@@ -516,6 +516,10 @@ async def send_new_order_notify(order: OrderSchema, user_id: int):
     order_user_data = await bot.get_chat(order.from_user)
     # products = [(await product_db.get_product(product_id), product_item.amount, product_item.extra_options)
     #             for product_id, product_item in order.items.items()]
+    products = []
+    for product_id, order_item in order.items.items():
+        product = await product_db.get_product(product_id)
+        products.append((product, order_item.amount, order_item.used_extra_options))
 
     await bot.send_message(user_id, f"Так будет выглядеть у тебя уведомление о новом заказе 👇")
     await bot.send_message(
