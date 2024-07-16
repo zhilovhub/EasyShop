@@ -78,7 +78,7 @@ class Product(Base):
     price = Column(Integer, nullable=False)
     count = Column(BigInteger, nullable=False, default=0)
     picture = Column(ARRAY(String))
-    extra_options = Column(JSON)
+    extra_options = Column(JSON, default='[]')
 
 
 class ExtraOptionType(str, Enum):
@@ -106,7 +106,7 @@ class ProductWithoutId(BaseModel):
     price: int
     count: int
     picture: Optional[list[str] | None] = None
-    extra_options: Optional[list[ProductExtraOption] | None] = None
+    extra_options: Optional[list[ProductExtraOption]] = []
 
 
 class ProductSchema(ProductWithoutId):
