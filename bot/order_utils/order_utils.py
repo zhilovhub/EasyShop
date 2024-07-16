@@ -57,7 +57,7 @@ async def create_order(event: Message, order_type: OrderType) -> OrderSchema:
     zero_products = []
 
     for product_id, item in data['raw_items'].items():
-        product = await product_db.get_product(product_id)
+        product = await product_db.get_product(int(product_id))
         chosen_options = []
 
         if 'chosen_options' in item and item['chosen_options']:

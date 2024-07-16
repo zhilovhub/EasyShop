@@ -201,6 +201,7 @@ class ProductDao(Dao):
 
         raw_res = raw_res.fetchone()
         if not raw_res:
+            self.logger.debug(f"product with id {product_id} not found.")
             raise ProductNotFound
 
         res = ProductSchema.model_validate(raw_res)
