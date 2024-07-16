@@ -88,10 +88,10 @@
 </template>
 
 <script>
-import { Swiper, SwiperSlide } from '@SwiperVue';
+import { Swiper, SwiperSlide } from '@SwiperVue'
 import { Navigation } from '@Swiper'
 import { tg } from '@/main.js'
-import router from "@/router/router.js";
+import router from '@/router/router.js'
 
 export default {
   components: { SwiperSlide, Swiper },
@@ -167,17 +167,17 @@ export default {
       if (firstOption) {
         firstOption.classList.add('chosen');
       }
-      const firstKey = Object.keys(this.productObject.extra_options)[0];
-      const firstInnerKey = Object.keys(this.productObject.extra_options[firstKey])[0];
-      this.productObject.chosenOption = firstInnerKey
-      console.log(firstInnerKey);
+      if (this.productObject.extra_options) {
+        const firstKey = Object.keys(this.productObject.extra_options)[0];
+        this.productObject.chosenOption = Object.keys(this.productObject.extra_options[firstKey])[0];
+      }
     }
   },
   mounted() {
     tg.BackButton.show();  // показываем всегда самой первой строчкой
 
-    if (this.productObject.extra_options !== null) {
-        this.productObject.extra_options = this.productObject.extra_options.map(item => ({ ...item, isSelected: true }));
+    if (this.productObject.extra_options) {
+      this.productObject.extra_options = this.productObject.extra_options.map(item => ({ ...item, isSelected: true }));
     }
     console.log(this.productObject);
     this.$nextTick(this.setFirstOptionChosen);
