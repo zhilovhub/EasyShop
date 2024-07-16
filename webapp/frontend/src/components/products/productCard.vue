@@ -176,7 +176,9 @@ export default {
   mounted() {
     tg.BackButton.show();  // показываем всегда самой первой строчкой
 
-    this.productObject.extra_options = this.productObject.extra_options.map(item => ({ ...item, isSelected: true }));
+    if (this.productObject.extra_options !== null) {
+        this.productObject.extra_options = this.productObject.extra_options.map(item => ({ ...item, isSelected: true }));
+    }
     console.log(this.productObject);
     this.$nextTick(this.setFirstOptionChosen);
 
