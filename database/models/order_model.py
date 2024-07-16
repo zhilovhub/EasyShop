@@ -131,7 +131,8 @@ class OrderSchema(BaseModel):
             product_price = product_schema.price
             if extra_options:
                 for option in extra_options:
-                    product_price += option.price
+                    if option.price:
+                        product_price = option.price
             total_price += product_price * product_item[1]
 
         products_text = "\n".join(products_converted)
