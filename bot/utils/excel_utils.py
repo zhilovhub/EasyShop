@@ -186,7 +186,7 @@ async def send_products_info_xlsx(bot_id: int, products: list[ProductSchema]):
 
             # cleaning unexisted categories
             if unexisted_categories:
-                product.category = list(filter(lambda x: x.id not in unexisted_categories, product.category))
+                product.category = list(filter(lambda x: x not in unexisted_categories, product.category))
                 await product_db.update_product(product)
         else:
             categories_text = "Категория не задана"
