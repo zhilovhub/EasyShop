@@ -162,7 +162,7 @@ export default {
         option.classList.remove('chosen');
       });
       target.classList.add('chosen');
-      this.productObject.chosenOption.push({name: "test", selected_variant: target.innerText});
+      this.productObject.chosenOption.push({name: this.productObject.extra_options[0].variants[key], selected_variant: target.innerText});
       if (key && key > 0) {
         this.productObject.price = this.productObject.extra_options[0].variants_prices[key];
       }
