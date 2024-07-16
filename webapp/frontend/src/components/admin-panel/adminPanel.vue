@@ -1,6 +1,6 @@
 <template>
   <FilterComponent @close="closeFilterComponent" v-if="filterComponentIsActive"/>
-  <AddProduct :item-edit-data="this.editItemData" @close="closeAddProductComponent" @closeAndEdit="clearItemEditData" v-else-if="addProductComponentIsActive" />
+  <AddProduct :item-edit-data="this.editItemData" @close="closeAddProductComponent" v-else-if="addProductComponentIsActive" />
   <div v-else>
     <div class="wrapper">
       <Transition v-if="this.inputIsActive">
@@ -308,6 +308,8 @@ export default {
       this.updateItems();
 
       this.mainCircleIsActive = false;
+
+      this.editItemData = {};
     },
     toggleAddProduct() {
       this.addProductComponentIsActive = !this.addProductComponentIsActive;
@@ -364,9 +366,6 @@ export default {
       this.editItemData = item;
       this.addProductComponentIsActive = true;
     },
-    clearItemEditData() {
-      this.editItemData = {};
-    }
   }
 }
 </script>

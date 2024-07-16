@@ -127,17 +127,10 @@ export default {
       }, 100);
     },
     closingComponent() {
-      if (this.itemEditData && this.itemEditData.id) {
-        this.isMounted = false;
-        setTimeout(() => {
-          this.$emit("close");
-        }, 100);
-      } else {
-        this.isMounted = false;
-        setTimeout(() => {
-          this.$emit("closeAndEdit");
-        }, 100);
-      }
+      this.isMounted = false;
+      setTimeout(() => {
+        this.$emit("close");
+      }, 100);
     },
     handleFileUpload(event) {
       const files = event.target.files;
@@ -244,7 +237,7 @@ export default {
 <div class="wrapper" :style="{ opacity: isMounted ? 1 : 0 }">
   <div class="header">
     <span v-if="this.itemEditData && this.itemEditData.id">Изменение товара</span>
-    <span @click="addProduct" v-else>Добавление товара</span>
+    <span v-else>Добавление товара</span>
   </div>
   <div class="main">
     <div class="card">
