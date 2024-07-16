@@ -45,6 +45,19 @@ class GetProductsRequest(BaseModel):
     filters: list[ProductFilterWithoutBot] | None
 
 
+def _remove_empty_variants(product: ProductWithoutId | ProductSchema) -> ProductWithoutId | ProductSchema:
+    options = product.extra_options
+    formatted_options = []
+    if options:
+        for option in options:
+            option.variants = list(filter(lambda x: x, option.variants))
+            if option.variants_prices:
+                option.variants_prices = list(filter(lambda x: x, option.variants_prices))
+            formatted_options.append(option)
+        product.extra_options = formatted_options
+    return product
+
+
 @router.get("/get_filters/")
 async def get_filters_api():
     api_logger.debug(
@@ -172,15 +185,7 @@ async def add_product_api(
 ) -> int:
     await check_admin_authorization(new_product.bot_id, authorization_data)
     try:
-        options = new_product.extra_options
-        formatted_options = []
-        if options:
-            for option in options:
-                option.variants = list(filter(lambda x: x, option.variants))
-                if option.variants_prices:
-                    option.variants_prices = list(filter(lambda x: x, option.variants_prices))
-                formatted_options.append(option)
-        new_product.extra_options = formatted_options
+        new_product = _remove_empty_variants(new_product)
         product_id = await product_db.add_product(new_product)
 
     except IntegrityError as ex:
@@ -270,6 +275,7 @@ async def edit_product_api(
     await check_admin_authorization(product.bot_id, authorization_data)
 
     try:
+        product = _remove_empty_variants(product)
         await product_db.update_product(product)
     except Exception as e:
         api_logger.error(
