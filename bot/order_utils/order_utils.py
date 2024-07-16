@@ -44,8 +44,8 @@ async def create_order(event: Message, order_type: OrderType) -> OrderSchema:
 
     zero_products = []
 
-    for item_id, item in data['raw_items'].items():
-        product = await product_db.get_product(item_id)
+    for product_id, item in data['raw_items'].items():
+        product = await product_db.get_product(product_id)
         chosen_options = {}
         used_options = False
 
@@ -54,7 +54,11 @@ async def create_order(event: Message, order_type: OrderType) -> OrderSchema:
             option_title = list(product.extra_options.items())[0][0]
             chosen_options[option_title] = item['chosen_option']
 
-        items[item_id] = OrderItem(amount=item['amount'], used_extra_option=used_options, extra_options=chosen_options)
+        items[product_id] = OrderItem(
+            amount=item['amount'],
+            used_extra_option=used_options,
+            extra_options=chosen_options
+        )
 
         if bot_data.settings and "auto_reduce" in bot_data.settings and bot_data.settings["auto_reduce"]:
             if product.count < item['amount']:
