@@ -118,7 +118,7 @@ class ProductSchema(ProductWithoutId):
             for option in used_extra_options:
                 options_text += f"\n • <i>{option.name}</i> : <u>{option.selected_variant}</u>"
                 if option.price:
-                    option_price = self.price - option.price
+                    option_price = option.price - self.price
                     if option_price <= 0:
                         option_price_text = f"{option_price}"
                     else:
