@@ -38,7 +38,7 @@ export const Store = new Vuex.Store({
       let data = {
         'bot_id': Store.state.bot_id,
         'raw_items': Store.state.itemsAddToCartArray.reduce((cartItemsById, item) => {
-          cartItemsById[item.id] = {"amount": item.countInCart, "used_extra_options": item.used_extra_options, "chosen_option": item.chosenOption};
+          cartItemsById[item.id] = {"amount": item.countInCart, "chosen_options": item.chosenOption};
           return cartItemsById;
         },{}),
         'ordered_at': new Date().toISOString(),
