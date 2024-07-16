@@ -162,6 +162,9 @@ export default {
         option.classList.remove('chosen');
       });
       target.classList.add('chosen');
+      if (this.productObject.chosenOption === undefined) {
+        this.productObject.chosenOption = []
+      }
       this.productObject.chosenOption.push({name: this.productObject.extra_options[0].variants[key], selected_variant: target.innerText});
       if (key && key > 0) {
         this.productObject.price = this.productObject.extra_options[0].variants_prices[key];
