@@ -31,7 +31,7 @@ async def process_web_app_request(event: Message):
 
         await order_db.add_order(order)
 
-        products = [(await product_db.get_product(product_id), product_item.amount, product_item.extra_options)
+        products = [(await product_db.get_product(product_id), product_item.amount, product_item.used_extra_options)
                     for product_id, product_item in order.items.items()]
         username = "@" + order_user_data.username if order_user_data.username else order_user_data.full_name
         admin_id = (await bot_db.get_bot_by_token(event.bot.token)).created_by

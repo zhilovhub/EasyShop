@@ -132,7 +132,8 @@ async def handler_order_cancel_callback(query: CallbackQuery, state: FSMContext)
 
             await order_db.update_order(order)
 
-            products = [(await product_db.get_product(int(product_id)), product_item.amount, product_item.extra_options)
+            products = [(await product_db.get_product(int(product_id)), product_item.amount,
+                         product_item.used_extra_options)
                         for product_id, product_item in order.items.items()]
             await Bot(bot_token, parse_mode=ParseMode.HTML).edit_message_text(
                 order.convert_to_notification_text(products=products),
