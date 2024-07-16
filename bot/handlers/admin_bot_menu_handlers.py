@@ -40,20 +40,22 @@ from database.models.mailing_model import MailingNotFound
 from database.models.product_model import ProductWithoutId, NotEnoughProductsInStockToReduce
 from database.models.product_review_model import ProductReviewNotFound
 
-from logs.config import logger
+from logs.config import logger, extra_params
 
 
 @admin_bot_menu_router.message(F.web_app_data)
 async def process_web_app_request(event: Message):
     user_id = event.from_user.id
+    db_bot = await bot_db.get_bot_by_token(event.bot.token)
     try:
         order = await create_order(event, OrderType.MAIN_BOT_TEST_ORDER)
 
         logger.info(f"order with id #{order.id} created")
+    except NotEnoughProductsInStockToReduce as e:
+        logger.info("not enough items for order creation", extra_params(bot_id=db_bot.bot_id))
+        return await event.answer(
+            f":(\nК сожалению на складе недостаточно <b>{e.product.name}</b> для выполнения Вашего заказа.")
     except Exception as e:
-        if isinstance(e, NotEnoughProductsInStockToReduce):
-            await event.answer(
-                f":(\nК сожалению на складе недостаточно <b>{e.product.name}</b> для выполнения Вашего заказа.")
         logger.warning("error while creating order", exc_info=True)
         return await event.answer("Произошла ошибка при создании заказа, попробуйте еще раз.")
     try:
@@ -512,8 +514,8 @@ async def bot_menu_handler(message: Message, state: FSMContext):
 
 async def send_new_order_notify(order: OrderSchema, user_id: int):
     order_user_data = await bot.get_chat(order.from_user)
-    products = [(await product_db.get_product(product_id), product_item.amount, product_item.extra_options)
-                for product_id, product_item in order.items.items()]
+    # products = [(await product_db.get_product(product_id), product_item.amount, product_item.extra_options)
+    #             for product_id, product_item in order.items.items()]
 
     await bot.send_message(user_id, f"Так будет выглядеть у тебя уведомление о новом заказе 👇")
     await bot.send_message(

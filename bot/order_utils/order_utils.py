@@ -10,8 +10,8 @@ from bot.main import bot_db, product_db
 from bot.config import TELEGRAM_TOKEN
 from bot.order_utils.order_type import OrderType, UnknownOrderType
 
-from database.models.order_model import OrderSchema, OrderItem
 from database.models.product_model import NotEnoughProductsInStockToReduce
+from database.models.order_model import OrderSchema, OrderItem, OrderItemExtraOption
 
 from logs.config import logger, custom_bot_logger, extra_params
 
@@ -40,24 +40,34 @@ async def create_order(event: Message, order_type: OrderType) -> OrderSchema:
     data["payment_method"] = "Картой Онлайн"
     data["status"] = "backlog"
 
+    # raw items example
+    # {product_id:
+    #     {"amount": 1, "chosen_options":
+    #         [
+    #             {"name": "размер", "selected_variant": "42"},
+    #             {"name": "цвет", "selected_variant": "синий"}
+    #         ]
+    #      }
+    # , ...}
+
+    data = {'bot_id': '77', 'raw_items': {'262': {'amount': 1}, '273': {'amount': 3, 'chosen_options': [{"name": "размер", "selected_variant": "42"}, {"name": "цвет", "selected_variant": "синий"}]}}, 'ordered_at': '2024-07-16T10:38:42.329Z', 'town': 'Москва', 'address': '1534', 'comment': 'Мой коммент'}
+
     items: dict[int, OrderItem] = {}
 
     zero_products = []
 
     for product_id, item in data['raw_items'].items():
         product = await product_db.get_product(product_id)
-        chosen_options = {}
-        used_options = False
+        chosen_options = []
 
-        if 'chosen_option' in item and item['chosen_option']:
-            used_options = True
-            option_title = list(product.extra_options.items())[0][0]
-            chosen_options[option_title] = item['chosen_option']
+        if 'chosen_options' in item and item['chosen_options']:
+            for option in item['chosen_options']:
+                chosen_options.append(OrderItemExtraOption(name=option['name'],
+                                                           selected_variant=option['selected_variant']))
 
         items[product_id] = OrderItem(
             amount=item['amount'],
-            used_extra_option=used_options,
-            extra_options=chosen_options
+            used_extra_options=chosen_options
         )
 
         if bot_data.settings and "auto_reduce" in bot_data.settings and bot_data.settings["auto_reduce"]:

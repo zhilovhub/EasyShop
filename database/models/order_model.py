@@ -64,11 +64,16 @@ class Order(Base):
     comment = Column(String)
 
 
+class OrderItemExtraOption(BaseModel):
+    name: str
+    selected_variant: str
+    price: int = 0
+
+
 class OrderItem(BaseModel):
     # product_id: int
     amount: int
-    used_extra_option: bool = False
-    extra_options: dict = {}
+    used_extra_options: list[OrderItemExtraOption] = []
 
 
 class OrderSchema(BaseModel):
@@ -78,7 +83,10 @@ class OrderSchema(BaseModel):
     bot_id: int
     items: dict[int, OrderItem] = Field(
         default={
-            101: OrderItem(amount=5, used_extra_option=True, extra_options={"Размер": "42"})
+            101: OrderItem(amount=2, used_extra_options=[
+                OrderItemExtraOption(name="размер",
+                                     selected_variant="42",)
+            ])
         }
     )
     from_user: int
@@ -103,23 +111,28 @@ class OrderSchema(BaseModel):
             case _:
                 return "❓ Неизвестен"
 
-    def convert_to_notification_text(self, products: list[tuple[ProductSchema, int, dict | None]],
+    def convert_to_notification_text(self, products: list[tuple[ProductSchema, int, list[OrderItemExtraOption] | None]],
                                      username: str = '@username',
                                      is_admin: bool = False) -> str:
         """
-        :param list products:
+        :param list products: [(ProductSchema, amount, [OrderItemExtraOption(), ...]), ...]
         :param username:
         :param is_admin:
-        [ProductSchema, amount, {"extra_option1": "selected_variant", ... } | None]
         """
+
         products_converted = []
         total_price = 0
         for ind, product_item in enumerate(products, start=1):
+            product_schema, amount, extra_options = product_item
             products_converted.append(
                 f"{ind}. "
-                f"{product_item[0].convert_to_notification_text(product_item[1], used_extra_options=product_item[2])}"
+                f"{product_schema.convert_to_notification_text(count=amount, used_extra_options=extra_options)}"
             )
-            total_price += product_item[0].price * product_item[1]
+            product_price = product_schema.price
+            if extra_options:
+                for option in extra_options:
+                    product_price += option.price
+            total_price += product_price * product_item[1]
 
         products_text = "\n".join(products_converted)
 
