@@ -34,9 +34,9 @@
         </swiper-slide>
       </swiper>
     </div>
-      <div v-else-if="option.optionType === 'text-option'" class="block" style="height: auto">
+      <div  v-else-if="option.optionType === 'text-option'" class="block" style="height: auto">
         <div class="span-block">
-          <h1>{{option.name}}</h1>
+          <h1 style="margin-bottom: 10px">{{option.name}}</h1>
         </div>
         <div>
           <span>{{option.text}}</span>

@@ -49,11 +49,9 @@ export default {
       this.productArticle = this.itemEditData.article;
       this.productPrice = this.itemEditData.price;
       this.productCount = this.itemEditData.count;
-      this.options = this.itemEditData.extra_options;
-      this.chosenCategory = this.itemEditData.category;
+      this.options = this.itemEditData.extra_options || [];
       this.imagePreviews = this.itemEditData.picture;
       this.imageFiles = this.itemEditData.picture;
-      this.chooseCategory({}, this.itemEditData);
       tg.MainButton.show();
       tg.BackButton.show();
       tg.MainButton.text = "Изменить товар";
@@ -74,9 +72,9 @@ export default {
     }, 50);
 
     this.$nextTick(this.setFirstOptionChosen);
-
     this.$store.dispatch('getCategories').then(() => {
       this.categories = this.$store.state.categories;
+      this.chooseCategory(this.itemEditData.category);
     });
   },
   setup() {
@@ -124,7 +122,9 @@ export default {
         pictures: this.imageFiles,
         extra_options: this.options,
         id: this.itemEditData.id
-      })
+      }).then(() => {
+        this.$emit("closeAndEdit");
+      }, 100);
     },
     closingComponent() {
       if (this.itemEditData && this.itemEditData.id) {
@@ -226,13 +226,13 @@ export default {
         return error
       }
     },
-    chooseCategory(target, item) {
+    chooseCategory(item) {
       const allSizes = document.querySelectorAll('.category-main');
       allSizes.forEach(size => {
         size.classList.remove('chosenCategory');
       });
       this.categories.map(category => {
-        category.isSelected = category === item;
+        category.isSelected = category.id === item.id || category.id === item[0];
       });
       this.chosenCategory = item;
     },
@@ -244,7 +244,7 @@ export default {
 <div class="wrapper" :style="{ opacity: isMounted ? 1 : 0 }">
   <div class="header">
     <span v-if="this.itemEditData && this.itemEditData.id">Изменение товара</span>
-    <span v-else>Добавление товара</span>
+    <span @click="addProduct" v-else>Добавление товара</span>
   </div>
   <div class="main">
     <div class="card">
@@ -264,7 +264,7 @@ export default {
             <li
               v-for="category in categories"
               class="category-item"
-              @click="chooseCategory($event.target, category)"
+              @click="chooseCategory(category)"
             >
               <div class="category-main">
                 <span  :style="{ color: category.isSelected ? '#2085BE' : '' }">{{category.name}}</span>
@@ -378,7 +378,7 @@ export default {
       </div>
     </div>
   </div>
-  <div v-if="options && options.length>0" class="options">
+  <div v-if="options" class="options">
     <div style="margin: 10px 0; width: 100%" v-for="(option, index) in options">
       <span style="padding-left: 15px; font-weight: 550">Дополнительная опция №{{index+1}}</span>
       <input style="height: 35px" v-model="option.name" placeholder="Название опции">
