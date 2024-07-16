@@ -120,7 +120,7 @@ class ProductSchema(ProductWithoutId):
                 if option.price:
                     options_text += f" ({option.price}₽)"
                 options_text += '\n'
-            return f"<b>{self.name} {self.price}₽ {options_text}\nx {count}шт</b>"
+            return f"<b>{self.name} {self.price}₽ x {count}шт</b> {options_text}"
         return f"<b>{self.name} {self.price}₽ x {count}шт</b>"
 
 
