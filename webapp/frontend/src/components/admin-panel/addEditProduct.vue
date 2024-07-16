@@ -153,7 +153,7 @@ export default {
         this.options.push({
           name: '',
           type: this.permChosenOption,
-          text: '',
+          variants: [''],
         });
       } else {
         this.options.push({
@@ -237,7 +237,7 @@ export default {
 <div class="wrapper" :style="{ opacity: isMounted ? 1 : 0 }">
   <div class="header">
     <span v-if="this.itemEditData && this.itemEditData.id">Изменение товара</span>
-    <span v-else>Добавление товара</span>
+    <span @click="addProduct" v-else>Добавление товара</span>
   </div>
   <div class="main">
     <div class="card">
@@ -375,7 +375,7 @@ export default {
     <div style="margin: 10px 0; width: 100%" v-for="(option, index) in options">
       <span style="padding-left: 15px; font-weight: 550">Дополнительная опция №{{index+1}}</span>
       <input style="height: 35px" v-model="option.name" placeholder="Название опции">
-      <input v-if="option.type === 'text'" v-model="option.text" placeholder="Текст">
+      <input v-if="option.type === 'text'" v-model="option.variants[0]" placeholder="Текст">
       <div v-else-if="option.type === 'block'">
         <swiper
           :slidesPerView="4.5"
