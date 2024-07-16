@@ -8,7 +8,7 @@ from openpyxl.styles import PatternFill, Border, Side, Alignment, Font
 
 from io import BytesIO
 
-from bot.main import bot_db, contest_db, category_db
+from bot.main import bot_db, contest_db, category_db, product_db
 from bot.config import FILES_PATH
 from bot.exceptions.exceptions import BotNotFound
 
@@ -174,13 +174,20 @@ async def send_products_info_xlsx(bot_id: int, products: list[ProductSchema]):
 
     for product in products:
         categories = []
+        unexisted_categories = set()
         if product.category:
-            for cat in product.category:
-                if not cat:
+            for cat_id in product.category:
+                cat_obj = await category_db.get_category(cat_id)
+                if cat_obj is None:
+                    unexisted_categories.add(cat_id)
                     continue
-                cat_obj = await category_db.get_category(cat)
-                categories.append(cat_obj.name)
-            categories_text = "/".join(categories)
+                categories.append(cat_obj)
+            categories_text = "/".join(map(lambda x: x.name, categories))
+
+            # cleaning unexisted categories
+            if unexisted_categories:
+                product.category = list(filter(lambda x: x.id not in unexisted_categories, product.category))
+                await product_db.update_product(product)
         else:
             categories_text = "Категория не задана"
 

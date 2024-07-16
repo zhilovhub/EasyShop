@@ -60,8 +60,8 @@ class CategoryDao(Dao):  # TODO write tests
 
         return res
 
-    @validate_call(validate_return=True)
-    async def get_category(self, category_id: int) -> CategorySchema:
+    @validate_call
+    async def get_category(self, category_id: int) -> CategorySchema | None:
         async with self.engine.begin() as conn:
             raw_res = await conn.execute(
                 select(Category).where(Category.id == category_id)

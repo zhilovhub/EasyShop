@@ -4,6 +4,7 @@ from datetime import datetime
 
 from aiogram import Bot, Dispatcher
 from aiogram.enums import ParseMode
+from aiogram.exceptions import TelegramBadRequest
 from aiogram.types import BotCommand, BotCommandScopeChatAdministrators, BotCommandScopeAllPrivateChats
 from aiogram.client.bot import DefaultBotProperties
 
@@ -96,7 +97,17 @@ async def on_start():
         commands.append(BotCommand(command="clear", description="Снести себя"))
 
     await bot.set_my_commands(commands, scope=BotCommandScopeAllPrivateChats())
-    await bot.set_my_commands(admin_commands, scope=BotCommandScopeChatAdministrators(chat_id=config.ADMIN_GROUP_ID))
+
+    try:
+        await bot.set_my_commands(
+            admin_commands,
+            scope=BotCommandScopeChatAdministrators(chat_id=config.ADMIN_GROUP_ID)
+        )
+    except TelegramBadRequest as e:
+        logger.warning(
+            f"Error while setting command to chat_id = {config.ADMIN_GROUP_ID}",
+            exc_info=e
+        )
 
     await storage.connect()
     await db_engine.connect()
