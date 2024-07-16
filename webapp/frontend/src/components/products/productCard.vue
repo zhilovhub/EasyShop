@@ -28,7 +28,7 @@
           v-show="option.isSelected"
         >
           <swiper-slide
-            v-for="(value, key) in option.blocks"
+            v-for="(value, key) in option.variants"
             :key="key"
             :modules="modules"
             class="option-block"
@@ -38,7 +38,7 @@
         </swiper-slide>
       </swiper>
     </div>
-      <div @click="option.isSelected = !option.isSelected" v-else-if="option.type === 'text-option'" class="block" style="height: auto">
+      <div @click="option.isSelected = !option.isSelected" v-else-if="option.type === 'text'" class="block" style="height: auto">
         <div class="span-block">
           <h1 style="margin-bottom: 10px">{{option.name}}</h1>
           <svg style="cursor: pointer" width="19" height="9" viewBox="0 0 19 9" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
@@ -46,10 +46,10 @@
           </svg>
         </div>
         <div v-show="option.isSelected">
-          <span>{{option.text}}</span>
+          <span>{{option.variants[0]}}</span>
         </div>
       </div>
-      <div @click="option.isSelected = !option.isSelected" v-if="option.type === 'priced_block'" class="block extra-options" :style="{ height: option.isSelected ? 'auto' : '68.27px' }">
+      <div @click="option.isSelected = !option.isSelected" v-else-if="option.type === 'priced_block'" class="block extra-options" :style="{ height: option.isSelected ? 'auto' : '68.27px' }">
         <div class="span-block">
           <h1>{{option.name}}</h1>
           <svg style="cursor: pointer" width="19" height="9" viewBox="0 0 19 9" fill="currentColor" xmlns="http://www.w3.org/2000/svg">

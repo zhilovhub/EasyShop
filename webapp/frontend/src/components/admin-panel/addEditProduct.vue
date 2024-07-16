@@ -237,7 +237,7 @@ export default {
 <div class="wrapper" :style="{ opacity: isMounted ? 1 : 0 }">
   <div class="header">
     <span v-if="this.itemEditData && this.itemEditData.id">Изменение товара</span>
-    <span @click="addProduct" v-else>Добавление товара</span>
+    <span v-else>Добавление товара</span>
   </div>
   <div class="main">
     <div class="card">
