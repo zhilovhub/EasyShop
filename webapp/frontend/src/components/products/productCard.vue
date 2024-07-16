@@ -14,7 +14,7 @@
     <div class="text">{{productObject.name}}</div>
     <div class="text">{{priceRub(productObject.price)}}</div>
     <div v-for="(option, type) in productObject.extra_options">
-      <div @click="option.isSelected = !option.isSelected" v-if="option.type === 'block'" class="block extra-options" :style="{ height: option.isSelected ? '' : '68.27px' }">
+      <div @click="toggleOption(option)" v-if="option.type === 'block'" class="block extra-options" :style="{ height: option.isSelected ? '' : '68.27px' }">
         <div class="span-block">
           <h1>{{option.name}}</h1>
           <svg style="cursor: pointer" width="19" height="9" viewBox="0 0 19 9" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
@@ -33,12 +33,13 @@
             :modules="modules"
             class="option-block"
             @click="chooseOption($event.target)"
+            @click.stop
           >
           {{ value }}
         </swiper-slide>
       </swiper>
     </div>
-      <div @click="option.isSelected = !option.isSelected" v-else-if="option.type === 'text'" class="block" style="height: auto">
+      <div @click="toggleOption(option)" v-else-if="option.type === 'text'" class="block" style="height: auto">
         <div class="span-block">
           <h1 style="margin-bottom: 10px">{{option.name}}</h1>
           <svg style="cursor: pointer" width="19" height="9" viewBox="0 0 19 9" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
@@ -49,7 +50,7 @@
           <span>{{option.variants[0]}}</span>
         </div>
       </div>
-      <div @click="option.isSelected = !option.isSelected" v-else-if="option.type === 'priced_block'" class="block extra-options" :style="{ height: option.isSelected ? 'auto' : '68.27px' }">
+      <div @click="toggleOption(option)" v-else-if="option.type === 'priced_block'" class="block extra-options" :style="{ height: option.isSelected ? 'auto' : '68.27px' }">
         <div class="span-block">
           <h1>{{option.name}}</h1>
           <svg style="cursor: pointer" width="19" height="9" viewBox="0 0 19 9" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
@@ -68,6 +69,7 @@
             :modules="modules"
             class="option-block"
             @click="chooseOption($event.target, key)"
+            @click.stop
             style="background-color: var(--app-card-background-color); height: 120px"
           >
             <div style="display: flex; flex-direction: column">
@@ -162,7 +164,7 @@ export default {
       target.classList.add('chosen');
       this.productObject.chosenOption = target.innerText;
       if (key && key > 0) {
-        this.productObject.price = this.productObject.extra_options.variants_prices[key];
+        this.productObject.price = this.productObject.extra_options[0].variants_prices[key];
       }
     },
     toggleDescription() {
@@ -197,7 +199,6 @@ export default {
     backButtonMethod() {
       router.router.back();
     },
-
     setFirstOptionChosen() {
       let firstOption = document.querySelector('.option-block');
       if (firstOption) {
@@ -207,6 +208,9 @@ export default {
         const firstKey = Object.keys(this.productObject.extra_options)[0];
         const firstInnerKey = Object.keys(this.productObject.extra_options[firstKey])[0];
       }
+    },
+    toggleOption(option) {
+      option.isSelected = !option.isSelected;
     }
   },
   mounted() {
