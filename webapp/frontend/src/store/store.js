@@ -38,6 +38,7 @@ export const Store = new Vuex.Store({
       let data = {
         'bot_id': Store.state.bot_id,
         'raw_items': Store.state.itemsAddToCartArray.reduce((cartItemsById, item) => {
+          console.log("chosenOption", item.chosenOption)
           cartItemsById[item.id] = {"amount": item.countInCart, "chosen_options": item.chosenOption};
           return cartItemsById;
         },{}),
