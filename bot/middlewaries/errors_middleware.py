@@ -35,8 +35,8 @@ class ErrorMiddleware(BaseMiddleware):
             await asyncio.sleep(ex.retry_after + 1000)
             return await handler(event, data)
         except TelegramAPIError as ex:
-            logger.error("Telegram API error while handling event", exc_info=True)
+            logger.error("Telegram API error while handling event", exc_info=ex)
             await notify_about_error(event, str(ex))
         except Exception as ex:
-            logger.error("Error while handling event", exc_info=True)
+            logger.error("Error while handling event", exc_info=ex)
             await notify_about_error(event, str(ex))

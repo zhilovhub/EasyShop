@@ -27,10 +27,11 @@ async def get_all_categories_api(bot_id: int) -> list[CategorySchema]:
             f"bot_id={bot_id}: has {len(categories)} categories: {categories}",
             extra=extra_params(bot_id=bot_id)
         )
-    except Exception:
+    except Exception as e:
         api_logger.error(
             "Error while execute get_all_categories db_method",
-            extra=extra_params(bot_id=bot_id)
+            extra=extra_params(bot_id=bot_id),
+            exc_info=e
         )
         raise HTTPException(status_code=500, detail="Internal error.")
     return categories
@@ -47,10 +48,11 @@ async def add_category_api(new_category: CategorySchemaWithoutId, authorization_
         )
     except SameCategoryNameAlreadyExists:
         raise HTTPException(status_code=409, detail="category with provided name already exists.")
-    except Exception:
+    except Exception as e:
         api_logger.error(
             "Error while execute add_category db_method",
-            extra=extra_params(bot_id=new_category.bot_id)
+            extra=extra_params(bot_id=new_category.bot_id),
+            exc_info=e
         )
         raise HTTPException(status_code=500, detail="Internal error.")
     return cat_id
@@ -65,10 +67,11 @@ async def edit_category_api(category: CategorySchema, authorization_data: str = 
             f"bot_id={category.bot_id}: updated category {category}",
             extra=extra_params(bot_id=category.bot_id, category_id=category.id)
         )
-    except Exception:
+    except Exception as e:
         api_logger.error(
             "Error while execute update_category db_method",
-            extra=extra_params(bot_id=category.bot_id, category_id=category.id)
+            extra=extra_params(bot_id=category.bot_id, category_id=category.id),
+            exc_info=e
         )
         raise HTTPException(status_code=500, detail="Internal error.")
     return True

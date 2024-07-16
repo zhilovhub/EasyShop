@@ -1,6 +1,6 @@
 <template>
   <FilterComponent @close="closeFilterComponent" v-if="filterComponentIsActive"/>
-  <AddProduct :item-edit-data="this.editItemData" @close="closeAddProductComponent" @closeAndEdit="clearItemEditData" v-else-if="addProductComponentIsActive" />
+  <AddProduct :item-edit-data="this.editItemData" @close="closeAddProductComponent" v-else-if="addProductComponentIsActive" />
   <div v-else>
     <div class="wrapper">
       <Transition v-if="this.inputIsActive">
@@ -97,7 +97,7 @@
                 </div>
             </Transition>
             <Transition>
-          <div @click="editItem(item)" class="block-footer" v-show="item.isActive">
+          <div @click="editItem($event.target, item)" class="block-footer" v-show="item.isActive">
             <hr>
             <div>
               <span>Категория <br>товара</span>
@@ -109,7 +109,7 @@
               <span>{{item.price}}₽</span>
             </div>
             <hr>
-            <div style="justify-content: space-between">
+            <div @click.stop="editItemData($event.target, item)" style="justify-content: space-between">
               <span style="width: 200px">Регулировка <br> количества товаров</span>
               <div class="buttons">
                 <div style="height: 35px; justify-content: space-between" class="countDivBtn">
@@ -163,7 +163,7 @@ import FilterComponent from '@/components/products/filterComponent.vue'
 import { mapState } from 'vuex'
 import { tg } from '@/main.js'
 import router from '@/router/router.js'
-import AddProduct from '@/components/admin-panel/addProduct.vue'
+import AddProduct from '@/components/admin-panel/addEditProduct.vue'
 
 export default {
   data() {
@@ -308,6 +308,8 @@ export default {
       this.updateItems();
 
       this.mainCircleIsActive = false;
+
+      this.editItemData = {};
     },
     toggleAddProduct() {
       this.addProductComponentIsActive = !this.addProductComponentIsActive;
@@ -360,13 +362,10 @@ export default {
         count >= 5 && count < 15 ? 'count-yellow' :
           'count-green';
     },
-    editItem(item) {
+    editItem(target, item) {
       this.editItemData = item;
       this.addProductComponentIsActive = true;
     },
-    clearItemEditData() {
-      this.editItemData = {};
-    }
   }
 }
 </script>

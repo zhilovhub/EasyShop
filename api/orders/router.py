@@ -50,13 +50,15 @@ async def get_all_orders_api(bot_id: int, authorization_data: str = Header()) ->
     except ValidationError as ex:
         api_logger.error(
             f"bot_id={bot_id}: validation error",
-            extra=extra_params(bot_id=bot_id)
+            extra=extra_params(bot_id=bot_id),
+            exc_info=ex
         )
         raise HTTPException(status_code=400, detail=f"Incorrect input data.\n{str(ex)}")
-    except Exception:
+    except Exception as e:
         api_logger.error(
             f"bot_id={bot_id}: Error while execute get_all_orders db_method",
-            extra=extra_params(bot_id=bot_id)
+            extra=extra_params(bot_id=bot_id),
+            exc_info=e
         )
         raise HTTPException(status_code=500, detail="Internal error.")
 
@@ -66,21 +68,6 @@ async def get_all_orders_api(bot_id: int, authorization_data: str = Header()) ->
     )
 
     return orders
-
-#
-# @router.get("/get_order/{bot_id}/{order_id}")
-# async def get_order_api(bot_id: int, order_id: str, authorization_hash: str = Header()) -> OrderSchema:
-#     await check_admin_authorization(bot_id, authorization_hash)
-#     try:
-#         order = await db.get_order(order_id)
-#     except OrderNotFound:
-#         raise HTTPException(status_code=404, detail="Product not found.")
-#     except ValidationError as ex:
-#         raise HTTPException(status_code=400, detail=f"Incorrect input data.\n{str(ex)}")
-#     except Exception:
-#         logger.error("Error while execute get_order db_method", exc_info=True)
-#         raise HTTPException(status_code=500, detail="Internal error.")
-#     return order
 
 
 @router.post("/add_order")
@@ -94,42 +81,12 @@ async def add_order_api(new_order: OrderSchema = Depends(), authorization_data: 
             f"bot_id={new_order.bot_id}: order {new_order} has been added",
             extra=extra_params(bot_id=new_order.bot_id, order_id=new_order.id)
         )
-    # except ValidationError as ex:
-    #     logger.warning("incorrect data in request", exc_info=True)
-    #     raise HTTPException(status_code=400, detail=f"Incorrect input data.\n{str(ex)}")
-    except Exception:
+    except Exception as e:
         api_logger.error(
             f"Error while execute add_order db_method with {new_order}",
-            extra=extra_params(bot_id=new_order.bot_id, order_id=new_order.id)
+            extra=extra_params(bot_id=new_order.bot_id, order_id=new_order.id),
+            exc_info=e
         )
         raise HTTPException(status_code=500, detail="Internal error.")
 
     return "success"
-#
-#
-# @router.post("/update_order")
-# async def update_order_api(updated_order: OrderWithoutId) -> str:
-#     try:
-#         order = await db.update_order(updated_order)
-#     except OrderNotFound:
-#         raise HTTPException(status_code=404, detail="Product not found.")
-#     except ValidationError as ex:
-#         raise HTTPException(status_code=400, detail="Incorrect input data.\n{str(ex)}")
-#     except Exception:
-#         logger.error("Error while execute add_order db_method", exc_info=True)
-#         raise HTTPException(status_code=500, detail="Internal error.")
-#     return "updated"
-#
-#
-# @router.delete("/delete_order/{token}/{order_id}")
-# async def delete_order_api(token: str, order_id: str) -> str:
-#     try:
-#         await db.delete_order(order_id)
-#     except OrderNotFound:
-#         raise HTTPException(status_code=404, detail="Product not found.")
-#     except ValidationError:
-#         raise HTTPException(status_code=400, detail="Incorrect input data.")
-#     except Exception:
-#         logger.error("Error while execute add_order db_method", exc_info=True)
-#         raise HTTPException(status_code=500, detail="Internal error.")
-#     return "deleted"

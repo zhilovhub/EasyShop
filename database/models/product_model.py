@@ -16,6 +16,8 @@ from database.models.bot_model import Bot
 
 from logs.config import extra_params
 
+from enum import Enum
+
 
 class ProductNotFound(Exception):
     """Raised when provided product not found in database"""
@@ -76,7 +78,20 @@ class Product(Base):
     price = Column(Integer, nullable=False)
     count = Column(BigInteger, nullable=False, default=0)
     picture = Column(ARRAY(String))
-    extra_options = Column(JSON, default="{}")
+    extra_options = Column(JSON, default='[]')
+
+
+class ExtraOptionType(str, Enum):
+    TEXT = 'text'
+    BLOCK = 'block'
+    PRICED_BLOCK = "priced_block"
+
+
+class ProductExtraOption(BaseModel):
+    name: str
+    type: ExtraOptionType
+    variants: list[str]
+    variants_prices: Optional[list[int]] = None
 
 
 class ProductWithoutId(BaseModel):
@@ -91,18 +106,27 @@ class ProductWithoutId(BaseModel):
     price: int
     count: int
     picture: Optional[list[str] | None] = None
-    extra_options: Optional[dict | None] = {}
+    extra_options: Optional[list[ProductExtraOption]] = []
 
 
 class ProductSchema(ProductWithoutId):
     id: int
 
-    def convert_to_notification_text(self, count: int, used_extra_options: dict) -> str:
-        text = f"<b>{self.name} {self.price}₽ x {count}шт</b>"
+    def convert_to_notification_text(self, count: int, used_extra_options: list = None) -> str:
         if used_extra_options:
-            options = "\n".join([f"{title} : {opt}" for title, opt in used_extra_options.items()])
-            text += f"\n<i>{options}</i>"
-        return text
+            options_text = ""
+            for option in used_extra_options:
+                options_text += f"\n • <i>{option.name}</i> : <u>{option.selected_variant}</u>"
+                if option.price:
+                    option_price = option.price - self.price
+                    if option_price <= 0:
+                        option_price_text = f"{option_price}"
+                    else:
+                        option_price_text = f"+{option_price}"
+                    options_text += f" ({option_price_text}₽)"
+                options_text += '\n'
+            return f"<b>{self.name} {self.price}₽ x {count}шт</b> {options_text}"
+        return f"<b>{self.name} {self.price}₽ x {count}шт</b>"
 
 
 class NotEnoughProductsInStockToReduce(Exception):
@@ -182,6 +206,7 @@ class ProductDao(Dao):
 
         raw_res = raw_res.fetchone()
         if not raw_res:
+            self.logger.debug(f"product with id {product_id} not found.")
             raise ProductNotFound
 
         res = ProductSchema.model_validate(raw_res)

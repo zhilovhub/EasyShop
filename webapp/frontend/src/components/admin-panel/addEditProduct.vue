@@ -49,11 +49,9 @@ export default {
       this.productArticle = this.itemEditData.article;
       this.productPrice = this.itemEditData.price;
       this.productCount = this.itemEditData.count;
-      this.options = this.itemEditData.extra_options;
-      this.chosenCategory = this.itemEditData.category;
+      this.options = this.itemEditData.extra_options || [];
       this.imagePreviews = this.itemEditData.picture;
       this.imageFiles = this.itemEditData.picture;
-      this.chooseCategory({}, this.itemEditData);
       tg.MainButton.show();
       tg.BackButton.show();
       tg.MainButton.text = "Изменить товар";
@@ -74,9 +72,9 @@ export default {
     }, 50);
 
     this.$nextTick(this.setFirstOptionChosen);
-
     this.$store.dispatch('getCategories').then(() => {
       this.categories = this.$store.state.categories;
+      this.chooseCategory(this.itemEditData.category);
     });
   },
   setup() {
@@ -124,20 +122,15 @@ export default {
         pictures: this.imageFiles,
         extra_options: this.options,
         id: this.itemEditData.id
-      })
+      }).then(() => {
+        this.$emit("closeAndEdit");
+      }, 100);
     },
     closingComponent() {
-      if (this.itemEditData && this.itemEditData.id) {
-        this.isMounted = false;
-        setTimeout(() => {
-          this.$emit("close");
-        }, 100);
-      } else {
-        this.isMounted = false;
-        setTimeout(() => {
-          this.$emit("closeAndEdit");
-        }, 100);
-      }
+      this.isMounted = false;
+      setTimeout(() => {
+        this.$emit("close");
+      }, 100);
     },
     handleFileUpload(event) {
       const files = event.target.files;
@@ -150,24 +143,24 @@ export default {
       }
     },
     addOption() {
-      if (this.permChosenOption === 'block-option' && this.options) {
+      if (this.permChosenOption === 'block' && this.options) {
         this.options.push({
           name: '',
-          blocks: {
-            block1: '',
-            block2: '',
-            block3: '',
-            block4: '',
-            block5: '',
-            block6: '',
-          },
-          optionType: this.permChosenOption
+          type: this.permChosenOption,
+          variants: ['', '', '', '', '', ''],
         })
+      } else if (this.permChosenOption === 'text' && this.options) {
+        this.options.push({
+          name: '',
+          type: this.permChosenOption,
+          variants: [''],
+        });
       } else {
         this.options.push({
           name: '',
-          text: '',
-          optionType: this.permChosenOption
+          type: this.permChosenOption,
+          variants: ['', '', '', '', '', ''],
+          variants_prices: [0, 0, 0, 0, 0, 0]
         });
       }
       this.modelWindowOptionIsActive = false;
@@ -226,13 +219,13 @@ export default {
         return error
       }
     },
-    chooseCategory(target, item) {
+    chooseCategory(item) {
       const allSizes = document.querySelectorAll('.category-main');
       allSizes.forEach(size => {
         size.classList.remove('chosenCategory');
       });
       this.categories.map(category => {
-        category.isSelected = category === item;
+        category.isSelected = category.id === item.id || category.id === item[0];
       });
       this.chosenCategory = item;
     },
@@ -264,7 +257,7 @@ export default {
             <li
               v-for="category in categories"
               class="category-item"
-              @click="chooseCategory($event.target, category)"
+              @click="chooseCategory(category)"
             >
               <div class="category-main">
                 <span  :style="{ color: category.isSelected ? '#2085BE' : '' }">{{category.name}}</span>
@@ -378,18 +371,32 @@ export default {
       </div>
     </div>
   </div>
-  <div v-if="options && options.length>0" class="options">
+  <div v-if="options" class="options">
     <div style="margin: 10px 0; width: 100%" v-for="(option, index) in options">
       <span style="padding-left: 15px; font-weight: 550">Дополнительная опция №{{index+1}}</span>
       <input style="height: 35px" v-model="option.name" placeholder="Название опции">
-      <input v-if="option.optionType === 'text-option'" v-model="option.text" placeholder="Текст">
-      <div v-else-if="option.optionType === 'block-option'">
+      <input v-if="option.type === 'text'" v-model="option.variants[0]" placeholder="Текст">
+      <div v-else-if="option.type === 'block'">
         <swiper
           :slidesPerView="4.5"
           :spaceBetween="10"
           :modules="modules"
         >
-          <swiper-slide v-for="(block, index) in option.blocks"><input  v-model="option.blocks[index]" placeholder="Текст"></swiper-slide>
+          <swiper-slide v-for="(block, index) in option.variants"><input v-model="option.variants[index]" placeholder="Текст"></swiper-slide>
+        </swiper>
+      </div>
+      <div v-else-if="option.type === 'priced_block'">
+        <swiper
+          :slidesPerView="4.5"
+          :spaceBetween="10"
+          :modules="modules"
+        >
+          <swiper-slide style="height: 110px; background-color: var(--app-background-color)" v-for="(block, index) in option.variants">
+            <div style="display: flex; flex-direction: column">
+              <input style="height: 72px" v-model="option.variants[index]" placeholder="Текст">
+              <input style="height: 25px" v-model="option.variants_prices[index]" type="number" min="0">
+            </div>
+          </swiper-slide>
         </swiper>
       </div>
     </div>
@@ -423,13 +430,18 @@ export default {
         <div class="warning-span">Выберите вид дополнительной опции</div>
         <div style="color: #878787; padding-left: 15px; padding-bottom: 5px; margin-top: 15px">Текстовая</div>
         <div class="option-block" @click="chooseOption($event.target)">
-          <img v-if="tg.colorScheme === 'light'" id="text-option" src="@/assets/admin-panel/text-option.png" alt="text-option">
-          <img v-else id="text-option" src="@/assets/admin-panel/dark-text-option.png" alt="text-option">
+          <img v-if="tg.colorScheme === 'light'" id="text" src="@/assets/admin-panel/text-option.png" alt="text-option">
+          <img v-else id="text" src="@/assets/admin-panel/dark-text-option.png" alt="text-option">
         </div>
         <div style="color: #878787; padding-left: 15px; padding-bottom: 5px; margin-top: 15px">Блочная</div>
         <div class="option-block" @click="chooseOption($event.target)">
-          <img v-if="tg.colorScheme === 'light'" id="block-option" src="@/assets/admin-panel/block-option.png" alt="block-option">
-          <img v-else id="block-option" src="@/assets/admin-panel/dark-block-option.png" alt="block-option">
+          <img v-if="tg.colorScheme === 'light'" id="block" src="@/assets/admin-panel/block-option.png" alt="block-option">
+          <img v-else id="block" src="@/assets/admin-panel/dark-block-option.png" alt="block-option">
+        </div>
+        <div style="color: #878787; padding-left: 15px; padding-bottom: 5px; margin-top: 15px">Размеры (с зависимыми ценами)</div>
+        <div class="option-block" @click="chooseOption($event.target)">
+          <img v-if="tg.colorScheme === 'light'" id="priced_block" src="@/assets/admin-panel/size-with-price-block.png" alt="priced_block">
+          <img v-else id="priced_block" src="@/assets/admin-panel/dark-size-with-price-block.png" alt="priced_block">
         </div>
         <div style="display: flex; justify-content: center; margin-top: 15px">
           <button @click="addOption">Выбрать</button>

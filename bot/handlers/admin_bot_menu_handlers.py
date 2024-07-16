@@ -1,6 +1,4 @@
-import json
 import os
-import random
 import string
 from random import sample
 from aiohttp import ClientConnectorError
@@ -23,6 +21,8 @@ from bot.exceptions import InstanceAlreadyExists
 from bot.states.states import States
 from bot.handlers.routers import admin_bot_menu_router
 from bot.utils.custom_bot_api import start_custom_bot, stop_custom_bot
+from bot.order_utils.order_type import OrderType
+from bot.order_utils.order_utils import create_order
 from bot.enums.post_message_type import PostMessageType
 from bot.keyboards.channel_keyboards import InlineChannelsListKeyboard
 from bot.keyboards.main_menu_keyboards import ReplyBotMenuKeyboard, InlineBotMenuKeyboard, ReplyBackBotMenuKeyboard
@@ -35,74 +35,26 @@ from bot.post_message.post_message_create import post_message_create
 from custom_bots.multibot import storage as custom_bot_storage
 
 from database.models.bot_model import BotSchemaWithoutId
-from database.models.order_model import OrderSchema, OrderNotFound, OrderItem, OrderStatusValues
+from database.models.order_model import OrderSchema, OrderNotFound, OrderStatusValues, OrderItemExtraOption
 from database.models.mailing_model import MailingNotFound
 from database.models.product_model import ProductWithoutId, NotEnoughProductsInStockToReduce
 from database.models.product_review_model import ProductReviewNotFound
 
-from logs.config import logger
+from logs.config import logger, extra_params
 
 
 @admin_bot_menu_router.message(F.web_app_data)
 async def process_web_app_request(event: Message):
     user_id = event.from_user.id
     try:
-        # {'bot_id': '33',
-        # 'raw_items':
-        #   {'38': {'amount': 4, 'chosen_option': 'на диске'}},
-        # 'ordered_at': '2024-05-20T      15:02:42.353Z',
-        # 'town': 'sd\nsdsd\n\nsd\n\n',
-        # 'address': 'sd', 'comment': ''}
-
-        data = json.loads(event.web_app_data.data)
-        logger.info(f"receive web app data: {data}")
-
-        bot_id = data["bot_id"]
-        bot_data = await bot_db.get_bot(int(bot_id))
-
-        data["from_user"] = user_id
-        data["payment_method"] = "Картой Онлайн"
-        data["status"] = "backlog"
-
-        items: dict[int, OrderItem] = {}
-
-        zero_products = []
-
-        for item_id, item in data['raw_items'].items():
-            product = await product_db.get_product(item_id)
-            chosen_options = {}
-            used_options = False
-            if 'chosen_option' in item and item['chosen_option']:
-                used_options = True
-                option_title = list(product.extra_options.items())[0][0]
-                chosen_options[option_title] = item['chosen_option']
-            items[item_id] = OrderItem(amount=item['amount'], used_extra_option=used_options,
-                                       extra_options=chosen_options)
-            if bot_data.settings and "auto_reduce" in bot_data.settings and bot_data.settings["auto_reduce"]:
-                if product.count < item['amount']:
-                    raise NotEnoughProductsInStockToReduce(product, item['amount'])
-                product.count -= item['amount']
-                if product.count == 0:
-                    zero_products.append(product)
-                await product_db.update_product(product)
-
-        if zero_products:
-            msg = await event.answer("⚠️ Внимание, после этого заказа кол-во следующих товаров будет равно 0.")
-            await msg.reply("\n".join([f"{p.name} [{p.id}]" for p in zero_products]))
-
-        data['items'] = items
-
-        date = datetime.now().strftime("%d%m%y")
-        random_string = ''.join(random.sample(string.digits + string.ascii_letters, 5))
-        data['order_id'] = date + random_string
-
-        order = OrderSchema(**data)
+        order = await create_order(event, OrderType.MAIN_BOT_TEST_ORDER)
 
         logger.info(f"order with id #{order.id} created")
+    except NotEnoughProductsInStockToReduce as e:
+        logger.info("not enough items for order creation")
+        return await event.answer(
+            f":(\nК сожалению на складе недостаточно <b>{e.product.name}</b> для выполнения Вашего заказа.")
     except Exception as e:
-        if isinstance(e, NotEnoughProductsInStockToReduce):
-            await event.answer(
-                f":(\nК сожалению на складе недостаточно <b>{e.product.name}</b> для выполнения Вашего заказа.")
         logger.warning("error while creating order", exc_info=True)
         return await event.answer("Произошла ошибка при создании заказа, попробуйте еще раз.")
     try:
@@ -180,7 +132,8 @@ async def handler_order_cancel_callback(query: CallbackQuery, state: FSMContext)
 
             await order_db.update_order(order)
 
-            products = [(await product_db.get_product(int(product_id)), product_item.amount, product_item.extra_options)
+            products = [(await product_db.get_product(int(product_id)), product_item.amount,
+                         product_item.used_extra_options)
                         for product_id, product_item in order.items.items()]
             await Bot(bot_token, parse_mode=ParseMode.HTML).edit_message_text(
                 order.convert_to_notification_text(products=products),
@@ -271,7 +224,7 @@ async def handle_callback(query: CallbackQuery, state: FSMContext):
 
             await order_db.update_order(order)
 
-            products = [(await product_db.get_product(int(product_id)), product_item.amount, product_item.extra_options)
+            products = [(await product_db.get_product(int(product_id)), product_item.amount, product_item.used_extra_options)
                         for product_id, product_item in order.items.items()]
             await Bot(bot_token, default=DefaultBotProperties(
                 parse_mode=ParseMode.HTML)).edit_message_text(
@@ -413,8 +366,8 @@ async def bot_menu_photo_handler(message: Message, state: FSMContext):
                                    count=0,
                                    picture=[filename],
                                    article=params[0],
-                                   category=[0],
-                                   extra_options={})
+                                   category=[0]
+                                   )
     try:
         await product_db.add_product(new_product)
     except IntegrityError:
@@ -561,8 +514,12 @@ async def bot_menu_handler(message: Message, state: FSMContext):
 
 async def send_new_order_notify(order: OrderSchema, user_id: int):
     order_user_data = await bot.get_chat(order.from_user)
-    products = [(await product_db.get_product(product_id), product_item.amount, product_item.extra_options)
-                for product_id, product_item in order.items.items()]
+    # products = [(await product_db.get_product(product_id), product_item.amount, product_item.extra_options)
+    #             for product_id, product_item in order.items.items()]
+    products = []
+    for product_id, order_item in order.items.items():
+        product = await product_db.get_product(product_id)
+        products.append((product, order_item.amount, order_item.used_extra_options))
 
     await bot.send_message(user_id, f"Так будет выглядеть у тебя уведомление о новом заказе 👇")
     await bot.send_message(

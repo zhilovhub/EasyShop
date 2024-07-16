@@ -38,7 +38,8 @@ export const Store = new Vuex.Store({
       let data = {
         'bot_id': Store.state.bot_id,
         'raw_items': Store.state.itemsAddToCartArray.reduce((cartItemsById, item) => {
-          cartItemsById[item.id] = {"amount": item.countInCart, "used_extra_options": item.used_extra_options, "chosen_option": item.chosenOption};
+          console.log("chosenOption", item.chosenOption)
+          cartItemsById[item.id] = {"amount": item.countInCart, "chosen_options": item.chosenOption};
           return cartItemsById;
         },{}),
         'ordered_at': new Date().toISOString(),
@@ -137,10 +138,6 @@ export const Store = new Vuex.Store({
     async addProduct({commit, dispatch}, productInformation) {
       try {
         const { name , category, description, article, price, count, extra_options, images } = productInformation;
-        const obj_extra_options = extra_options.reduce((acc, item, index) => {
-          acc[`option${index + 1}`] = item;
-          return acc;
-        }, {});
         const response = await fetch(`${Store.state.api_url}/api/products/add_product`, {
           method: 'POST',
           headers: {
@@ -156,7 +153,7 @@ export const Store = new Vuex.Store({
             "article": article,
             "price": price || 0,
             "count": count || 0,
-            "extra_options": obj_extra_options || {}
+            "extra_options": extra_options || []
           })
         });
 
