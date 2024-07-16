@@ -19,6 +19,8 @@ from logs.config import logger, custom_bot_logger, extra_params
 async def create_order(event: Message, order_type: OrderType) -> OrderSchema:
     data = json.loads(event.web_app_data.data)
 
+    data = {'bot_id': '75', 'raw_items': {'264': {'amount': 1}, '284': {'amount': 3, 'chosen_options': [{"name": "test", "selected_variant": "block1"}]}}, 'ordered_at': '2024-07-16T10:38:42.329Z', 'town': 'Москва', 'address': '1534', 'comment': 'Мой коммент'}
+
     user_id = event.from_user.id
     bot_id = data["bot_id"]
     bot_data = await bot_db.get_bot(int(bot_id))
@@ -49,8 +51,6 @@ async def create_order(event: Message, order_type: OrderType) -> OrderSchema:
     #         ]
     #      }
     # , ...}
-
-    data = {'bot_id': '75', 'raw_items': {'264': {'amount': 1}, '284': {'amount': 3, 'chosen_options': [{"name": "test", "selected_variant": "block1"}]}}, 'ordered_at': '2024-07-16T10:38:42.329Z', 'town': 'Москва', 'address': '1534', 'comment': 'Мой коммент'}
 
     items: dict[int, OrderItem] = {}
 
