@@ -91,7 +91,7 @@ class ProductExtraOption(BaseModel):
     name: str
     type: ExtraOptionType
     variants: list[str]
-    variants_prices: list[int]
+    variants_prices: Optional[list[int]] = None
 
 
 class ProductWithoutId(BaseModel):
