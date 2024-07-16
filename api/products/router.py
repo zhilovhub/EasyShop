@@ -172,6 +172,15 @@ async def add_product_api(
 ) -> int:
     await check_admin_authorization(new_product.bot_id, authorization_data)
     try:
+        options = new_product.extra_options
+        formatted_options = []
+        if options:
+            for option in options:
+                option.variants = list(filter(lambda x: x, option.variants))
+                if option.variants_prices:
+                    option.variants_prices = list(filter(lambda x: x, option.variants_prices))
+                formatted_options.append(option)
+        new_product.extra_options = formatted_options
         product_id = await product_db.add_product(new_product)
 
     except IntegrityError as ex:
