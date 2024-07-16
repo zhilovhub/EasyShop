@@ -60,8 +60,20 @@ async def create_order(event: Message, order_type: OrderType) -> OrderSchema:
 
         if 'chosen_options' in item and item['chosen_options']:
             for option in item['chosen_options']:
+                need_option = None
+                for opt in product.extra_options:
+                    if opt.name == option["name"]:
+                        need_option = opt
+                        break
+                price = 0
+                if need_option.variants_prices:
+                    for i, var in enumerate(need_option.variants):
+                        if var == option['selected_variant']:
+                            price = need_option.variants_prices[i]
+                            break
                 chosen_options.append(OrderItemExtraOption(name=option['name'],
-                                                           selected_variant=option['selected_variant']))
+                                                           selected_variant=option['selected_variant'],
+                                                           price=price))
 
         items[product_id] = OrderItem(
             amount=item['amount'],
