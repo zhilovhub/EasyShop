@@ -47,13 +47,6 @@ from logs.config import logger
 async def process_web_app_request(event: Message):
     user_id = event.from_user.id
     try:
-        # {'bot_id': '33',
-        # 'raw_items':
-        #   {'38': {'amount': 4, 'chosen_option': 'на диске'}},
-        # 'ordered_at': '2024-05-20T      15:02:42.353Z',
-        # 'town': 'sd\nsdsd\n\nsd\n\n',
-        # 'address': 'sd', 'comment': ''}
-
         data = json.loads(event.web_app_data.data)
         logger.info(f"receive web app data: {data}")
 
@@ -413,8 +406,8 @@ async def bot_menu_photo_handler(message: Message, state: FSMContext):
                                    count=0,
                                    picture=[filename],
                                    article=params[0],
-                                   category=[0],
-                                   extra_options={})
+                                   category=[0]
+                                   )
     try:
         await product_db.add_product(new_product)
     except IntegrityError:
