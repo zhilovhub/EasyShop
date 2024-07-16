@@ -48,7 +48,7 @@ export const Store = new Vuex.Store({
         'comment': Store.state.comment
       };
       tg.sendData(JSON.stringify(data));
-      tg.close();
+      // tg.close();
     }
   },
   actions: {
