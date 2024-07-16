@@ -46,13 +46,12 @@ from logs.config import logger, extra_params
 @admin_bot_menu_router.message(F.web_app_data)
 async def process_web_app_request(event: Message):
     user_id = event.from_user.id
-    db_bot = await bot_db.get_bot_by_token(event.bot.token)
     try:
         order = await create_order(event, OrderType.MAIN_BOT_TEST_ORDER)
 
         logger.info(f"order with id #{order.id} created")
     except NotEnoughProductsInStockToReduce as e:
-        logger.info("not enough items for order creation", extra_params(bot_id=db_bot.bot_id))
+        logger.info("not enough items for order creation")
         return await event.answer(
             f":(\nК сожалению на складе недостаточно <b>{e.product.name}</b> для выполнения Вашего заказа.")
     except Exception as e:
