@@ -165,8 +165,8 @@ export default {
       if (this.productObject.chosenOption === undefined) {
         this.productObject.chosenOption = []
       }
-      console.log(this.productObject.extra_options[0].variants[key])
-      this.productObject.chosenOption.push({name: this.productObject.extra_options[0].variants[key], selected_variant: target.innerText});
+      console.log(target.parent, target.parent.parent)
+      this.productObject.chosenOption.push({name: "test", selected_variant: target.innerText});
       if (key && key > 0) {
         this.productObject.price = this.productObject.extra_options[0].variants_prices[key];
       }
