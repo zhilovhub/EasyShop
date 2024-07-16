@@ -50,7 +50,7 @@ async def create_order(event: Message, order_type: OrderType) -> OrderSchema:
     #      }
     # , ...}
 
-    data = {'bot_id': '77', 'raw_items': {'262': {'amount': 1}, '273': {'amount': 3, 'chosen_options': [{"name": "размер", "selected_variant": "42"}, {"name": "цвет", "selected_variant": "синий"}]}}, 'ordered_at': '2024-07-16T10:38:42.329Z', 'town': 'Москва', 'address': '1534', 'comment': 'Мой коммент'}
+    data = {'bot_id': '75', 'raw_items': {'264': {'amount': 1}, '284': {'amount': 3, 'chosen_options': [{"name": "test", "selected_variant": "block1"}]}}, 'ordered_at': '2024-07-16T10:38:42.329Z', 'town': 'Москва', 'address': '1534', 'comment': 'Мой коммент'}
 
     items: dict[int, OrderItem] = {}
 
