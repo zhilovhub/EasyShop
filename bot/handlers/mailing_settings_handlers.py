@@ -1,8 +1,7 @@
 import asyncio
 
-from aiogram.enums import ParseMode
 from aiogram.exceptions import TelegramForbiddenError
-from aiogram.client.bot import DefaultBotProperties, Bot
+from aiogram.client.bot import Bot
 
 from bot.main import bot
 from bot.utils.excel_utils import send_ban_users_xlsx

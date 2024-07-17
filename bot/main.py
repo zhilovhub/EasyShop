@@ -3,10 +3,8 @@ import asyncio
 from datetime import datetime
 
 from aiogram import Bot, Dispatcher
-from aiogram.enums import ParseMode
-from aiogram.exceptions import TelegramBadRequest
 from aiogram.types import BotCommand, BotCommandScopeChatAdministrators, BotCommandScopeAllPrivateChats
-from aiogram.client.bot import DefaultBotProperties
+from aiogram.exceptions import TelegramBadRequest
 
 from bot.stoke.stoke import Stoke
 from bot.subscription.subscription import Subscription

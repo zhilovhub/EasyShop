@@ -11,7 +11,6 @@ from aiogram.types import User, Chat
 from aiogram.fsm.state import State, StatesGroup
 from aiogram.exceptions import TelegramUnauthorizedError
 from aiogram.utils.token import TokenValidationError, validate_token
-from aiogram.client.default import DefaultBotProperties
 from aiogram.client.session.aiohttp import AiohttpSession
 from aiogram.webhook.aiohttp_server import (
     TokenBasedRequestHandler,
@@ -178,7 +177,7 @@ async def main():
 
     TokenBasedRequestHandler(
         dispatcher=multibot_dispatcher,
-        bot_settings=bot_settings,
+        bot_settings={"parse_mode": ParseMode.HTML},
         session=session,
     ).register(app, path=OTHER_BOTS_PATH)
 
