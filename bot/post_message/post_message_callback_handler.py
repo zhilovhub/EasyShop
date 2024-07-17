@@ -480,7 +480,8 @@ async def _demo(
             post_message,
             media_files,
             PostActionType.DEMO,
-            message=query.message
+            message=query.message,
+            is_delayed=False
         )
         await query.message.answer(
             text=MessageTexts.bot_post_message_menu_message(post_message_type).format(username),

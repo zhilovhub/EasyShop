@@ -37,6 +37,7 @@ async def send_post_messages(custom_bot, post_message, media_files, chat_id):
                 media_files=media_files,
                 post_action_type=PostActionType.RELEASE,
                 message=None,
+                is_delayed=False
             )
             logger.info(
                 f"post_message_id={post_message_id}: "

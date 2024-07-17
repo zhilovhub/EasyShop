@@ -279,7 +279,8 @@ async def _start_confirm(
                         channel_id,
                         post_message,
                         media_files,
-                        PostActionType.RELEASE
+                        PostActionType.RELEASE,
+                        is_delayed=False
                     )
                     if post_message_type == PostMessageType.CONTEST:
                         post_message.is_sent = True
