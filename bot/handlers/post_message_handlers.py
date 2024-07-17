@@ -192,7 +192,7 @@ async def _start_confirm(
 ):
     media_files = await post_message_media_file_db.get_all_post_message_media_files(post_message.post_message_id)
 
-    if await is_post_message_valid(query, post_message, media_files):
+    if await is_post_message_valid(query, post_message, post_message_type, media_files):
         if post_message.is_delayed:
             # Небольшой запас по времени
             if datetime.now() > (post_message.send_date + timedelta(minutes=1)):

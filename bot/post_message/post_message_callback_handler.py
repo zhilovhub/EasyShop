@@ -426,7 +426,7 @@ async def _start(
     bot_id = post_message.bot_id
     media_files = await post_message_media_file_db.get_all_post_message_media_files(post_message_id)
 
-    if await is_post_message_valid(query, post_message, media_files):
+    if await is_post_message_valid(query, post_message, post_message_type, media_files):
         custom_bot_token = (await bot_db.get_bot(bot_id)).token
 
         match post_message_type:
@@ -463,7 +463,7 @@ async def _demo(
     bot_id = post_message.bot_id
     media_files = await post_message_media_file_db.get_all_post_message_media_files(post_message_id)
 
-    if await is_post_message_valid(query, post_message, media_files):
+    if await is_post_message_valid(query, post_message, post_message_type, media_files):
         custom_bot_token = (await bot_db.get_bot(bot_id)).token
 
         match post_message_type:
