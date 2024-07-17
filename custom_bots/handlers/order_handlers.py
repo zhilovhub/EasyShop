@@ -160,7 +160,7 @@ async def get_product_id(query: CallbackQuery, state: FSMContext):
                 user_id=query.from_user.id, product_id=callback_data.product_id)
             if product:
                 try:
-                    bot = await bot_db.get_bot_by_token(query.message.bot.token)
+                    await bot_db.get_bot_by_token(query.message.bot.token)
                 except BotNotFound:
                     custom_bot_logger.warning(
                         f"bot_token={query.message.bot.token}: this bot is not in db",
@@ -168,11 +168,10 @@ async def get_product_id(query: CallbackQuery, state: FSMContext):
                     )
                     return await query.message.answer("Бот не инициализирован")
 
-                await query.message.answer(
+                await query.answer(
                     "Вы уже оставили отзыв на этот продукт!",
-                    reply_markup=ReplyCustomBotMenuKeyboard.get_keyboard(bot.bot_id)
+                    show_alert=True
                 )
-                await query.answer()
                 await state.set_state(CustomUserStates.MAIN_MENU)
                 return
 
