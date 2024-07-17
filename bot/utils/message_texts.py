@@ -133,7 +133,7 @@ class MessageTexts(Enum):
             sent_post_message_amount: int,
             custom_bot_users_len: int) -> str:
         text = f"Сообщений отправлено:\n" \
-            f"<b>{sent_post_message_amount}/{custom_bot_users_len}</b>"
+            f"{sent_post_message_amount}/{custom_bot_users_len} "
 
         if sent_post_message_amount != custom_bot_users_len:
             text += f"\n\n❗ Во время рассылки было обнаружено, что бота забанило " \

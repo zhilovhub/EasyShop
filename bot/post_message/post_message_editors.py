@@ -869,7 +869,7 @@ async def send_post_message(
                 link_preview_options=LinkPreviewOptions(is_disabled=not (
                     post_message_schema.enable_link_preview))
             )
-
+            await post_message_db.delete_post_message(post_message_schema.post_message_id)
 
 async def _reply_no_button(
         message: Message,
