@@ -116,7 +116,7 @@ async def handle_order_callback(query: CallbackQuery, state: FSMContext):
             if not state_data:
                 state_data = {"order_id": order_id}
             else:
-                if not is_able_to_ask(query, state_data, user_id, order_id):
+                if not await is_able_to_ask(query, state_data, user_id, order_id):
                     return
                 state_data['order_id'] = order_id
 

@@ -82,7 +82,7 @@ async def ask_question_callback(query: CallbackQuery, state: FSMContext):
                 return await query.message.edit_reply_markup(None)
 
             try:
-                if not is_able_to_ask(query, state_data, user_id, order_id):
+                if not await is_able_to_ask(query, state_data, user_id, order_id):
                     return
 
                 message = await main_bot.send_message(
