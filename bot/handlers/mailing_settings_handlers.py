@@ -8,6 +8,7 @@ from bot.main import bot
 from bot.utils.excel_utils import send_ban_users_xlsx
 from bot.utils.message_texts import MessageTexts
 from bot.post_message.post_message_editors import PostActionType, send_post_message
+from common_utils.bot_settings_config import BOT_PROPERTIES
 
 from database.config import custom_bot_user_db, post_message_db
 
@@ -17,8 +18,7 @@ from logs.config import logger, extra_params
 async def send_post_messages(custom_bot, post_message, media_files, chat_id):
     post_message_id = post_message.post_message_id
     all_custom_bot_users = await custom_bot_user_db.get_custom_bot_users(custom_bot.bot_id)
-    custom_bot_tg = Bot(custom_bot.token, default=DefaultBotProperties(
-        parse_mode=ParseMode.HTML))
+    custom_bot_tg = Bot(custom_bot.token, default=BOT_PROPERTIES)
 
     banned_users_list = []
 

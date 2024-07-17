@@ -4,6 +4,7 @@ from aiogram import Bot
 from aiogram.enums import ParseMode
 from aiogram.types import Message, User
 
+from common_utils.bot_settings_config import BOT_PROPERTIES
 from common_utils.env_config import ADMIN_GROUP_ID, TELEGRAM_TOKEN
 
 from logs.config import logger
@@ -33,7 +34,7 @@ class EventTypes(Enum):
 async def send_event(
         user: User,
         event_type: EventTypes,
-        event_bot: Bot = Bot(TELEGRAM_TOKEN),
+        event_bot: Bot = Bot(TELEGRAM_TOKEN, default=BOT_PROPERTIES),
         err_msg: str = 'Не указано'
 ) -> Message:
     try:

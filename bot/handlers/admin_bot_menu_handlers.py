@@ -11,7 +11,6 @@ from aiogram.types import Message, CallbackQuery
 from aiogram.exceptions import TelegramUnauthorizedError
 from aiogram.fsm.context import FSMContext
 from aiogram.utils.token import validate_token, TokenValidationError
-from aiogram.client.default import DefaultBotProperties
 from aiogram.fsm.storage.base import StorageKey
 
 from bot.main import bot, QUESTION_MESSAGES
@@ -24,6 +23,7 @@ from bot.keyboards.main_menu_keyboards import ReplyBotMenuKeyboard, ReplyBackBot
 from bot.keyboards.stock_menu_keyboards import InlineStockMenuKeyboard, InlineWebStockKeyboard
 from bot.keyboards.post_message_keyboards import InlinePostMessageMenuKeyboard
 from bot.post_message.post_message_create import post_message_create
+from common_utils.bot_settings_config import BOT_PROPERTIES
 
 from common_utils.env_config import FILES_PATH
 from common_utils.keyboards.keyboards import InlineBotMenuKeyboard
@@ -85,7 +85,7 @@ async def handle_reply_to_question(message: Message, state: FSMContext):
     custom_bot = await bot_db.get_bot_by_created_by(created_by=message.from_user.id)
     await Bot(
         token=custom_bot.token,
-        parse_mode=ParseMode.HTML
+        default=BOT_PROPERTIES
     ).send_message(
         chat_id=order.from_user,
         text=f"Поступил ответ на вопрос по заказу <b>#{order.id}</b> 👇\n\n"
@@ -137,7 +137,7 @@ async def handler_order_cancel_callback(query: CallbackQuery, state: FSMContext)
             products = [(await product_db.get_product(int(product_id)), product_item.amount,
                          product_item.used_extra_options)
                         for product_id, product_item in order.items.items()]
-            await Bot(bot_token, parse_mode=ParseMode.HTML).edit_message_text(
+            await Bot(bot_token, default=BOT_PROPERTIES).edit_message_text(
                 order.convert_to_notification_text(products=products),
                 reply_markup=None,
                 chat_id=callback_data.chat_id,
@@ -159,7 +159,7 @@ async def handler_order_cancel_callback(query: CallbackQuery, state: FSMContext)
                 product.count += item.amount
                 await product_db.update_product(product)
 
-            await Bot(bot_token, parse_mode=ParseMode.HTML).send_message(
+            await Bot(bot_token, default=BOT_PROPERTIES).send_message(
                 chat_id=callback_data.chat_id,
                 text=f"Новый статус заказа <b>#{order.id}</b>\n<b>{order.translate_order_status()}</b>"
             )
@@ -231,8 +231,7 @@ async def handle_callback(query: CallbackQuery, state: FSMContext):
                     int(product_id)), product_item.amount, product_item.used_extra_options
                  ) for product_id, product_item in order.items.items()
             ]
-            await Bot(bot_token, default=DefaultBotProperties(
-                parse_mode=ParseMode.HTML)).edit_message_text(
+            await Bot(bot_token, default=BOT_PROPERTIES).edit_message_text(
                 order.convert_to_notification_text(products=products),
                 reply_markup=None if callback_data.a == callback_data.ActionEnum.FINISH else
                 InlineOrderCustomBotKeyboard.get_keyboard(order.id, callback_data.msg_id, callback_data.chat_id),
@@ -265,13 +264,12 @@ async def handle_callback(query: CallbackQuery, state: FSMContext):
                             "⚠️ Внимание, кол-во следующих товаров на складе равно 0.")
                         await msg.reply("\n".join([f"{p.name} [{p.id}]" for p in zero_products]))
 
-            msg = await Bot(bot_token, default=DefaultBotProperties(
-                parse_mode=ParseMode.HTML)).send_message(
+            msg = await Bot(bot_token, default=BOT_PROPERTIES).send_message(
                 chat_id=callback_data.chat_id,
                 text=f"Новый статус заказа <b>#{order.id}</b>\n<b>{order.translate_order_status()}</b>")
 
             if callback_data.a == callback_data.ActionEnum.FINISH:
-                await Bot(bot_token, default=DefaultBotProperties(parse_mode=ParseMode.HTML)).send_message(
+                await Bot(bot_token, default=BOT_PROPERTIES).send_message(
                     reply_to_message_id=msg.message_id,
                     chat_id=callback_data.chat_id,
                     text=f"Вы можете оставить отзыв ❤️",

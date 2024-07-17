@@ -18,6 +18,7 @@ from aiogram.webhook.aiohttp_server import (
     setup_application,
 )
 
+from common_utils.bot_settings_config import BOT_PROPERTIES
 from common_utils.env_config import TIMEZONE, SCHEDULER_URL, WEBHOOK_URL, WEBHOOK_PORT, TELEGRAM_TOKEN, WEB_APP_URL, \
     WEB_APP_PORT, RESOURCES_PATH, SSL_CERT_PATH, \
     SSL_KEY_PATH, TECH_ADMINS, LOCAL_API_SERVER_HOST, LOCAL_API_SERVER_PORT, WEBHOOK_HOST, \
@@ -44,9 +45,8 @@ BASE_URL = f"{WEBHOOK_URL}:{WEBHOOK_PORT}"
 OTHER_BOTS_PATH = "/webhook/bot/{bot_token}"
 
 session = AiohttpSession()
-bot_settings = {"parse_mode": ParseMode.HTML}
 
-main_bot = Bot(TELEGRAM_TOKEN, default=DefaultBotProperties(**bot_settings), session=session)
+main_bot = Bot(TELEGRAM_TOKEN, default=BOT_PROPERTIES, session=session)
 
 OTHER_BOTS_URL = f"{BASE_URL}{OTHER_BOTS_PATH}"
 
