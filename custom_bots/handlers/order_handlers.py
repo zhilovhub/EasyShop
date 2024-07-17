@@ -106,8 +106,6 @@ async def handle_order_callback(query: CallbackQuery, state: FSMContext):
                 reply_markup=InlineOrderCancelKeyboard.get_keyboard(order_id)
             )
         case callback_data.ActionEnum.ASK_QUESTION:
-            await query.answer()
-
             custom_bot_logger.info(
                 f"user_id={user_id}: wants to ask the question regarding order by order_id={order_id}",
                 extra=extra_params(user_id=user_id, order_id=order_id)
@@ -120,6 +118,7 @@ async def handle_order_callback(query: CallbackQuery, state: FSMContext):
                     return
                 state_data['order_id'] = order_id
 
+            await query.answer()
             await query.message.answer(
                 "Вы можете отправить свой вопрос по заказу, отправив любое сообщение боту",
                 reply_markup=ReplyBackQuestionMenuKeyboard.get_keyboard()
