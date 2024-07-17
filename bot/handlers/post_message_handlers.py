@@ -285,7 +285,7 @@ async def _start_confirm(
                         post_message.is_sent = True
                         await post_message_db.update_post_message(post_message)
                         await query.message.edit_text(
-                            text=MessageTexts.BOT_CHANNEL_POST_MENU_WHILE_RUNNING.value.format(channel_username),
+                            text=MessageTexts.BOT_CHANNEL_CONTEST_MENU_WHILE_RUNNING.value.format(channel_username),
                             reply_markup=await InlinePostMessageMenuKeyboard.get_keyboard(
                                 post_message.bot_id, post_message_type, channel_id
                             ),
@@ -311,7 +311,7 @@ async def _start_confirm(
                     await post_message_db.update_post_message(post_message)
 
                     await query.message.edit_text(
-                        text=MessageTexts.BOT_CHANNEL_POST_MENU_WHILE_RUNNING.value.format(channel_username),
+                        text=MessageTexts.BOT_CHANNEL_CONTEST_MENU_WHILE_RUNNING.value.format(channel_username),
                         reply_markup=await InlinePostMessageMenuKeyboard.get_keyboard(
                             post_message.bot_id, post_message_type, channel_id
                         ),

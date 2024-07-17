@@ -79,6 +79,8 @@ class MessageTexts(Enum):
 
     BOT_CHANNEL_POST_MENU_WHILE_RUNNING = "Сейчас в очереди запись в канал <b>@{}</b>\n\n"
 
+    BOT_CHANNEL_CONTEST_MENU_WHILE_RUNNING = "Сейчас в очереди конкурс в канал <b>@{}</b>\n\n"
+
     GOODS_COUNT_MESSAGE = (
         "Вы перешли в состояние обновления кол-ва товаров на складе, все отправленные .xlsx файлы "
         "в этом состоянии обновят кол-во товаров.\n\n⬇️ Ниже отправлена таблица с актуальным списком"

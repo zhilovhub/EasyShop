@@ -104,6 +104,7 @@ async def _cancel_send(
                     pass
 
             username = (await Bot(custom_bot_token).get_chat(channel_id)).username
+
             if contest_pre_finish:
                 await bot.send_message(custom_bot.created_by, "Досрочно завершаю конкурс...")
                 await pre_finish_contest(contest.contest_id)
@@ -118,9 +119,12 @@ async def _cancel_send(
                 reply_markup=await InlineChannelMenuKeyboard.get_keyboard(post_message.bot_id, channel_id),
                 parse_mode=ParseMode.HTML
             )
+
             if contest_users:
-                await query.message.answer_photo(FSInputFile(path_to_graph),
-                                                 caption="📈 График количества участников конкурса от времени")
+                await query.message.answer_photo(
+                    FSInputFile(path_to_graph),
+                    caption="📈 График количества участников конкурса от времени"
+                )
         case _:
             raise UnknownPostMessageType
 
