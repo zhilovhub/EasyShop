@@ -193,6 +193,6 @@ if __name__ == '__main__':
     scheduler = Scheduler(SCHEDULER_URL, 'postgres', TIMEZONE)
 
     subscription = Subscription(
-        database=Database(sqlalchemy_url=DB_FOR_TESTS),
-        custom_scheduler=scheduler
+        database=Database(sqlalchemy_url=DB_FOR_TESTS, logger=logger),
+        custom_scheduler=scheduler,
     )
