@@ -21,6 +21,7 @@ from bot.post_message.post_message_editors import edit_delay_date, edit_message,
 from bot.handlers.mailing_settings_handlers import send_post_messages
 from bot.post_message.post_message_decorators import check_callback_conflicts
 from bot.post_message.post_message_callback_handler import post_message_handler
+from common_utils.bot_settings_config import BOT_PROPERTIES
 
 from common_utils.keyboards.keyboards import InlineBotMenuKeyboard
 
@@ -191,7 +192,7 @@ async def _start_confirm(
 ):
     media_files = await post_message_media_file_db.get_all_post_message_media_files(post_message.post_message_id)
 
-    if await is_post_message_valid(query, post_message, media_files):
+    if await is_post_message_valid(query, post_message, post_message_type, media_files):
         if post_message.is_delayed:
             # Небольшой запас по времени
             if datetime.now() > (post_message.send_date + timedelta(minutes=1)):
@@ -274,17 +275,18 @@ async def _start_confirm(
 
                 if not post_message.is_delayed:
                     await send_post_message(
-                        Bot(custom_bot.token),
+                        Bot(custom_bot.token, default=BOT_PROPERTIES),
                         channel_id,
                         post_message,
                         media_files,
-                        PostActionType.RELEASE
+                        PostActionType.RELEASE,
+                        is_delayed=False
                     )
                     if post_message_type == PostMessageType.CONTEST:
                         post_message.is_sent = True
                         await post_message_db.update_post_message(post_message)
                         await query.message.edit_text(
-                            text=MessageTexts.BOT_CHANNEL_POST_MENU_WHILE_RUNNING.value.format(channel_username),
+                            text=MessageTexts.BOT_CHANNEL_CONTEST_MENU_WHILE_RUNNING.value.format(channel_username),
                             reply_markup=await InlinePostMessageMenuKeyboard.get_keyboard(
                                 post_message.bot_id, post_message_type, channel_id
                             ),

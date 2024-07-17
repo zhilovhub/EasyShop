@@ -396,6 +396,7 @@ async def _message_save(
         media_files,
         PostActionType.AFTER_REDACTING,
         message,
+        is_delayed=False
     )
 
     custom_bot_token = (await bot_db.get_bot(post_message.bot_id)).token
@@ -690,7 +691,8 @@ async def _button_url_save(
         post_message,
         media_files,
         PostActionType.AFTER_REDACTING,
-        message
+        message,
+        is_delayed=False
     )
 
     custom_bot_token = (await bot_db.get_bot(post_message.bot_id)).token
@@ -716,7 +718,8 @@ async def send_post_message(
         post_message_schema: PostMessageSchema,
         media_files: list[PostMessageMediaFileSchema],
         post_action_type: PostActionType,
-        message: Message = None
+        message: Message = None,
+        is_delayed: bool = True
 ) -> None:
     if isinstance(bot_from_send, BotSchema):
         bot_from_send = Bot(bot_from_send.token)
@@ -869,6 +872,8 @@ async def send_post_message(
                 link_preview_options=LinkPreviewOptions(is_disabled=not (
                     post_message_schema.enable_link_preview))
             )
+            if is_delayed:
+                await post_message_db.delete_post_message(post_message_schema.post_message_id)
 
 
 async def _reply_no_button(

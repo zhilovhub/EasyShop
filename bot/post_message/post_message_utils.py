@@ -2,7 +2,7 @@ from aiogram.types import CallbackQuery
 
 from bot.keyboards.post_message_keyboards import UnknownPostMessageType
 
-from database.config import post_message_db
+from database.config import post_message_db, contest_db
 from database.models.post_message_model import PostMessageSchema, PostMessageNotFound, PostMessageType
 from database.models.post_message_media_files import PostMessageMediaFileSchema
 
@@ -12,8 +12,25 @@ from logs.config import extra_params, logger
 async def is_post_message_valid(
         query: CallbackQuery,
         post_message: PostMessageSchema,
+        post_message_type: PostMessageType,
         media_files: list[PostMessageMediaFileSchema]
 ) -> bool:
+    match post_message_type:
+        case PostMessageType.MAILING:
+            pass
+        case PostMessageType.CHANNEL_POST:
+            pass
+        case PostMessageType.CONTEST:
+            contest = await contest_db.get_contest_by_post_message_id(post_message.post_message_id)
+            if contest.finish_date is None:
+                await query.answer(
+                    "Введите дату окончания конкурса",
+                    show_alert=True
+                )
+                return False
+        case _:
+            raise UnknownPostMessageType
+
     if len(media_files) > 1 and post_message.has_button:
         await query.answer(
             "Telegram не позволяет прикрепить кнопку, если в сообщении минимум 2 медиафайла",

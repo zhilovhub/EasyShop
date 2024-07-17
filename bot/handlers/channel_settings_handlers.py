@@ -11,7 +11,7 @@ from bot.keyboards.channel_keyboards import (InlineChannelsListKeyboard, InlineC
 from bot.keyboards.post_message_keyboards import InlinePostMessageMenuKeyboard
 from bot.post_message.post_message_create import post_message_create
 
-from database.config import bot_db, channel_user_db, channel_post_db, contest_db
+from database.config import bot_db, channel_user_db, channel_post_db, contest_db, post_message_db
 from database.models.contest_model import ContestNotFound
 from database.models.channel_post_model import ChannelPostNotFound
 from database.models.post_message_model import PostMessageType
@@ -107,11 +107,21 @@ async def channel_menu_callback_handler(query: CallbackQuery):
             )
         case callback_data.ActionEnum.CREATE_CONTEST | callback_data.ActionEnum.EDIT_CONTEST:
             try:
-                await contest_db.get_contest_by_bot_id(bot_id=bot_id)
+                contest = await contest_db.get_contest_by_bot_id(bot_id=bot_id)
+
                 if callback_data.a == callback_data.ActionEnum.CREATE_CONTEST:
                     await query.answer("В канале уже есть активный конкурс", show_alert=True)
+
+                post_message = await post_message_db.get_post_message(contest.post_message_id)
+                if post_message.is_running:
+                    message_text = MessageTexts.BOT_CHANNEL_CONTEST_MENU_WHILE_RUNNING.value.format(channel_username)
+                else:
+                    message_text = MessageTexts.bot_post_message_menu_message(
+                        PostMessageType.CONTEST
+                    ).format(channel_username)
+
                 await query.message.edit_text(
-                    MessageTexts.bot_post_message_menu_message(PostMessageType.CONTEST).format(channel_username),
+                    message_text,
                     reply_markup=await InlinePostMessageMenuKeyboard.get_keyboard(
                         bot_id=bot_id,
                         post_message_type=PostMessageType.CONTEST,

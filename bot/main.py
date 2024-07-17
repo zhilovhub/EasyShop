@@ -3,13 +3,12 @@ import asyncio
 from datetime import datetime
 
 from aiogram import Bot, Dispatcher
-from aiogram.enums import ParseMode
-from aiogram.exceptions import TelegramBadRequest
 from aiogram.types import BotCommand, BotCommandScopeChatAdministrators, BotCommandScopeAllPrivateChats
-from aiogram.client.bot import DefaultBotProperties
+from aiogram.exceptions import TelegramBadRequest
 
 from bot.stoke.stoke import Stoke
 from bot.subscription.subscription import Subscription
+from common_utils.bot_settings_config import BOT_PROPERTIES
 
 from common_utils.env_config import SQLALCHEMY_URL, TIMEZONE, SCHEDULER_URL, TELEGRAM_TOKEN, STORAGE_TABLE_NAME, \
     RESOURCES_PATH, BOT_DEBUG_MODE, TECH_ADMINS, LOGS_PATH, ADMIN_GROUP_ID
@@ -22,8 +21,7 @@ from database.config import db_engine
 
 from logs.config import logger
 
-bot = Bot(TELEGRAM_TOKEN, default=DefaultBotProperties(
-    parse_mode=ParseMode.HTML))
+bot = Bot(TELEGRAM_TOKEN, default=BOT_PROPERTIES)
 storage = AlchemyStorageAsync(SQLALCHEMY_URL, STORAGE_TABLE_NAME)
 dp = Dispatcher(storage=storage)
 

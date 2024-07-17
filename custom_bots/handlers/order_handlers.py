@@ -1,5 +1,3 @@
-import time
-
 from aiogram.types import CallbackQuery, Message
 from aiogram.filters import StateFilter
 from aiogram.fsm.context import FSMContext
@@ -12,6 +10,7 @@ from custom_bots.keyboards.order_manage_keyboards import InlinePickReviewProduct
     ReplyReviewBackKeyboard
 from custom_bots.keyboards.custom_bot_menu_keyboards import ReplyCustomBotMenuKeyboard
 
+from custom_bots.utils.question_utils import is_able_to_ask
 from common_utils.keyboards.order_manage_keyboards import InlineOrderCancelKeyboard, InlineOrderCustomBotKeyboard, \
     InlineCreateReviewKeyboard, InlineAcceptReviewKeyboard
 
@@ -70,12 +69,12 @@ async def handle_cancel_order_callback(query: CallbackQuery):
                     products=products,
                     username="@" + query.from_user.username if query.from_user.username else query.from_user.full_name,
                     is_admin=True
-                ), chat_id=msg_id_data[order.id][0], message_id=msg_id_data[order.id][1], reply_markup=None)
+                ), chat_id=msg_id_data[order_id][0], message_id=msg_id_data[order_id][1], reply_markup=None)
             await main_bot.send_message(
-                chat_id=msg_id_data[order.id][0],
-                text=f"Новый статус заказа <b>#{order.id}</b>\n<b>{order.translate_order_status()}</b>")
+                chat_id=msg_id_data[order_id][0],
+                text=f"Новый статус заказа <b>#{order_id}</b>\n<b>{order.translate_order_status()}</b>")
 
-            del msg_id_data[order.id]
+            del msg_id_data[order_id]
 
             custom_bot_logger.info(
                 f"order_id={order}: is cancelled by custom_user with user_id={user_id}",
@@ -92,7 +91,7 @@ async def handle_order_callback(query: CallbackQuery, state: FSMContext):
     user_id = query.from_user.id
 
     try:
-        order = await order_db.get_order(order_id)
+        await order_db.get_order(order_id)
     except OrderNotFound:
         custom_bot_logger.warning(
             f"user_id={user_id}: tried to ask the question regarding order by order_id={order_id} is not found",
@@ -113,19 +112,13 @@ async def handle_order_callback(query: CallbackQuery, state: FSMContext):
             )
 
             if not state_data:
-                state_data = {"order_id": order.id}
+                state_data = {"order_id": order_id}
             else:
-                if "last_question_time" in state_data and time.time() - state_data['last_question_time'] < 1 * 60 * 60:
-                    custom_bot_logger.info(
-                        f"user_id={user_id}: too early for asking question about order_id={order.id}",
-                        extra=extra_params(user_id=user_id, order_id=order.id)
-                    )
-                    return await query.answer(
-                        "Вы уже задавали вопрос недавно, пожалуйста, попробуйте позже "
-                        "(между вопросами должен пройти час)", show_alert=True
-                    )
-                state_data['order_id'] = order.id
+                if not await is_able_to_ask(query, state_data, user_id, order_id):
+                    return
+                state_data['order_id'] = order_id
 
+            await query.answer()
             await query.message.answer(
                 "Вы можете отправить свой вопрос по заказу, отправив любое сообщение боту",
                 reply_markup=ReplyBackQuestionMenuKeyboard.get_keyboard()
@@ -167,7 +160,7 @@ async def get_product_id(query: CallbackQuery, state: FSMContext):
                 user_id=query.from_user.id, product_id=callback_data.product_id)
             if product:
                 try:
-                    bot = await bot_db.get_bot_by_token(query.message.bot.token)
+                    await bot_db.get_bot_by_token(query.message.bot.token)
                 except BotNotFound:
                     custom_bot_logger.warning(
                         f"bot_token={query.message.bot.token}: this bot is not in db",
@@ -175,11 +168,10 @@ async def get_product_id(query: CallbackQuery, state: FSMContext):
                     )
                     return await query.message.answer("Бот не инициализирован")
 
-                await query.message.answer(
+                await query.answer(
                     "Вы уже оставили отзыв на этот продукт!",
-                    reply_markup=ReplyCustomBotMenuKeyboard.get_keyboard(bot.bot_id)
+                    show_alert=True
                 )
-                await query.answer()
                 await state.set_state(CustomUserStates.MAIN_MENU)
                 return
 

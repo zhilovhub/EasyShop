@@ -1,4 +1,4 @@
-from database.models.models import Database
+from database.config import product_db
 from database.models.product_model import ProductSchema, ProductNotFound
 
 from logs.config import logger, extra_params
@@ -6,7 +6,7 @@ from logs.config import logger, extra_params
 
 async def get_product_by_id(product_id: int) -> ProductSchema | None:
     try:
-        product = await Database().get_product(product_id=product_id)
+        product = await product_db.get_product(product_id=product_id)
         return product
     except ProductNotFound:
         logger.debug(

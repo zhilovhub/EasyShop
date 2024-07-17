@@ -72,10 +72,11 @@ async def get_bot_post_message(bot_id: int, post_message_type: PostMessageType) 
     try:
         post_message = await post_message_db.get_post_message_by_bot_id(bot_id, post_message_type)
         return post_message
-    except PostMessageNotFound:
-        logger.debug(
+    except PostMessageNotFound as e:
+        logger.warning(
             f"bot_id={bot_id}: there is no post_message",
             extra=extra_params(bot_id=bot_id),
+            exc_info=e
         )
         return None
 

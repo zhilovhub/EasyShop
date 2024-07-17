@@ -104,6 +104,7 @@ async def _cancel_send(
                     pass
 
             username = (await Bot(custom_bot_token).get_chat(channel_id)).username
+
             if contest_pre_finish:
                 await bot.send_message(custom_bot.created_by, "Досрочно завершаю конкурс...")
                 await pre_finish_contest(contest.contest_id)
@@ -118,9 +119,12 @@ async def _cancel_send(
                 reply_markup=await InlineChannelMenuKeyboard.get_keyboard(post_message.bot_id, channel_id),
                 parse_mode=ParseMode.HTML
             )
+
             if contest_users:
-                await query.message.answer_photo(FSInputFile(path_to_graph),
-                                                 caption="📈 График количества участников конкурса от времени")
+                await query.message.answer_photo(
+                    FSInputFile(path_to_graph),
+                    caption="📈 График количества участников конкурса от времени"
+                )
         case _:
             raise UnknownPostMessageType
 
@@ -422,7 +426,7 @@ async def _start(
     bot_id = post_message.bot_id
     media_files = await post_message_media_file_db.get_all_post_message_media_files(post_message_id)
 
-    if await is_post_message_valid(query, post_message, media_files):
+    if await is_post_message_valid(query, post_message, post_message_type, media_files):
         custom_bot_token = (await bot_db.get_bot(bot_id)).token
 
         match post_message_type:
@@ -459,7 +463,7 @@ async def _demo(
     bot_id = post_message.bot_id
     media_files = await post_message_media_file_db.get_all_post_message_media_files(post_message_id)
 
-    if await is_post_message_valid(query, post_message, media_files):
+    if await is_post_message_valid(query, post_message, post_message_type, media_files):
         custom_bot_token = (await bot_db.get_bot(bot_id)).token
 
         match post_message_type:
@@ -476,7 +480,8 @@ async def _demo(
             post_message,
             media_files,
             PostActionType.DEMO,
-            message=query.message
+            message=query.message,
+            is_delayed=False
         )
         await query.message.answer(
             text=MessageTexts.bot_post_message_menu_message(post_message_type).format(username),
