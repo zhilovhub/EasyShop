@@ -4,7 +4,7 @@ from datetime import datetime, timedelta
 
 import pytest
 
-from bot.subscription.subscription import Subscription, UserHasAlreadyStartedTrial
+from subscription.subscription import Subscription, UserHasAlreadyStartedTrial
 from common_utils.env_config import PROJECT_ROOT
 from database.models.payment_model import PaymentDao
 from database.models.user_model import UserDao, UserStatusValues

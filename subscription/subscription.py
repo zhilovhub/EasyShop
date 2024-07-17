@@ -1,6 +1,6 @@
 from datetime import datetime, timedelta
 
-from bot.subscription import config
+from subscription import config
 
 from database.models.models import Database
 from database.models.user_model import UserStatusValues

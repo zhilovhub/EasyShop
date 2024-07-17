@@ -3,7 +3,7 @@ import sys
 
 import pytest
 
-from bot.subscription.subscription import Subscription
+from subscription.subscription import Subscription
 from common_utils.env_config import DB_FOR_TESTS, SCHEDULER_FOR_TESTS
 from common_utils.scheduler.scheduler import Scheduler
 from database.models.bot_model import BotDao
