@@ -21,6 +21,7 @@ from bot.post_message.post_message_editors import edit_delay_date, edit_message,
 from bot.handlers.mailing_settings_handlers import send_post_messages
 from bot.post_message.post_message_decorators import check_callback_conflicts
 from bot.post_message.post_message_callback_handler import post_message_handler
+from common_utils.bot_settings_config import BOT_PROPERTIES
 
 from common_utils.keyboards.keyboards import InlineBotMenuKeyboard
 
@@ -274,7 +275,7 @@ async def _start_confirm(
 
                 if not post_message.is_delayed:
                     await send_post_message(
-                        Bot(custom_bot.token),
+                        Bot(custom_bot.token, default=BOT_PROPERTIES),
                         channel_id,
                         post_message,
                         media_files,

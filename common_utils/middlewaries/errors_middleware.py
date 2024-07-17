@@ -5,6 +5,7 @@ from aiogram import BaseMiddleware, Bot
 from aiogram.types import CallbackQuery, Message, ChatMemberUpdated
 from aiogram.exceptions import TelegramAPIError, TelegramRetryAfter
 
+from common_utils.bot_settings_config import BOT_PROPERTIES
 from common_utils.env_config import TELEGRAM_TOKEN
 from common_utils.message_texts import MessageTexts
 from common_utils.broadcasting.broadcasting import EventTypes, send_event
@@ -13,7 +14,7 @@ from logs.config import logger
 
 
 async def notify_about_error(event: CallbackQuery | Message | ChatMemberUpdated, error_message: str):
-    await Bot(TELEGRAM_TOKEN).send_message(event.from_user.id, MessageTexts.UNKNOWN_ERROR_MESSAGE.value)
+    await Bot(TELEGRAM_TOKEN, default=BOT_PROPERTIES).send_message(event.from_user.id, MessageTexts.UNKNOWN_ERROR_MESSAGE.value)
     await send_event(event.from_user, EventTypes.UNKNOWN_ERROR, event.bot, err_msg=error_message)
 
 
