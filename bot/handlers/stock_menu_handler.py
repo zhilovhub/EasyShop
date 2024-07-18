@@ -9,7 +9,7 @@ from bot.main import stock_manager, bot
 from bot.utils import MessageTexts
 from bot.states import States
 from bot.handlers.routers import stock_menu_router
-from bot.utils.excel_utils import send_products_info_xlsx
+from bot.utils.excel_utils import send_demo_import_xlsx, send_products_info_xlsx
 from bot.keyboards.main_menu_keyboards import ReplyBotMenuKeyboard
 from bot.keyboards.stock_menu_keyboards import InlineStockImportFileTypeKeyboard, InlineStockMenuKeyboard, ReplyBackStockMenuKeyboard, \
     InlineStockImportMenuKeyboard
@@ -160,22 +160,23 @@ async def pick_import_file_type(query: CallbackQuery, state: FSMContext):
         await query.answer("Вы уже импортировали товары", show_alert=True)
         await query.message.delete()
         return
-
+    if callback_data.a == callback_data.ActionEnum.BACK_TO_STOCK_MENU:
+        return await query.message.edit_text(text=MessageTexts.STOCK_IMPORT_COMMANDS.value,
+                                             reply_markup=InlineStockImportMenuKeyboard.get_keyboard(bot_id),
+                                             parse_mode=ParseMode.HTML)
     match callback_data.a:
-        case callback_data.ActionEnum.BACK_TO_STOCK_MENU:
-            return await query.message.edit_text(text=MessageTexts.STOCK_IMPORT_COMMANDS.value,
-                                                 reply_markup=InlineStockImportMenuKeyboard.get_keyboard(bot_id),
-                                                 parse_mode=ParseMode.HTML)
         case callback_data.ActionEnum.EXCEL:
-            await query.message.delete()
-            await query.message.answer(
-                "Теперь отправьте боту xlsx / csv / json файл с товарами в таком же формате, "
-                "как файлы из экспорта товаров.",
-                reply_markup=ReplyBackStockMenuKeyboard.get_keyboard())
-            await query.answer()
-            await state.set_state(States.IMPORT_PRODUCTS)
-            await state.set_data({"bot_id": bot_id, "file_type": callback_data.a.value, "action": action})
-            return
+            example_file = send_demo_import_xlsx
+    await query.message.delete()
+    await query.message.answer(
+        "Теперь отправьте боту xlsx / csv / json файл с товарами в таком же формате, "
+        "как файл ниже",
+        reply_markup=ReplyBackStockMenuKeyboard.get_keyboard())
+    await example_file(bot_id)
+    await query.answer()
+    await state.set_state(States.IMPORT_PRODUCTS)
+    await state.set_data({"bot_id": bot_id, "file_type": callback_data.a.value, "action": action})
+    return
 
 
 @stock_menu_router.message(States.GOODS_COUNT_MANAGE)
@@ -227,7 +228,6 @@ async def handle_stock_import_input(message: Message, state: FSMContext):
         return await message.answer("Необходимо отправить файл с товарами.",
                                     reply_markup=ReplyBackStockMenuKeyboard.get_keyboard())
     file_extension = message.document.file_name.split('.')[-1].lower()
-    print(state_data["file_type"])
     match state_data["file_type"]:
         case InlineStockImportFileTypeKeyboard.Callback.ActionEnum.EXCEL.value:
             if file_extension not in ("xlsx",):

@@ -45,34 +45,40 @@ def _make_xlsx_buffer(name: str, wb_data) -> BufferedInputFile:
     return buffer_file
 
 
-def create_excel(data, sheet_name, table_type):
+def create_excel(data: dict, sheet_name, table_type):
     wb = Workbook()
     ws = wb.active
     ws.title = sheet_name
-
-    # Добавляем заголовки
+    headers = list(data[0].keys())
+    ws.append(headers)
+    for el in data:
+        ws.append([el[header] for header in headers])
+    # only for styling
+    alignment = Alignment(horizontal="center", vertical="center")
     match table_type:
+        case "demo_import":
+            for col in range(1, len(headers) + 1):
+                max_length = 0
+                column = get_column_letter(col)
+                for cell in ws[column]:
+                    if cell.value:
+                        cell.alignment = alignment
+                        max_length = max(max_length, len(str(cell.value)))
+                adjusted_width = (max_length + 2)
+                ws.column_dimensions[column].width = adjusted_width
         case "banned":
-            headers = ["user_id", "username"]
-            ws.append(headers)
+            pass
 
         case "contest":
-            headers = ["user_id", "username", "full_name", "took part time", "won"]
-            ws.append(headers)
+            pass
 
         case "product_export":
-            headers = ["id", "Имя", "Описание", "Цена", "Остаток", "Артикул", "Категория", "Картинки товара"]
-            ws.append(headers)
-            for product in data:
-                ws.append([product[header] for header in headers])
-
             header_fill = PatternFill(fgColor="FFCCFFCC", patternType="solid", fill_type="solid")
             even_fill = PatternFill(fgColor="FFE6FFCC", patternType="solid", fill_type="solid")
             odd_fill = PatternFill(fgColor="FFFFF2CC", patternType="solid", fill_type="solid")
             thin_border = Border(left=Side(style='thin'), right=Side(style='thin'),
                                  top=Side(style='thin'), bottom=Side(style='thin'))
             bold_font = Font(bold=True)
-            alignment = Alignment(horizontal="center", vertical="center")
             for col in range(1, len(headers) + 1):
                 cell = ws.cell(row=1, column=col)
                 cell.fill = header_fill
@@ -101,15 +107,24 @@ def create_excel(data, sheet_name, table_type):
                 adjusted_width = (max_length + 2)
                 ws.column_dimensions[column].width = adjusted_width
         case _:
-            headers = ["user_id", "username"]
-            ws.append(headers)
-
-    # Добавляем данные
-    if table_type != "product_export":
-        for user in data:
-            ws.append([user[header] for header in headers])
+            pass
 
     return wb
+
+
+async def send_demo_import_xlsx(bot_id):
+    try:
+        bot = await bot_db.get_bot(bot_id=bot_id)
+        created_by = bot.created_by
+    except BotNotFound:
+        logger.error(f"Provided to excel function bot not found bot_id={bot_id}",
+                     extra_params(bot_id=bot_id))
+        return
+    wb_data = [{"Имя": "шаблон", "Описание": "шаблон", "Цена": 0,
+               "Остаток": 0, "Артикул": "шаблон", "Категория": "Шаблон"}]
+    buffered_file = _make_xlsx_buffer("demo_import", wb_data)
+    await main_bot.send_document(created_by, document=buffered_file,
+                                 caption="шаблон.xlsx")
 
 
 async def send_ban_users_xlsx(users_list: List[int], bot_id: int):

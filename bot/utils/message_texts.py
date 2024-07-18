@@ -94,6 +94,8 @@ class MessageTexts(Enum):
         "Выберите <b>тип файла</b>, который хотите импортировать: "
     )
 
+    IMPORT_SAMPLE_EXAMPLE = "Загрузите файл с таким шаблоном"
+
     SELECT_CONTEST_TYPE = "Выберите тип конкурса:"
 
     @staticmethod
