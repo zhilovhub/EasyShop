@@ -131,6 +131,12 @@ class InlineStockMenuKeyboard:
                             actions.EXPORT, bot_id
                         )
                     ),
+                    InlineKeyboardButton(
+                        text="⬇️ Импорт товаров",
+                        callback_data=InlineStockMenuKeyboard.callback_json(
+                            actions.IMPORT, bot_id
+                        )
+                    ),
                 ],
                 # [
                 #     InlineKeyboardButton(
@@ -140,15 +146,6 @@ class InlineStockMenuKeyboard:
                 #         )
                 #     ),
                 # ],
-                # [
-                #     InlineKeyboardButton(
-                #         text="⬇️ Импорт товаров",
-                #         callback_data=InlineStockMenuKeyboard.callback_json(
-                #             actions.IMPORT, bot_id
-                #         )
-                #     ),
-
-                # [
                 #     InlineKeyboardButton(
                 #         text=f"{'✅' if auto_reduce else '❌'} Автоуменьшение на складе",
                 #         callback_data=InlineStockMenuKeyboard.callback_json(
@@ -184,14 +181,14 @@ class InlineStockImportMenuKeyboard:
 
         bot_id: int
 
-    @staticmethod
-    @callback_json_validator
+    @ staticmethod
+    @ callback_json_validator
     def callback_json(action: Callback.ActionEnum, bot_id: int) -> str:
         return InlineStockImportMenuKeyboard.Callback(
             a=action, bot_id=bot_id
         ).model_dump_json(by_alias=True)
 
-    @staticmethod
+    @ staticmethod
     def callback_validator(json_string: str) -> bool:
         try:
             InlineStockImportMenuKeyboard.Callback.model_validate_json(json_string)
@@ -199,7 +196,7 @@ class InlineStockImportMenuKeyboard:
         except ValidationError:
             return False
 
-    @staticmethod
+    @ staticmethod
     def get_keyboard(bot_id: int) -> InlineKeyboardMarkup:
         actions = InlineStockImportMenuKeyboard.Callback.ActionEnum
 
@@ -207,7 +204,7 @@ class InlineStockImportMenuKeyboard:
             inline_keyboard=[
                 [
                     InlineKeyboardButton(
-                        text="1",
+                        text="1️⃣",
                         callback_data=InlineStockImportMenuKeyboard.callback_json(
                             actions.REPLACE_ALL, bot_id
                         )
@@ -215,7 +212,7 @@ class InlineStockImportMenuKeyboard:
                 ],
                 [
                     InlineKeyboardButton(
-                        text="2",
+                        text="2️⃣",
                         callback_data=InlineStockImportMenuKeyboard.callback_json(
                             actions.REPLACE_DUPLICATES, bot_id
                         )
@@ -223,7 +220,7 @@ class InlineStockImportMenuKeyboard:
                 ],
                 [
                     InlineKeyboardButton(
-                        text="3",
+                        text="3️⃣",
                         callback_data=InlineStockImportMenuKeyboard.callback_json(
                             actions.NOT_REPLACE_DUPLICATES, bot_id
                         )
@@ -238,4 +235,54 @@ class InlineStockImportMenuKeyboard:
                     ),
                 ],
             ],
+        )
+
+
+class InlineStockImportFileTypeKeyboard:
+    class Callback(BaseModel):
+        class ActionEnum(Enum):
+            EXCEL = "xlsx"
+            BACK_TO_STOCK_MENU = "btsm"
+
+        model_config = ConfigDict(from_attributes=True, populate_by_name=True)
+
+        n: str = Field(default="imft", frozen=True)
+        a: ActionEnum
+
+        bot_id: int
+
+    @ staticmethod
+    @ callback_json_validator
+    def callback_json(action: Callback.ActionEnum, bot_id: int) -> str:
+        return InlineStockImportFileTypeKeyboard.Callback(
+            a=action, bot_id=bot_id
+        ).model_dump_json(by_alias=True)
+
+    @ staticmethod
+    def callback_validator(json_string: str) -> bool:
+        try:
+            InlineStockImportFileTypeKeyboard.Callback.model_validate_json(json_string)
+            return True
+        except ValidationError:
+            return False
+
+    @ staticmethod
+    def get_keyboard(bot_id: int) -> InlineKeyboardMarkup:
+        actions = InlineStockImportFileTypeKeyboard.Callback.ActionEnum
+
+        return InlineKeyboardMarkup(
+            inline_keyboard=[
+                [InlineKeyboardButton(
+                    text="Excel (.xlsx)",
+                    callback_data=InlineStockImportFileTypeKeyboard.callback_json(
+                        actions.EXCEL, bot_id
+                    )
+                )],
+                [InlineKeyboardButton(
+                    text="🔙 Назад",
+                    callback_data=InlineStockImportFileTypeKeyboard.callback_json(
+                        actions.BACK_TO_STOCK_MENU, bot_id
+                    )
+                )],
+            ]
         )

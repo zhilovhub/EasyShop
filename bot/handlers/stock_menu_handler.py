@@ -11,7 +11,7 @@ from bot.states import States
 from bot.handlers.routers import stock_menu_router
 from bot.utils.excel_utils import send_products_info_xlsx
 from bot.keyboards.main_menu_keyboards import ReplyBotMenuKeyboard
-from bot.keyboards.stock_menu_keyboards import InlineStockMenuKeyboard, ReplyBackStockMenuKeyboard, \
+from bot.keyboards.stock_menu_keyboards import InlineStockImportFileTypeKeyboard, InlineStockMenuKeyboard, ReplyBackStockMenuKeyboard, \
     InlineStockImportMenuKeyboard
 
 from common_utils.env_config import FILES_PATH
@@ -138,20 +138,53 @@ async def import_menu_handler(query: CallbackQuery, state: FSMContext):
             reply_markup=await InlineStockMenuKeyboard.get_keyboard(bot_id, auto_reduce),
             parse_mode=ParseMode.HTML
         )
-    await query.message.answer(
-        "Теперь отправьте боту xlsx / csv / json файл с товарами в таком же формате, "
-        "как файлы из экспорта товаров.",
-        reply_markup=ReplyBackStockMenuKeyboard.get_keyboard())
-    await query.answer()
 
-    await state.set_state(States.IMPORT_PRODUCTS)
+    await query.message.edit_text(
+        text=MessageTexts.STOCK_IMPORT_FILE_TYPE.value,
+        reply_markup=InlineStockImportFileTypeKeyboard.get_keyboard(bot_id)
+    )
     await state.set_data({"bot_id": bot_id, "action": callback_data.a.value})
+
+
+@stock_menu_router.callback_query(lambda query: InlineStockImportFileTypeKeyboard.callback_validator(query.data))
+async def pick_import_file_type(query: CallbackQuery, state: FSMContext):
+    callback_data = InlineStockImportFileTypeKeyboard.Callback.model_validate_json(query.data)
+
+    bot_id = callback_data.bot_id
+
+    state_data = await state.get_data()
+
+    try:
+        action = state_data["action"]
+    except KeyError:
+        await query.answer("Вы уже импортировали товары", show_alert=True)
+        await query.message.delete()
+        return
+
+    match callback_data.a:
+        case callback_data.ActionEnum.BACK_TO_STOCK_MENU:
+            return await query.message.edit_text(text=MessageTexts.STOCK_IMPORT_COMMANDS.value,
+                                                 reply_markup=InlineStockImportMenuKeyboard.get_keyboard(bot_id),
+                                                 parse_mode=ParseMode.HTML)
+        case callback_data.ActionEnum.EXCEL:
+            await query.message.delete()
+            await query.message.answer(
+                "Теперь отправьте боту xlsx / csv / json файл с товарами в таком же формате, "
+                "как файлы из экспорта товаров.",
+                reply_markup=ReplyBackStockMenuKeyboard.get_keyboard())
+            await query.answer()
+            await state.set_state(States.IMPORT_PRODUCTS)
+            await state.set_data({"bot_id": bot_id, "file_type": callback_data.a.value, "action": action})
+            return
 
 
 @stock_menu_router.message(States.GOODS_COUNT_MANAGE)
 async def handle_stock_manage_input(message: Message, state: FSMContext):
+    state_data = await state.get_data()
     if message.text == ReplyBackStockMenuKeyboard.Callback.ActionEnum.BACK_TO_STOCK_MENU.value:
-        await _back_to_stock_menu(message, state)
+        await message.edit_reply_markup(InlineStockImportFileTypeKeyboard.get_keyboard(state_data["bot_id"]))
+        await state.set_state(States.BOT_MENU)
+        await state.set_data({"action": state_data["action"], "bot_id": state_data["bot_id"]})
         return
 
     if message.content_type != "document":
@@ -179,18 +212,31 @@ async def handle_stock_manage_input(message: Message, state: FSMContext):
 
 @stock_menu_router.message(States.IMPORT_PRODUCTS)
 async def handle_stock_import_input(message: Message, state: FSMContext):
+    state_data = await state.get_data()
     if message.text == ReplyBackStockMenuKeyboard.Callback.ActionEnum.BACK_TO_STOCK_MENU.value:
-        await _back_to_stock_menu(message, state)
+
+        await message.answer(
+            text=MessageTexts.STOCK_IMPORT_FILE_TYPE.value,
+            reply_markup=InlineStockImportFileTypeKeyboard.get_keyboard(bot_id=state_data['bot_id'])
+        )
+        await state.set_state(States.BOT_MENU)
+        await state.set_data({"action": state_data["action"], "bot_id": state_data["bot_id"]})
         return
 
-    state_data = await state.get_data()
     if message.content_type != "document":
         return await message.answer("Необходимо отправить файл с товарами.",
                                     reply_markup=ReplyBackStockMenuKeyboard.get_keyboard())
     file_extension = message.document.file_name.split('.')[-1].lower()
-    if file_extension not in ("xlsx", "json", "csv"):
-        return await message.answer("Файл должен быть в формате xlsx / json / csv",
-                                    reply_markup=ReplyBackStockMenuKeyboard.get_keyboard())
+    print(state_data["file_type"])
+    match state_data["file_type"]:
+        case InlineStockImportFileTypeKeyboard.Callback.ActionEnum.EXCEL.value:
+            if file_extension not in ("xlsx",):
+                return await message.answer("Файл должен быть в формате xlsx",
+                                            reply_markup=ReplyBackStockMenuKeyboard.get_keyboard())
+
+    # if file_extension not in ("xlsx", "json", "csv"):
+    #     return await message.answer("Файл должен быть в формате xlsx / json / csv",
+    #                                 reply_markup=ReplyBackStockMenuKeyboard.get_keyboard())
     try:
         bot_id = state_data['bot_id']
         file_path = f"{FILES_PATH}docs/{datetime.now().strftime('%d$m%Y_%H%M%S')}.{file_extension}"
@@ -214,6 +260,7 @@ async def handle_stock_import_input(message: Message, state: FSMContext):
                 await stock_manager.import_csv(bot_id=bot_id, path_to_file=file_path, replace=replace,
                                                replace_duplicates=replace_d)
         await message.answer("Товары обновлены.")
+        await _back_to_stock_menu(message, state)
     except Exception as e:
         # TODO
         logger.error(
