@@ -1,12 +1,12 @@
 from datetime import datetime, timedelta
 
-from bot.subscription import config
 
 from database.models.models import Database
 from database.models.user_model import UserStatusValues
 from database.models.payment_model import PaymentSchemaWithoutId
 
-from common_utils.env_config import DESTINATION_PHONE_NUMBER, TIMEZONE, DB_FOR_TESTS
+from common_utils.env_config import DESTINATION_PHONE_NUMBER, TIMEZONE, DB_FOR_TESTS, SCHEDULER_URL
+from common_utils.subscription import config
 from common_utils.scheduler.scheduler import Scheduler
 
 from logs.config import logger, extra_params
@@ -190,9 +190,9 @@ class Subscription:
 if __name__ == '__main__':
     from database.models.models import Database
 
-    scheduler = Scheduler('postgres', TIMEZONE)
+    scheduler = Scheduler(SCHEDULER_URL, 'postgres', TIMEZONE)
 
     subscription = Subscription(
-        database=Database(sqlalchemy_url=DB_FOR_TESTS),
-        custom_scheduler=scheduler
+        database=Database(sqlalchemy_url=DB_FOR_TESTS, logger=logger),
+        custom_scheduler=scheduler,
     )

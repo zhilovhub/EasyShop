@@ -11,12 +11,12 @@ from bot.states.states import States
 from bot.handlers.routers import commands_router
 from bot.utils.send_instructions import send_instructions
 from bot.utils.check_subscription import check_subscription
-from bot.subscription.subscription import UserHasAlreadyStartedTrial
 from bot.handlers.subscription_handlers import send_subscription_expire_notify, send_subscription_end_notify
 from bot.keyboards.subscription_keyboards import InlineSubscriptionContinueKeyboard
 from bot.middlewaries.subscription_middleware import CheckSubscriptionMiddleware
 
 from common_utils.keyboards.keyboards import InlineBotMenuKeyboard
+from common_utils.subscription.subscription import UserHasAlreadyStartedTrial
 from common_utils.broadcasting.broadcasting import send_event, EventTypes, success_event
 
 from database.config import user_db, adv_db, bot_db
@@ -121,6 +121,8 @@ async def _start_trial(message: Message, state: FSMContext):
     admin_message = await send_event(message.from_user, EventTypes.STARTED_TRIAL)
 
     user_id = message.from_user.id
+    user = await user_db.get_user(user_id)
+
     # logger.info(f"starting trial subscription for user with id ({user_id} until date {subscribe_until}")
     # TODO move logger into to subscription module
     logger.info(
@@ -134,12 +136,14 @@ async def _start_trial(message: Message, state: FSMContext):
         return await message.answer("Вы уже оформляли пробную подписку")
 
     logger.info(f"adding scheduled subscription notifies for user {user_id}")
-    await subscription.add_notifications(
+    notification_job_ids = await subscription.add_notifications(
         user_id,
         on_expiring_notification=send_subscription_expire_notify,
         on_end_notification=send_subscription_end_notify,
         subscribed_until=subscribed_until,
     )
+    user.subscription_job_ids = notification_job_ids  # + [finish_job_id]
+    await user_db.update_user(user)
 
     await state.set_state(States.WAITING_FOR_TOKEN)
 

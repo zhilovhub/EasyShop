@@ -2,7 +2,7 @@ from enum import Enum
 from typing import Optional
 from datetime import datetime
 
-from sqlalchemy import BigInteger, Column, String, DateTime, JSON, TypeDecorator, Unicode, Dialect
+from sqlalchemy import BigInteger, Column, String, DateTime, JSON, TypeDecorator, Unicode, Dialect, ARRAY
 from sqlalchemy import select, update, delete, insert
 from sqlalchemy.ext.asyncio import AsyncEngine
 
@@ -60,6 +60,7 @@ class User(Base):
     settings = Column(JSON)
     locale = Column(String(10), nullable=False)
     balance = Column(BigInteger, default=0)
+    subscription_job_ids = Column(ARRAY(String))
 
 
 class UserSchema(BaseModel):
@@ -73,6 +74,7 @@ class UserSchema(BaseModel):
     settings: dict | None = None
     locale: str = Field(max_length=10, default="default")
     balance: int | None = 0
+    subscription_job_ids: list[str] | None = None
 
 
 class UserDao(Dao):
