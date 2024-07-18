@@ -11,7 +11,7 @@ from bot.states import States
 from bot.handlers.routers import stock_menu_router
 from bot.utils.excel_utils import send_demo_import_xlsx, send_products_info_xlsx
 from bot.keyboards.main_menu_keyboards import ReplyBotMenuKeyboard
-from bot.keyboards.stock_menu_keyboards import InlineStockImportFileTypeKeyboard, InlineStockMenuKeyboard, ReplyBackStockMenuKeyboard, \
+from bot.keyboards.stock_menu_keyboards import InlineStockImportConfirmKeyboard, InlineStockImportFileTypeKeyboard, InlineStockMenuKeyboard, ReplyBackStockMenuKeyboard, \
     InlineStockImportMenuKeyboard
 
 from common_utils.env_config import FILES_PATH
@@ -241,26 +241,25 @@ async def handle_stock_import_input(message: Message, state: FSMContext):
         bot_id = state_data['bot_id']
         file_path = f"{FILES_PATH}docs/{datetime.now().strftime('%d$m%Y_%H%M%S')}.{file_extension}"
         await bot.download(message.document.file_id, destination=file_path)
-        if state_data['action'] == "replace_all":
-            replace = True
-        else:
-            replace = False
-        if state_data['action'] == "replace_duplicates":
-            replace_d = True
-        else:
-            replace_d = False
+
         match file_extension:
             case "xlsx":
-                await stock_manager.import_xlsx(bot_id=bot_id, path_to_file=file_path, replace=replace,
-                                                replace_duplicates=replace_d)
-            case "json":
-                await stock_manager.import_json(bot_id=bot_id, path_to_file=file_path, replace=replace,
-                                                replace_duplicates=replace_d)
-            case "csv":
-                await stock_manager.import_csv(bot_id=bot_id, path_to_file=file_path, replace=replace,
-                                               replace_duplicates=replace_d)
-        await message.answer("Товары обновлены.")
-        await _back_to_stock_menu(message, state)
+                status, err_message = await stock_manager.check_xlsx(file_path)
+
+                # await stock_manager.import_xlsx(bot_id=bot_id, path_to_file=file_path, replace=replace,
+                #                                 replace_duplicates=replace_d)
+                # case "json":
+                #     await stock_manager.import_json(bot_id=bot_id, path_to_file=file_path, replace=replace,
+                #                                     replace_duplicates=replace_d)
+                # case "csv":
+                #     await stock_manager.import_csv(bot_id=bot_id, path_to_file=file_path, replace=replace,
+                #                                    replace_duplicates=replace_d)
+        if status == False:
+            return await message.answer(f"Файл не соответствует формату ({err_message})")
+        await message.answer(text=MessageTexts.CONFIRM_STOCK_IMPORT,
+                             reply_markup=InlineStockImportConfirmKeyboard.get_keyboard(bot_id))
+        await state.set_data({"action": state_data['action'], "file_type": state_data["file_type"], "bot_id": bot_id,
+                              "file_path": file_path})
     except Exception as e:
         # TODO
         logger.error(
@@ -269,6 +268,59 @@ async def handle_stock_import_input(message: Message, state: FSMContext):
             exc_info=e
         )
         raise e
+
+
+@stock_menu_router.callback_query(lambda query: InlineStockImportConfirmKeyboard.callback_validator(query.data))
+async def confirm_file_import(query: CallbackQuery, state: FSMContext):
+    callback_data = InlineStockImportConfirmKeyboard.Callback.model_validate_json(query.data)
+
+    bot_id = callback_data.bot_id
+
+    state_data = await state.get_data()
+    try:
+        action = state_data["action"]
+        file_type = state_data["file_type"]
+        file_path = state_data["file_path"]
+    except KeyError:
+        await query.answer("Вы уже добаили товары", show_alert=True)
+        await query.message.delete()
+        return
+    match callback_data.a:
+        case callback_data.ActionEnum.DENY:
+            query.message.delete()
+            await query.message.answer(
+                text=MessageTexts.STOCK_IMPORT_FILE_TYPE.value,
+                reply_markup=InlineStockImportFileTypeKeyboard.get_keyboard(bot_id=state_data['bot_id'])
+            )
+            await state.set_state(States.BOT_MENU)
+            await state.set_data({"action": state_data["action"], "bot_id": state_data["bot_id"]})
+            return
+
+        case callback_data.ActionEnum.CONFIRM:
+            replace = False
+            replace_d = False
+            match action:
+                case "replace_all":
+                    replace = True
+
+                case "replace_duplicates":
+                    replace_d = True
+            # if action == "replace_all":
+            #     replace = True
+            # else:
+            #     replace = False
+            # if action == "replace_duplicates":
+            #     replace_d = True
+            # else:
+            #     replace_d = False
+            match file_type:
+                case InlineStockImportFileTypeKeyboard.Callback.ActionEnum.EXCEL.value:
+                    await stock_manager.import_xlsx(bot_id=bot_id, path_to_file=file_path, replace=replace,
+                                                    replace_duplicates=replace_d)
+
+            await query.message.answer("Товары обновлены.")
+            await query.message.delete()
+            await _back_to_stock_menu(query.message, state)
 
 
 async def _back_to_stock_menu(message: Message, state: FSMContext) -> None:

@@ -181,14 +181,14 @@ class InlineStockImportMenuKeyboard:
 
         bot_id: int
 
-    @ staticmethod
-    @ callback_json_validator
+    @staticmethod
+    @callback_json_validator
     def callback_json(action: Callback.ActionEnum, bot_id: int) -> str:
         return InlineStockImportMenuKeyboard.Callback(
             a=action, bot_id=bot_id
         ).model_dump_json(by_alias=True)
 
-    @ staticmethod
+    @staticmethod
     def callback_validator(json_string: str) -> bool:
         try:
             InlineStockImportMenuKeyboard.Callback.model_validate_json(json_string)
@@ -235,6 +235,60 @@ class InlineStockImportMenuKeyboard:
                     ),
                 ],
             ],
+        )
+
+
+class InlineStockImportConfirmKeyboard:
+    class Callback(BaseModel):
+        class ActionEnum(Enum):
+            CONFIRM = "cfrm"
+            DENY = "deny"
+
+        model_config = ConfigDict(from_attributes=True, populate_by_name=True)
+
+        n: str = Field(default="imft", frozen=True)
+        a: ActionEnum
+
+        bot_id: int
+
+    @staticmethod
+    @callback_json_validator
+    def callback_json(action: Callback.ActionEnum, bot_id: int) -> str:
+        return InlineStockImportConfirmKeyboard.Callback(
+            a=action, bot_id=bot_id
+        ).model_dump_json(by_alias=True)
+
+    @staticmethod
+    def callback_validator(json_string: str) -> bool:
+        try:
+            InlineStockImportConfirmKeyboard.Callback.model_validate_json(json_string)
+            return True
+        except ValidationError:
+            return False
+
+    @staticmethod
+    def get_keyboard(bot_id: int) -> InlineKeyboardMarkup:
+        actions = InlineStockImportConfirmKeyboard.Callback.ActionEnum
+
+        return InlineKeyboardMarkup(
+            inline_keyboard=[
+                [
+                    InlineKeyboardButton(
+                        text="✅",
+                        callback_data=InlineStockImportConfirmKeyboard.callback_json(
+                            actions.CONFIRM, bot_id
+                        )
+                    ),
+                ],
+                [
+                    InlineKeyboardButton(
+                        text="❌",
+                        callback_data=InlineStockImportConfirmKeyboard.callback_json(
+                            actions.DENY, bot_id
+                        )
+                    )
+                ],
+            ]
         )
 
 

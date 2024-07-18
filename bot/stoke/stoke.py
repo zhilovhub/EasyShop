@@ -137,6 +137,24 @@ class Stoke:
 
         return path_to_file, path_to_images
 
+    async def check_xlsx(self, path_to_file: str):
+        wb = load_workbook(filename=path_to_file)
+        ws = wb.active
+        for ind, row in enumerate(list(ws.values)[1:]):
+            err_message = f"Строка {ind+1}: "
+            if len(row) != 6:
+                return False, "Неверное количество колонок"
+            try:
+                price = int(row[2])
+                count = int(row[3])
+                if price < 0:
+                    return False, err_message + "цена меньше 0"
+                elif count < 0:
+                    return False, err_message + "остаток товара меньше 0"
+                return True, ""
+            except:
+                return False, err_message + "остаток или цена - не числа"
+
     async def import_xlsx(
             self,
             bot_id: int,
