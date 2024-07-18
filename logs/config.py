@@ -9,6 +9,8 @@ from logging import LogRecord
 
 from common_utils.env_config import LOGS_PATH, FROM, LOG_TO_GRAFANA, GRAFANA_URL
 
+from typing import TypedDict, Unpack
+
 try:
     os.mkdir(LOGS_PATH)
 except FileExistsError:
@@ -21,7 +23,26 @@ GRAFANA_FORMATTER_NAME = "formatter_grafana"
 LOCAL_FORMATTER_NAME = "formatter_local"
 
 
-def extra_params(**kwargs):
+class RequestParams(TypedDict, total=False):
+    bot_id: int
+    user_id: int
+    product_review_id: int
+    category_id: int
+    channel_id: int
+    channel_user_id: int
+    channel_post_id: int
+    post_message_id: int
+    order_id: int
+    product_id: int
+    payment_id: int
+    adv_id: int
+    job_id: str
+    contest_id: int
+    partnership_id: int
+    bot_token: str
+
+
+def extra_params(**kwargs: Unpack[RequestParams]):
     return {
         "tags": kwargs
     }
@@ -86,6 +107,8 @@ class LokiFilter(logging.Filter):
                 record.tags["job_id"] = record.job_id
             if hasattr(record, "contest_id"):
                 record.tags["contest_id"] = record.contest_id
+            if hasattr(record, "partnership_id"):
+                record.tags["partnership_id"] = record.partnership_id
             if hasattr(record, "bot_token"):
                 # hide the token from gr
                 record.msg = record.msg.replace(record.bot_token[5:-1], "*" * len(record.bot_token[5:-1]))
