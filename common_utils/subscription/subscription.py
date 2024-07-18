@@ -2,7 +2,7 @@ from datetime import datetime, timedelta
 
 
 from database.models.models import Database
-from database.models.user_model import UserStatusValues
+from database.models.user_model import UserStatusValues, UserSchema
 from database.models.payment_model import PaymentSchemaWithoutId
 
 from common_utils.env_config import DESTINATION_PHONE_NUMBER, TIMEZONE, DB_FOR_TESTS, SCHEDULER_URL
@@ -38,7 +38,7 @@ class Subscription:
 
         self.scheduler = custom_scheduler
 
-    async def start_trial(self, user_id: int) -> datetime:
+    async def start_trial(self, user_id: int) -> UserSchema:
         """Starts trial subscription of the user"""
         user = await self.user_db.get_user(user_id)
         if user.status != UserStatusValues.NEW:
@@ -48,15 +48,13 @@ class Subscription:
             days=config.TRIAL_DURATION_IN_DAYS)
         user.status = UserStatusValues.TRIAL
 
-        await self.user_db.update_user(user)
-
         logger.info(
             f"user_id={user_id}: the user started trial for {config.TRIAL_DURATION_IN_DAYS} days and he is subscribed"
             f"until {user.subscribed_until}",
             extra=extra_params(user_id=user_id)
         )
 
-        return user.subscribed_until
+        return user
 
     async def approve_payment(self, user_id: int) -> datetime:
         """Approves user's payment"""
