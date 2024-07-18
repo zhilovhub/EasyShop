@@ -21,6 +21,7 @@ class PostMessageType(Enum):
     MAILING = "1"
     CHANNEL_POST = "2"
     CONTEST = "3"
+    PARTNERSHIP_POST = "4"
 
 
 class PostMessageNotFound(Exception):

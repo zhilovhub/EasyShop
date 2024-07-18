@@ -251,7 +251,7 @@ async def _button_text_save(
     match post_message_type:
         case PostMessageType.MAILING:
             username = (await Bot(custom_bot_token).get_me()).username
-        case PostMessageType.CHANNEL_POST | PostMessageType.CONTEST:
+        case PostMessageType.CHANNEL_POST | PostMessageType.CONTEST | PostMessageType.PARTNERSHIP_POST:
             username = (await Bot(custom_bot_token).get_chat(channel_id)).username
         case _:
             raise UnknownPostMessageType
@@ -561,7 +561,7 @@ async def _contest_finish_date_save(
     match post_message_type:
         case PostMessageType.MAILING:
             username = (await Bot(custom_bot_token).get_me()).username
-        case PostMessageType.CHANNEL_POST | PostMessageType.CONTEST:
+        case PostMessageType.CHANNEL_POST | PostMessageType.CONTEST | PostMessageType.PARTNERSHIP_POST:
             username = (await Bot(custom_bot_token).get_chat(channel_id)).username
         case _:
             raise UnknownPostMessageType
@@ -604,7 +604,7 @@ async def _delay_save(
     match post_message_type:
         case PostMessageType.MAILING:
             username = (await Bot(custom_bot_token).get_me()).username
-        case PostMessageType.CHANNEL_POST | PostMessageType.CONTEST:
+        case PostMessageType.CHANNEL_POST | PostMessageType.CONTEST | PostMessageType.PARTNERSHIP_POST:
             username = (await Bot(custom_bot_token).get_chat(channel_id)).username
         case _:
             raise UnknownPostMessageType
@@ -699,7 +699,7 @@ async def _button_url_save(
     match post_message_type:
         case PostMessageType.MAILING:
             username = (await Bot(custom_bot_token).get_me()).username
-        case PostMessageType.CHANNEL_POST | PostMessageType.CONTEST:
+        case PostMessageType.CHANNEL_POST | PostMessageType.CONTEST | PostMessageType.PARTNERSHIP_POST:
             username = (await Bot(custom_bot_token).get_chat(channel_id)).username
         case _:
             raise UnknownPostMessageType
@@ -894,7 +894,7 @@ async def _reply_no_button(
     match post_message_type:
         case PostMessageType.MAILING:
             username = (await Bot(custom_bot_token).get_me()).username
-        case PostMessageType.CHANNEL_POST | PostMessageType.CONTEST:
+        case PostMessageType.CHANNEL_POST | PostMessageType.CONTEST | PostMessageType.PARTNERSHIP_POST:
             username = (await Bot(custom_bot_token).get_chat(channel_id)).username
         case _:
             raise UnknownPostMessageType
@@ -925,7 +925,7 @@ async def _back_to_post_message_menu(
     match post_message_type:
         case PostMessageType.MAILING:
             username = (await Bot(custom_bot_token).get_me()).username
-        case PostMessageType.CHANNEL_POST | PostMessageType.CONTEST:
+        case PostMessageType.CHANNEL_POST | PostMessageType.CONTEST | PostMessageType.PARTNERSHIP_POST:
             username = (await Bot(custom_bot_token).get_chat(channel_id)).username
         case _:
             raise UnknownPostMessageType

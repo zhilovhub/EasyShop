@@ -233,6 +233,8 @@ class InlinePostMessageMenuKeyboard:
                 delete_button_text = "🗑 Удалить запись"
             case PostMessageType.CONTEST:
                 delete_button_text = "🗑 Удалить конкурс"
+            case PostMessageType.PARTNERSHIP_POST:
+                delete_button_text = "🗑 Удалить партнерский пост"
             case _:
                 raise UnknownPostMessageType
 
@@ -298,6 +300,17 @@ class InlinePostMessageMenuKeyboard:
                             ],
                             [
                                 contest_button
+                            ],
+                            [
+                                cancel_button
+                            ]
+                        ]
+                    )
+                case PostMessageType.PARTNERSHIP_POST:
+                    return InlineKeyboardMarkup(
+                        inline_keyboard=[
+                            [
+                                statistic_button
                             ],
                             [
                                 cancel_button

@@ -243,7 +243,7 @@ async def _start_confirm(
                         parse_mode=ParseMode.HTML
                     )
 
-            case PostMessageType.CHANNEL_POST | PostMessageType.CONTEST:
+            case PostMessageType.CHANNEL_POST | PostMessageType.CONTEST | PostMessageType.PARTNERSHIP_POST:
                 if post_message_type == PostMessageType.CONTEST:
                     contest = await contest_db.get_contest_by_bot_id(bot_id=post_message.bot_id)
                     if contest.finish_job_id:
@@ -352,7 +352,7 @@ async def _delete_post_message(
                 parse_mode=ParseMode.HTML
             )
 
-        case PostMessageType.CHANNEL_POST | PostMessageType.CONTEST:
+        case PostMessageType.CHANNEL_POST | PostMessageType.CONTEST | PostMessageType.PARTNERSHIP_POST:
             channel_username = (await Bot(custom_bot.token).get_chat(channel_id)).username
             keyboard = await InlineChannelMenuKeyboard.get_keyboard(post_message.bot_id, channel_id)
 
@@ -428,7 +428,7 @@ async def _inline_back_to_post_message_menu(
     match post_message_type:
         case PostMessageType.MAILING:
             username = (await Bot(custom_bot_token).get_me()).username
-        case PostMessageType.CHANNEL_POST | PostMessageType.CONTEST:
+        case PostMessageType.CHANNEL_POST | PostMessageType.CONTEST | PostMessageType.PARTNERSHIP_POST:
             username = (await Bot(custom_bot_token).get_chat(channel_id)).username
         case _:
             raise UnknownPostMessageType
