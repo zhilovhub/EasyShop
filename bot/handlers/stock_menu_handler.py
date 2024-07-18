@@ -142,7 +142,7 @@ async def import_menu_handler(query: CallbackQuery, state: FSMContext):
 
     await query.message.edit_text(
         text=MessageTexts.STOCK_IMPORT_FILE_TYPE.value,
-        reply_markup=InlineStockImportFileTypeKeyboard.get_keyboard(bot_id)
+        reply_markup=InlineStockImportFileTypeKeyboard.get_keyboard(bot_id, callback_data.a.value)
     )
     await state.set_data({"bot_id": bot_id})
 
@@ -152,6 +152,7 @@ async def pick_import_file_type(query: CallbackQuery, state: FSMContext):
     callback_data = InlineStockImportFileTypeKeyboard.Callback.model_validate_json(query.data)
 
     bot_id = callback_data.bot_id
+    import_action = callback_data.import_action
 
     if callback_data.a == callback_data.ActionEnum.BACK_TO_STOCK_MENU:
         return await query.message.edit_text(
@@ -173,7 +174,7 @@ async def pick_import_file_type(query: CallbackQuery, state: FSMContext):
     await example_file(bot_id)
 
     await state.set_state(States.IMPORT_PRODUCTS)
-    await state.set_data({"bot_id": bot_id, "file_type": callback_data.a.value})
+    await state.set_data({"bot_id": bot_id, "file_type": callback_data.a.value, "import_action": import_action})
 
 
 @stock_menu_router.message(States.GOODS_COUNT_MANAGE)
@@ -184,7 +185,9 @@ async def handle_stock_manage_input(message: Message, state: FSMContext):
     if message.content_type != "document":
         return await message.answer("Необходимо отправить xlsx файл с товарами.",
                                     reply_markup=ReplyBackStockMenuKeyboard.get_keyboard())
+
     file_extension = message.document.file_name.split('.')[-1].lower()
+
     if file_extension not in ("xlsx",):
         return await message.answer("Файл должен быть в формате xlsx товарами.",
                                     reply_markup=ReplyBackStockMenuKeyboard.get_keyboard())
@@ -208,13 +211,19 @@ async def handle_stock_manage_input(message: Message, state: FSMContext):
 @stock_menu_router.message(States.IMPORT_PRODUCTS)
 async def handle_stock_import_input(message: Message, state: FSMContext):
     state_data = await state.get_data()
+
     bot_id = state_data["bot_id"]
     file_type = state_data["file_type"]
+    import_action = state_data["import_action"]
 
     if message.text == ReplyBackStockMenuKeyboard.Callback.ActionEnum.BACK_TO_STOCK_MENU.value:
         await message.answer(
             text=MessageTexts.STOCK_IMPORT_FILE_TYPE.value,
-            reply_markup=InlineStockImportFileTypeKeyboard.get_keyboard(bot_id=bot_id)
+            reply_markup=InlineStockImportFileTypeKeyboard.get_keyboard(bot_id=bot_id, import_action=import_action)
+        )
+        await message.answer(
+            text="Возвращаемся назад...",
+            reply_markup=ReplyBotMenuKeyboard.get_keyboard(bot_id)
         )
         await state.set_state(States.BOT_MENU)
         await state.set_data(state_data)
@@ -253,7 +262,7 @@ async def handle_stock_import_input(message: Message, state: FSMContext):
 
         await message.answer(
             text=MessageTexts.CONFIRM_STOCK_IMPORT.value,
-            reply_markup=InlineStockImportConfirmKeyboard.get_keyboard(bot_id, file_type, file_path)
+            reply_markup=InlineStockImportConfirmKeyboard.get_keyboard(bot_id, import_action, file_type, file_path)
         )
         await state.set_data(state_data)
 
@@ -283,7 +292,7 @@ async def confirm_file_import(query: CallbackQuery, state: FSMContext):
             await query.message.delete()
             await query.message.answer(
                 text=MessageTexts.STOCK_IMPORT_FILE_TYPE.value,
-                reply_markup=InlineStockImportFileTypeKeyboard.get_keyboard(bot_id=bot_id)
+                reply_markup=InlineStockImportFileTypeKeyboard.get_keyboard(bot_id=bot_id, import_action=import_action)
             )
             await state.set_state(States.BOT_MENU)
             await state.set_data(state_data)
@@ -297,8 +306,6 @@ async def confirm_file_import(query: CallbackQuery, state: FSMContext):
                     replace = True
                 case "replace_duplicates":
                     replace_d = True
-                case _:
-                    raise UnknownFileExstension(import_action)
 
             match file_type:
                 case InlineStockImportFileTypeKeyboard.Callback.ActionEnum.EXCEL.value:

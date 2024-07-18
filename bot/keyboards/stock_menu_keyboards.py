@@ -259,11 +259,12 @@ class InlineStockImportConfirmKeyboard:
     def callback_json(
             action: Callback.ActionEnum,
             bot_id: int,
+            import_action: str,
             file_type: str,
             file_path: str
     ) -> str:
         return InlineStockImportConfirmKeyboard.Callback(
-            a=action, bot_id=bot_id, file_type=file_type, file_path=file_path
+            a=action, bot_id=bot_id, import_action=import_action, file_type=file_type, file_path=file_path
         ).model_dump_json(by_alias=True)
 
     @staticmethod
@@ -275,7 +276,7 @@ class InlineStockImportConfirmKeyboard:
             return False
 
     @staticmethod
-    def get_keyboard(bot_id: int, file_type: str, file_path: str) -> InlineKeyboardMarkup:
+    def get_keyboard(bot_id: int, import_action: str, file_type: str, file_path: str) -> InlineKeyboardMarkup:
         actions = InlineStockImportConfirmKeyboard.Callback.ActionEnum
 
         return InlineKeyboardMarkup(
@@ -284,7 +285,7 @@ class InlineStockImportConfirmKeyboard:
                     InlineKeyboardButton(
                         text="✅",
                         callback_data=InlineStockImportConfirmKeyboard.callback_json(
-                            actions.CONFIRM, bot_id, file_type, file_path
+                            actions.CONFIRM, bot_id, import_action, file_type, file_path
                         )
                     ),
                 ],
@@ -292,7 +293,7 @@ class InlineStockImportConfirmKeyboard:
                     InlineKeyboardButton(
                         text="❌",
                         callback_data=InlineStockImportConfirmKeyboard.callback_json(
-                            actions.DENY, bot_id, file_type, file_path
+                            actions.DENY, bot_id, import_action, file_type, file_path
                         )
                     )
                 ],
@@ -312,12 +313,13 @@ class InlineStockImportFileTypeKeyboard:
         a: ActionEnum
 
         bot_id: int
+        import_action: str = Field(alias="ia")
 
     @staticmethod
-    @ callback_json_validator
-    def callback_json(action: Callback.ActionEnum, bot_id: int) -> str:
+    @callback_json_validator
+    def callback_json(action: Callback.ActionEnum, bot_id: int, import_action: str) -> str:
         return InlineStockImportFileTypeKeyboard.Callback(
-            a=action, bot_id=bot_id
+            a=action, bot_id=bot_id, import_action=import_action
         ).model_dump_json(by_alias=True)
 
     @staticmethod
@@ -329,7 +331,7 @@ class InlineStockImportFileTypeKeyboard:
             return False
 
     @staticmethod
-    def get_keyboard(bot_id: int) -> InlineKeyboardMarkup:
+    def get_keyboard(bot_id: int, import_action: str) -> InlineKeyboardMarkup:
         actions = InlineStockImportFileTypeKeyboard.Callback.ActionEnum
 
         return InlineKeyboardMarkup(
@@ -337,13 +339,13 @@ class InlineStockImportFileTypeKeyboard:
                 [InlineKeyboardButton(
                     text="Excel (.xlsx)",
                     callback_data=InlineStockImportFileTypeKeyboard.callback_json(
-                        actions.EXCEL, bot_id
+                        actions.EXCEL, bot_id, import_action
                     )
                 )],
                 [InlineKeyboardButton(
                     text="🔙 Назад",
                     callback_data=InlineStockImportFileTypeKeyboard.callback_json(
-                        actions.BACK_TO_STOCK_MENU, bot_id
+                        actions.BACK_TO_STOCK_MENU, bot_id, import_action
                     )
                 )],
             ]
