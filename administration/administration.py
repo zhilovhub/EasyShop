@@ -1,14 +1,13 @@
 try:
-    from common_utils.scheduler.scheduler import Scheduler
-
     from database.models.models import Database
     from database.models.user_model import UserStatusValues
 
     from common_utils.env_config import TIMEZONE, SQLALCHEMY_URL, SCHEDULER_URL
+    from common_utils.scheduler.scheduler import Scheduler
+    from common_utils.subscription.subscription import Subscription
 
     from logs.config import logger, extra_params
 
-    from subscription.subscription import Subscription
 
     from bot.handlers.subscription_handlers import send_subscription_expire_notify, send_subscription_end_notify
 except ImportError as ex:
@@ -108,7 +107,8 @@ if __name__ == "__main__":
                           "\n")
 
     if len(sys.argv) == 1:
-        print(f"\nARGUMENT NOT PROVIDED ERROR:\nFORMAT: python3 administration.py [command] [options...]{available_commands}")
+        print(f"\nARGUMENT NOT PROVIDED ERROR:\n"
+              f"FORMAT: python3 administration.py [command] [options...]{available_commands}")
         exit(2)
 
     def _check_params(params: list[str], params_types: list) -> list:
@@ -124,7 +124,7 @@ if __name__ == "__main__":
             elif params_types[ind] == int:
                 try:
                     return_params.append(int(param))
-                except:
+                except Exception:
                     raise IncorrectParamType(f"{param} must be {params_types[ind]}")
         return return_params
 

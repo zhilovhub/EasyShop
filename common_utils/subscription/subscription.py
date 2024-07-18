@@ -1,12 +1,12 @@
 from datetime import datetime, timedelta
 
-from subscription import config
 
 from database.models.models import Database
 from database.models.user_model import UserStatusValues
 from database.models.payment_model import PaymentSchemaWithoutId
 
 from common_utils.env_config import DESTINATION_PHONE_NUMBER, TIMEZONE, DB_FOR_TESTS, SCHEDULER_URL
+from common_utils.subscription import config
 from common_utils.scheduler.scheduler import Scheduler
 
 from logs.config import logger, extra_params

@@ -11,12 +11,12 @@ from bot.states.states import States
 from bot.handlers.routers import commands_router
 from bot.utils.send_instructions import send_instructions
 from bot.utils.check_subscription import check_subscription
-from subscription.subscription import UserHasAlreadyStartedTrial
 from bot.handlers.subscription_handlers import send_subscription_expire_notify, send_subscription_end_notify
 from bot.keyboards.subscription_keyboards import InlineSubscriptionContinueKeyboard
 from bot.middlewaries.subscription_middleware import CheckSubscriptionMiddleware
 
 from common_utils.keyboards.keyboards import InlineBotMenuKeyboard
+from common_utils.subscription.subscription import UserHasAlreadyStartedTrial
 from common_utils.broadcasting.broadcasting import send_event, EventTypes, success_event
 
 from database.config import user_db, adv_db, bot_db
