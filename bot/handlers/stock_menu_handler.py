@@ -262,8 +262,9 @@ async def handle_stock_import_input(message: Message, state: FSMContext):
 
         await message.answer(
             text=MessageTexts.CONFIRM_STOCK_IMPORT.value,
-            reply_markup=InlineStockImportConfirmKeyboard.get_keyboard(bot_id, import_action, file_type, file_path)
+            reply_markup=InlineStockImportConfirmKeyboard.get_keyboard(bot_id, import_action, file_type)
         )
+        state_data["file_path"] = file_path
         await state.set_data(state_data)
 
     except Exception as e:
@@ -282,10 +283,10 @@ async def confirm_file_import(query: CallbackQuery, state: FSMContext):
 
     bot_id = callback_data.bot_id
     file_type = callback_data.file_type
-    file_path = callback_data.file_path
     import_action = callback_data.import_action
 
     state_data = await state.get_data()
+    file_path = state_data["file_path"]
 
     match callback_data.a:
         case callback_data.ActionEnum.DENY:

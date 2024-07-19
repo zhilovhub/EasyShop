@@ -252,7 +252,6 @@ class InlineStockImportConfirmKeyboard:
         bot_id: int
         import_action: str = Field(alias="ia")
         file_type: str = Field(alias="t")
-        file_path: str = Field(alias="p")
 
     @staticmethod
     @callback_json_validator
@@ -261,10 +260,9 @@ class InlineStockImportConfirmKeyboard:
             bot_id: int,
             import_action: str,
             file_type: str,
-            file_path: str
     ) -> str:
         return InlineStockImportConfirmKeyboard.Callback(
-            a=action, bot_id=bot_id, import_action=import_action, file_type=file_type, file_path=file_path
+            a=action, bot_id=bot_id, import_action=import_action, file_type=file_type
         ).model_dump_json(by_alias=True)
 
     @staticmethod
@@ -276,7 +274,7 @@ class InlineStockImportConfirmKeyboard:
             return False
 
     @staticmethod
-    def get_keyboard(bot_id: int, import_action: str, file_type: str, file_path: str) -> InlineKeyboardMarkup:
+    def get_keyboard(bot_id: int, import_action: str, file_type: str) -> InlineKeyboardMarkup:
         actions = InlineStockImportConfirmKeyboard.Callback.ActionEnum
 
         return InlineKeyboardMarkup(
@@ -285,7 +283,7 @@ class InlineStockImportConfirmKeyboard:
                     InlineKeyboardButton(
                         text="✅",
                         callback_data=InlineStockImportConfirmKeyboard.callback_json(
-                            actions.CONFIRM, bot_id, import_action, file_type, file_path
+                            actions.CONFIRM, bot_id, import_action, file_type
                         )
                     ),
                 ],
@@ -293,7 +291,7 @@ class InlineStockImportConfirmKeyboard:
                     InlineKeyboardButton(
                         text="❌",
                         callback_data=InlineStockImportConfirmKeyboard.callback_json(
-                            actions.DENY, bot_id, import_action, file_type, file_path
+                            actions.DENY, bot_id, import_action, file_type
                         )
                     )
                 ],
