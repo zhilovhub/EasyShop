@@ -14,7 +14,10 @@ from logs.config import extra_params
 
 class SameCategoryNameAlreadyExists(Exception):
     """Raised when trying to add category with name already exists in bot"""
-    pass
+
+    def __init__(self, message: str, cat_id: int = 0) -> None:
+        super().__init__(message)
+        self.cat_id = cat_id
 
 
 class Category(Base):
@@ -85,10 +88,11 @@ class CategoryDao(Dao):  # TODO write tests
 
         async with self.engine.begin() as conn:
             all_categories = await self.get_all_categories(new_category.bot_id)
-            if new_category.name in list(map(lambda x: x.name, all_categories)):
-                raise SameCategoryNameAlreadyExists(
-                    f"category name {new_category.name} already exists in bot_id = {new_category.bot_id}"
-                )
+            for cat in all_categories:
+                if new_category.name == cat.name:
+                    raise SameCategoryNameAlreadyExists(
+                        f"category name {new_category.name} already exists in bot_id = {new_category.bot_id}",
+                        cat_id=cat.id)
             cat_id = (await conn.execute(insert(Category).values(new_category.model_dump()))).inserted_primary_key[0]
 
         self.logger.debug(

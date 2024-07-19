@@ -14,8 +14,15 @@ from openpyxl.styles import Font
 from common_utils.singleton import singleton
 from common_utils.env_config import FILES_PATH
 
+from database.config import category_db
 from database.models.models import Database
 from database.models.product_model import ProductNotFound, ProductWithoutId
+from database.models.category_model import CategorySchemaWithoutId, SameCategoryNameAlreadyExists
+
+
+class UnknownFileExstension(Exception):
+    def __init__(self, message):
+        super.__init__(message)
 
 
 @singleton
@@ -135,6 +142,25 @@ class Stoke:
 
         return path_to_file, path_to_images
 
+    @staticmethod
+    async def check_xlsx(path_to_file: str):
+        wb = load_workbook(filename=path_to_file)
+        ws = wb.active
+        for ind, row in enumerate(list(ws.values)[1:]):
+            err_message = f"Строка {ind+1}: "
+            if len(row) != 6:
+                return False, "Неверное количество колонок"
+            try:
+                price = int(row[2])
+                count = int(row[3])
+                if price < 0:
+                    return False, err_message + "цена меньше 0"
+                elif count < 0:
+                    return False, err_message + "остаток товара меньше 0"
+                return True, ""
+            except ValueError:
+                return False, err_message + "остаток или цена - не числа"
+
     async def import_xlsx(
             self,
             bot_id: int,
@@ -150,15 +176,18 @@ class Stoke:
         # should be name, description, price, count, picture, article, category
         products = []
         for row in list(ws.values)[1:]:
+            try:
+                cat_id = await category_db.add_category(CategorySchemaWithoutId(bot_id=bot_id, name=row[5]))
+            except SameCategoryNameAlreadyExists as err:
+                cat_id = err.cat_id
             products.append(ProductWithoutId(
-                article=row[5],
-                category=[row[6]],
+                article=row[4],
+                category=[cat_id],
                 bot_id=bot_id,
                 name=row[0],
                 description=row[1] if row[1] is not None else "",
                 price=int(row[2]),
-                count=int(row[3]),
-                picture=[row[4]] if row[4] else None
+                count=int(row[3])
             ))
 
         await self._import_products(
@@ -224,7 +253,7 @@ class Stoke:
             bot_id: int,
             products: Iterable[ProductWithoutId],
             replace: bool,
-            path_to_file_with_pictures: str,
+            path_to_file_with_pictures: str = None,
             replace_duplicates: bool = False
     ) -> None:
         if replace:
@@ -250,13 +279,13 @@ class Stoke:
 
     def _generate_path_to_file(self, bot_id: int, file_format: str) -> str:
         return self.files_path + \
-               f"{bot_id}_" + \
-               datetime.datetime.utcnow().strftime("%d%m%y_%H%M%S") + f".{file_format}"
+            f"{bot_id}_" + \
+            datetime.datetime.utcnow().strftime("%d%m%y_%H%M%S") + f".{file_format}"
 
     def _generate_path_for_pictures(self, bot_id: int) -> str:
         path_to_pictures = self.files_path + \
-                           f"{bot_id}_" + \
-                           datetime.datetime.utcnow().strftime("%d%m%y_%H%M%S")
+            f"{bot_id}_" + \
+            datetime.datetime.utcnow().strftime("%d%m%y_%H%M%S")
         try:
             os.mkdir(path_to_pictures)
             path_to_pictures += "/pictures/"

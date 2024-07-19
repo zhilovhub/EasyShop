@@ -90,6 +90,14 @@ class MessageTexts(Enum):
         "2.<b>При совпадении артикулов - перезаписать</b>\n"
         "3.<b>При совпадении артикулов - оставить старое</b>\n")
 
+    STOCK_IMPORT_FILE_TYPE = (
+        "Выберите <b>тип файла</b>, который хотите импортировать: "
+    )
+
+    IMPORT_SAMPLE_EXAMPLE = "Загрузите файл с таким шаблоном"
+
+    CONFIRM_STOCK_IMPORT = "Подтвердите импорт:"
+
     SELECT_CONTEST_TYPE = "Выберите тип конкурса:"
 
     @staticmethod
