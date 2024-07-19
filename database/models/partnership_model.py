@@ -2,16 +2,14 @@ from datetime import datetime, timedelta
 
 from pydantic import BaseModel, Field, validate_call, ConfigDict
 
-from sqlalchemy import BigInteger, Column, ForeignKey, select, insert, delete, update, Boolean, DateTime, String, Interval
-
+from sqlalchemy import BigInteger, Column, ForeignKey, select, insert, delete, update, Boolean, DateTime, String,\
+    Interval
 from sqlalchemy.ext.asyncio import AsyncEngine
-from sqlalchemy.exc import IntegrityError
 
 from database.models import Base
 from database.models.dao import Dao
-from database.exceptions import InvalidParameterFormat, InstanceAlreadyExists
+from database.exceptions import InvalidParameterFormat
 from database.models.bot_model import Bot
-
 from database.models.post_message_model import PostMessage
 
 from logs.config import extra_params

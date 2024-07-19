@@ -1,12 +1,9 @@
-from datetime import datetime, timedelta
-
 from database.models.models import Database
 from database.models.partnership_model import PartnershipSchemaWithoutId, CriteriaSchemaWithoutId
 
-from common_utils.partnership import config
 from common_utils.singleton import singleton
-from common_utils.scheduler.scheduler import Scheduler
 from common_utils.env_config import TIMEZONE, DB_FOR_TESTS, SCHEDULER_URL
+from common_utils.scheduler.scheduler import Scheduler
 
 from logs.config import logger, extra_params
 
@@ -22,7 +19,7 @@ class Partnership:
         self.scheduler = custom_scheduler
 
     async def start_partnership(self, partnership_id: int):
-        partnership = self.partnership_db.get_partnership_by_id(partnership_id)
+        await self.partnership_db.get_partnership_by_id(partnership_id)
 
     async def create_partnership(self, bot_id: int, post_message_id: int, price: int,
                                  criteria: CriteriaSchemaWithoutId) -> int:

@@ -9,8 +9,6 @@ from logging import LogRecord
 
 from common_utils.env_config import LOGS_PATH, FROM, LOG_TO_GRAFANA, GRAFANA_URL
 
-from typing import TypedDict, Unpack
-
 try:
     os.mkdir(LOGS_PATH)
 except FileExistsError:
@@ -23,27 +21,7 @@ GRAFANA_FORMATTER_NAME = "formatter_grafana"
 LOCAL_FORMATTER_NAME = "formatter_local"
 
 
-class RequestParams(TypedDict, total=False):
-    bot_id: int
-    user_id: int
-    product_review_id: int
-    category_id: int
-    channel_id: int
-    channel_user_id: int
-    channel_post_id: int
-    post_message_id: int
-    order_id: int
-    product_id: int
-    payment_id: int
-    adv_id: int
-    job_id: str
-    contest_id: int
-    partnership_id: int
-    bot_token: str
-    criteria_id: int
-
-
-def extra_params(**kwargs: Unpack[RequestParams]):
+def extra_params(**kwargs):
     return {
         "tags": kwargs
     }
