@@ -246,10 +246,10 @@ class InlineStockImportConfirmKeyboard:
 
         model_config = ConfigDict(from_attributes=True, populate_by_name=True)
 
-        n: str = Field(default="imft", frozen=True)
+        n: str = Field(default="if", frozen=True)
         a: ActionEnum
 
-        bot_id: int
+        bot_id: int = Field(alias="b")
         import_action: str = Field(alias="ia")
         file_type: str = Field(alias="t")
 
