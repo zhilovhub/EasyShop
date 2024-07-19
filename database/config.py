@@ -11,6 +11,7 @@ from database.models.mailing_model import MailingDao
 from database.models.payment_model import PaymentDao
 from database.models.product_model import ProductDao
 from database.models.category_model import CategoryDao
+from database.models.partnership_model import PartnershipDao
 from database.models.channel_post_model import ChannelPostDao
 from database.models.channel_user_model import ChannelUserDao
 from database.models.post_message_model import PostMessageDao
@@ -32,6 +33,7 @@ channel_db: ChannelDao = db_engine.get_channel_dao()
 mailing_db: MailingDao = db_engine.get_mailing_dao()
 contest_db: ContestDao = db_engine.get_contest_dao()
 category_db: CategoryDao = db_engine.get_category_dao()
+partnership_db: PartnershipDao = db_engine.get_partnership_dao()
 post_message_db: PostMessageDao = db_engine.get_post_message_dao()
 channel_user_db: ChannelUserDao = db_engine.get_channel_user_dao()
 channel_post_db: ChannelPostDao = db_engine.get_channel_post_dao()

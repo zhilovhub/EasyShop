@@ -2,6 +2,7 @@ try:
     from database.models.models import Database
     from database.models.user_model import UserStatusValues
 
+    from common_utils.singleton import singleton
     from common_utils.env_config import TIMEZONE, SQLALCHEMY_URL, SCHEDULER_URL
     from common_utils.scheduler.scheduler import Scheduler
     from common_utils.subscription.subscription import Subscription
@@ -28,17 +29,6 @@ class NewDateMustBeInFuture(Exception):
 
 class IncorrectParamType(Exception):
     pass
-
-
-def singleton(class_):
-    instances = {}
-
-    def get_instance(*args, **kwargs):
-        if class_ not in instances:
-            instances[class_] = class_(*args, **kwargs)
-        return instances[class_]
-
-    return get_instance
 
 
 @singleton

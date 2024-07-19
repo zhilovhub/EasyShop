@@ -1,8 +1,9 @@
 from datetime import datetime
 
-from database.config import post_message_db, mailing_db, channel_post_db, contest_db
+from database.config import post_message_db, mailing_db, channel_post_db, contest_db, partnership_db
 from database.models.contest_model import ContestSchemaWithoutId
 from database.models.mailing_model import MailingSchemaWithoutId
+from database.models.partnership_model import PartnershipSchemaWithoutId
 from database.models.channel_post_model import ChannelPostSchemaWithoutId
 from database.models.post_message_model import PostMessageSchemaWithoutId, PostMessageType
 
@@ -25,3 +26,5 @@ async def post_message_create(bot_id: int,
             await channel_post_db.add_channel_post(ChannelPostSchemaWithoutId.model_validate(data))
         case PostMessageType.CONTEST:
             await contest_db.add_contest(ContestSchemaWithoutId.model_validate(data))
+        case PostMessageType.PARTNERSHIP_POST:
+            await partnership_db.add_partnership(PartnershipSchemaWithoutId.model_validate(data))

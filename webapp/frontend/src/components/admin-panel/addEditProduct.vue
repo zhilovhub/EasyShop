@@ -147,7 +147,7 @@ export default {
         this.options.push({
           name: '',
           type: this.permChosenOption,
-          variants: ['', '', '', '', '', ''],
+          variants: ['', '', '', '', '', '', '', '', '', '', '', '', '', '', '', ''],
         })
       } else if (this.permChosenOption === 'text' && this.options) {
         this.options.push({
@@ -159,8 +159,8 @@ export default {
         this.options.push({
           name: '',
           type: this.permChosenOption,
-          variants: ['', '', '', '', '', ''],
-          variants_prices: [0, 0, 0, 0, 0, 0]
+          variants: ['', '', '', '', '', '', '', '', '', '', '', '', '', '', '', ''],
+          variants_prices: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
         });
       }
       this.modelWindowOptionIsActive = false;

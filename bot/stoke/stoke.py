@@ -11,21 +11,11 @@ from typing import Iterable
 from openpyxl import load_workbook, Workbook
 from openpyxl.styles import Font
 
+from common_utils.singleton import singleton
 from common_utils.env_config import FILES_PATH
 
 from database.models.models import Database
 from database.models.product_model import ProductNotFound, ProductWithoutId
-
-
-def singleton(class_):
-    instances = {}
-
-    def get_instance(*args, **kwargs):
-        if class_ not in instances:
-            instances[class_] = class_(*args, **kwargs)
-        return instances[class_]
-
-    return get_instance
 
 
 @singleton

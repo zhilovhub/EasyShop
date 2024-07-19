@@ -97,35 +97,43 @@ class MessageTexts(Enum):
             post_message_type: PostMessageType) -> str:
         match post_message_type:
             case PostMessageType.MAILING:
-                return "Управление текущей рассылки для бота <b>@{}</b>\n\n" \
+                return "⚙️ Управление текущей рассылки 📨 для бота <b>@{}</b>\n\n" \
                        "❗️Перед запуcком нажмите <b>Проверить</b>, чтобы убедиться в правильности составленного " \
                        "сообщения"
             case PostMessageType.CONTEST:
-                return "Управление конкурсом для канала <b>@{}</b>\n\n" \
+                return "⚙️ Управление конкурсом 🎲 для канала <b>@{}</b>\n\n" \
                        "❗️Перед запуcком нажмите <b>Проверить</b>, чтобы убедиться в правильности составленного " \
                        "сообщения"
             case PostMessageType.CHANNEL_POST:
-                return "Управление записью для канала <b>@{}</b>\n\n" \
+                return "⚙️ Управление записью 📋 для канала <b>@{}</b>\n\n" \
                        "❗️Перед запуcком нажмите <b>Проверить</b>, " \
                        "чтобы убедиться в правильности составленного сообщения"
+            case PostMessageType.PARTNERSHIP_POST:
+                return "⚙️ Управление партнерской записью 🤝 для канала <b>@{}</b>\n\n" \
+                       "❗️Перед запуcком нажмите <b>Проверить</b>, чтобы убедиться в правильности составленного " \
+                       "сообщения"
 
     @staticmethod
     def bot_post_already_started_message(
             post_message_type: PostMessageType) -> str:
         match post_message_type:
             case PostMessageType.MAILING:
-                return "Рассылка уже запущена"
+                return "🙅 Рассылка <b>уже запущена</b>"
             case PostMessageType.CHANNEL_POST:
-                return "Запись уже запущена"
+                return "🙅 Запись <b>уже запущена</b>"
+            case PostMessageType.CONTEST:
+                return "🙅 Конкурс <b>уже запущен</b>"
+            case PostMessageType.PARTNERSHIP_POST:
+                return "🙅 Партнерский пост <b>уже запущен</b>"
 
     @staticmethod
     def bot_post_button_already_exists_message(
             post_message_type: PostMessageType) -> str:
         match post_message_type:
             case PostMessageType.MAILING:
-                return "В рассылочном сообщении кнопка уже есть"
-            case PostMessageType.CHANNEL_POST:
-                return "В записи кнопка уже есть"
+                return "🚫 В рассылочном сообщении кнопка уже есть"
+            case PostMessageType.CHANNEL_POST | PostMessageType.PARTNERSHIP_POST:
+                return "🚫 В записи кнопка уже есть"
 
     @staticmethod
     def show_mailing_info(

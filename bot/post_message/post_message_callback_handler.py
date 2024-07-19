@@ -125,6 +125,8 @@ async def _cancel_send(
                     FSInputFile(path_to_graph),
                     caption="📈 График количества участников конкурса от времени"
                 )
+        case PostMessageType.PARTNERSHIP_POST:
+            pass
         case _:
             raise UnknownPostMessageType
 
@@ -141,7 +143,7 @@ async def _button_add(
     match post_message_type:
         case PostMessageType.MAILING:
             username = (await Bot(custom_bot_token).get_me()).username
-        case PostMessageType.CHANNEL_POST | PostMessageType.CONTEST:
+        case PostMessageType.CHANNEL_POST | PostMessageType.CONTEST | PostMessageType.PARTNERSHIP_POST:
             username = (await Bot(custom_bot_token).get_chat(channel_id)).username
         case _:
             raise UnknownPostMessageType
@@ -171,6 +173,8 @@ async def _button_add(
                 post_message.button_url = f"t.me/{(await custom_bot.get_me()).username}/?start=web_app"
             case PostMessageType.CONTEST:
                 raise ContestMessageDontNeedButton
+            case PostMessageType.PARTNERSHIP_POST:
+                pass
             case _:
                 raise UnknownPostMessageType
         post_message.has_button = True
@@ -284,7 +288,7 @@ async def _button_delete(
         match post_message_type:
             case PostMessageType.MAILING:
                 username = (await Bot(custom_bot_token).get_me()).username
-            case PostMessageType.CHANNEL_POST | PostMessageType.CONTEST:
+            case PostMessageType.CHANNEL_POST | PostMessageType.CONTEST | PostMessageType.PARTNERSHIP_POST:
                 username = (await Bot(custom_bot_token).get_chat(channel_id)).username
             case _:
                 raise UnknownPostMessageType
@@ -306,11 +310,13 @@ async def _post_message_text(
 ):
     match post_message_type:
         case PostMessageType.MAILING:
-            text = "Введите текст, который будет отображаться в рассылочном сообщении"
+            text = "📝 Введите текст, который будет отображаться в рассылочном сообщении 📨"
         case PostMessageType.CHANNEL_POST:
-            text = "Введите текст, который будет отображаться в записи для канала"
+            text = "📝 Введите текст, который будет отображаться в записи для канала 📋"
         case PostMessageType.CONTEST:
-            text = "Введите текст, который будет отображаться в сообщении конкурса в канале"
+            text = "📝 Введите текст, который будет отображаться в сообщении конкурса 🎲 в канале"
+        case PostMessageType.PARTNERSHIP_POST:
+            text = "📝 Введите текст, который будет отображаться в партнерской записи 🤝 в канале"
         case _:
             raise UnknownPostMessageType
 
@@ -386,18 +392,23 @@ async def _post_message_media(
 ):
     match post_message_type:
         case PostMessageType.MAILING:
-            text = "Отправьте одним сообщение медиафайлы для рассылочного сообщения\n\n" \
+            text = "🗂 Отправьте одним сообщение медиафайлы для рассылочного сообщения 📨\n\n" \
                    "❗ Старые медиафайлы к этому рассылочному сообщению <b>перезапишутся</b>\n\n" \
                    "❗❗ Обратите внимание, что к сообщению нельзя будет прикрепить кнопку, " \
                    "если медиафайлов <b>больше одного</b>"
         case PostMessageType.CHANNEL_POST:
-            text = "Отправьте одним сообщение медиафайлы для записи в канал\n\n" \
+            text = "🗂 Отправьте одним сообщение медиафайлы для записи в канал 📋\n\n" \
                    "❗ Старые медиафайлы к этой записи в канал <b>перезапишутся</b>\n\n" \
                    "❗❗ Обратите внимание, что к сообщению нельзя будет прикрепить кнопку, " \
                    "если медиафайлов <b>больше одного</b>"
         case PostMessageType.CONTEST:
-            text = "Отправьте одним сообщением <b>один</b> медиафайл для сообщения с конкурсом\n\n" \
+            text = "🗂 Отправьте одним сообщением <b>один</b> медиафайл для сообщения с конкурсом 🎲\n\n" \
                    "❗ Старый медиафайл к этой записи в канал <b>перезапишется</b>\n\n"
+        case PostMessageType.PARTNERSHIP_POST:
+            text = "🗂 Отправьте одним сообщение медиафайлы для партнерского поста в канал 🤝\n\n" \
+                   "❗ Старые медиафайлы к этой записи в канал <b>перезапишутся</b>\n\n" \
+                   "❗❗ Обратите внимание, что к сообщению нельзя будет прикрепить кнопку, " \
+                   "если медиафайлов <b>больше одного</b>"
         case _:
             raise UnknownPostMessageType
 
@@ -439,6 +450,9 @@ async def _start(
             case PostMessageType.CONTEST:
                 username = (await Bot(custom_bot_token).get_chat(channel_id)).username
                 text = MessageTexts.BOT_CHANNEL_POST_MENU_ACCEPT_START.value.format(username)
+            case PostMessageType.PARTNERSHIP_POST:
+                username = (await Bot(custom_bot_token).get_chat(channel_id)).username
+                text = MessageTexts.BOT_CHANNEL_POST_MENU_ACCEPT_START.value.format(username)
             case _:
                 raise UnknownPostMessageType
 
@@ -469,7 +483,7 @@ async def _demo(
         match post_message_type:
             case PostMessageType.MAILING:
                 username = (await Bot(custom_bot_token).get_me()).username
-            case PostMessageType.CHANNEL_POST | PostMessageType.CONTEST:
+            case PostMessageType.CHANNEL_POST | PostMessageType.CONTEST | PostMessageType.PARTNERSHIP_POST:
                 username = (await Bot(custom_bot_token).get_chat(channel_id)).username
             case _:
                 raise UnknownPostMessageType
@@ -503,7 +517,7 @@ async def _delete_post_message(
         case PostMessageType.MAILING:
             username = (await Bot(custom_bot_token).get_me()).username
             text = MessageTexts.BOT_MAILINGS_MENU_ACCEPT_DELETING_MESSAGE.value.format(username)
-        case PostMessageType.CHANNEL_POST | PostMessageType.CONTEST:
+        case PostMessageType.CHANNEL_POST | PostMessageType.CONTEST | PostMessageType.PARTNERSHIP_POST:
             username = (await Bot(custom_bot_token).get_chat(channel_id)).username
             text = MessageTexts.BOT_CHANNEL_POST_MENU_ACCEPT_DELETING_MESSAGE.value.format(username)
         case _:
@@ -598,7 +612,7 @@ async def _back(
                 reply_markup=await InlineBotMenuKeyboard.get_keyboard(bot_id),
                 parse_mode=ParseMode.HTML
             )
-        case PostMessageType.CHANNEL_POST | PostMessageType.CONTEST:
+        case PostMessageType.CHANNEL_POST | PostMessageType.CONTEST | PostMessageType.PARTNERSHIP_POST:
             custom_bot = await bot_db.get_bot(bot_id)
 
             username = (await Bot(custom_bot.token).get_chat(channel_id)).username
@@ -660,6 +674,8 @@ async def _post_message_union(
                         await query.answer()
                     else:
                         await query.answer("В конкурсе никто ещё не принял участие")
+                case PostMessageType.PARTNERSHIP_POST:
+                    pass
 
         # NOT RUNNING ACTIONS
         case callback_data.ActionEnum.BUTTON_ADD:

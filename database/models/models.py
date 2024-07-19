@@ -10,6 +10,7 @@ from database.models.payment_model import PaymentDao
 from database.models.mailing_model import MailingDao
 from database.models.contest_model import ContestDao
 from database.models.category_model import CategoryDao
+from database.models.partnership_model import PartnershipDao
 from database.models.channel_post_model import ChannelPostDao
 from database.models.post_message_model import PostMessageDao
 from database.models.channel_user_model import ChannelUserDao
@@ -18,16 +19,7 @@ from database.models.custom_bot_user_model import CustomBotUserDao
 from database.models.post_message_media_files import PostMessageMediaFileDao
 from database.models import Base  # should be the last import from database.models
 
-
-def singleton(class_):
-    instances = {}
-
-    def get_instance(*args, **kwargs):
-        if class_ not in instances:
-            instances[class_] = class_(*args, **kwargs)
-        return instances[class_]
-
-    return get_instance
+from common_utils.singleton import singleton
 
 
 @singleton
@@ -46,6 +38,7 @@ class Database:
         self.payment_dao = PaymentDao(self.engine, self.logger)
         self.channel_dao = ChannelDao(self.engine, self.logger)
         self.category_dao = CategoryDao(self.engine, self.logger)
+        self.partnership_dao = PartnershipDao(self.engine, self.logger)
         self.post_message_dao = PostMessageDao(self.engine, self.logger)
         self.channel_user_dao = ChannelUserDao(self.engine, self.logger)
         self.channel_post_dao = ChannelPostDao(self.engine, self.logger)
@@ -90,6 +83,9 @@ class Database:
 
     def get_category_dao(self) -> CategoryDao:
         return self.category_dao
+
+    def get_partnership_dao(self) -> PartnershipDao:
+        return self.partnership_dao
 
     def get_post_message_dao(self) -> PostMessageDao:
         return self.post_message_dao
