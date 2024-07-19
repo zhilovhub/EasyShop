@@ -14,7 +14,9 @@ from logs.config import logger
 
 
 async def notify_about_error(event: CallbackQuery | Message | ChatMemberUpdated, error_message: str):
-    await Bot(TELEGRAM_TOKEN, default=BOT_PROPERTIES).send_message(event.from_user.id, MessageTexts.UNKNOWN_ERROR_MESSAGE.value)
+    await Bot(TELEGRAM_TOKEN, default=BOT_PROPERTIES).send_message(
+        event.from_user.id, MessageTexts.UNKNOWN_ERROR_MESSAGE.value
+    )
     await send_event(event.from_user, EventTypes.UNKNOWN_ERROR, event.bot, err_msg=error_message)
 
 

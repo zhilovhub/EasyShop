@@ -20,6 +20,11 @@ from database.models.product_model import ProductNotFound, ProductWithoutId
 from database.models.category_model import CategorySchemaWithoutId, SameCategoryNameAlreadyExists
 
 
+class UnknownFileExstension(Exception):
+    def __init__(self, message):
+        super.__init__(message)
+
+
 @singleton
 class Stoke:
     """Модуль склада"""
@@ -137,7 +142,8 @@ class Stoke:
 
         return path_to_file, path_to_images
 
-    async def check_xlsx(self, path_to_file: str):
+    @staticmethod
+    async def check_xlsx(path_to_file: str):
         wb = load_workbook(filename=path_to_file)
         ws = wb.active
         for ind, row in enumerate(list(ws.values)[1:]):
@@ -152,7 +158,7 @@ class Stoke:
                 elif count < 0:
                     return False, err_message + "остаток товара меньше 0"
                 return True, ""
-            except:
+            except ValueError:
                 return False, err_message + "остаток или цена - не числа"
 
     async def import_xlsx(
@@ -176,7 +182,7 @@ class Stoke:
                 cat_id = err.cat_id
             products.append(ProductWithoutId(
                 article=row[4],
-                category=[cat_id,],
+                category=[cat_id],
                 bot_id=bot_id,
                 name=row[0],
                 description=row[1] if row[1] is not None else "",
