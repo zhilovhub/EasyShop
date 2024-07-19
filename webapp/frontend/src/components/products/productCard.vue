@@ -184,7 +184,7 @@ export default {
       }
 
       if (optionName) {
-        this.productObject.chosenOption.push({name: optionName, selected_variant: target.innerText});
+        this.productObject.chosenOption.push({name: optionName, selected_variant: target.innerText.split("\n")[0]});
       }
 
       if (this.productObject.extra_options[0].variants_prices[key]) {
