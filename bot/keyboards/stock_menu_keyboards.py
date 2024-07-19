@@ -307,11 +307,11 @@ class InlineStockImportFileTypeKeyboard:
 
         model_config = ConfigDict(from_attributes=True, populate_by_name=True)
 
-        n: str = Field(default="imft", frozen=True)
+        n: str = Field(default="i", frozen=True)
         a: ActionEnum
 
-        bot_id: int
-        import_action: str = Field(alias="ia")
+        bot_id: int = Field(alias="b")
+        import_action: str = Field(alias="i")
 
     @staticmethod
     @callback_json_validator
