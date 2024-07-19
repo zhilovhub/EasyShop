@@ -147,7 +147,7 @@ export default {
         this.options.push({
           name: '',
           type: this.permChosenOption,
-          variants: ['', '', '', '', '', ''],
+          variants: ['', '', '', '', '', '', '', '', '', '', '', '', '', '', '', ''],
         })
       } else if (this.permChosenOption === 'text' && this.options) {
         this.options.push({
