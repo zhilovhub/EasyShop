@@ -18,6 +18,9 @@ services:
       - type: bind
         source: ./common_utils
         target: /common_utils
+      - type: bind
+        source: ./resources
+        target: /resources
 
   main_bot:
     build:
@@ -36,6 +39,9 @@ services:
       - type: bind
         source: ./common_utils
         target: /common_utils
+      - type: bind
+        source: ./resources
+        target: /resources
 
 
 networks:
