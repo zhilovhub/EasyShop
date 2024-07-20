@@ -9,7 +9,10 @@
         townValue: '',
         addressValue: '',
         commentValue: '',
-        imageSrc: ''
+        phoneNumber: '',
+        nameValue: '',
+        timeValue: '',
+        imageSrc: '',
       }
     },
     computed: {
@@ -29,31 +32,33 @@
       orderBtnClicked() {
         const townValue = document.getElementById('townValue');
         const addressValue = document.getElementById('addressValue');
-        const commentValue = document.getElementById('commentValue')
-        if (townValue.value === '' && addressValue.value === '') {
-          townValue.style.border = '1px solid #ff003c';
-          townValue.placeholder = 'Поле не может быть пустым';
-          townValue.classList.add('red-placeholder');
-          addressValue.style.border = '1px solid #ff003c';
-          addressValue.placeholder = 'Поле не может быть пустым';
-          addressValue.classList.add('red-placeholder');
-          return
+        const commentValue = document.getElementById('commentValue');
+        const nameValue = document.getElementById('nameValue');
+        const phoneValue = document.getElementById('phoneNumberValue');
+
+        const validateField = (field) => {
+          if (field.value === '') {
+            field.style.border = '1px solid #ff003c';
+            field.placeholder = 'Поле не может быть пустым';
+            field.classList.add('red-placeholder');
+            return false;
+          }
+          return true;
+        };
+
+        const isTownValid = validateField(townValue);
+        const isAddressValid = validateField(addressValue);
+        const isNameValid = validateField(nameValue);
+        const isPhoneValueValid = validateField(phoneValue);
+        if (!isTownValid || !isAddressValid || !isNameValid || !isPhoneValueValid) {
+          return;
         }
-        if (townValue.value === '') {
-          townValue.style.border = '1px solid #ff003c';
-          townValue.placeholder = 'Поле не может быть пустым';
-          townValue.classList.add('red-placeholder');
-          return
-        }
-        if (addressValue.value === '') {
-          addressValue.style.border = '1px solid #ff003c';
-          addressValue.placeholder = 'Поле не может быть пустым';
-          addressValue.classList.add('red-placeholder');
-          return
-        }
-        this.$store.state.town = this.townValue;
-        this.$store.state.address = this.addressValue;
-        this.$store.state.comment = this.commentValue;
+
+        this.$store.state.town = townValue.value;
+        this.$store.state.address = addressValue.value;
+        this.$store.state.comment = commentValue.value;
+        this.$store.state.name = nameValue.value;
+        this.$store.state.phoneNumber = phoneValue.value;
         this.$store.commit("postData");
       },
       backButtonMethod() {
@@ -95,42 +100,36 @@
 
     <hr style="border: 1px solid var(--app-hr-border-color); width: 90%; margin: 2.5% auto;">
 
-  <div class="address-container">
-    <span>Город</span>
-    <textarea placeholder="г.Москва" id="townValue" v-model="townValue" required></textarea>
-  </div>
+    <div class="input-container">
+      <span>Ваше имя</span>
+      <textarea placeholder="Иванов Иван" id="nameValue" v-model="nameValue" required></textarea>
+    </div>
 
-  <div class="pay-container">
-    <span>Адрес доставки</span>
-    <textarea placeholder="Дмитровское шоссе, 81" id="addressValue" v-model="addressValue" required></textarea>
-    <!--    <select id="payment-method">-->
-<!--      <option value="card-online">Картой онлайн</option>-->
-<!--    </select>-->
-  </div>
+    <div class="input-container">
+      <span>Номер телефона</span>
+      <textarea placeholder="Номер телефона" id="phoneNumberValue" v-model="phoneNumber" required></textarea>
+    </div>
 
-  <div class="comment-block">
-    <span>Комментарий</span>
-    <textarea placeholder="Добавьте комментарий" v-model="commentValue"></textarea>
+    <div class="input-container">
+      <span>Город</span>
+      <textarea placeholder="г.Москва" id="townValue" v-model="townValue" required></textarea>
+    </div>
+
+    <div class="input-container">
+      <span>Адрес доставки</span>
+      <textarea placeholder="Дмитровское шоссе, 81" id="addressValue" v-model="addressValue" required></textarea>
+    </div>
+
+    <div class="input-container">
+      <span>Время</span>
+      <textarea placeholder="Предпочтения по времени доставки" v-model="timeValue"></textarea>
+    </div>
+
+    <div class="input-container">
+      <span>Комментарий</span>
+      <textarea placeholder="Добавьте комментарий" v-model="commentValue"></textarea>
+    </div>
   </div>
-  </div>
-<!--  <div class="footer">-->
-<!--    <div style="margin: 0 0 10px">-->
-<!--      <span style="font-size: 20px; color: #FFFFFF">Итого</span>-->
-<!--      <span style="font-size: 20px; color: #FFFFFF">{{totalPrice}}</span>-->
-<!--    </div>-->
-<!--    <div>-->
-<!--      <span>{{totalCount}}</span>-->
-<!--      <span>{{totalPrice}}</span>-->
-<!--    </div>-->
-<!--    <div>-->
-<!--      <span>Скидка</span>-->
-<!--      <span>0 ₽</span>-->
-<!--    </div>-->
-<!--    <div>-->
-<!--      <span>Доставка</span>-->
-<!--      <span>0 ₽</span>-->
-<!--    </div>-->
-<!--  </div>-->
 </template>
 
 <style scoped lang="scss">
@@ -166,17 +165,6 @@
   }
 }
 
-.address-container {
-  background-color: var(--app-background-color);
-  display: flex;
-  flex-direction: column;
-  padding: 5% 5% 0;
-  span {
-    font-size: var(--app-text-color);
-    font-weight: 750;
-  }
-}
-
 textarea {
   background-color: var(--app-card-background-color);
   width: 100%;
@@ -201,41 +189,11 @@ textarea {
   color: #ff003c;
 }
 
-.pay-container {
+.input-container {
   background-color: var(--app-background-color);
   display: flex;
   flex-direction: column;
   padding: 5% 5% 0;
-  span {
-    font-size: var(--app-text-color);
-    font-weight: 750;
-  }
-  //select {
-  //  width: 100%;
-  //  height: 50px;
-  //  background-color: #293C47;
-  //  border: 1px solid #20282C;
-  //  border-radius: 7px;
-  //  -webkit-appearance: none;
-  //  -moz-appearance: none;
-  //  appearance: none;
-  //  background-image: url('../../assets/arrow-down.png') !important;
-  //  background-position: center right 20px;
-  //  background-repeat: no-repeat;
-  //  background-size: auto 15%;
-  //  padding-left: 20px;
-  //  margin: 10px auto;
-  //  &:hover, :focus, :active {
-  //    outline: none;
-  //  }
-  //}
-}
-
-.comment-block {
-  background-color: var(--app-background-color);
-  display: flex;
-  flex-direction: column;
-  padding: 5% 5%;
   span {
     font-size: var(--app-text-color);
     font-weight: 750;
@@ -262,14 +220,8 @@ textarea {
 
 
 @media screen and (max-height: 625px) {
-  .address-container {
+  .input-container {
    padding-top: 10px;
-  }
-  .pay-container {
-    padding-top: 10px;
-  }
-  .comment-block {
-    padding-top: 10px;
   }
 }
 </style>
