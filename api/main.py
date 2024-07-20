@@ -1,5 +1,3 @@
-print(__name__)
-
 import os
 import datetime
 
