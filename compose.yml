@@ -52,7 +52,7 @@ services:
       - "88:4444"
       - "7532:7532"
     networks:
-      - grafana_network:
+      grafana_network:
           ipv4_address: "171.30.0.24"
     volumes:
       - type: bind
