@@ -10,4 +10,4 @@ WORKDIR /
 
 EXPOSE 3024
 
-CMD ["python3", "-m", "api.main.py"]
+CMD ["python3", "-m", "api.main"]
