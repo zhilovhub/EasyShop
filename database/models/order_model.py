@@ -62,6 +62,9 @@ class Order(Base):
     address = Column(String)
     status = Column(OrderStatus)
     comment = Column(String)
+    name = Column(String)
+    phone_number = Column(String)
+    time = Column(String)
 
 
 class OrderItemExtraOption(BaseModel):
@@ -95,6 +98,9 @@ class OrderSchema(BaseModel):
     address: str
     status: OrderStatusValues
     comment: str
+    name: str | None = None
+    phone_number: str | None = None
+    time: str | None = None
 
     def translate_order_status(self) -> str:
         match self.status:
@@ -143,6 +149,9 @@ class OrderSchema(BaseModel):
                f"Итого: <b>{total_price}₽</b>\n\n" \
                f"🛤 Адрес: <b>{self.address}</b>\n" \
                f"💌 Комментарий: <b>{self.comment}</b>\n\n" \
+               f"👤 Имя клиента: <b>{self.name if self.name else 'Не указано'}</b>" \
+               f"📱 Номер телефона: <b>{self.phone_number if self.phone_number else 'Не указано'}</b>" \
+               f"⏰ Время доставки: <b>{self.time if self.time else 'Не указано'}</b>" \
                f"Статус: <b>{self.translate_order_status()}</b>" if not is_admin \
             else f"Новый заказ <b>#{self.id}</b>\n" \
                  f"от пользователя " \
@@ -152,6 +161,9 @@ class OrderSchema(BaseModel):
                  f"Итого: <b>{total_price}₽</b>\n\n" \
                  f"🛤 Адрес: <b>{self.address}</b>\n" \
                  f"💌 Комментарий: <b>{self.comment}</b>\n\n" \
+                 f"👤 Имя клиента: <b>{self.name if self.name else 'Не указано'}</b>" \
+                 f"📱 Номер телефона: <b>{self.phone_number if self.phone_number else 'Не указано'}</b>" \
+                 f"⏰ Время доставки: <b>{self.time if self.time else 'Не указано'}</b>" \
                  f"Статус: <b>{self.translate_order_status()}</b>"
 
 
