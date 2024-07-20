@@ -10,4 +10,4 @@ WORKDIR /
 
 EXPOSE 2024
 
-CMD ["uvicorn", "api.main:app", "--host",  "0.0.0.0", "--port", "2024", "--log-level", "info"]
+CMD ["python3", "api/main.py"]
