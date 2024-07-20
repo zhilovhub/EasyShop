@@ -58,7 +58,7 @@ if __name__ == "__main__":
     import uvicorn
 
     try:
-        os.system("mkdir logs")
+        os.mkdir(LOGS_PATH)
     except Exception as e:  # noqa
         pass
 
