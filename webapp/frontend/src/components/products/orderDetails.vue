@@ -6,12 +6,12 @@
     name: 'orderDetails',
     data() {
       return {
-        townValue: '',
-        addressValue: '',
-        commentValue: '',
+        town: '',
+        address: '',
+        comment: '',
         phoneNumber: '',
-        nameValue: '',
-        timeValue: '',
+        name: '',
+        time: '',
         imageSrc: '',
       }
     },
@@ -32,9 +32,10 @@
       orderBtnClicked() {
         const townValue = document.getElementById('townValue');
         const addressValue = document.getElementById('addressValue');
-        const commentValue = document.getElementById('commentValue');
         const nameValue = document.getElementById('nameValue');
         const phoneValue = document.getElementById('phoneNumberValue');
+        const commentValue = document.getElementById('commentValue');
+        const timeValue = document.getElementById('timeValue');
 
         const validateField = (field) => {
           if (field.value === '') {
@@ -54,12 +55,14 @@
           return;
         }
 
-        this.$store.state.town = townValue.value;
-        this.$store.state.address = addressValue.value;
-        this.$store.state.comment = commentValue.value;
-        this.$store.state.name = nameValue.value;
-        this.$store.state.phoneNumber = phoneValue.value;
-        this.$store.commit("postData");
+        this.$store.dispatch("postData", {
+          'name': this.name,
+          'phone_number': this.phoneNumber,
+          'town': this.town,
+          'address': this.address,
+          'time': this.time,
+          'comment': this.comment,
+        });
       },
       backButtonMethod() {
         router.router.back();
@@ -102,7 +105,7 @@
 
     <div class="input-container">
       <span>Ваше имя</span>
-      <textarea placeholder="Иванов Иван" id="nameValue" v-model="nameValue" required></textarea>
+      <textarea placeholder="Иванов Иван" id="nameValue" v-model="name" required></textarea>
     </div>
 
     <div class="input-container">
@@ -112,22 +115,22 @@
 
     <div class="input-container">
       <span>Город</span>
-      <textarea placeholder="г.Москва" id="townValue" v-model="townValue" required></textarea>
+      <textarea placeholder="г.Москва" id="townValue" v-model="town" required></textarea>
     </div>
 
     <div class="input-container">
       <span>Адрес доставки</span>
-      <textarea placeholder="Дмитровское шоссе, 81" id="addressValue" v-model="addressValue" required></textarea>
+      <textarea placeholder="Дмитровское шоссе, 81" id="addressValue" v-model="address" required></textarea>
     </div>
 
     <div class="input-container">
       <span>Время</span>
-      <textarea placeholder="Предпочтения по времени доставки" v-model="timeValue"></textarea>
+      <textarea placeholder="Предпочтения по времени доставки" id="timeValue" v-model="time"></textarea>
     </div>
 
     <div class="input-container">
       <span>Комментарий</span>
-      <textarea placeholder="Добавьте комментарий" v-model="commentValue"></textarea>
+      <textarea placeholder="Добавьте комментарий" id="commentValue" v-model="comment"></textarea>
     </div>
   </div>
 </template>
