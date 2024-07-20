@@ -8,6 +8,6 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 WORKDIR /
 
-EXPOSE 2024
+EXPOSE 3024
 
-CMD ["python3", "api/main.py"]
+CMD ["python3", "-m", "api.main.py"]
