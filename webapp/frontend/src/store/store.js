@@ -9,11 +9,6 @@ export const Store = new Vuex.Store({
     itemsAddToCartArray: [],
     items: [],
     filters: [],
-    name: '',
-    town: '',
-    address: '',
-    comment: '',
-    phoneNumber: '',
     price_min: 0,
     price_max: 2147483647,
     reverse_order: null,
@@ -35,23 +30,6 @@ export const Store = new Vuex.Store({
     setCategories(state, categories) {
       state.categories = categories;
       state.categories = state.categories.map(item => ({...item, isSelected: false }));
-    },
-    postData() {
-      let data = {
-        'bot_id': Store.state.bot_id,
-        'raw_items': Store.state.itemsAddToCartArray.reduce((cartItemsById, item) => {
-          cartItemsById[item.id] = {"amount": item.countInCart, "chosen_options": item.chosenOption};
-          return cartItemsById;
-        }, {}),
-        'ordered_at': new Date().toISOString(),
-        'name': Store.state.name,
-        'phone_number': Store.state.phoneNumber,
-        'town': Store.state.town,
-        'address': Store.state.address,
-        'comment': Store.state.comment
-      };
-      tg.sendData(JSON.stringify(data));
-      tg.close();
     }
   },
   actions: {
@@ -209,7 +187,26 @@ export const Store = new Vuex.Store({
         } catch (error) {
           console.error('There was a problem with the fetch operation:', error);
         }
-      }
+      },
+      async postData({commit}, orderInformation) {
+        const {name, phone_number, town, address, time, comment} = orderInformation;
+        let data = {
+          'bot_id': Store.state.bot_id,
+          'raw_items': Store.state.itemsAddToCartArray.reduce((cartItemsById, item) => {
+            cartItemsById[item.id] = {"amount": item.countInCart, "chosen_options": item.chosenOption};
+            return cartItemsById;
+          }, {}),
+          'ordered_at': new Date().toISOString(),
+          'name': name,
+          'phone_number': phone_number,
+          'town': town,
+          'address': address,
+          'time': time || '',
+          'comment': comment || ''
+        };
+        await tg.sendData(JSON.stringify(data));
+        tg.close();
+    }
     },
   getters: {
 }
