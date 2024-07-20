@@ -53,7 +53,7 @@ services:
       - "7532:7532"
     networks:
       - grafana_network:
-          ipv4_address: 171.30.0.24
+          ipv4_address: "171.30.0.24"
     volumes:
       - type: bind
         source: ./database
