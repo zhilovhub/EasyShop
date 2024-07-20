@@ -43,6 +43,27 @@ services:
         source: ./resources
         target: /resources
 
+  custom_bots:
+    build:
+      custom_bots/
+    env_file:
+      ./.env
+    networks:
+      - grafana_network
+    volumes:
+      - type: bind
+        source: ./database
+        target: /database
+      - type: bind
+        source: ./logs
+        target: /logs
+      - type: bind
+        source: ./common_utils
+        target: /common_utils
+      - type: bind
+        source: ./resources
+        target: /resources
+
 
 networks:
   grafana_network:
