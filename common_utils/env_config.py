@@ -15,7 +15,8 @@ def _get_env(var_name: str, raise_if_none: bool = True) -> str | None:
     return variable
 
 
-load_dotenv()
+# load_dotenv()  # TODO back after docker compose
+load_dotenv("/common_utils/.env")
 
 # COMMON
 PROJECT_ROOT = _get_env("PROJECT_ROOT")
