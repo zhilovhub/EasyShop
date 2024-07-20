@@ -11,7 +11,7 @@ from common_utils.env_config import LOGS_PATH, FROM, LOG_TO_GRAFANA, GRAFANA_URL
 
 try:
     os.mkdir(LOGS_PATH)
-except FileExistsError:
+except Exception:  # noqa
     pass
 
 if not FROM:
