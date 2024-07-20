@@ -9,9 +9,11 @@ export const Store = new Vuex.Store({
     itemsAddToCartArray: [],
     items: [],
     filters: [],
+    name: '',
     town: '',
     address: '',
     comment: '',
+    phoneNumber: '',
     price_min: 0,
     price_max: 2147483647,
     reverse_order: null,
@@ -38,11 +40,12 @@ export const Store = new Vuex.Store({
       let data = {
         'bot_id': Store.state.bot_id,
         'raw_items': Store.state.itemsAddToCartArray.reduce((cartItemsById, item) => {
-          console.log("chosenOption", item.chosenOption)
           cartItemsById[item.id] = {"amount": item.countInCart, "chosen_options": item.chosenOption};
           return cartItemsById;
-        },{}),
+        }, {}),
         'ordered_at': new Date().toISOString(),
+        'name': Store.state.name,
+        'phone_number': Store.state.phoneNumber,
         'town': Store.state.town,
         'address': Store.state.address,
         'comment': Store.state.comment
@@ -181,7 +184,6 @@ export const Store = new Vuex.Store({
         }
       },
       async editProduct({commit}, productInformation) {
-        console.log(productInformation);
         try {
           const { name , category, description, article, price, count, extra_options, pictures, id} = productInformation;
           const response = await fetch(`${Store.state.api_url}/api/products/edit_product`, {
