@@ -50,7 +50,7 @@ services:
       ./.env
     ports:
       - "88:4444"
-      - "7531:7531"
+      - "7532:7532"
     networks:
       - grafana_network
     volumes:
