@@ -41,14 +41,20 @@ async def stock_menu_handler(query: CallbackQuery, state: FSMContext):
             )
             await query.answer()
         case callback_data.ActionEnum.GOODS_COUNT_MANAGE:
-            await query.message.edit_text(
+            await query.message.answer(
                 MessageTexts.GOODS_COUNT_MESSAGE.value,
-                reply_markup=None
+                reply_markup=ReplyBackStockMenuKeyboard.get_keyboard()
             )
-            xlsx_file_path, photo_path = await stock_manager.export_xlsx(bot_id=bot_id, with_pictures=False)
-            await query.message.answer_document(document=FSInputFile(xlsx_file_path),
-                                                caption="Список товаров на складе",
-                                                reply_markup=ReplyBackStockMenuKeyboard.get_keyboard())
+            # xlsx_file_path, photo_path = await stock_manager.export_xlsx(bot_id=bot_id, with_pictures=False)
+            products = await product_db.get_all_products(bot_id)
+            if len(products) == 0:
+                return await query.message.answer("Товаров на складе нет")
+            else:
+                await send_products_info_xlsx(bot_id, products, False)
+            await query.answer()
+            # await query.message.answer_document(document=FSInputFile(xlsx_file_path),
+            #                                     caption="Список товаров на складе",
+            #                                     reply_markup=ReplyBackStockMenuKeyboard.get_keyboard())
 
             await state.set_state(States.GOODS_COUNT_MANAGE)
             await state.set_data({'bot_id': bot_id})
@@ -106,7 +112,7 @@ async def stock_menu_handler(query: CallbackQuery, state: FSMContext):
             if len(products) == 0:
                 await query.message.answer("Товаров на складе нет")
             else:
-                await send_products_info_xlsx(bot_id, products)
+                await send_products_info_xlsx(bot_id, products, True)
             await query.message.answer(
                 "Меню склада:",
                 reply_markup=await InlineStockMenuKeyboard.get_keyboard(bot_id, button_data)
@@ -195,8 +201,12 @@ async def handle_stock_manage_input(message: Message, state: FSMContext):
         bot_id = (await state.get_data())['bot_id']
         file_path = f"{FILES_PATH}docs/{datetime.now().strftime('%d$m%Y_%H%M%S')}.{file_extension}"
         await bot.download(message.document.file_id, destination=file_path)
-        await stock_manager.import_xlsx(bot_id=bot_id, path_to_file=file_path, replace=False)
+        # await stock_manager.import_xlsx(bot_id=bot_id, path_to_file=file_path, replace=False)
+        status, err_message = await stock_manager.update_count_xlsx(file_path)
+        if status == False:
+            return await message.answer(err_message)
         await message.answer("Кол-во товаров на складе обновлено")
+        await _back_to_stock_menu(message, state)
 
     except Exception as e:
         # TODO

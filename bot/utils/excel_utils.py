@@ -175,7 +175,7 @@ async def send_contest_results_xlsx(users: list[ContestUserSchema], contest_id: 
                                  caption="Список участников конкурса.")
 
 
-async def send_products_info_xlsx(bot_id: int, products: list[ProductSchema]):
+async def send_products_info_xlsx(bot_id: int, products: list[ProductSchema], with_pics: bool):
     wb_data = []
     images = []
 
@@ -211,13 +211,16 @@ async def send_products_info_xlsx(bot_id: int, products: list[ProductSchema]):
             images.extend([FILES_PATH + prod for prod in product.picture])
         else:
             images_text = "Картинки не найдены"
+        current_line = {"Имя": product.name, "Описание": product.description,
+                        "Цена": product.price, "Остаток": product.count, "Артикул": product.article,
+                        "Категория": categories_text}
+        if with_pics:
+            current_line.update({"Картинки товара": images_text})
         wb_data.append(
-            {"id": product.id, "Имя": product.name, "Описание": product.description,
-             "Цена": product.price, "Остаток": product.count, "Артикул": product.article,
-             "Категория": categories_text, "Картинки товара": images_text}
+            current_line
         )
 
-    if len(images) != 0:
+    if len(images) != 0 and with_pics == True:
         buffered_zip_file = _create_zip_buffer(images)
         await main_bot.send_document(created_by, document=buffered_zip_file, caption="Картинки ваших товаров")
 

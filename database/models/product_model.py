@@ -71,10 +71,10 @@ class Product(Base):
     id = Column(BigInteger, primary_key=True)
     bot_id = Column(ForeignKey(Bot.bot_id, ondelete="CASCADE"), nullable=False)
 
-    name = Column(String(100), unique=True, nullable=False)  # TODO add test for unique name
+    name = Column(String(100), nullable=False)  # TODO add test for unique name
     category = Column(ARRAY(BigInteger))
     description = Column(String(255), nullable=False)
-    article = Column(String)
+    article = Column(String, unique=True, nullable=False)
     price = Column(Integer, nullable=False)
     count = Column(BigInteger, nullable=False, default=0)
     picture = Column(ARRAY(String))
@@ -102,7 +102,7 @@ class ProductWithoutId(BaseModel):
     name: str = Field(max_length=100)
     category: list[int] | None = None
     description: str = Field(max_length=255)
-    article: Optional[str | None] = None
+    article: str = Field(frozen=True)
     price: int
     count: int
     picture: Optional[list[str] | None] = None
@@ -194,6 +194,26 @@ class ProductDao(Dao):
         self.logger.debug(
             f"bot_id={bot_id}: has {len(res)} products",
             extra=extra_params(bot_id=bot_id)
+        )
+
+        return res
+
+    @validate_call(validate_return=True)
+    async def get_product_by_article(self, article: str) -> ProductSchema:
+        async with self.engine.begin() as conn:
+            raw_res = await conn.execute(select(Product).where(Product.article == article))
+        await self.engine.dispose()
+
+        raw_res = raw_res.fetchone()
+        if not raw_res:
+            self.logger.debug(f"product with article {article} not found.")
+            raise ProductNotFound
+
+        res = ProductSchema.model_validate(raw_res)
+
+        self.logger.debug(
+            f"bot_id={res.bot_id}: product {res.id} is found",
+            extra=extra_params(product_id=res.id, bot_id=res.bot_id)
         )
 
         return res
