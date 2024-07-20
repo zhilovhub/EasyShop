@@ -7,6 +7,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from api.files.router import router as files_router
 from api.orders.router import router as order_router
 from api.products.router import router as product_router
+from api.settings.router import router as settings_router
 from api.categories.router import router as category_router
 
 from common_utils.env_config import LOGS_PATH, API_PROTOCOL, API_HOST, SSL_KEY_PATH, SSL_CERT_PATH, API_PORT
@@ -30,8 +31,13 @@ tags_metadata = [
         "name": "files",
         "description": "Operations with project files.",
     },
+    {
+        "name": "settings",
+        "description": "Operations with bot user settings.",
+    },
 ]
 app = FastAPI(openapi_tags=tags_metadata)
+app.include_router(settings_router)
 app.include_router(order_router)
 app.include_router(category_router)
 app.include_router(product_router)
