@@ -1,3 +1,5 @@
+print(__name__)
+
 import os
 import datetime
 
@@ -70,10 +72,10 @@ if __name__ == "__main__":
                       f'=============================\n')
 
     if API_PROTOCOL == "http":
-        uvicorn.run("main:app", host=API_HOST, port=API_PORT, log_level="info",
+        uvicorn.run("api.main:app", host=API_HOST, port=API_PORT, log_level="info",
                     log_config=logger_configuration)
     elif API_PROTOCOL == "https":
-        uvicorn.run("main:app", host=API_HOST, port=API_PORT, log_level="info",
+        uvicorn.run("api.main:app", host=API_HOST, port=API_PORT, log_level="info",
                     ssl_keyfile=SSL_KEY_PATH, ssl_certfile=SSL_CERT_PATH,
                     log_config=logger_configuration)
 
