@@ -48,6 +48,9 @@ services:
       custom_bots/
     env_file:
       ./.env
+    ports:
+      - "88:4444"
+      - "7531:7531"
     networks:
       - grafana_network
     volumes:
