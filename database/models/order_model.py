@@ -98,6 +98,7 @@ class OrderSchema(BaseModel):
     address: str
     status: OrderStatusValues
     comment: str
+    town: str
     name: str | None = None
     phone_number: str | None = None
     time: str | None = None
@@ -147,11 +148,12 @@ class OrderSchema(BaseModel):
                f"Список товаров:\n\n" \
                f"{products_text}\n\n" \
                f"Итого: <b>{total_price}₽</b>\n\n" \
-               f"🛤 Адрес: <b>{self.address if self.address else 'Не указано'}</b>\n" \
-               f"💌 Комментарий: <b>{self.comment if self.comment else 'Не указано'}</b>\n" \
                f"👤 Имя клиента: <b>{self.name if self.name else 'Не указано'}</b>\n" \
                f"📱 Номер телефона: <b>{self.phone_number if self.phone_number else 'Не указано'}</b>\n" \
-               f"⏰ Время доставки: <b>{self.time if self.time else 'Не указано'}</b>\n\n" \
+               f"🌇 Город: <b>{self.town if self.town else 'Не указано'}</b>\n" \
+               f"🛤 Адрес доставки: <b>{self.address if self.address else 'Не указано'}</b>\n" \
+               f"⏰ Время доставки: <b>{self.time if self.time else 'Не указано'}</b>\n" \
+               f"💌 Комментарий: <b>{self.comment if self.comment else 'Не указано'}</b>\n\n" \
                f"Статус: <b>{self.translate_order_status()}</b>" if not is_admin \
             else f"Новый заказ <b>#{self.id}</b>\n" \
                  f"от пользователя " \
@@ -159,11 +161,12 @@ class OrderSchema(BaseModel):
                  f"Список товаров:\n\n" \
                  f"{products_text}\n\n" \
                  f"Итого: <b>{total_price}₽</b>\n\n" \
-                 f"🛤 Адрес: <b>{self.address if self.address else 'Не указано'}</b>\n" \
-                 f"💌 Комментарий: <b>{self.comment if self.comment else 'Не указано'}</b>\n" \
                  f"👤 Имя клиента: <b>{self.name if self.name else 'Не указано'}</b>\n" \
-                 f"📱 Номер телефона: <b>{self.phone_number if self.phone_number else 'Не указано'}</b>\n" \
-                 f"⏰ Время доставки: <b>{self.time if self.time else 'Не указано'}</b>\n\n" \
+               f"📱 Номер телефона: <b>{self.phone_number if self.phone_number else 'Не указано'}</b>\n" \
+               f"🌇 Город: <b>{self.town if self.town else 'Не указано'}</b>\n" \
+               f"🛤 Адрес доставки: <b>{self.address if self.address else 'Не указано'}</b>\n" \
+               f"⏰ Время доставки: <b>{self.time if self.time else 'Не указано'}</b>\n" \
+               f"💌 Комментарий: <b>{self.comment if self.comment else 'Не указано'}</b>\n\n" \
                  f"Статус: <b>{self.translate_order_status()}</b>"
 
 
