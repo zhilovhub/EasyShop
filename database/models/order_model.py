@@ -62,6 +62,7 @@ class Order(Base):
     address = Column(String)
     status = Column(OrderStatus)
     comment = Column(String)
+    town = Column(String)
     name = Column(String)
     phone_number = Column(String)
     time = Column(String)
