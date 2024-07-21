@@ -85,7 +85,7 @@
       </div>
 
     </div>
-  <div @click="toggleDescription" class="block block-description" :style="{ height: descriptionVisible ? 'auto' : '68.27px' }">
+  <div v-if="productObject.description && productObject.description.length>0" @click="toggleDescription" class="block block-description" :style="{ height: descriptionVisible ? 'auto' : '68.27px' }">
     <div class="span-block">
       <h1>Описание</h1>
       <svg style="cursor: pointer" width="19" height="9" viewBox="0 0 19 9" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
