@@ -58,7 +58,13 @@ QUESTION_MESSAGES = JsonStore(
     json_store_name="QUESTION_MESSAGES"
 )
 
-scheduler = Scheduler(SCHEDULER_URL, "postgres", TIMEZONE)
+scheduler = Scheduler(
+    SCHEDULER_URL,
+    "postgres",
+    TIMEZONE,
+    tablename="custom_bot_apscheduler_jobs",
+    unique_id="multi_bot"
+)
 
 
 class CustomUserStates(StatesGroup):

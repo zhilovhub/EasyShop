@@ -15,10 +15,10 @@ from logs.config import logger, extra_params
 @singleton
 class Scheduler:
 
-    def __init__(self, scheduler_url: str, jobstore_alias: str, timezone: str):
+    def __init__(self, scheduler_url: str, jobstore_alias: str, timezone: str, tablename: str = "apscheduler_jobs"):
         self.scheduler = AsyncIOScheduler(
             {'apscheduler.timezone': TIMEZONE},
-            jobstores={jobstore_alias: SQLAlchemyJobStore(url=scheduler_url)}
+            jobstores={jobstore_alias: SQLAlchemyJobStore(url=scheduler_url, tablename=tablename)}
         )
         self.jobstore_alias = jobstore_alias
         self.timezone = timezone
