@@ -2,7 +2,7 @@ from datetime import datetime
 
 from aiogram import Bot
 from aiogram.enums import ParseMode
-from aiogram.types import CallbackQuery, Message, FSInputFile
+from aiogram.types import CallbackQuery, Message
 from aiogram.fsm.context import FSMContext
 
 from bot.main import stock_manager, bot
@@ -41,17 +41,15 @@ async def stock_menu_handler(query: CallbackQuery, state: FSMContext):
             )
             await query.answer()
         case callback_data.ActionEnum.GOODS_COUNT_MANAGE:
-            await query.message.edit_text(
-                MessageTexts.GOODS_COUNT_MESSAGE.value,
-                reply_markup=None
-            )
-            xlsx_file_path, photo_path = await stock_manager.export_xlsx(bot_id=bot_id, with_pictures=False)
-            await query.message.answer_document(document=FSInputFile(xlsx_file_path),
-                                                caption="Список товаров на складе",
-                                                reply_markup=ReplyBackStockMenuKeyboard.get_keyboard())
+            if await _check_goods_exist(query, bot_id, with_pictures=False):
+                await query.message.answer(
+                    MessageTexts.GOODS_COUNT_MESSAGE.value,
+                    reply_markup=ReplyBackStockMenuKeyboard.get_keyboard()
+                )
 
-            await state.set_state(States.GOODS_COUNT_MANAGE)
-            await state.set_data({'bot_id': bot_id})
+                await state.set_state(States.GOODS_COUNT_MANAGE)
+                await state.set_data({'bot_id': bot_id})
+
         case callback_data.ActionEnum.AUTO_REDUCE:
             bot_data = await bot_db.get_bot(bot_id)
             if not bot_data.settings:
@@ -92,26 +90,12 @@ async def stock_menu_handler(query: CallbackQuery, state: FSMContext):
             else:
                 button_data = True
 
-            # xlsx_path, photo_path = await stock_manager.export_xlsx(bot_id=bot_id)
-            # json_path, photo_path = await stock_manager.export_json(bot_id=bot_id)
-            # csv_path, photo_path = await stock_manager.export_csv(bot_id=bot_id)
+            if await _check_goods_exist(query, bot_id, with_pictures=True):
+                await query.message.answer(
+                    "Меню склада:",
+                    reply_markup=await InlineStockMenuKeyboard.get_keyboard(bot_id, button_data)
+                )
 
-            # media_group = MediaGroupBuilder()
-            # media_group.add_document(media=FSInputFile(xlsx_path), caption="Excel таблица")
-            # media_group.add_document(media=FSInputFile(json_path), caption="JSON файл")
-            # media_group.add_document(media=FSInputFile(csv_path), caption="CSV таблица")
-
-            # await bot.send_media_group(chat_id=query.message.chat.id, media=media_group.build())
-            products = await product_db.get_all_products(bot_id)
-            if len(products) == 0:
-                await query.message.answer("Товаров на складе нет")
-            else:
-                await send_products_info_xlsx(bot_id, products)
-            await query.message.answer(
-                "Меню склада:",
-                reply_markup=await InlineStockMenuKeyboard.get_keyboard(bot_id, button_data)
-            )
-            await query.answer()
         case callback_data.ActionEnum.BACK_TO_BOT_MENU:
             custom_bot = await bot_db.get_bot(bot_id)
             await query.message.edit_text(
@@ -183,20 +167,26 @@ async def handle_stock_manage_input(message: Message, state: FSMContext):
         await _back_to_stock_menu(message, state)
 
     if message.content_type != "document":
-        return await message.answer("Необходимо отправить xlsx файл с товарами.",
+        return await message.answer("Необходимо отправить xlsx файл с товарами",
                                     reply_markup=ReplyBackStockMenuKeyboard.get_keyboard())
 
     file_extension = message.document.file_name.split('.')[-1].lower()
 
     if file_extension not in ("xlsx",):
-        return await message.answer("Файл должен быть в формате xlsx товарами.",
-                                    reply_markup=ReplyBackStockMenuKeyboard.get_keyboard())
+        return await message.answer(
+            "Файл должен быть в формате xlsx",
+            reply_markup=ReplyBackStockMenuKeyboard.get_keyboard()
+        )
     try:
-        bot_id = (await state.get_data())['bot_id']
         file_path = f"{FILES_PATH}docs/{datetime.now().strftime('%d$m%Y_%H%M%S')}.{file_extension}"
         await bot.download(message.document.file_id, destination=file_path)
-        await stock_manager.import_xlsx(bot_id=bot_id, path_to_file=file_path, replace=False)
+
+        status, err_message = await stock_manager.update_count_xlsx(file_path)
+        if not status:
+            return await message.answer(err_message)
+
         await message.answer("Кол-во товаров на складе обновлено")
+        await _back_to_stock_menu(message, state)
 
     except Exception as e:
         # TODO
@@ -341,3 +331,14 @@ async def _back_to_stock_menu(message: Message, state: FSMContext) -> None:
     )
     await state.set_state(States.BOT_MENU)
     await state.set_data({'bot_id': bot_id})
+
+
+async def _check_goods_exist(query: CallbackQuery, bot_id: int, with_pictures: bool) -> bool:
+    products = await product_db.get_all_products(bot_id)
+    if len(products) == 0:
+        await query.answer("Товаров на складе нет")
+        return False
+    else:
+        await send_products_info_xlsx(bot_id, products, with_pictures)
+        await query.answer()
+        return True
