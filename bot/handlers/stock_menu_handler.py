@@ -164,7 +164,7 @@ async def pick_import_file_type(query: CallbackQuery, state: FSMContext):
 @stock_menu_router.message(States.GOODS_COUNT_MANAGE)
 async def handle_stock_manage_input(message: Message, state: FSMContext):
     if message.text == ReplyBackStockMenuKeyboard.Callback.ActionEnum.BACK_TO_STOCK_MENU.value:
-        await _back_to_stock_menu(message, state)
+        return await _back_to_stock_menu(message, state)
 
     if message.content_type != "document":
         return await message.answer("Необходимо отправить xlsx файл с товарами",
