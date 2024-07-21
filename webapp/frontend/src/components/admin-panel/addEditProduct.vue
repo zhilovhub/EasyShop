@@ -84,7 +84,7 @@ export default {
   },
   methods: {
     addProduct() {
-      if (this.productName && this.productDescription && this.productArticle && this.productPrice && this.productCount && this.chosenCategory && this.chosenCategory.id) {
+      if (this.productName && this.productArticle && this.productPrice && this.productCount && this.chosenCategory && this.chosenCategory.id) {
         this.$store.dispatch("addProduct", {
           name: this.productName,
           category: [this.chosenCategory.id],
