@@ -14,7 +14,7 @@ from openpyxl.styles import Font
 from common_utils.singleton import singleton
 from common_utils.env_config import FILES_PATH
 
-from database.config import category_db
+from database.config import category_db, product_db
 from database.models.models import Database
 from database.models.product_model import ProductNotFound, ProductWithoutId
 from database.models.category_model import CategorySchemaWithoutId, SameCategoryNameAlreadyExists
@@ -142,6 +142,23 @@ class Stoke:
 
         return path_to_file, path_to_images
 
+    async def update_count_xlsx(self, path_to_file: str):
+        """Expects the xlsx file without pictures column"""
+        status, err_message = await self.check_xlsx(path_to_file)
+        if status is False:
+            return False, err_message
+        wb = load_workbook(filename=path_to_file)
+        ws = wb.active
+        for ind, row in enumerate(list(ws.values)[1:]):
+            try:
+                product = await product_db.get_product_by_article(row[4])
+                if product.count != int(row[3]):
+                    product.count = int(row[3])
+                    await product_db.update_product(product)
+            except ProductNotFound:
+                continue
+        return True, ""
+
     @staticmethod
     async def check_xlsx(path_to_file: str):
         wb = load_workbook(filename=path_to_file)
@@ -149,7 +166,7 @@ class Stoke:
         for ind, row in enumerate(list(ws.values)[1:]):
             err_message = f"Строка {ind+1}: "
             if len(row) != 6:
-                return False, "Неверное количество колонок"
+                return False, err_message + "Неверное количество колонок"
             try:
                 price = int(row[2])
                 count = int(row[3])

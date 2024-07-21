@@ -17,6 +17,7 @@ from bot.main import bot, QUESTION_MESSAGES
 from bot.utils import MessageTexts
 from bot.states.states import States
 from bot.handlers.routers import admin_bot_menu_router
+from bot.utils.product_utils import generate_article
 from bot.utils.custom_bot_api import start_custom_bot, stop_custom_bot
 from bot.keyboards.channel_keyboards import InlineChannelsListKeyboard
 from bot.keyboards.main_menu_keyboards import ReplyBotMenuKeyboard, ReplyBackBotMenuKeyboard
@@ -368,7 +369,7 @@ async def bot_menu_photo_handler(message: Message, state: FSMContext):
                                    price=price,
                                    count=0,
                                    picture=[filename],
-                                   article=params[0],
+                                   article=generate_article(),
                                    category=[0]
                                    )
     try:

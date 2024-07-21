@@ -138,14 +138,14 @@ class InlineStockMenuKeyboard:
                         )
                     ),
                 ],
-                # [
-                #     InlineKeyboardButton(
-                #         text="📦 Управление остатками",
-                #         callback_data=InlineStockMenuKeyboard.callback_json(
-                #             actions.GOODS_COUNT_MANAGE, bot_id
-                #         )
-                #     ),
-                # ],
+                [
+                    InlineKeyboardButton(
+                        text="📦 Управление остатками",
+                        callback_data=InlineStockMenuKeyboard.callback_json(
+                            actions.GOODS_COUNT_MANAGE, bot_id
+                        )
+                    ),
+                ],
                 #     InlineKeyboardButton(
                 #         text=f"{'✅' if auto_reduce else '❌'} Автоуменьшение на складе",
                 #         callback_data=InlineStockMenuKeyboard.callback_json(
