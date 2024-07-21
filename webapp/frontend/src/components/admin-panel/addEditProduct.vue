@@ -21,7 +21,7 @@ export default {
       productDescription: '',
       productArticle: '',
       productPrice: null,
-      productCount: null,
+      productCount: 0,
       imagePreviews: [],
       imageFiles: [],
       options: [],
@@ -135,7 +135,7 @@ export default {
     handleFileUpload(event) {
       const files = event.target.files;
       for (let i = 0; i < files.length; i++) {
-        if (this.imageFiles && this.imageFiles.length < 3) {
+        if (this.imageFiles && this.imageFiles.length < 5) {
           const file = files[i];
           this.imageFiles.push(file);
           this.imagePreviews.push(URL.createObjectURL(file));

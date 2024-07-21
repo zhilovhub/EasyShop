@@ -163,7 +163,7 @@ export const Store = new Vuex.Store({
       },
       async editProduct({commit}, productInformation) {
         try {
-          const { name , category, description, article, price, count, extra_options, pictures, id} = productInformation;
+          const { name , category, description, article, price, count, extra_options, picture, id} = productInformation;
           const response = await fetch(`${Store.state.api_url}/api/products/edit_product`, {
             method: 'POST',
             headers: {
@@ -179,7 +179,7 @@ export const Store = new Vuex.Store({
               "article": article,
               "price": price || 0,
               "count": count || 0,
-              "picture": pictures,
+              "picture": picture,
               "extra_options": extra_options || {},
               "id": id,
             })
@@ -209,5 +209,6 @@ export const Store = new Vuex.Store({
     }
     },
   getters: {
-}
+
+  }
 });

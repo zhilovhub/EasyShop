@@ -324,7 +324,7 @@ export default {
         article: item.article,
         price: item.price,
         count: item.count,
-        pictures: item.pictures,
+        picture: item.picture,
         extra_options: item.extra_options,
         id: item.id
       }).then(() => {
@@ -347,7 +347,7 @@ export default {
         article: item.article,
         price: item.price,
         count: item.count,
-        pictures: item.pictures,
+        picture: item.picture,
         extra_options: item.extra_options,
         id: item.id,
       }).then(() => {
