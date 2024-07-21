@@ -220,7 +220,7 @@ async def send_products_info_xlsx(bot_id: int, products: list[ProductSchema], wi
             current_line
         )
 
-    if len(images) != 0 and with_pics == True:
+    if len(images) != 0 and with_pics:
         buffered_zip_file = _create_zip_buffer(images)
         await main_bot.send_document(created_by, document=buffered_zip_file, caption="Картинки ваших товаров")
 

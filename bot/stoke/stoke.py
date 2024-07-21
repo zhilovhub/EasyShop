@@ -143,6 +143,7 @@ class Stoke:
         return path_to_file, path_to_images
 
     async def update_count_xlsx(self, path_to_file: str):
+        """Expects the xlsx file without pictures column"""
         status, err_message = await self.check_xlsx(path_to_file)
         if status is False:
             return False, err_message
@@ -158,7 +159,8 @@ class Stoke:
                 continue
         return True, ""
 
-    async def check_xlsx(self, path_to_file: str):
+    @staticmethod
+    async def check_xlsx(path_to_file: str):
         wb = load_workbook(filename=path_to_file)
         ws = wb.active
         for ind, row in enumerate(list(ws.values)[1:]):
