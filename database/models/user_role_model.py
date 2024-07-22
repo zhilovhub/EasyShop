@@ -9,7 +9,7 @@ from pydantic import BaseModel, ConfigDict, Field
 from database.models import Base
 from database.exceptions import *
 from database.models.dao import Dao
-from database.models.bot_model import Bot
+from database.models.bot_model import Bot, BotSchema
 from database.models.user_model import User
 
 from typing import *
@@ -56,6 +56,26 @@ class UserRoleSchema(BaseModel):
 class UserRoleDao(Dao):
     def __init__(self, engine: AsyncEngine, logger) -> None:
         super().__init__(engine, logger)
+
+    async def get_user_bots(self, user_id: int) -> list[BotSchema]:
+        async with self.engine.begin() as conn:
+            raw_data = await conn.execute(select(UserRole).where(UserRole.user_id == user_id))
+            raw_data = raw_data.fetchall()
+            if raw_data is None:
+                raise UserRoleNotFound(f"user_id={user_id} user role not found in database.")
+            data = []
+            for user_role in raw_data:
+                data.append(UserRoleSchema.model_validate(user_role))
+
+        async with self.engine.begin() as conn:
+            bots = []
+            for user_role in data:
+                raw_bot = await conn.execute(select(Bot).where(Bot.bot_id == user_role.bot_id))
+                raw_bot = raw_bot.fetchone()
+                if raw_bot:
+                    bots.append(BotSchema.model_validate(raw_bot))
+
+        return bots
 
     async def get_user_role(self, user_id: int, bot_id: int) -> UserRoleSchema:
         async with self.engine.begin() as conn:

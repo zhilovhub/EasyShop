@@ -12,14 +12,9 @@ from pydantic import BaseModel, Field, ConfigDict
 from database.models import Base
 from database.models.dao import Dao
 from database.models.user_model import User
+from database.exceptions.exceptions import BotNotFound
 
 from logs.config import extra_params
-
-
-class BotNotFound(Exception):
-    """Raised when provided bot not found in database"""
-    pass
-
 
 class InvalidParameterFormat(Exception):
     """Raised when provided invalid data format to function"""
@@ -41,6 +36,7 @@ class Bot(Base):
     created_by = Column(ForeignKey(User.user_id, ondelete="CASCADE"), nullable=False)
     settings = Column(JSON)
     locale = Column(String(10), nullable=False)
+    admin_invite_link_hash = Column(String(15), unique=True)
 
 
 class BotSchemaWithoutId(BaseModel):
@@ -52,6 +48,7 @@ class BotSchemaWithoutId(BaseModel):
     created_by: int = Field(frozen=True)
     settings: dict | None = None
     locale: str = Field()
+    admin_invite_link_hash: str | None = Field(max_length=15, default=None)
 
 
 class BotSchema(BotSchemaWithoutId):
@@ -99,6 +96,17 @@ class BotDao(Dao):
             f"bot_id={bot_id}: bot {bot_id} is found",
             extra=extra_params(bot_id=bot_id)
         )
+
+        return BotSchema.model_validate(res)
+
+    async def get_bot_by_invite_link_hash(self, link_hash: str) -> BotSchema:
+        async with self.engine.begin() as conn:
+            raw_res = await conn.execute(select(Bot).where(Bot.admin_invite_link_hash == link_hash))
+        await self.engine.dispose()
+
+        res = raw_res.fetchone()
+        if res is None:
+            raise BotNotFound(f"link_hash={link_hash}: bot with provided invite link not found in database.")
 
         return BotSchema.model_validate(res)
 

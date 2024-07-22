@@ -9,6 +9,7 @@ from aiogram import F, Bot
 from aiogram.enums import ParseMode
 from aiogram.types import Message, CallbackQuery
 from aiogram.exceptions import TelegramUnauthorizedError
+from aiogram.utils.formatting import Text, Bold, Italic, Pre
 from aiogram.fsm.context import FSMContext
 from aiogram.utils.token import validate_token, TokenValidationError
 from aiogram.fsm.storage.base import StorageKey
@@ -26,6 +27,7 @@ from bot.keyboards.post_message_keyboards import InlinePostMessageMenuKeyboard
 from bot.post_message.post_message_create import post_message_create
 from common_utils.bot_settings_config import BOT_PROPERTIES
 
+from common_utils import generate_admin_invite_link
 from common_utils.env_config import FILES_PATH
 from common_utils.order_utils.order_type import OrderType
 from common_utils.order_utils.order_utils import create_order
@@ -407,6 +409,12 @@ async def bot_menu_callback_handler(query: CallbackQuery, state: FSMContext):
         case callback_data.ActionEnum.ADMINS:
             await query.message.edit_reply_markup(
                 reply_markup=await InlineAdministratorsManageKeyboard.get_keyboard(bot_id))
+        case callback_data.ActionEnum.LEAVE_ADMINISTRATING:
+            await user_role_db.del_user_role(query.from_user.id, bot_id)
+            await query.message.edit_text("Вы больше не администратор этого бота. "
+                                          "Пропишите /start для рестарта бота",
+                                          reply_markup=None)
+            await state.clear()
         case callback_data.ActionEnum.BOT_EDIT_POST_ORDER_MESSAGE:
             await query.message.answer(
                 "Введите текст, который будет отображаться у пользователей Вашего бота "
@@ -541,9 +549,24 @@ async def admins_manage_callback_handler(query: CallbackQuery, state: FSMContext
     user_bot = await bot_db.get_bot(bot_id)
     custom_bot_data = await Bot(token=user_bot.token).get_me()
 
+    main_bot_data = await query.bot.get_me()
+
+    current_text = Text.from_entities(query.message.text, query.message.entities)
+
     match callback_data.a:
         case callback_data.ActionEnum.ADD_ADMIN:
-            pass
+            link_hash, link = generate_admin_invite_link(main_bot_data.username)
+            user_bot.admin_invite_link_hash = link_hash
+            await bot_db.update_bot(user_bot)
+
+            ADD_ADMIN_LINK_TEXT = Text("Администраторы бота ", Bold("@" + main_bot_data.username), ":",
+                                       "\n\nℹ️ Для добавления администратора в бота отправьте нужному ",
+                                       "пользователю ссылку приглашение:\n", Bold(link), "\n\n",
+                                       "Сгенерированная ссылка ", Italic("действует 1 раз"),
+                                       " для создания новой ссылки нажмите на кнопку добавить админа еще раз.")
+
+            await query.message.edit_text(**ADD_ADMIN_LINK_TEXT.as_kwargs(),
+                                          reply_markup=await InlineAdministratorsManageKeyboard.get_keyboard(bot_id))
         case callback_data.ActionEnum.ADMIN_LIST:
             pass
         case callback_data.ActionEnum.BACK_TO_BOT_MENU:
