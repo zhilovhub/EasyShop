@@ -19,6 +19,11 @@ from logs.config import extra_params
 from enum import Enum
 
 
+class SameArticleProduct(Exception):
+    """Raised when bot_id already has this article"""
+    pass
+
+
 class ProductNotFound(Exception):
     """Raised when provided product not found in database"""
     pass
@@ -74,7 +79,7 @@ class Product(Base):
     name = Column(String(100), nullable=False)  # TODO add test for unique name
     category = Column(ARRAY(BigInteger))
     description = Column(String(255), nullable=False)
-    article = Column(String, unique=True, nullable=False)
+    article = Column(String, nullable=False)
     price = Column(Integer, nullable=False)
     count = Column(BigInteger, nullable=False, default=0)
     picture = Column(ARRAY(String))
@@ -199,26 +204,6 @@ class ProductDao(Dao):
         return res
 
     @validate_call(validate_return=True)
-    async def get_product_by_article(self, article: str) -> ProductSchema:
-        async with self.engine.begin() as conn:
-            raw_res = await conn.execute(select(Product).where(Product.article == article))
-        await self.engine.dispose()
-
-        raw_res = raw_res.fetchone()
-        if not raw_res:
-            self.logger.debug(f"product with article {article} not found.")
-            raise ProductNotFound
-
-        res = ProductSchema.model_validate(raw_res)
-
-        self.logger.debug(
-            f"bot_id={res.bot_id}: product {res.id} is found",
-            extra=extra_params(product_id=res.id, bot_id=res.bot_id)
-        )
-
-        return res
-
-    @validate_call(validate_return=True)
     async def get_product(self, product_id: int) -> ProductSchema:
         async with self.engine.begin() as conn:
             raw_res = await conn.execute(select(Product).where(Product.id == product_id))
@@ -238,11 +223,40 @@ class ProductDao(Dao):
 
         return res
 
+    @validate_call(validate_return=True)
+    async def get_product_by_bot_id_and_article(self, bot_id: int, article: str) -> ProductSchema:
+        async with self.engine.begin() as conn:
+            raw_res = await conn.execute(select(Product).where(Product.bot_id == bot_id, Product.article == article))
+        await self.engine.dispose()
+
+        raw_res = raw_res.fetchone()
+        if not raw_res:
+            self.logger.debug(f"product with bot_id {bot_id} and article {article} not found.")
+            raise ProductNotFound
+
+        res = ProductSchema.model_validate(raw_res)
+
+        self.logger.debug(
+            f"bot_id={res.bot_id}, article={res.article}: product {res.id} is found",
+            extra=extra_params(product_id=res.id, bot_id=res.bot_id, article=res.article)
+        )
+
+        return res
+
+    async def check_article_in_bot_id(self, article: str, bot_id: int) -> bool:
+        try:
+            await self.get_product_by_bot_id_and_article(bot_id, article)
+            return True
+        except ProductNotFound:
+            return False
+
     @validate_call
     async def add_product(self, new_product: ProductWithoutId) -> int:
         if type(new_product) != ProductWithoutId:
             raise InvalidParameterFormat("new_product must be type of ProductWithoutId")
-
+        status = await self.check_article_in_bot_id(new_product.article, new_product.bot_id)
+        if status is True:
+            raise SameArticleProduct("New product should have unqiue article for given bot_id")
         async with self.engine.begin() as conn:
             product_id = (await conn.execute(insert(Product).values(new_product.model_dump()))).inserted_primary_key[0]
 
