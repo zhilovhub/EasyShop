@@ -133,14 +133,16 @@ async def editing_bg_color_handler(message: Message, state: FSMContext):
                 await state.set_state(States.BOT_MENU)
                 await state.set_data(state_data)
             case _:
-                print(is_valid_hex_code(message_text))
                 if not is_valid_hex_code(message_text) and message_text != "telegram":
                     return await message.answer("Не получилось распознать ввод. Введите еще раз цвет в формате "
                                                 "<i>#FFFFFF</i> или напишите <i>telegram</i> для дефолтных цветов.")
+
+                bg_color = None if message_text == "telegram" else message_text
+
                 if custom_bot.settings:
-                    custom_bot.settings["bg_color"] = message_text
+                    custom_bot.settings["bg_color"] = bg_color
                 else:
-                    custom_bot.settings = {"bg_color": message_text}
+                    custom_bot.settings = {"bg_color": bg_color}
                 await bot_db.update_bot(custom_bot)
 
                 await message.answer(
