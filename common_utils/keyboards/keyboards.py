@@ -7,6 +7,8 @@ from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 from common_utils.keyboards.keyboard_utils import callback_json_validator, get_bot_channels, get_bot_username, \
     get_bot_mailing, get_bot_status
 
+from database.models.user_model import UserRoleValues
+
 
 class InlineBotMenuKeyboard:
     class Callback(BaseModel):
@@ -17,6 +19,7 @@ class InlineBotMenuKeyboard:
             MAILING_OPEN = "mailing_menu"
 
             BOT_SETTINGS = "settings"
+            ADMINS = "settings"
             BOT_EDIT_POST_ORDER_MESSAGE = "pom"
 
             BOT_STOP = "stop_bot"
@@ -26,6 +29,8 @@ class InlineBotMenuKeyboard:
             BOT_GOODS_OPEN = "goods"
 
             PARTNERSHIP = "partnership"
+
+            LEAVE_ADMINISTRATING = "leave_admin"
 
             BOT_DELETE = "delete_bot"
 
@@ -52,7 +57,7 @@ class InlineBotMenuKeyboard:
             return False
 
     @staticmethod
-    async def get_keyboard(bot_id: int) -> InlineKeyboardMarkup:
+    async def get_keyboard(bot_id: int, user_status: UserRoleValues) -> InlineKeyboardMarkup:
         actions = InlineBotMenuKeyboard.Callback.ActionEnum
 
         channel_inline_button = InlineKeyboardButton(
@@ -79,6 +84,42 @@ class InlineBotMenuKeyboard:
                 )
             )
 
+        leave_admin_or_delete_bot_button = InlineKeyboardButton(
+                text="🗑 Удалить бота",
+                callback_data=InlineBotMenuKeyboard.callback_json(
+                    actions.BOT_DELETE, bot_id
+                )
+        ) if user_status == UserRoleValues.OWNER else \
+            InlineKeyboardButton(
+                text="🛑 Покинуть администрирование",
+                callback_data=InlineBotMenuKeyboard.callback_json(
+                    actions.LEAVE_ADMINISTRATING, bot_id
+                )
+            )
+
+        bot_setup_buttons = [
+            InlineKeyboardButton(
+                text="⚙️ Настройки бота",
+                callback_data=InlineBotMenuKeyboard.callback_json(
+                    actions.BOT_SETTINGS, bot_id
+                )
+            ),
+            InlineKeyboardButton(
+                text="👥 Администраторы",
+                callback_data=InlineBotMenuKeyboard.callback_json(
+                    actions.ADMINS, bot_id
+                )
+            ),
+        ] if user_status == UserRoleValues.OWNER else \
+            [
+                InlineKeyboardButton(
+                    text="⚙️ Настройки бота",
+                    callback_data=InlineBotMenuKeyboard.callback_json(
+                        actions.BOT_SETTINGS, bot_id
+                    )
+                ),
+            ]
+
         return InlineKeyboardMarkup(
             inline_keyboard=[
                 [
@@ -89,14 +130,7 @@ class InlineBotMenuKeyboard:
                         )
                     )
                 ],
-                [
-                    InlineKeyboardButton(
-                        text="⚙️ Настройки бота",
-                        callback_data=InlineBotMenuKeyboard.callback_json(
-                            actions.BOT_SETTINGS, bot_id
-                        )
-                    )
-                ],
+                bot_setup_buttons
                 [
                     InlineKeyboardButton(
                         text="⛔ Остановить бота",
@@ -139,13 +173,8 @@ class InlineBotMenuKeyboard:
                     )
                 ],
                 [
-                    InlineKeyboardButton(
-                        text="🗑 Удалить бота",
-                        callback_data=InlineBotMenuKeyboard.callback_json(
-                            actions.BOT_DELETE, bot_id
-                        )
-                    )
-                ]
+                    leave_admin_or_delete_bot_button,
+                ],
             ],
         )
 
