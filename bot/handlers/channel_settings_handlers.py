@@ -41,7 +41,7 @@ async def channels_list_callback_handler(query: CallbackQuery):
         case callback_data.ActionEnum.BACK_TO_MAIN_MENU:
             await query.message.edit_text(
                 MessageTexts.BOT_MENU_MESSAGE.value.format((await Bot(custom_bot.token).get_me()).username),
-                reply_markup=await InlineBotMenuKeyboard.get_keyboard(custom_bot.bot_id),
+                reply_markup=await InlineBotMenuKeyboard.get_keyboard(custom_bot.bot_id, query.from_user.id),
                 parse_mode=ParseMode.HTML
             )
 

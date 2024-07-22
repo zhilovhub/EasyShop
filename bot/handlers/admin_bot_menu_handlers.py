@@ -339,7 +339,7 @@ async def waiting_for_the_token_handler(message: Message, state: FSMContext):
     )
     await message.answer(
         MessageTexts.BOT_MENU_MESSAGE.value.format(bot_username),
-        reply_markup=await InlineBotMenuKeyboard.get_keyboard(user_bot.bot_id)
+        reply_markup=await InlineBotMenuKeyboard.get_keyboard(user_bot.bot_id, message.from_user.id)
     )
     await state.set_state(States.BOT_MENU)
     await state.set_data({"bot_id": bot_id})
@@ -416,7 +416,7 @@ async def bot_menu_callback_handler(query: CallbackQuery, state: FSMContext):
             await query.message.edit_text(
                 query.message.text,
                 parse_mode=ParseMode.HTML,
-                reply_markup=await InlineBotMenuKeyboard.get_keyboard(bot_id)
+                reply_markup=await InlineBotMenuKeyboard.get_keyboard(bot_id, query.from_user.id)
             )
             await query.answer("Ваш бот запущен ✅", show_alert=True)
         case callback_data.ActionEnum.BOT_STOP:
@@ -424,7 +424,7 @@ async def bot_menu_callback_handler(query: CallbackQuery, state: FSMContext):
             await query.message.edit_text(
                 query.message.text,
                 parse_mode=ParseMode.HTML,
-                reply_markup=await InlineBotMenuKeyboard.get_keyboard(bot_id)
+                reply_markup=await InlineBotMenuKeyboard.get_keyboard(bot_id, query.from_user.id)
             )
             await query.answer("Ваш бот приостановлен ❌", show_alert=True)
         case callback_data.ActionEnum.PARTNERSHIP:
@@ -523,7 +523,7 @@ async def bot_settings_callback_handler(query: CallbackQuery, state: FSMContext)
         case callback_data.ActionEnum.BACK_TO_BOT_MENU:
             await query.message.edit_text(
                 MessageTexts.BOT_MENU_MESSAGE.value.format(custom_bot_data.username),
-                reply_markup=await InlineBotMenuKeyboard.get_keyboard(user_bot.bot_id)
+                reply_markup=await InlineBotMenuKeyboard.get_keyboard(user_bot.bot_id, query.from_user.id)
             )
 
 
@@ -536,7 +536,7 @@ async def bot_menu_handler(message: Message, state: FSMContext):
         case ReplyBotMenuKeyboard.Callback.ActionEnum.SETTINGS.value:
             await message.answer(
                 MessageTexts.BOT_MENU_MESSAGE.value.format((await Bot(custom_bot.token).get_me()).username),
-                reply_markup=await InlineBotMenuKeyboard.get_keyboard(custom_bot.bot_id)
+                reply_markup=await InlineBotMenuKeyboard.get_keyboard(custom_bot.bot_id, message.from_user.id)
             )
 
         case ReplyBotMenuKeyboard.Callback.ActionEnum.CONTACTS.value:
@@ -550,7 +550,7 @@ async def bot_menu_handler(message: Message, state: FSMContext):
             )
             await message.answer(
                 MessageTexts.BOT_MENU_MESSAGE.value.format((await Bot(custom_bot.token).get_me()).username),
-                reply_markup=await InlineBotMenuKeyboard.get_keyboard(custom_bot.bot_id)
+                reply_markup=await InlineBotMenuKeyboard.get_keyboard(custom_bot.bot_id, message.from_user.id)
             )
 
 

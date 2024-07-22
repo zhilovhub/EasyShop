@@ -76,7 +76,7 @@ async def _cancel_send(
             )
             await query.message.edit_text(
                 MessageTexts.BOT_MENU_MESSAGE.value.format(custom_bot_username),
-                reply_markup=await InlineBotMenuKeyboard.get_keyboard(post_message.bot_id),
+                reply_markup=await InlineBotMenuKeyboard.get_keyboard(post_message.bot_id, query.from_user.id),
                 parse_mode=ParseMode.HTML
             )
         case PostMessageType.CHANNEL_POST:
@@ -609,7 +609,7 @@ async def _back(
         case PostMessageType.MAILING:
             await query.message.edit_text(
                 MessageTexts.BOT_MENU_MESSAGE.value.format(custom_bot_username),
-                reply_markup=await InlineBotMenuKeyboard.get_keyboard(bot_id),
+                reply_markup=await InlineBotMenuKeyboard.get_keyboard(bot_id, query.from_user.id),
                 parse_mode=ParseMode.HTML
             )
         case PostMessageType.CHANNEL_POST | PostMessageType.CONTEST | PostMessageType.PARTNERSHIP_POST:

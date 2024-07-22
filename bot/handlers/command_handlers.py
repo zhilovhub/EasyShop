@@ -99,7 +99,7 @@ async def start_command_handler(message: Message, state: FSMContext):
         user_bot_data = await user_bot.get_me()
         await message.answer(
             MessageTexts.BOT_MENU_MESSAGE.value.format(user_bot_data.username),
-            reply_markup=await InlineBotMenuKeyboard.get_keyboard(user_bots[0].bot_id)
+            reply_markup=await InlineBotMenuKeyboard.get_keyboard(user_bots[0].bot_id, message.from_user.id)
         )
         await state.set_state(States.BOT_MENU)
         await state.set_data({'bot_id': bot_id})
