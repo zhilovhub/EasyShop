@@ -52,7 +52,7 @@ async def process_web_app_request(event: Message):
             products_to_refill = []
             for ind, product_item in enumerate(products, start=1):
                 product_schema, amount, extra_options = product_item
-                if product_schema.count - amount == 0:
+                if product_schema.count - amount == -1:
                     products_to_refill.append((product_schema, amount))
 
             if len(products_to_refill) != 0:
