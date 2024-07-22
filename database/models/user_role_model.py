@@ -132,3 +132,20 @@ class UserRoleDao(Dao):
             extra=extra_params(user_id=user_id, bot_id=bot_id)
         )
 
+    async def get_bot_admin_ids(self, bot_id: int) -> list[int]:
+        async with self.engine.begin() as conn:
+            raw_res = await conn.execute(select(UserRole).where(UserRole.bot_id == bot_id,
+                                                                UserRole.role == UserRoleValues.ADMINISTRATOR))
+        await self.engine.dispose()
+
+        res = raw_res.fetchall()
+
+        if res is None:
+            return []
+
+        ids = []
+        for admin in res:
+            admin_obj = UserRoleSchema.model_validate(admin)
+            ids.append(admin_obj.user_id)
+
+        return ids

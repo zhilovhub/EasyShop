@@ -146,6 +146,33 @@ async def start_command_handler(message: Message, state: FSMContext):
         await state.set_data({'bot_id': bot_id})
 
 
+@commands_router.message(F.text.startswith("/rm_admin"))
+async def rm_admin_command_handler(message: Message, state: FSMContext):
+    state_data = await state.get_data()
+    bot_id = state_data['bot_id']
+    params = message.text.strip().split(maxsplit=1)
+    if len(params) < 2:
+        return await message.answer("🚫 Необходимо указать айди администратора")
+    if not params[1].isalnum():
+        return await message.answer("🚫 UID должен быть числом")
+    try:
+        user_role = await user_role_db.get_user_role(int(params[1]), bot_id)
+    except UserRoleNotFound:
+        return await message.answer("🔍 Админ с таким UID не найден.")
+
+    await user_role_db.del_user_role(user_role.user_id, user_role.bot_id)
+
+    custom_bot_data = await Bot((await bot_db.get_bot(bot_id)).token).get_me()
+
+    await message.answer(f"🔔 Пользователь больше не администратор ({params[1]}) для бота "
+                         f"@{custom_bot_data.username}")
+
+    await bot.send_message(int(params[1]),
+                           "Вы больше не администратор этого бота. "
+                           "Пропишите /start для рестарта бота",
+                           reply_markup=None)
+
+
 @commands_router.message(F.text == "/clear")
 async def clear_command_handler(message: Message, state: FSMContext) -> None:
     """ONLY FOR DEBUG BOT"""

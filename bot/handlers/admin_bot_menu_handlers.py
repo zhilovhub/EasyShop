@@ -402,6 +402,8 @@ async def bot_menu_callback_handler(query: CallbackQuery, state: FSMContext):
     callback_data = InlineBotMenuKeyboard.Callback.model_validate_json(query.data)
 
     bot_id = callback_data.bot_id
+    db_bot_data = await bot_db.get_bot(bot_id)
+    custom_bot_data = await Bot(token=db_bot_data.token).get_me()
 
     match callback_data.a:
         case callback_data.ActionEnum.BOT_SETTINGS:
@@ -415,6 +417,11 @@ async def bot_menu_callback_handler(query: CallbackQuery, state: FSMContext):
                                           "Пропишите /start для рестарта бота",
                                           reply_markup=None)
             await state.clear()
+            await bot.send_message(db_bot_data.created_by,
+                                   f"🔔 Пользователь больше не администратор ("
+                                   f"{'@' + query.from_user.username if query.from_user.username else query.from_user.full_name}"
+                                   f") для бота "
+                                   f"@{custom_bot_data.username}")
         case callback_data.ActionEnum.BOT_EDIT_POST_ORDER_MESSAGE:
             await query.message.answer(
                 "Введите текст, который будет отображаться у пользователей Вашего бота "
@@ -568,7 +575,23 @@ async def admins_manage_callback_handler(query: CallbackQuery, state: FSMContext
             await query.message.edit_text(**ADD_ADMIN_LINK_TEXT.as_kwargs(),
                                           reply_markup=await InlineAdministratorsManageKeyboard.get_keyboard(bot_id))
         case callback_data.ActionEnum.ADMIN_LIST:
-            pass
+            admins = await user_role_db.get_bot_admin_ids(bot_id)
+            admins_text = ""
+            for ind, admin in enumerate(admins, start=1):
+                admin_user = await bot.get_chat(admin)
+                admins_text += (f"=== {ind} ===\n"
+                                f"👤 Имя: {admin_user.full_name}\n🆔 UID: {admin_user.id}"
+                                f"\n🔤 Username: @{admin_user.username}\n\n")
+            if not admins:
+                admins_text = Bold("Администраторы еще не добавлены")
+            else:
+                admins_text += "Для удаления админа введите команду:\n/rm_admin UID"
+
+            ADMINS_LIST_TEXT = Text("Администраторы бота ", Bold("@" + main_bot_data.username), ":\n\n",
+                                    admins_text)
+
+            await query.message.edit_text(**ADMINS_LIST_TEXT.as_kwargs(),
+                                          reply_markup=await InlineAdministratorsManageKeyboard.get_keyboard(bot_id))
         case callback_data.ActionEnum.BACK_TO_BOT_MENU:
             await query.message.edit_text(
                 MessageTexts.BOT_MENU_MESSAGE.value.format(custom_bot_data.username),
