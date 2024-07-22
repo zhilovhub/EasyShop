@@ -268,3 +268,67 @@ class InlineBotSettingsMenuKeyboard:
                 ],
             ]
         )
+
+
+class InlineAdministratorsManageKeyboard:
+    class Callback(BaseModel):
+        class ActionEnum(Enum):
+            ADD_ADMIN = "add"
+            ADMIN_LIST = "list"
+
+            BACK_TO_BOT_MENU = "back"
+
+        model_config = ConfigDict(from_attributes=True, populate_by_name=True)
+
+        n: str = Field(default="bot_admins_manage_menu", frozen=True)
+        a: ActionEnum
+
+        bot_id: int
+
+    @staticmethod
+    @callback_json_validator
+    def callback_json(action: Callback.ActionEnum, bot_id: int) -> str:
+        return InlineAdministratorsManageKeyboard.Callback(
+            a=action, bot_id=bot_id
+        ).model_dump_json(by_alias=True)
+
+    @staticmethod
+    def callback_validator(json_string: str) -> bool:
+        try:
+            InlineAdministratorsManageKeyboard.Callback.model_validate_json(json_string)
+            return True
+        except ValidationError:
+            return False
+
+    @staticmethod
+    async def get_keyboard(bot_id: int) -> InlineKeyboardMarkup:
+        actions = InlineAdministratorsManageKeyboard.Callback.ActionEnum
+
+        return InlineKeyboardMarkup(
+            inline_keyboard=[
+                [
+                    InlineKeyboardButton(
+                        text="➕ Добавить администратора",
+                        callback_data=InlineAdministratorsManageKeyboard.callback_json(
+                            actions.ADD_ADMIN, bot_id
+                        )
+                    ),
+                ],
+                [
+                    InlineKeyboardButton(
+                        text="👥 Список администраторов",
+                        callback_data=InlineAdministratorsManageKeyboard.callback_json(
+                            actions.ADMIN_LIST, bot_id
+                        )
+                    )
+                ],
+                [
+                    InlineKeyboardButton(
+                        text="🔙 Назад",
+                        callback_data=InlineAdministratorsManageKeyboard.callback_json(
+                            actions.BACK_TO_BOT_MENU, bot_id
+                        )
+                    )
+                ],
+            ]
+        )
