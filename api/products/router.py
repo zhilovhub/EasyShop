@@ -7,10 +7,11 @@ from pydantic import BaseModel, Field
 from sqlalchemy.exc import IntegrityError
 
 from api.utils import (check_admin_authorization, SearchWordMustNotBeEmpty, HTTPProductNotFound, HTTPInternalError,
-                       HTTPBadRequest, HTTPConflict, RESPONSES_DICT)
+                       HTTPBadRequest, HTTPConflict, RESPONSES_DICT, HTTPCustomBotIsOffline, HTTPBotNotFound)
 from common_utils.env_config import FILES_PATH
 
-from database.config import product_db, category_db
+from database.models.bot_model import BotNotFound
+from database.config import product_db, category_db, bot_db
 from database.models.product_model import (
     ProductSchema,
     ProductNotFound,
@@ -63,6 +64,14 @@ async def get_filters_api():
 @router.post("/get_all_products/")
 async def get_all_products_api(payload: GetProductsRequest = Depends(
         GetProductsRequest)) -> list[ProductSchema]:
+    try:
+        bot = await bot_db.get_bot(payload.bot_id)
+    except BotNotFound:
+        raise HTTPBotNotFound(bot_id=payload.bot_id)
+
+    if bot.status != "online":
+        raise HTTPCustomBotIsOffline(bot_id=bot.bot_id)
+
     try:
         if not payload.filters:
             products = await product_db.get_all_products(payload.bot_id,

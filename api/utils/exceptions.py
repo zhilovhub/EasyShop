@@ -6,6 +6,7 @@ RESPONSES_DICT = {
     400: {"description": "Bad request (incorrect input data)"},
     409: {"description": "Conflict"},
     500: {"description": "Internal server error"},
+    406: {"description": "Custom bot is offline"}
 }
 
 
@@ -47,6 +48,15 @@ class HTTPConflict(HTTPException):
 
     def __init__(self, detail_message: str = RESPONSES_DICT[409]['description'], **extra_params):
         self.status_code = 409
+        self.detail = detail_message + _generate_extra_params_text(**extra_params)
+        super().__init__(status_code=self.status_code, detail=self.detail)
+
+
+class HTTPCustomBotIsOffline(HTTPException):
+    """Raised when Conflict error occurred"""
+
+    def __init__(self, detail_message: str = RESPONSES_DICT[406]['description'], **extra_params):
+        self.status_code = 406
         self.detail = detail_message + _generate_extra_params_text(**extra_params)
         super().__init__(status_code=self.status_code, detail=self.detail)
 
