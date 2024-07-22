@@ -11,9 +11,7 @@ from pydantic import BaseModel, Field, ConfigDict
 from database.models import Base
 from database.exceptions import *
 from database.models.dao import Dao
-from database.models.bot_model import Bot
-
-from database.config import bot_db
+from database.models import bot_model
 
 from logs.config import extra_params
 
@@ -90,7 +88,7 @@ class UserRole(Base):
     __tablename__ = "user_role"
 
     user_id = Column(ForeignKey(User.user_id, ondelete="CASCADE"), primary_key=True)
-    bot_id = Column(ForeignKey(Bot.bot_id, ondelete="CASCADE"), primary_key=True)
+    bot_id = Column(ForeignKey(bot_model.Bot.bot_id, ondelete="CASCADE"), primary_key=True)
     role = Column(UserRoleEnum, nullable=False)
 
 
@@ -204,8 +202,7 @@ class UserDao(Dao):
             extra=extra_params(user_id=user_id)
         )
 
-    # TODO change auto_create to False after updating all old users
-    async def get_user_role(self, user_id: int, bot_id: int, auto_create_new_role: bool = True) -> UserRoleSchema:
+    async def get_user_role(self, user_id: int, bot_id: int) -> UserRoleSchema:
         async with self.engine.begin() as conn:
             raw_res = await conn.execute(select(UserRole).where(UserRole.user_id == user_id,
                                                                 UserRole.bot_id == bot_id))
@@ -213,19 +210,7 @@ class UserDao(Dao):
 
         res = raw_res.fetchone()
         if res is None:
-            if not auto_create_new_role:
-                raise UserRoleNotFound(f"user_id={user_id} bot_id={bot_id} user role not found in database.")
-
-            self.logger.debug(
-                f"user_id={user_id} bot_id={bot_id}: role not found, auto creating new role",
-                extra=extra_params(user_id=user_id, bot_id=bot_id))
-            bot = await bot_db.get_bot(bot_id)
-            if bot.created_by == user_id:
-                role = UserRoleValues.OWNER
-            else:
-                role = UserRoleValues.ADMINISTRATOR
-            await self.add_user_role(UserRoleSchema(user_id=user_id, bot_id=bot_id, role=role))
-            return await self.get_user_role(user_id, bot_id)
+            raise UserRoleNotFound(f"user_id={user_id} bot_id={bot_id} user role not found in database.")
 
         res = UserRoleSchema.model_validate(res)
 
@@ -245,6 +230,9 @@ class UserDao(Dao):
             async with self.engine.begin() as conn:
                 await conn.execute(insert(UserRole).values(**new_role.model_dump(by_alias=True)))
             await self.engine.dispose()
+        self.logger.debug(
+            f"user_id={new_role.user_id} bot_id={new_role.bot_id}: new user role created with role {new_role.role}",
+            extra=extra_params(user_id=new_role.user_id, bot_id=new_role.bot_id))
 
     async def update_user_role(self, updated_role: UserRoleSchema) -> None:
         async with self.engine.begin() as conn:
