@@ -44,6 +44,11 @@ MAINTENANCE = JsonStore(
     json_store_name="MAINTENANCE"
 )
 
+SENT_SUBSCRIPTION_NOTIFICATIONS = JsonStore(
+    file_path=RESOURCES_PATH.format("sent_sub_notifications.json"),
+    json_store_name="SENT_SUB_NOTIFICATIONS"
+)
+
 
 async def on_start():
     logger.info("onStart called")

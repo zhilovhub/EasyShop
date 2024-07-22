@@ -2,19 +2,20 @@ from datetime import timedelta, datetime
 
 from aiogram import Bot
 from aiogram.enums import ContentType
+from aiogram.utils.formatting import Text, Bold, Italic
 from aiogram.types import CallbackQuery, FSInputFile, User, Message
 from aiogram.types import ReplyKeyboardRemove, InlineKeyboardMarkup, InlineKeyboardButton
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.storage.base import StorageKey
 
-from bot.main import subscription, bot, dp, cache_resources_file_id_store
+from bot.main import subscription, bot, dp, cache_resources_file_id_store, SENT_SUBSCRIPTION_NOTIFICATIONS
 from bot.utils import MessageTexts
 from bot.states import States
 from bot.handlers.routers import subscribe_router
 from bot.utils.custom_bot_api import stop_custom_bot
 from bot.utils.send_instructions import send_instructions
 from bot.keyboards.main_menu_keyboards import ReplyBotMenuKeyboard, ReplyBackBotMenuKeyboard
-from bot.keyboards.subscription_keyboards import InlineSubscriptionContinueKeyboard
+from bot.keyboards.subscription_keyboards import InlineSubscriptionContinueKeyboard, InlineAdminRefundKeyboard
 
 from common_utils.env_config import RESOURCES_PATH, SBP_URL, ADMINS
 from common_utils.keyboards.keyboards import InlineBotMenuKeyboard
@@ -23,7 +24,7 @@ from common_utils.broadcasting.broadcasting import send_event, EventTypes, succe
 from database.config import user_db, bot_db
 from database.models.user_model import UserSchema, UserStatusValues
 
-from logs.config import logger
+from logs.config import logger, extra_params
 
 
 @subscribe_router.callback_query(lambda query: InlineSubscriptionContinueKeyboard.callback_validator(query.data))
@@ -118,10 +119,11 @@ async def waiting_payment_pay_handler(message: Message, state: FSMContext):
             "В подписи к файлу или фото укажите Ваши контактные данные и отправьте чек повторно",
             reply_markup=ReplyBackBotMenuKeyboard.get_keyboard()
         )
+    sent_message_ids = []
     for admin in ADMINS:
         try:
             msg: Message = await message.send_copy(admin)
-            await bot.send_message(
+            sent_msg = await bot.send_message(
                 admin,
                 f"💳 Оплата подписки от пользователя <b>"
                 f"{'@' + message.from_user.username if message.from_user.username else message.from_user.full_name}"
@@ -138,8 +140,13 @@ async def waiting_payment_pay_handler(message: Message, state: FSMContext):
                     ]
                 ])
             )
+            sent_message_ids.append((admin, sent_msg.message_id))
         except Exception as e:
             logger.warning("error while notify admin", exc_info=e)
+
+    json_data = SENT_SUBSCRIPTION_NOTIFICATIONS.get_data()
+    json_data[str(message.from_user.id)] = sent_message_ids
+    SENT_SUBSCRIPTION_NOTIFICATIONS.update_data(json_data)
 
     await message.reply(
         "Ваши данные отправлены на модерацию, ожидайте изменения статуса оплаты",
@@ -190,7 +197,6 @@ async def subscribe_ended_handler(message: Message) -> None:
 
 @subscribe_router.callback_query(lambda q: q.data.startswith("approve_pay"))
 async def approve_pay_callback(query: CallbackQuery):
-    await query.message.edit_text(query.message.text + "\n\n<b>ПОДТВЕРЖДЕНО</b>", reply_markup=None)
     user_id = int(query.data.split(':')[-1])
 
     user_chat_to_approve = await bot.get_chat(user_id)
@@ -216,6 +222,8 @@ async def approve_pay_callback(query: CallbackQuery):
         chat_id=user_id,
         user_id=user_id,
         bot_id=bot.id))
+
+    bot_id = None
 
     if user_bots:
         bot_id = user_bots[0].bot_id
@@ -244,6 +252,34 @@ async def approve_pay_callback(query: CallbackQuery):
             reply_markup=ReplyKeyboardRemove()
         )
     await query.answer("Оплата подтверждена", show_alert=True)
+
+    payment_id = 0  # TODO payment generation
+    PAYMENT_APPROVED_TEXT = Text("\n\n✅ Оплата подписки подтверждена.",
+                                 "\n\n📆 Дата подтверждения: ",
+                                 Bold(f"{datetime.now().strftime('%d.%m.%Y %H:%M:%S')}"),
+                                 "\n\n👤 От админа: ",
+                                 Bold('@' + str(query.from_user.username)),
+                                 "\n\n🆔 Номер платежа: ",
+                                 Italic(str(payment_id)))
+
+    current_text = Text.from_entities(query.message.text, query.message.entities)
+    message_text = current_text + PAYMENT_APPROVED_TEXT
+
+    json_data = SENT_SUBSCRIPTION_NOTIFICATIONS.get_data()
+    if str(user_id) in json_data:
+        message_ids = json_data[str(user_id)]
+    else:
+        logger.warning(f"bot_id = {bot_id} : cant find old notification message ids for subscription for user {user_id}",
+                       extra_params(bot_id=bot_id, user_id=user_id))
+        message_ids = [(query.from_user.id, query.message.message_id), ]
+
+    text, entities = message_text.render()
+    for admin_id, msg_id in message_ids:
+        await bot.edit_message_text(chat_id=int(admin_id),
+                                    message_id=int(msg_id),
+                                    text=text,
+                                    entities=entities,
+                                    reply_markup=InlineAdminRefundKeyboard.get_keyboard(bot_id, payment_id))
 
     await success_event(user_to_approve, bot, admin_message, EventTypes.SUBSCRIBED)
 
