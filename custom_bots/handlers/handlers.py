@@ -3,6 +3,7 @@ import json
 from aiogram import F, Bot
 from aiogram.enums import ParseMode
 from aiogram.types import Message
+from aiogram.utils.formatting import Text, Bold
 
 from custom_bots.multibot import bot_db, main_bot, PREV_ORDER_MSGS, \
     CustomUserStates, format_locales
@@ -35,13 +36,34 @@ async def process_web_app_request(event: Message):
         products = [(await product_db.get_product(product_id), product_item.amount, product_item.used_extra_options)
                     for product_id, product_item in order.items.items()]
         username = "@" + order_user_data.username if order_user_data.username else order_user_data.full_name
-        admin_id = (await bot_db.get_bot_by_token(event.bot.token)).created_by
+
+        custom_bot = await bot_db.get_bot_by_token(event.bot.token)
+
+        admin_id = custom_bot.created_by
+
         main_msg = await main_bot.send_message(
             admin_id, order.convert_to_notification_text(
                 products,
                 username,
                 True
             ))
+
+        if custom_bot.settings.get("auto_reduce", False) is True:
+            products_to_refill = []
+            for ind, product_item in enumerate(products, start=1):
+                product_schema, amount, extra_options = product_item
+                if product_schema.count - amount == 0:
+                    products_to_refill.append((product_schema, amount))
+
+            if len(products_to_refill) != 0:
+                def generate_stock_info_to_refill(products_to_refill, order_id):  # Move to MessageTexts
+                    result = Text(f"После заказа ", Bold(order_id), " закончатся следующие товары:\n\n")
+                    for product, amount in products_to_refill:
+                        result += Text(Bold(product.name), " артикул ", Bold(product.article) + "\n")
+                    return result
+                await main_bot.send_message(
+                    generate_stock_info_to_refill(products_to_refill, order.id)
+                )
 
         msg_id_data = PREV_ORDER_MSGS.get_data()
         msg_id_data[order.id] = (main_msg.chat.id, main_msg.message_id)
@@ -100,7 +122,7 @@ async def process_web_app_request(event: Message):
         raise e
 
 
-@multi_bot_router.message(CustomUserStates.MAIN_MENU)
+@ multi_bot_router.message(CustomUserStates.MAIN_MENU)
 async def main_menu_handler(message: Message):
     try:
         bot = await bot_db.get_bot_by_token(message.bot.token)

@@ -81,7 +81,7 @@ async def create_order(event: Message, order_type: OrderType) -> OrderSchema:
 
             await product_db.update_product(product)
 
-    await _handle_zero_products(event, bot_data.created_by, zero_products, order_type)
+    # await _handle_zero_products(event, bot_data.created_by, zero_products, order_type)
 
     data['items'] = items
 
