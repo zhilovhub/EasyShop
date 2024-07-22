@@ -2,11 +2,12 @@ import random
 import string
 from typing import Annotated
 
-from fastapi import HTTPException, APIRouter, File, UploadFile, Depends, Header
+from fastapi import APIRouter, File, UploadFile, Depends, Header
 from pydantic import BaseModel, Field
 from sqlalchemy.exc import IntegrityError
 
-from api.utils import check_admin_authorization
+from api.utils import (check_admin_authorization, SearchWordMustNotBeEmpty, HTTPProductNotFound, HTTPInternalError,
+                       HTTPBadRequest, HTTPConflict, RESPONSES_DICT)
 from common_utils.env_config import FILES_PATH
 
 from database.config import product_db, category_db
@@ -25,13 +26,8 @@ PATH = "/api/products"
 router = APIRouter(
     prefix=PATH,
     tags=["products"],
-    responses={404: {"description": "Product not found"}},
+    responses=RESPONSES_DICT,
 )
-
-
-class SearchWordMustNotBeEmpty(Exception):
-    """Raised when 'search' filter is provided but search word is empty string"""
-    pass
 
 
 class GetProductsRequest(BaseModel):
@@ -119,15 +115,13 @@ async def get_all_products_api(payload: GetProductsRequest = Depends(
             f"bot_id={payload.bot_id}: {ex.message}",
             extra=extra_params(bot_id=payload.bot_id)
         )
-        raise HTTPException(status_code=400, detail=ex.message)
+        raise HTTPBadRequest(detail_message=ex.message)
     except SearchWordMustNotBeEmpty:
         api_logger.error(
             f"bot_id={payload.bot_id}: SearchWordMustNotBeEmpty with {payload}",
             extra=extra_params(bot_id=payload.bot_id)
         )
-        raise HTTPException(
-            status_code=400,
-            detail="'search' filter is provided, search_word must not be empty")
+        raise HTTPBadRequest(detail_message="'search' filter is provided, search_word must not be empty")
     # except CategoryFilterNotFound as ex:
     #     raise HTTPException(status_code=400, detail=ex.message)
     except Exception as e:
@@ -136,7 +130,7 @@ async def get_all_products_api(payload: GetProductsRequest = Depends(
             extra=extra_params(bot_id=payload.bot_id),
             exc_info=e
         )
-        raise HTTPException(status_code=500, detail="Internal error.")
+        raise HTTPInternalError
 
     api_logger.info(
         f"bot_id={payload.bot_id}: has {len(products)} products -> {products}",
@@ -157,7 +151,7 @@ async def get_product_api(bot_id: int, product_id: int) -> ProductSchema:
             extra=extra_params(bot_id=bot_id, product_id=product_id),
             exc_info=e
         )
-        raise HTTPException(status_code=404, detail="Product not found.")
+        raise HTTPProductNotFound(product_id=product_id, bot_id=bot_id)
 
     except Exception as e:
         api_logger.error(
@@ -165,7 +159,7 @@ async def get_product_api(bot_id: int, product_id: int) -> ProductSchema:
             extra=extra_params(bot_id=bot_id, product_id=product_id),
             exc_info=e
         )
-        raise HTTPException(status_code=500, detail="Internal error.")
+        raise HTTPInternalError
 
     api_logger.debug(
         f"bot_id={bot_id}: product_id={product_id} is found database -> {product}",
@@ -192,7 +186,7 @@ async def add_product_api(
             extra=extra_params(bot_id=new_product.bot_id),
             exc_info=ex
         )
-        raise HTTPException(status_code=409, detail=str(ex))
+        raise HTTPConflict(detail_message="Conflict while adding product (Item already exists)", ex_msg=ex.detail)
 
     except Exception as e:
         api_logger.error(
@@ -200,7 +194,7 @@ async def add_product_api(
             extra=extra_params(bot_id=new_product.bot_id),
             exc_info=e
         )
-        raise HTTPException(status_code=500, detail="Internal error.")
+        raise HTTPInternalError
 
     api_logger.debug(
         f"bot_id={new_product.bot_id}: product_id={product_id} has been added to database -> {new_product}",
@@ -246,8 +240,7 @@ async def create_file(bot_id: int,
             extra=extra_params(bot_id=bot_id, product_id=product_id),
             exc_info=e
         )
-        return HTTPException(status_code=404,
-                             detail="Product with provided id not found")
+        raise HTTPProductNotFound(product_id=product_id, bot_id=bot_id)
     except BaseException as e:
         api_logger.error(
             f"bot_id={bot_id}: Error while adding photos to product_id={product_id}",
@@ -279,7 +272,7 @@ async def edit_product_api(
             extra=extra_params(bot_id=product.bot_id, product_id=product.id),
             exc_info=e
         )
-        raise HTTPException(status_code=500, detail="Internal error.")
+        raise HTTPInternalError
 
     api_logger.debug(
         f"bot_id={product.bot_id}: updated product={product}",
@@ -304,14 +297,14 @@ async def delete_product_api(
             extra=extra_params(bot_id=bot_id, product_id=product_id),
             exc_info=e
         )
-        raise HTTPException(status_code=404, detail="Product not found.")
+        raise HTTPProductNotFound(product_id=product_id, bot_id=bot_id)
     except Exception as e:
         api_logger.error(
             f"bot_id={bot_id}: Error while execute delete_product db_method with product_id={product_id}",
             extra=extra_params(bot_id=bot_id, product_id=product_id),
             exc_info=e
         )
-        raise HTTPException(status_code=500, detail="Internal error.")
+        raise HTTPInternalError
 
     api_logger.debug(
         f"bot_id={bot_id}: product_id={product_id} is delete from database",
@@ -336,7 +329,7 @@ async def send_product_csv_api(
         api_logger.info(f"get new csv file from api method bytes: {payload.file}")
     except Exception as e:
         api_logger.error("Error while execute send_product_csv api method", exc_info=e)
-        raise HTTPException(status_code=500, detail="Internal error.")
+        raise HTTPInternalError
     return True
 
 
@@ -349,5 +342,5 @@ async def get_product_csv_api(
         pass
     except Exception as e:
         api_logger.error("Error while execute get_product_csv api method", exc_info=e)
-        raise HTTPException(status_code=500, detail="Internal error.")
+        raise HTTPInternalError
     return bytes(200)

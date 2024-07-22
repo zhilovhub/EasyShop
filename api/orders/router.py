@@ -4,9 +4,9 @@ import string
 
 from pydantic import ValidationError
 
-from fastapi import APIRouter, HTTPException, Depends, Header
+from fastapi import APIRouter, Depends, Header
 
-from api.utils import check_admin_authorization
+from api.utils import check_admin_authorization, HTTPBadRequest, HTTPInternalError, RESPONSES_DICT
 
 from database.config import order_db
 from database.models.order_model import OrderNotFound, OrderSchema
@@ -17,7 +17,7 @@ PATH = "/api/orders"
 router = APIRouter(
     prefix=PATH,
     tags=["orders"],
-    responses={404: {"description": "Order not found"}},
+    responses=RESPONSES_DICT,
 )
 
 
@@ -51,14 +51,14 @@ async def get_all_orders_api(bot_id: int, authorization_data: str = Header()) ->
             extra=extra_params(bot_id=bot_id),
             exc_info=ex
         )
-        raise HTTPException(status_code=400, detail=f"Incorrect input data.\n{str(ex)}")
+        raise HTTPBadRequest(detail_message=f"Incorrect input data.", ex_msg=str(ex))
     except Exception as e:
         api_logger.error(
             f"bot_id={bot_id}: Error while execute get_all_orders db_method",
             extra=extra_params(bot_id=bot_id),
             exc_info=e
         )
-        raise HTTPException(status_code=500, detail="Internal error.")
+        raise HTTPInternalError
 
     api_logger.debug(
         f"bot_id={bot_id}: has {len(orders)} orders -> {orders}",
@@ -85,6 +85,6 @@ async def add_order_api(new_order: OrderSchema = Depends(), authorization_data: 
             extra=extra_params(bot_id=new_order.bot_id, order_id=new_order.id),
             exc_info=e
         )
-        raise HTTPException(status_code=500, detail="Internal error.")
+        raise HTTPInternalError
 
     return "success"
