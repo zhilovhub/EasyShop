@@ -62,6 +62,7 @@ async def process_web_app_request(event: Message):
                         result += Text(Bold(product.name), " артикул ", Bold(product.article) + "\n")
                     return result
                 await main_bot.send_message(
+                    admin_id,
                     **generate_stock_info_to_refill(products_to_refill, order.id).as_kwargs()
                 )
 
