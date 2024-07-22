@@ -6,13 +6,17 @@ from sqlalchemy import BigInteger, Column, String, DateTime, JSON, TypeDecorator
 from sqlalchemy import select, update, delete, insert
 from sqlalchemy.ext.asyncio import AsyncEngine
 
-from pydantic import BaseModel, Field, ConfigDict
+from pydantic import BaseModel, Field, ConfigDict, validate_call
 
 from database.models import Base
-from database.exceptions import *
 from database.models.dao import Dao
+from database.exceptions.exceptions import KwargsException
 
 from logs.config import extra_params
+
+
+class UserNotFoundError(KwargsException):
+    """Raised when provided user not found in database"""
 
 
 class UserStatusValues(Enum):
@@ -24,6 +28,7 @@ class UserStatusValues(Enum):
 
 
 class UserStatus(TypeDecorator):  # noqa
+    """Class to convert Enum values to db values (and reverse)"""
     impl = Unicode
     cache_ok = True
 
@@ -44,9 +49,8 @@ class UserStatus(TypeDecorator):  # noqa
                 return UserStatusValues.SUBSCRIPTION_ENDED
 
 
-class NotInUserStatusesList(ValueError):
+class NotInUserStatusesListError(ValueError):
     """Error when value of user status not in values list"""
-    pass
 
 
 class User(Base):
@@ -81,33 +85,18 @@ class UserDao(Dao):
     def __init__(self, engine: AsyncEngine, logger) -> None:
         super().__init__(engine, logger)
 
-    async def get_users(self) -> list[UserSchema]:
-        async with self.engine.begin() as conn:
-            raw_res = await conn.execute(select(User))
-        await self.engine.dispose()
-
-        raw_res = raw_res.fetchall()
-        res = []
-        for user in raw_res:
-            res.append(UserSchema.model_validate(user))
-
-        self.logger.debug(
-            f"There are {len(res)} users in our service"
-        )
-
-        return res
-
+    @validate_call(validate_return=True)
     async def get_user(self, user_id: int) -> UserSchema:
-        if not isinstance(user_id, int):
-            raise InvalidParameterFormat("user_id must be type of int.")
-
+        """
+        :raises UserNotFoundError:
+        """
         async with self.engine.begin() as conn:
             raw_res = await conn.execute(select(User).where(User.user_id == user_id))
         await self.engine.dispose()
 
         res = raw_res.fetchone()
         if res is None:
-            raise UserNotFound(f"id {user_id} not found in database.")
+            raise UserNotFoundError(user_id=user_id)
 
         res = UserSchema.model_validate(res)
 
@@ -118,49 +107,39 @@ class UserDao(Dao):
 
         return res
 
+    @validate_call(validate_return=True)
     async def add_user(self, user: UserSchema) -> None:
-        if not isinstance(user, UserSchema):
-            raise InvalidParameterFormat(
-                "user must be type of database.DbUser.")
-
-        try:
-            await self.get_user(user_id=user.id)
-            raise InstanceAlreadyExists(
-                f"user with {user.id} already exists in db.")
-        except UserNotFound:
-            async with self.engine.begin() as conn:
-                await conn.execute(insert(User).values(**user.model_dump(by_alias=True)))
-            await self.engine.dispose()
+        """
+        :raises IntegrityError:
+        """
+        async with self.engine.begin() as conn:
+            await conn.execute(insert(User).values(**user.model_dump(by_alias=True)))
+        await self.engine.dispose()
 
         self.logger.debug(
-            f"user_id={user.id}: user {user.id} is added",
+            f"user_id={user.id}: added user {user}",
             extra=extra_params(user_id=user.id)
         )
 
+    @validate_call(validate_return=True)
     async def update_user(self, updated_user: UserSchema) -> None:
-        if not isinstance(updated_user, UserSchema):
-            raise InvalidParameterFormat(
-                "updated_user must be type of database.DbUser.")
-
         async with self.engine.begin() as conn:
             await conn.execute(update(User).where(User.user_id == updated_user.id).
                                values(**updated_user.model_dump(by_alias=True)))
         await self.engine.dispose()
 
         self.logger.debug(
-            f"user_id={updated_user.id}: user {updated_user.id} is updated",
+            f"user_id={updated_user.id}: updated user {updated_user}",
             extra=extra_params(user_id=updated_user.id)
         )
 
+    @validate_call(validate_return=True)
     async def del_user(self, user_id: int) -> None:
-        if not isinstance(user_id, int):
-            raise InvalidParameterFormat("user_id must be type of int.")
-
         async with self.engine.begin() as conn:
             await conn.execute(delete(User).where(User.user_id == user_id))
         await self.engine.dispose()
 
         self.logger.debug(
-            f"user_id={user_id}: user {user_id} is deleted",
+            f"user_id={user_id}: deleted user {user_id}",
             extra=extra_params(user_id=user_id)
         )

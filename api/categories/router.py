@@ -2,7 +2,7 @@ from fastapi import APIRouter, Header
 
 from database.config import category_db
 from database.models.category_model import CategorySchema, CategorySchemaWithoutId, \
-    SameCategoryNameAlreadyExists
+    CategoryNameAlreadyExistsError
 
 from api.utils import check_admin_authorization, RESPONSES_DICT, HTTPInternalError, HTTPConflict
 
@@ -43,7 +43,7 @@ async def add_category_api(new_category: CategorySchemaWithoutId, authorization_
             f"bot_id={new_category.bot_id}: added cat_id={cat_id}, category {new_category}",
             extra=extra_params(bot_id=new_category.bot_id, category_id=cat_id)
         )
-    except SameCategoryNameAlreadyExists:
+    except CategoryNameAlreadyExistsError:
         raise HTTPConflict(
             detail_message="Conflict while adding category (category with provided name already exists).",
             category_name=new_category.name

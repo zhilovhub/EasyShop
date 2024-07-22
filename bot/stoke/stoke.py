@@ -16,8 +16,8 @@ from common_utils.env_config import FILES_PATH
 
 from database.config import category_db, product_db
 from database.models.models import Database
-from database.models.product_model import ProductNotFound, ProductWithoutId
-from database.models.category_model import CategorySchemaWithoutId, SameCategoryNameAlreadyExists
+from database.models.product_model import ProductNotFoundError, ProductWithoutId
+from database.models.category_model import CategorySchemaWithoutId, CategoryNameAlreadyExistsError
 
 
 class UnknownFileExstension(Exception):
@@ -155,7 +155,7 @@ class Stoke:
                 if product.count != int(row[3]):
                     product.count = int(row[3])
                     await product_db.update_product(product)
-            except ProductNotFound:
+            except ProductNotFoundError:
                 continue
         return True, ""
 
@@ -195,7 +195,7 @@ class Stoke:
         for row in list(ws.values)[1:]:
             try:
                 cat_id = await category_db.add_category(CategorySchemaWithoutId(bot_id=bot_id, name=row[5]))
-            except SameCategoryNameAlreadyExists as err:
+            except CategoryNameAlreadyExistsError as err:
                 cat_id = err.cat_id
             products.append(ProductWithoutId(
                 article=row[4],
@@ -256,7 +256,7 @@ class Stoke:
         """Возвращает количество товара на складе"""
         try:
             return (await self.product_db.get_product(product_id)).count
-        except ProductNotFound:
+        except ProductNotFoundError:
             return 0
 
     async def update_product_count(self, product_id: int, new_count: int) -> None:

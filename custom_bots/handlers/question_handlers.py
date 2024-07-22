@@ -11,7 +11,7 @@ from custom_bots.keyboards.custom_bot_menu_keyboards import ReplyCustomBotMenuKe
 from custom_bots.utils.question_utils import is_able_to_ask
 
 from database.config import bot_db, order_db
-from database.models.order_model import OrderNotFound
+from database.models.order_model import OrderNotFoundError
 
 from logs.config import custom_bot_logger, extra_params
 
@@ -72,7 +72,7 @@ async def ask_question_callback(query: CallbackQuery, state: FSMContext):
         case callback_data.ActionEnum.APPROVE:
             try:
                 order = await order_db.get_order(order_id)
-            except OrderNotFound as e:
+            except OrderNotFoundError as e:
                 custom_bot_logger.warning(
                     f"user_id={user_id}: unable to approve question due to lost order_id={order_id} from db",
                     extra=extra_params(user_id=user_id, order_id=order_id),

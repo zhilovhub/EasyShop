@@ -5,8 +5,7 @@ from aiogram.fsm.context import FSMContext
 from aiogram.types import CallbackQuery, Message
 
 from database.config import user_role_db
-from database.exceptions import UserRoleNotFound
-from database.models.user_role_model import UserRoleValues
+from database.models.user_role_model import UserRoleValues, UserRoleNotFoundError
 
 
 class CheckRoleMiddleware(BaseMiddleware):
@@ -29,8 +28,8 @@ class CheckRoleMiddleware(BaseMiddleware):
         try:
             user_role = await user_role_db.get_user_role(user_id, state_data['bot_id'])
             if user_role.role not in (UserRoleValues.ADMINISTRATOR, UserRoleValues.OWNER):
-                raise UserRoleNotFound
-        except UserRoleNotFound:
+                raise UserRoleNotFoundError
+        except UserRoleNotFoundError:
             if isinstance(event, CallbackQuery):
                 await event.message.edit_reply_markup(reply_markup=None)
                 return await event.answer("Вы больше не админ этого бота.", show_alert=True)

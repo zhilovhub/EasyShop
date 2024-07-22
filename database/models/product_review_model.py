@@ -3,20 +3,18 @@ from pydantic import BaseModel, ConfigDict, Field, validate_call
 from sqlalchemy import BOOLEAN, Column, BigInteger, String, select, ForeignKey, insert, update, delete
 from sqlalchemy.ext.asyncio import AsyncEngine
 
-
 from database.models import Base
-from database.exceptions import InvalidParameterFormat
 from database.models.dao import Dao
 from database.models.bot_model import Bot
 from database.models.user_model import User
 from database.models.product_model import Product
+from database.exceptions.exceptions import KwargsException
 
 from logs.config import extra_params
 
 
-class ProductReviewNotFound(Exception):
+class ProductReviewNotFoundError(KwargsException):
     """Raised when provided product_review not found in database"""
-    pass
 
 
 class ProductReview(Base):
@@ -76,6 +74,9 @@ class ProductReviewDao(Dao):  # TODO write tests
             user_id: int,
             product_id: int
     ) -> ProductReviewSchema | None:
+        """
+        :raises ProductReviewNotFoundError:
+        """
         async with self.engine.begin() as conn:
             raw_res = await conn.execute(
                 select(ProductReview).where(ProductReview.user_id == user_id, ProductReview.product_id == product_id)
@@ -83,13 +84,13 @@ class ProductReviewDao(Dao):  # TODO write tests
         await self.engine.dispose()
 
         if not raw_res:
-            raise ProductReviewNotFound
+            raise ProductReviewNotFoundError(user_id=user_id, product_id=product_id)
 
-        res = raw_res.fetchone()
+        res = ProductReviewSchema.model_validate(raw_res.fetchone())
 
         if res is not None:
             self.logger.debug(
-                f"product_review with product_id={product_id} and user_id {user_id} is found",
+                f"product_id={product_id}, user_id {user_id}: found product_review {res}",
                 extra=extra_params(product_id=product_id, user_id=user_id)
             )
 
@@ -97,40 +98,45 @@ class ProductReviewDao(Dao):  # TODO write tests
 
     @validate_call(validate_return=True)
     async def get_product_review(self, review_id: int) -> ProductReviewSchema:
+        """
+        :raises ProductReviewNotFoundError:
+        """
         async with self.engine.begin() as conn:
             raw_res = await conn.execute(
                 select(ProductReview).where(ProductReview.id == review_id)
             )
         await self.engine.dispose()
 
-        res = raw_res.fetchone()
+        if not raw_res:
+            raise ProductReviewNotFoundError(review_id=review_id)
 
-        if res is not None:
-            self.logger.debug(
-                f"product_review_id={review_id}: review {review_id} is found",
-                extra=extra_params(product_review_id=review_id)
-            )
+        res = ProductReviewSchema.model_validate(raw_res.fetchone())
+
+        self.logger.debug(
+            f"product_review_id={review_id}: found product_review {review_id}",
+            extra=extra_params(product_review_id=review_id)
+        )
 
         return res
 
-    @validate_call
+    @validate_call(validate_return=True)
     async def add_product_review(self, new_review: ProductReviewSchemaWithoutID) -> int:
-        if type(new_review) != ProductReviewSchemaWithoutID:
-            raise InvalidParameterFormat("new_review must be type of ProductReviewSchemaWithoutID")
-
+        """
+        :raises IntegrityError:
+        """
         async with self.engine.begin() as conn:
             review_id = (
                 await conn.execute(insert(ProductReview).values(new_review.model_dump()))
             ).inserted_primary_key[0]
 
         self.logger.debug(
-            f"product_review_id={review_id}: review {review_id} is added to database",
+            f"product_review_id={review_id}: added product_review {review_id} {new_review}",
             extra=extra_params(product_review=review_id)
         )
 
         return review_id
 
-    @validate_call
+    @validate_call(validate_return=True)
     async def update_product_review(self, updated_review: ProductReviewSchema) -> None:
         await self.get_product_review(updated_review.id)
         async with self.engine.begin() as conn:
@@ -139,16 +145,16 @@ class ProductReviewDao(Dao):  # TODO write tests
             )
 
         self.logger.debug(
-            f"product_review_id={updated_review.id}: review {updated_review.id} is updated",
+            f"product_review_id={updated_review.id}: updated product_review {updated_review}",
             extra=extra_params(product_review=updated_review.id)
         )
 
-    @validate_call
+    @validate_call(validate_return=True)
     async def delete_product_review(self, review_id: int):
         async with self.engine.begin() as conn:
             await conn.execute(delete(ProductReview).where(ProductReview.id == review_id))
 
         self.logger.debug(
-            f"product_review_id={review_id}: review {review_id} is deleted",
+            f"product_review_id={review_id}: deleted product_review {review_id}",
             extra=extra_params(product_review=review_id)
         )

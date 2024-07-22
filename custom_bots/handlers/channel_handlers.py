@@ -13,10 +13,9 @@ from custom_bots.handlers.routers import multi_bot_channel_router
 from custom_bots.utils.custom_message_texts import CustomMessageTexts
 
 from database.config import channel_user_db, channel_db, contest_db
-from database.exceptions import ChannelUserNotFound
 from database.models.channel_model import ChannelSchema
-from database.models.contest_model import ContestUserNotFound, ContestNotFound
-from database.models.channel_user_model import ChannelUserSchemaWithoutId
+from database.models.contest_model import ContestUserNotFoundError, ContestNotFoundError
+from database.models.channel_user_model import ChannelUserSchemaWithoutId, ChannelUserNotFoundError
 
 from logs.config import custom_bot_logger, extra_params
 
@@ -37,7 +36,7 @@ async def on_user_join(event: ChatMemberUpdated):
         channel_user.is_channel_member = True
         await channel_user_db.update_channel_user(channel_user)
 
-    except ChannelUserNotFound:
+    except ChannelUserNotFoundError:
         custom_bot_logger.debug(
             f"channel_id={channel_id}: user_id={user_id} has first join",
             extra=extra_params(user_id=user_id, channel_id=channel_id)
@@ -69,7 +68,7 @@ async def on_user_leave(event: ChatMemberUpdated):
         channel_user.is_channel_member = False
         await channel_user_db.update_channel_user(channel_user)
 
-    except ChannelUserNotFound:
+    except ChannelUserNotFoundError:
         custom_bot_logger.debug(
             f"channel_id={channel_id}: user_id={user_id} left channel before our analyze system",
             extra=extra_params(user_id=user_id, channel_id=channel_id)
@@ -168,14 +167,14 @@ async def channel_menu_callback_handler(query: CallbackQuery):
 
     try:
         contest = await contest_db.get_contest_by_post_message_id(callback_data.post_message_id)
-    except ContestNotFound:
+    except ContestNotFoundError:
         return await query.answer("Конкурс уже завершен.", show_alert=True)
 
     match callback_data.a:
         case callback_data.ActionEnum.JOIN_CONTEST:
             try:
                 await contest_db.get_contest_user(contest.contest_id, query.from_user.id)
-            except ContestUserNotFound:
+            except ContestUserNotFoundError:
                 await contest_db.add_contest_user(contest.contest_id,
                                                   query.from_user.id,
                                                   query.from_user.full_name,

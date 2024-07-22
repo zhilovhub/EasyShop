@@ -8,28 +8,25 @@ from sqlalchemy.ext.asyncio import AsyncEngine
 from sqlalchemy.dialects.postgresql import ARRAY
 from sqlalchemy.dialects.postgresql import insert as upsert
 
-
 from database.models import Base
-from database.exceptions import InvalidParameterFormat
 from database.models.dao import Dao
 from database.models.bot_model import Bot
+from database.exceptions.exceptions import KwargsException
 
 from logs.config import extra_params
 
 from enum import Enum
 
 
-class SameArticleProduct(Exception):
+class SameArticleProductError(KwargsException):
     """Raised when bot_id already has this article"""
-    pass
 
 
-class ProductNotFound(Exception):
+class ProductNotFoundError(KwargsException):
     """Raised when provided product not found in database"""
-    pass
 
 
-class FilterNotFound(Exception):
+class FilterNotFoundError(Exception):
     """Raised when filter name provided to ProductFilter class is not a valid filter name from filters list"""
 
     def __init__(self, filter_name: str, message: str = "Provided filter name ('{FILTER_NAME}') not found"):
@@ -57,6 +54,9 @@ class ProductFilter(ProductFilterWithoutBot):
 
     @model_validator(mode='after')
     def validate_filter_name(self):
+        """
+        :raises FilterNotFoundError:
+        """
         if self.is_category_filter:
             pass
             # cats = await category_db.get_all_categories(self.bot_id)
@@ -66,7 +66,7 @@ class ProductFilter(ProductFilterWithoutBot):
             # else:
             #     raise CategoryFilterNotFound(self.filter_name)
         elif self.filter_name.lower() not in PRODUCT_FILTERS:
-            raise FilterNotFound(self.filter_name)
+            raise FilterNotFoundError(self.filter_name)
         return self
 
 
@@ -96,7 +96,7 @@ class ProductExtraOption(BaseModel):
     name: str
     type: ExtraOptionType
     variants: list[str]
-    variants_prices: Optional[list[int]] = None
+    variants_prices: Optional[list[int]] = None  # not None if PRICED_BLOCK
 
 
 class ProductWithoutId(BaseModel):
@@ -118,6 +118,9 @@ class ProductSchema(ProductWithoutId):
     id: int
 
     def convert_to_notification_text(self, count: int, used_extra_options: list = None) -> str:
+        """
+        Converts ProductSchema to text for notification
+        """
         if used_extra_options:
             options_text = ""
             for option in used_extra_options:
@@ -134,7 +137,7 @@ class ProductSchema(ProductWithoutId):
         return f"<b>{self.name} {self.price}₽ x {count}шт</b>"
 
 
-class NotEnoughProductsInStockToReduce(Exception):
+class NotEnoughProductsInStockToReduce(Exception):  # TODO Arsen should delete
     """Raised when auto_reduce on order option is enabled and product reduce amount is more than product count"""
 
     def __init__(self, product: ProductSchema, amount: int,
@@ -164,6 +167,12 @@ class ProductDao(Dao):
             price_max: int = 2147483647,
             filters: list[ProductFilter] | None = None
     ) -> list[ProductSchema]:
+        """
+        :param bot_id: id of the Bot
+        :param price_min: considers the products with price more than it
+        :param price_max: considers the products with price less than it
+        :param filters: a list of different ProductFilter to apply
+        """
         sql_select = select(Product).where(
             and_(and_(Product.bot_id == bot_id, Product.price >= price_min), Product.price <= price_max)
         )
@@ -205,19 +214,22 @@ class ProductDao(Dao):
 
     @validate_call(validate_return=True)
     async def get_product(self, product_id: int) -> ProductSchema:
+        """
+        :raises ProductNotFoundError:
+        """
         async with self.engine.begin() as conn:
             raw_res = await conn.execute(select(Product).where(Product.id == product_id))
         await self.engine.dispose()
 
         raw_res = raw_res.fetchone()
         if not raw_res:
-            self.logger.debug(f"product with id {product_id} not found.")
-            raise ProductNotFound
+            self.logger.debug(f"product with id {product_id} not found ")
+            raise ProductNotFoundError(product_id=product_id)
 
         res = ProductSchema.model_validate(raw_res)
 
         self.logger.debug(
-            f"bot_id={res.bot_id}: product {res.id} is found",
+            f"bot_id={res.bot_id}: found product {res}",
             extra=extra_params(product_id=res.id, bot_id=res.bot_id)
         )
 
@@ -225,6 +237,9 @@ class ProductDao(Dao):
 
     @validate_call(validate_return=True)
     async def get_product_by_bot_id_and_article(self, bot_id: int, article: str) -> ProductSchema:
+        """
+        :raises ProductNotFoundError:
+        """
         async with self.engine.begin() as conn:
             raw_res = await conn.execute(select(Product).where(Product.bot_id == bot_id, Product.article == article))
         await self.engine.dispose()
@@ -232,47 +247,56 @@ class ProductDao(Dao):
         raw_res = raw_res.fetchone()
         if not raw_res:
             self.logger.debug(f"product with bot_id {bot_id} and article {article} not found.")
-            raise ProductNotFound
+            raise ProductNotFoundError(bot_id=bot_id, article=article)
 
         res = ProductSchema.model_validate(raw_res)
 
         self.logger.debug(
-            f"bot_id={res.bot_id}, article={res.article}: product {res.id} is found",
+            f"bot_id={res.bot_id}, article={res.article}: found product {res}",
             extra=extra_params(product_id=res.id, bot_id=res.bot_id, article=res.article)
         )
 
         return res
 
     async def check_article_in_bot_id(self, article: str, bot_id: int) -> bool:
+        """
+        Helps to consider only unique articles
+
+        :return: True if the article already exists in bot else False
+        """
         try:
             await self.get_product_by_bot_id_and_article(bot_id, article)
             return True
-        except ProductNotFound:
+        except ProductNotFoundError:
             return False
 
-    @validate_call
+    @validate_call(validate_return=True)
     async def add_product(self, new_product: ProductWithoutId) -> int:
-        if type(new_product) != ProductWithoutId:
-            raise InvalidParameterFormat("new_product must be type of ProductWithoutId")
+        """
+        :raises SameArticleProductError: when there is an attempt to add the duplicate article
+        :raises IntegrityError:
+        """
         status = await self.check_article_in_bot_id(new_product.article, new_product.bot_id)
         if status is True:
-            raise SameArticleProduct("New product should have unqiue article for given bot_id")
+            raise SameArticleProductError(bot_id=new_product.bot_id, article=new_product.article)
         async with self.engine.begin() as conn:
             product_id = (await conn.execute(insert(Product).values(new_product.model_dump()))).inserted_primary_key[0]
 
         self.logger.debug(
-            f"bot_id={new_product.bot_id}: product {product_id} is added",
+            f"bot_id={new_product.bot_id}: added product {product_id} {new_product}",
             extra=extra_params(product_id=product_id, bot_id=new_product.bot_id)
         )
 
         return product_id
 
-    @validate_call
+    @validate_call(validate_return=True)
     async def upsert_product(self, new_product: ProductWithoutId,
                              replace_duplicates: bool = False) -> int:  # TODO write tests for it
-        if type(new_product) not in (ProductWithoutId, ProductSchema):
-            raise InvalidParameterFormat("new_product must be a subclass of ProductWithoutId")
+        """
+        Inserts product if it doesn't exist otherwise update
 
+        :raises IntegrityError:
+        """
         new_product_dict = new_product.model_dump(exclude={"id"})
         async with self.engine.begin() as conn:
             if replace_duplicates:
@@ -282,7 +306,7 @@ class ProductDao(Dao):
                 )
                 product_id = (await conn.execute(upsert_query)).inserted_primary_key[0]
                 self.logger.debug(
-                    f"bot_id={new_product.bot_id}: product {product_id} is upserted",
+                    f"bot_id={new_product.bot_id}: upserted product {product_id} {new_product}",
                     extra=extra_params(product_id=product_id, bot_id=new_product.bot_id)
                 )
             else:
@@ -293,7 +317,7 @@ class ProductDao(Dao):
 
         return product_id
 
-    @validate_call
+    @validate_call(validate_return=True)
     async def update_product(self, updated_product: ProductSchema):
         await self.get_product(updated_product.id)
         async with self.engine.begin() as conn:
@@ -302,21 +326,21 @@ class ProductDao(Dao):
             )
 
         self.logger.debug(
-            f"bot_id={updated_product.bot_id}: product {updated_product.id} is updated",
+            f"bot_id={updated_product.bot_id}: updated product {updated_product}",
             extra=extra_params(product_id=updated_product.id, bot_id=updated_product.bot_id)
         )
 
-    @validate_call
+    @validate_call(validate_return=True)
     async def delete_product(self, product_id: int):
         async with self.engine.begin() as conn:
             await conn.execute(delete(Product).where(Product.id == product_id))
 
         self.logger.debug(
-            f"product_id={product_id}: product {product_id} is deleted",
+            f"product_id={product_id}: deleted product {product_id}",
             extra=extra_params(product_id=product_id)
         )
 
-    @validate_call
+    @validate_call(validate_return=True)
     async def delete_all_products(self, bot_id: int):
         async with self.engine.begin() as conn:
             await conn.execute(delete(Product).where(Product.bot_id == bot_id))

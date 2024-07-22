@@ -5,7 +5,7 @@ from fastapi import APIRouter
 from pydantic import BaseModel
 
 from database.config import bot_db
-from database.models.bot_model import BotNotFound
+from database.models.bot_model import BotNotFoundError
 
 from api.utils import HTTPBotNotFound, HTTPInternalError, RESPONSES_DICT
 
@@ -33,7 +33,7 @@ async def get_product_api(bot_id: int) -> WebAppOptions:
 
         return WebAppOptions(bg_color=bot.settings['bg_color'])
 
-    except BotNotFound as e:
+    except BotNotFoundError as e:
         api_logger.error(
             f"bot_id={bot_id}: bot_id={bot_id} is not found in database",
             extra=extra_params(bot_id=bot_id),
