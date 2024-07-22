@@ -1,5 +1,6 @@
 import Vuex from 'vuex'
 import { tg } from '@/main.js'
+import '@/assets/base.css'
 
 
 export const Store = new Vuex.Store({
@@ -188,6 +189,31 @@ export const Store = new Vuex.Store({
           console.error('There was a problem with the fetch operation:', error);
         }
       },
+      async getWebAppOptions() {
+        console.log(Store.state.bot_id);
+        try {
+          const response = await fetch(`${Store.state.api_url}/api/settings/get_web_app_options/${Store.state.bot_id}`, {
+            method: 'GET',
+            headers: {
+              'Content-Type': 'application/json',
+              'Access-Control-Allow-Origin': '*',
+            },
+          });
+          if (!response.ok) {
+            throw new Error('Network response was not ok');
+          }
+          const data = await response.json();
+
+          if (data.bg_color) {
+            document.documentElement.style.setProperty('--app-background-color', data.bg_color);
+            document.body.removeAttribute('data-theme');
+            console.log(data.bg_color);
+          }
+
+        } catch (error) {
+          console.error('There was a problem with the fetch operation:', error);
+        }
+      },
       async postData({commit}, orderInformation) {
         const {name, phone_number, town, address, time, comment} = orderInformation;
         let data = {
@@ -206,8 +232,10 @@ export const Store = new Vuex.Store({
         };
         await tg.sendData(JSON.stringify(data));
         tg.close();
-    }
     },
+
+
+  },
   getters: {
 
   }

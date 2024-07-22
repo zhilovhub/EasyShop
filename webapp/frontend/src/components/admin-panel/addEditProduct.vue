@@ -1,6 +1,6 @@
 <script>
 import { Swiper, SwiperSlide } from '@SwiperVue'
-import { Scrollbar, Navigation } from '@Swiper'
+import { Navigation, Scrollbar } from '@Swiper'
 import { tg } from '@/main.js'
 
 export default {
@@ -50,22 +50,22 @@ export default {
       this.productPrice = this.itemEditData.price;
       this.productCount = this.itemEditData.count;
       this.options = this.itemEditData.extra_options || [];
-      this.imagePreviews = this.itemEditData.picture;
-      this.imageFiles = this.itemEditData.picture;
+      this.imageFiles = new Object(this.itemEditData.picture);
+      this.imagePreviews = new Object(this.itemEditData.picture);
       tg.MainButton.show();
       tg.BackButton.show();
       tg.MainButton.text = "Изменить товар";
       tg.MainButton.textColor = "#0C0C0C";
       tg.onEvent('mainButtonClicked', this.editProduct);
-      tg.onEvent('backButtonClicked', this.closingComponent);
     } else {
       tg.MainButton.show();
       tg.BackButton.show();
       tg.MainButton.text = "Добавить товар";
       tg.MainButton.textColor = "#0C0C0C";
       tg.onEvent('mainButtonClicked', this.addProduct);
-      tg.onEvent('backButtonClicked', this.closingComponent);
     }
+
+    tg.onEvent('backButtonClicked', this.closingComponent);
 
     setTimeout(() => {
       this.isMounted = true;
@@ -74,7 +74,10 @@ export default {
     this.$nextTick(this.setFirstOptionChosen);
     this.$store.dispatch('getCategories').then(() => {
       this.categories = this.$store.state.categories;
-      this.chooseCategory(this.itemEditData.category);
+      if (this.itemEditData) {
+        this.chooseCategory(this.itemEditData);
+        this.handleFileUpload(null);
+      }
     });
   },
   setup() {
@@ -123,7 +126,7 @@ export default {
         extra_options: this.options,
         id: this.itemEditData.id
       }).then(() => {
-        this.$emit("closeAndEdit");
+        this.$emit("close");
       }, 100);
     },
     closingComponent() {
@@ -133,13 +136,20 @@ export default {
       }, 100);
     },
     handleFileUpload(event) {
-      const files = event.target.files;
-      for (let i = 0; i < files.length; i++) {
-        if (this.imageFiles && this.imageFiles.length < 5) {
-          const file = files[i];
-          this.imageFiles.push(file);
-          this.imagePreviews.push(URL.createObjectURL(file));
+      if (!this.imageFiles) {
+        this.imageFiles = [];
+      }
+      if (event) {
+        const newFiles = Array.from(event.target.files);
+        if (this.imageFiles.length + newFiles.length > 5) {
+          alert("Вы можете загрузить максимум 5 фоток.");
+          return;
         }
+
+        newFiles.forEach(file => {
+          this.imagePreviews.push(URL.createObjectURL(file));
+          this.imageFiles.push(file);
+        });
       }
     },
     addOption() {
@@ -225,7 +235,7 @@ export default {
         size.classList.remove('chosenCategory');
       });
       this.categories.map(category => {
-        category.isSelected = category.id === item.id || category.id === item[0];
+        category.isSelected = category.id === item.id || item.category && category.id === item.category[0];
       });
       this.chosenCategory = item;
     },
@@ -336,8 +346,8 @@ export default {
             class="swiper-container"
           >
             <swiper-slide v-for="(preview, index) in imagePreviews" :key="index" class="swiper-slide">
-              <img v-if="this.itemEditData && this.itemEditData.id" :src="`${this.$store.state.api_url}/files/`+ preview" alt="Uploaded image" class="image-preview"/>
-              <img v-else :src="preview" alt="Uploaded image" class="image-preview"/>
+              <img v-if="preview.slice(0, 4) === 'blob'" :src="preview" alt="Uploaded image" class="image-preview"/>
+              <img v-else-if="this.itemEditData && this.itemEditData.id" :src="`${this.$store.state.api_url}/files/`+ preview" alt="Uploaded image" class="image-preview"/>
             </swiper-slide>
           </swiper>
           <input type="file" id="images-input" name="avatar" accept="image/png, image/jpeg" @change="handleFileUpload"/>

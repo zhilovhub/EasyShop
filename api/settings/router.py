@@ -17,7 +17,7 @@ router = APIRouter(
 
 
 class WebAppOptions(BaseModel):
-    bg_color: str
+    bg_color: str | None
 
 
 @router.get("/get_web_app_options/{bot_id}/")
@@ -26,7 +26,7 @@ async def get_product_api(bot_id: int) -> WebAppOptions:
         bot = await bot_db.get_bot(bot_id)
 
         if not bot.settings or "bg_color" not in bot.settings:
-            options = WebAppOptions(bg_color="telegram")
+            options = WebAppOptions(bg_color=None)
             return options
 
         return WebAppOptions(bg_color=bot.settings['bg_color'])

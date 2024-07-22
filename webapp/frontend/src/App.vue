@@ -25,6 +25,12 @@ function isKeyboardEvent(event) {
   // Например, на мобильных устройствах, клавиатурные события имеют 0 координат для event.clientX и event.clientY
   return event.clientX === 0 && event.clientY === 0;
 }
+
+export default {
+  mounted() {
+    this.$store.dispatch('getWebAppOptions');
+  }
+}
 </script>
 
 <style>
