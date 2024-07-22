@@ -2,7 +2,7 @@ from enum import Enum
 from typing import Optional
 from datetime import datetime
 
-from sqlalchemy import BigInteger, Column, String, DateTime, JSON, TypeDecorator, Unicode, Dialect, ARRAY
+from sqlalchemy import BigInteger, Column, String, DateTime, JSON, TypeDecorator, Unicode, Dialect, ARRAY, ForeignKey
 from sqlalchemy import select, update, delete, insert
 from sqlalchemy.ext.asyncio import AsyncEngine
 
@@ -11,6 +11,7 @@ from pydantic import BaseModel, Field, ConfigDict
 from database.models import Base
 from database.exceptions import *
 from database.models.dao import Dao
+from database.models.bot_model import Bot
 
 from logs.config import extra_params
 
@@ -21,6 +22,11 @@ class UserStatusValues(Enum):
     TRIAL = "trial"
     SUBSCRIBED = "subscribed"
     SUBSCRIPTION_ENDED = "subscription_ended"
+
+
+class UserRoleValues(Enum):
+    OWNER = "owner"
+    ADMINISTRATOR = "admin"
 
 
 class UserStatus(TypeDecorator):  # noqa
@@ -44,6 +50,21 @@ class UserStatus(TypeDecorator):  # noqa
                 return UserStatusValues.SUBSCRIPTION_ENDED
 
 
+class UserRoleEnum(TypeDecorator):  # noqa
+    impl = Unicode
+    cache_ok = True
+
+    def process_bind_param(self, value: Optional[UserRoleValues], dialect: Dialect) -> String:
+        return value.value
+
+    def process_result_value(self, value: Optional[String], dialect: Dialect) -> Optional[UserRoleValues]:
+        match value:
+            case UserRoleValues.OWNER.value:
+                return UserRoleValues.OWNER
+            case UserRoleValues.ADMINISTRATOR.value:
+                return UserRoleValues.ADMINISTRATOR
+
+
 class NotInUserStatusesList(ValueError):
     """Error when value of user status not in values list"""
     pass
@@ -63,6 +84,14 @@ class User(Base):
     subscription_job_ids = Column(ARRAY(String))
 
 
+class UserRole(Base):
+    __tablename__ = "user_role"
+
+    user_id = Column(ForeignKey(User.user_id, ondelete="CASCADE"), primary_key=True)
+    bot_id = Column(ForeignKey(Bot.bot_id, ondelete="CASCADE"), primary_key=True)
+    role = Column(UserRoleEnum, nullable=False)
+
+
 class UserSchema(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
@@ -75,6 +104,14 @@ class UserSchema(BaseModel):
     locale: str = Field(max_length=10, default="default")
     balance: int | None = 0
     subscription_job_ids: list[str] | None = None
+
+
+class UserRoleSchema(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    user_id: int = Field(frozen=True)
+    bot_id: int = Field(frozen=True)
+    role: UserRoleValues
 
 
 class UserDao(Dao):
@@ -163,4 +200,56 @@ class UserDao(Dao):
         self.logger.debug(
             f"user_id={user_id}: user {user_id} is deleted",
             extra=extra_params(user_id=user_id)
+        )
+
+    async def get_user_role(self, user_id: int, bot_id: int) -> UserRoleSchema:
+        async with self.engine.begin() as conn:
+            raw_res = await conn.execute(select(UserRole).where(UserRole.user_id == user_id,
+                                                                UserRole.bot_id == bot_id))
+        await self.engine.dispose()
+
+        res = raw_res.fetchone()
+        if res is None:
+            raise UserRoleNotFound(f"user_id={user_id} bot_id={bot_id} user role not found in database.")
+
+        res = UserRoleSchema.model_validate(res)
+
+        self.logger.debug(
+            f"user_id={user_id} bot_id={bot_id}: user role is found",
+            extra=extra_params(user_id=user_id, bot_id=bot_id)
+        )
+
+        return res
+
+    async def add_user_role(self, new_role: UserRoleSchema) -> None:
+        try:
+            await self.get_user_role(user_id=new_role.user_id, bot_id=new_role.bot_id)
+            raise InstanceAlreadyExists(
+                f"user_role with user_id={new_role.user_id} bot_id={new_role.bot_id} already exists in db.")
+        except UserRoleNotFound:
+            async with self.engine.begin() as conn:
+                await conn.execute(insert(UserRole).values(**new_role.model_dump(by_alias=True)))
+            await self.engine.dispose()
+
+    async def update_user_role(self, updated_role: UserRoleSchema) -> None:
+        async with self.engine.begin() as conn:
+            await conn.execute(update(UserRole).where(UserRole.user_id == updated_role.user_id,
+                                                      UserRole.bot_id == updated_role.bot_id).
+                               values(**updated_role.model_dump(by_alias=True)))
+        await self.engine.dispose()
+
+        self.logger.debug(
+            f"user_id={updated_role.user_id} bot_id={updated_role.bot_id}: user role is updated",
+            extra=extra_params(user_id=updated_role.user_id, bot_id=updated_role.bot_id)
+        )
+
+    async def del_user_role(self, user_id: int, bot_id: int) -> None:
+        async with self.engine.begin() as conn:
+            await conn.execute(delete(UserRole).where(UserRole.user_id == user_id,
+                                                      UserRole.bot_id == bot_id))
+        await self.engine.dispose()
+
+        self.logger.debug(
+            f"user_id={user_id} bot_id={bot_id}: user role is deleted",
+            extra=extra_params(user_id=user_id, bot_id=bot_id)
         )
