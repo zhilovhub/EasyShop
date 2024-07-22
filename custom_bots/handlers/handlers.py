@@ -48,7 +48,7 @@ async def process_web_app_request(event: Message):
                 True
             ))
 
-        if custom_bot.settings.get("auto_reduce", False) is True:
+        if custom_bot.settings.get("auto_reduce", None) is True:
             products_to_refill = []
             for ind, product_item in enumerate(products, start=1):
                 product_schema, amount, extra_options = product_item
@@ -62,7 +62,7 @@ async def process_web_app_request(event: Message):
                         result += Text(Bold(product.name), " артикул ", Bold(product.article) + "\n")
                     return result
                 await main_bot.send_message(
-                    generate_stock_info_to_refill(products_to_refill, order.id)
+                    **generate_stock_info_to_refill(products_to_refill, order.id).as_kwargs()
                 )
 
         msg_id_data = PREV_ORDER_MSGS.get_data()
