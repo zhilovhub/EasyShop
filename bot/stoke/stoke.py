@@ -142,7 +142,7 @@ class Stoke:
 
         return path_to_file, path_to_images
 
-    async def update_count_xlsx(self, path_to_file: str):
+    async def update_count_xlsx(self, path_to_file: str, bot_id: int):
         """Expects the xlsx file without pictures column"""
         status, err_message = await self.check_xlsx(path_to_file)
         if status is False:
@@ -151,7 +151,7 @@ class Stoke:
         ws = wb.active
         for ind, row in enumerate(list(ws.values)[1:]):
             try:
-                product = await product_db.get_product_by_article(row[4])
+                product = await product_db.get_product_by_bot_id_and_article(bot_id, row[4])
                 if product.count != int(row[3]):
                     product.count = int(row[3])
                     await product_db.update_product(product)

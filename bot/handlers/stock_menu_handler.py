@@ -163,6 +163,7 @@ async def pick_import_file_type(query: CallbackQuery, state: FSMContext):
 
 @stock_menu_router.message(States.GOODS_COUNT_MANAGE)
 async def handle_stock_manage_input(message: Message, state: FSMContext):
+    state_data = await state.get_data()
     if message.text == ReplyBackStockMenuKeyboard.Callback.ActionEnum.BACK_TO_STOCK_MENU.value:
         return await _back_to_stock_menu(message, state)
 
@@ -181,7 +182,7 @@ async def handle_stock_manage_input(message: Message, state: FSMContext):
         file_path = f"{FILES_PATH}docs/{datetime.now().strftime('%d$m%Y_%H%M%S')}.{file_extension}"
         await bot.download(message.document.file_id, destination=file_path)
 
-        status, err_message = await stock_manager.update_count_xlsx(file_path)
+        status, err_message = await stock_manager.update_count_xlsx(file_path, state_data["bot_id"])
         if not status:
             return await message.answer(err_message)
 
