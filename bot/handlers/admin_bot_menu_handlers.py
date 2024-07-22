@@ -37,13 +37,14 @@ from common_utils.keyboards.order_manage_keyboards import InlineOrderCancelKeybo
 from database.config import bot_db, product_db, order_db, product_review_db, user_db, custom_bot_user_db, mailing_db
 from database.exceptions import InstanceAlreadyExists
 from database.models.bot_model import BotSchemaWithoutId
+from database.models.user_model import UserRoleSchema, UserRoleValues
 from database.models.order_model import OrderSchema, OrderNotFound, OrderStatusValues
 from database.models.mailing_model import MailingNotFound
 from database.models.product_model import ProductWithoutId, NotEnoughProductsInStockToReduce
 from database.models.post_message_model import PostMessageType
 from database.models.product_review_model import ProductReviewNotFound
 
-from logs.config import logger
+from logs.config import logger, extra_params
 
 
 @admin_bot_menu_router.message(F.web_app_data)
@@ -322,6 +323,16 @@ async def waiting_for_the_token_handler(message: Message, state: FSMContext):
         )
         return await message.answer(":( Произошла ошибка при добавлении бота, попробуйте еще раз позже")
     user_bot = await bot_db.get_bot(bot_id)
+
+    user_role = UserRoleSchema(user_id=message.from_user.id, bot_id=user_bot.bot_id, role=UserRoleValues.OWNER)
+    try:
+        await user_db.add_user_role(user_role)
+    except InstanceAlreadyExists:
+        await user_db.update_user_role(user_role)
+    logger.info(f"user_id={message.from_user.id} bot_id={bot_id} : set user role to owner for user "
+                f"{message.from_user.id} of bot {bot_id}",
+                extra=extra_params(user_id=message.from_user.id, bot_id=bot_id))
+
     await message.answer(
         MessageTexts.BOT_INITIALIZING_MESSAGE.value.format(bot_fullname, bot_username),
         reply_markup=ReplyBotMenuKeyboard.get_keyboard(bot_id)
