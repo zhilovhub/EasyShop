@@ -5,13 +5,17 @@ import { Swiper, SwiperSlide } from "@SwiperVue"; //import component
 import SwiperCore, { Pagination, Scrollbar, Navigation } from "@Swiper"; //import swiper core and plugins
 SwiperCore.use([Pagination, Scrollbar, Navigation]); //declare two plugins
 
+document.documentElement.style.setProperty('--app-background-color', tg.bgColor);
+document.documentElement.style.setProperty('--app-text-color', tg.textColor);
 
-if (tg.colorScheme === 'dark') {
-    document.body.setAttribute('data-theme', 'dark');
-} else {
-    document.body.setAttribute('data-theme', 'light');
+// if (tg.colorScheme === 'dark') {
+//     document.body.setAttribute('data-theme', 'dark');
+// } else {
+//     document.body.setAttribute('data-theme', 'light');
+//
+// }
 
-}tg.expand();
+tg.expand();
 
 import './assets/main.css'
 import { createApp } from 'vue'

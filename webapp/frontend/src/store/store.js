@@ -204,10 +204,9 @@ export const Store = new Vuex.Store({
           }
           const data = await response.json();
 
-          if (data.bg_color) {
+          if (data.bg_color && data.bg_color.length>0) {
             document.documentElement.style.setProperty('--app-background-color', data.bg_color);
             document.body.removeAttribute('data-theme');
-            console.log(data.bg_color);
           }
 
         } catch (error) {
