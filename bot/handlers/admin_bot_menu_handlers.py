@@ -34,10 +34,11 @@ from common_utils.storage.custom_bot_storage import custom_bot_storage
 from common_utils.keyboards.order_manage_keyboards import InlineOrderCancelKeyboard, InlineOrderStatusesKeyboard, \
     InlineAcceptReviewKeyboard, InlineOrderCustomBotKeyboard, InlineCreateReviewKeyboard
 
-from database.config import bot_db, product_db, order_db, product_review_db, user_db, custom_bot_user_db, mailing_db
+from database.config import (bot_db, product_db, order_db, product_review_db, user_db, custom_bot_user_db, mailing_db,
+                             user_role_db)
 from database.exceptions import InstanceAlreadyExists
 from database.models.bot_model import BotSchemaWithoutId
-from database.models.user_model import UserRoleSchema, UserRoleValues
+from database.models.user_role_model import UserRoleSchema, UserRoleValues
 from database.models.order_model import OrderSchema, OrderNotFound, OrderStatusValues
 from database.models.mailing_model import MailingNotFound
 from database.models.product_model import ProductWithoutId, NotEnoughProductsInStockToReduce
@@ -326,9 +327,9 @@ async def waiting_for_the_token_handler(message: Message, state: FSMContext):
 
     user_role = UserRoleSchema(user_id=message.from_user.id, bot_id=user_bot.bot_id, role=UserRoleValues.OWNER)
     try:
-        await user_db.add_user_role(user_role)
+        await user_role_db.add_user_role(user_role)
     except InstanceAlreadyExists:
-        await user_db.update_user_role(user_role)
+        await user_role_db.update_user_role(user_role)
     logger.info(f"user_id={message.from_user.id} bot_id={bot_id} : set user role to owner for user "
                 f"{message.from_user.id} of bot {bot_id}",
                 extra=extra_params(user_id=message.from_user.id, bot_id=bot_id))

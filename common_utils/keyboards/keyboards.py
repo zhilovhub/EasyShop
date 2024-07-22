@@ -7,8 +7,8 @@ from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 from common_utils.keyboards.keyboard_utils import callback_json_validator, get_bot_channels, get_bot_username, \
     get_bot_mailing, get_bot_status
 
-from database.config import user_db, bot_db
-from database.models.user_model import UserRoleValues, UserRoleSchema
+from database.config import bot_db, user_role_db
+from database.models.user_role_model import UserRoleValues, UserRoleSchema
 
 from logs.config import logger, extra_params
 
@@ -65,7 +65,7 @@ class InlineBotMenuKeyboard:
 
         # TODO ? remove after updating old users
         try:
-            user_role = await user_db.get_user_role(user_id, bot_id)
+            user_role = await user_role_db.get_user_role(user_id, bot_id)
         except:
             logger.debug(
                 f"user_id={user_id} bot_id={bot_id}: role not found, auto creating new role",
@@ -75,8 +75,8 @@ class InlineBotMenuKeyboard:
                 role = UserRoleValues.OWNER
             else:
                 role = UserRoleValues.ADMINISTRATOR
-            await user_db.add_user_role(UserRoleSchema(user_id=user_id, bot_id=bot_id, role=role))
-            user_role = await user_db.get_user_role(user_id, bot_id)
+            await user_role_db.add_user_role(UserRoleSchema(user_id=user_id, bot_id=bot_id, role=role))
+            user_role = await user_role_db.get_user_role(user_id, bot_id)
 
         channel_inline_button = InlineKeyboardButton(
             text="📢 Добавить в канал",
