@@ -22,7 +22,7 @@ class InlineBotMenuKeyboard:
             MAILING_OPEN = "mailing_menu"
 
             BOT_SETTINGS = "settings"
-            ADMINS = "settings"
+            ADMINS = "admins"
             BOT_EDIT_POST_ORDER_MESSAGE = "pom"
 
             BOT_STOP = "stop_bot"
