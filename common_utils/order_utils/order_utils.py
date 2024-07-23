@@ -79,8 +79,6 @@ async def create_order(event: Message, order_type: OrderType) -> OrderSchema:
             product.count -= item['amount']
             # if product.count == 0:
             #     zero_products.append(product)
-            if product.count < 0:
-                product.count = 0
 
             await product_db.update_product(product)
 

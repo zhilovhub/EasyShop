@@ -58,6 +58,8 @@ async def process_web_app_request(event: Message):
                     products_to_refill.append(product_schema)
                 if product_schema.count < 0:
                     products_not_enough.append(product_schema)
+                    product_schema.count = 0
+                    await product_db.update_product(product_schema)
 
         msg_id_data = PREV_ORDER_MSGS.get_data()
         msg_id_data[order.id] = (main_msg.chat.id, main_msg.message_id)
