@@ -4,7 +4,7 @@ from database.config import category_db
 from database.models.category_model import CategorySchema, CategorySchemaWithoutId, \
     SameCategoryNameAlreadyExists
 
-from api.utils import check_admin_authorization, RESPONSES_DICT, HTTPInternalError, HTTPConflict, HTTPCategoryNotFound
+from api.utils import check_admin_authorization, RESPONSES_DICT, HTTPInternalError, HTTPConflict
 
 from logs.config import api_logger, extra_params
 
