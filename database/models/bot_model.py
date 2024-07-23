@@ -16,6 +16,7 @@ from database.exceptions.exceptions import BotNotFound
 
 from logs.config import extra_params
 
+
 class InvalidParameterFormat(Exception):
     """Raised when provided invalid data format to function"""
     pass

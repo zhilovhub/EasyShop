@@ -42,10 +42,13 @@ async def _handle_admin_invite_link(message: Message, params: list[str]):
 
         await message.answer(f"✅ Теперь Вы администратор бота @{custom_bot_data.username}")
 
-        await bot.send_message(db_bot.created_by, f"🔔 Добавлен новый Администратор ("
-                                                  f"{'@' + message.from_user.username if message.from_user.username else message.from_user.full_name}"
-                                                  f") для бота "
-                                                  f"@{custom_bot_data.username}")
+        await bot.send_message(
+            db_bot.created_by,
+            f"🔔 Добавлен новый Администратор ("
+            f"{'@' + message.from_user.username if message.from_user.username else message.from_user.full_name}"
+            f") для бота "
+            f"@{custom_bot_data.username}"
+        )
         db_bot.admin_invite_link_hash = None
         await bot_db.update_bot(db_bot)
     except BotNotFound:

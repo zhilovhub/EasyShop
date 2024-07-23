@@ -2,7 +2,7 @@ from enum import Enum
 from typing import Optional
 from datetime import datetime
 
-from sqlalchemy import BigInteger, Column, String, DateTime, JSON, TypeDecorator, Unicode, Dialect, ARRAY, ForeignKey
+from sqlalchemy import BigInteger, Column, String, DateTime, JSON, TypeDecorator, Unicode, Dialect, ARRAY
 from sqlalchemy import select, update, delete, insert
 from sqlalchemy.ext.asyncio import AsyncEngine
 
