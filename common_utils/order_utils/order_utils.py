@@ -72,8 +72,9 @@ async def create_order(event: Message, order_type: OrderType) -> OrderSchema:
         )
 
         if bot_data.settings and "auto_reduce" in bot_data.settings and bot_data.settings["auto_reduce"]:
-            if product.count < item['amount']:
-                raise NotEnoughProductsInStockToReduce(product, item['amount'])
+            # check if owner wants to get order or not
+            # if product.count < item['amount']:
+            #     raise NotEnoughProductsInStockToReduce(product, item['amount'])
 
             product.count -= item['amount']
             if product.count == 0:
@@ -92,6 +93,7 @@ async def create_order(event: Message, order_type: OrderType) -> OrderSchema:
     return _form_order(data, order_type)
 
 
+# Old text generation
 async def _handle_zero_products(event: Message, bot_owner: int, zero_products: list, order_type: OrderType) -> None:
     if zero_products:
         text = "⚠️ Внимание, после этого заказа кол-во следующих товаров будет равно 0"
