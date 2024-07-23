@@ -12,7 +12,7 @@ class CustomMessageTexts(Enum):
 
     @staticmethod
     def generate_not_enough_in_sctock(products: List[ProductSchema], order_id):
-        result = Text(f"Чтобы выполнить заказ ", Bold(order_id), " вас не хватает следующих товаров:\n\n")
+        result = Text(f"Чтобы выполнить заказ ", Bold(order_id), " у вас не хватает следующих товаров:\n\n")
         for product in products:
             result += Text(Bold(product.name), " артикул ", Bold(product.article) + "\n")
         return result.as_kwargs()
