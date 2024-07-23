@@ -1,8 +1,7 @@
 from enum import Enum
 from aiogram.utils.formatting import Text, Bold
-from typing import List, TYPE_CHECKING
-if TYPE_CHECKING:
-    from database.models.product_model import ProductSchema
+from typing import List
+from database.models.product_model import ProductSchema
 
 
 class CustomMessageTexts(Enum):
