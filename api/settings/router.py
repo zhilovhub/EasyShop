@@ -1,18 +1,20 @@
 from logs.config import api_logger, extra_params
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter
 
 from pydantic import BaseModel
 
 from database.config import bot_db
 from database.models.bot_model import BotNotFound
 
+from api.utils import HTTPBotNotFound, HTTPInternalError, RESPONSES_DICT
+
 
 PATH = "/api/settings"
 router = APIRouter(
     prefix=PATH,
     tags=["settings"],
-    responses={404: {"description": "Setting not found"}},
+    responses=RESPONSES_DICT,
 )
 
 
@@ -37,7 +39,7 @@ async def get_product_api(bot_id: int) -> WebAppOptions:
             extra=extra_params(bot_id=bot_id),
             exc_info=e
         )
-        raise HTTPException(status_code=404, detail="Bot not found.")
+        raise HTTPBotNotFound(bot_id=bot_id)
 
     except Exception as e:
         api_logger.error(
@@ -45,4 +47,4 @@ async def get_product_api(bot_id: int) -> WebAppOptions:
             extra=extra_params(bot_id=bot_id),
             exc_info=e
         )
-        raise HTTPException(status_code=500, detail="Internal error.")
+        raise HTTPInternalError

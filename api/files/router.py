@@ -1,5 +1,7 @@
-from fastapi import HTTPException, APIRouter
+from fastapi import APIRouter
 from fastapi.responses import FileResponse
+
+from api.utils import RESPONSES_DICT, HTTPFileNotFound, HTTPInternalError
 
 from common_utils.env_config import FILES_PATH
 
@@ -9,7 +11,7 @@ PATH = "/files"
 router = APIRouter(
     prefix=PATH,
     tags=["files"],
-    responses={404: {"description": "File not found"}},
+    responses=RESPONSES_DICT,
 )
 
 
@@ -19,11 +21,11 @@ async def get_file(file_name: str) -> FileResponse:
         with open(FILES_PATH + file_name, 'rb'):
             pass
     except FileNotFoundError:
-        raise HTTPException(status_code=404, detail="provided file name not found")
+        raise HTTPFileNotFound(file_name=file_name)
     except Exception as e:
         api_logger.error(
             "Error while execute get_file",
             exc_info=e
         )
-        raise HTTPException(status_code=500, detail="Internal error.")
+        raise HTTPInternalError
     return FileResponse(path=FILES_PATH + file_name, status_code=200)

@@ -19,21 +19,51 @@ from common_utils.keyboards.keyboards import InlineBotMenuKeyboard
 from common_utils.subscription.subscription import UserHasAlreadyStartedTrial
 from common_utils.broadcasting.broadcasting import send_event, EventTypes, success_event
 
-from database.config import user_db, adv_db, bot_db
+from database.config import user_db, adv_db, bot_db, user_role_db
 from database.exceptions import *
 from database.models.adv_model import EmptyAdvTable, AdvSchemaWithoutId
 from database.models.user_model import UserSchema, UserStatusValues
+from database.models.user_role_model import UserRoleSchema, UserRoleValues
 
 from logs.config import logger, adv_logger, extra_params
+
+
+async def _handle_admin_invite_link(message: Message, params: list[str]):
+    link_hash = params[0].split('_', maxsplit=1)[-1]
+    try:
+        db_bot = await bot_db.get_bot_by_invite_link_hash(link_hash)
+
+        new_role = UserRoleSchema(user_id=message.from_user.id,
+                                  bot_id=db_bot.bot_id,
+                                  role=UserRoleValues.ADMINISTRATOR)
+        await user_role_db.add_user_role(new_role)
+
+        custom_bot_data = await Bot(token=db_bot.token).get_me()
+
+        await message.answer(f"✅ Теперь Вы администратор бота @{custom_bot_data.username}")
+
+        await bot.send_message(
+            db_bot.created_by,
+            f"🔔 Добавлен новый Администратор ("
+            f"{'@' + message.from_user.username if message.from_user.username else message.from_user.full_name}"
+            f") для бота "
+            f"@{custom_bot_data.username}"
+        )
+        db_bot.admin_invite_link_hash = None
+        await bot_db.update_bot(db_bot)
+    except BotNotFound:
+        return await message.answer("🚫 Пригласительная ссылка не найдена.")
 
 
 @commands_router.message(CommandStart())
 async def start_command_handler(message: Message, state: FSMContext):
     user_id = message.from_user.id
+    params = message.text.strip().split()
+    params.pop(0)  # remove /start from params
     try:
         await user_db.get_user(user_id)
 
-        if message.text == "/start from_adv":
+        if params and params[0] == "/start from_adv":
             adv_logger.info(
                 f"user {user_id}, @{message.from_user.username}: tapped to adv again",
                 extra=extra_params(user_id=user_id)
@@ -49,9 +79,17 @@ async def start_command_handler(message: Message, state: FSMContext):
                     e.__str__(),
                     extra=extra_params(user_id=user_id)
                 )
+        elif params and params[0].startswith("admin_"):
+            user_bots = await user_role_db.get_user_bots(user_id)
+            if user_bots:
+                return await message.answer("🚫 Вы не можете быть одновременно и админом и владельцем бота.")
+            else:
+                res = await _handle_admin_invite_link(message, params)
+                if res is not None:
+                    return res
 
     except UserNotFound:
-        if message.text == "/start from_adv":
+        if params and params[0] == "/start from_adv":
             adv_logger.info(
                 f"user {user_id}, {message.from_user.username}: came here from adv",
                 extra=extra_params(user_id=user_id)
@@ -77,9 +115,15 @@ async def start_command_handler(message: Message, state: FSMContext):
             status=UserStatusValues.NEW, locale="default", subscribed_until=None)
         )
 
-        await _start_trial(message, state)
+        if params and params[0].startswith("admin_"):
+            res = await _handle_admin_invite_link(message, params)
+            if res is not None:
+                return res
+        else:
+            await _start_trial(message, state)
 
-    user_bots = await bot_db.get_bots(user_id)
+    # user_bots = await bot_db.get_bots(user_id)
+    user_bots = await user_role_db.get_user_bots(user_id)
     await send_instructions(bot, user_bots[0].bot_id if user_bots else None, user_id, cache_resources_file_id_store)
 
     user_status = (await user_db.get_user(user_id)).status
@@ -99,10 +143,37 @@ async def start_command_handler(message: Message, state: FSMContext):
         user_bot_data = await user_bot.get_me()
         await message.answer(
             MessageTexts.BOT_MENU_MESSAGE.value.format(user_bot_data.username),
-            reply_markup=await InlineBotMenuKeyboard.get_keyboard(user_bots[0].bot_id)
+            reply_markup=await InlineBotMenuKeyboard.get_keyboard(user_bots[0].bot_id, message.from_user.id)
         )
         await state.set_state(States.BOT_MENU)
         await state.set_data({'bot_id': bot_id})
+
+
+@commands_router.message(F.text.startswith("/rm_admin"))
+async def rm_admin_command_handler(message: Message, state: FSMContext):
+    state_data = await state.get_data()
+    bot_id = state_data['bot_id']
+    params = message.text.strip().split(maxsplit=1)
+    if len(params) < 2:
+        return await message.answer("🚫 Необходимо указать айди администратора")
+    if not params[1].isalnum():
+        return await message.answer("🚫 UID должен быть числом")
+    try:
+        user_role = await user_role_db.get_user_role(int(params[1]), bot_id)
+    except UserRoleNotFound:
+        return await message.answer("🔍 Админ с таким UID не найден.")
+
+    await user_role_db.del_user_role(user_role.user_id, user_role.bot_id)
+
+    custom_bot_data = await Bot((await bot_db.get_bot(bot_id)).token).get_me()
+
+    await message.answer(f"🔔 Пользователь больше не администратор ({params[1]}) для бота "
+                         f"@{custom_bot_data.username}")
+
+    await bot.send_message(int(params[1]),
+                           "Вы больше не администратор этого бота. "
+                           "Пропишите /start для рестарта бота",
+                           reply_markup=None)
 
 
 @commands_router.message(F.text == "/clear")

@@ -335,7 +335,7 @@ async def _delete_post_message(
 
     match post_message_type:
         case PostMessageType.MAILING:
-            keyboard = await InlineBotMenuKeyboard.get_keyboard(post_message.bot_id)
+            keyboard = await InlineBotMenuKeyboard.get_keyboard(post_message.bot_id, query.from_user.id)
 
             await query.message.edit_text(
                 text=MessageTexts.BOT_MENU_MESSAGE.value.format(custom_bot_username),

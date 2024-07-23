@@ -64,7 +64,7 @@ async def editing_start_message_handler(message: Message, state: FSMContext):
                 )
                 await message.answer(
                     MessageTexts.BOT_MENU_MESSAGE.value.format((await Bot(custom_bot.token).get_me()).username),
-                    reply_markup=await InlineBotMenuKeyboard.get_keyboard(custom_bot.bot_id)
+                    reply_markup=await InlineBotMenuKeyboard.get_keyboard(custom_bot.bot_id, message.from_user.id)
                 )
 
                 await state.set_state(States.BOT_MENU)
@@ -174,7 +174,7 @@ async def editing_post_order_message_handler(message: Message, state: FSMContext
                 )
                 await message.answer(
                     MessageTexts.BOT_MENU_MESSAGE.value.format((await Bot(custom_bot.token).get_me()).username),
-                    reply_markup=await InlineBotMenuKeyboard.get_keyboard(custom_bot.bot_id)
+                    reply_markup=await InlineBotMenuKeyboard.get_keyboard(custom_bot.bot_id, message.from_user.id)
                 )
                 await state.set_state(States.BOT_MENU)
                 await state.set_data(state_data)
@@ -191,7 +191,7 @@ async def editing_post_order_message_handler(message: Message, state: FSMContext
                 )
                 await message.answer(
                     MessageTexts.BOT_MENU_MESSAGE.value.format((await Bot(custom_bot.token).get_me()).username),
-                    reply_markup=await InlineBotMenuKeyboard.get_keyboard(custom_bot.bot_id)
+                    reply_markup=await InlineBotMenuKeyboard.get_keyboard(custom_bot.bot_id, message.from_user.id)
                 )
                 await state.set_state(States.BOT_MENU)
                 await state.set_data(state_data)
@@ -213,7 +213,7 @@ async def delete_bot_handler(message: Message, state: FSMContext):
             )
             await message.answer(
                 MessageTexts.BOT_MENU_MESSAGE.value.format((await Bot(custom_bot.token).get_me()).username),
-                reply_markup=await InlineBotMenuKeyboard.get_keyboard(custom_bot.bot_id)
+                reply_markup=await InlineBotMenuKeyboard.get_keyboard(custom_bot.bot_id, message.from_user.id)
             )
             await state.set_state(States.BOT_MENU)
             await state.set_data(state_data)

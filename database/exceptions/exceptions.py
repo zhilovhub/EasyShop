@@ -8,6 +8,11 @@ class UserNotFound(Exception):
     pass
 
 
+class UserRoleNotFound(Exception):
+    """Raised when provided user role not found in database"""
+    pass
+
+
 class BotNotFound(Exception):
     """Raised when provided bot not found in database"""
     pass

@@ -12,6 +12,7 @@ from aiogram.exceptions import TelegramUnauthorizedError
 from aiogram.fsm.context import FSMContext
 from aiogram.utils.token import validate_token, TokenValidationError
 from aiogram.fsm.storage.base import StorageKey
+from aiogram.utils.formatting import Text, Bold, Italic
 
 from bot.main import bot, QUESTION_MESSAGES
 from bot.utils import MessageTexts
@@ -26,24 +27,28 @@ from bot.keyboards.post_message_keyboards import InlinePostMessageMenuKeyboard
 from bot.post_message.post_message_create import post_message_create
 from common_utils.bot_settings_config import BOT_PROPERTIES
 
+from common_utils import generate_admin_invite_link
 from common_utils.env_config import FILES_PATH
-from common_utils.keyboards.keyboards import InlineBotMenuKeyboard, InlineBotSettingsMenuKeyboard
 from common_utils.order_utils.order_type import OrderType
 from common_utils.order_utils.order_utils import create_order
 from common_utils.storage.custom_bot_storage import custom_bot_storage
 from common_utils.keyboards.order_manage_keyboards import InlineOrderCancelKeyboard, InlineOrderStatusesKeyboard, \
     InlineAcceptReviewKeyboard, InlineOrderCustomBotKeyboard, InlineCreateReviewKeyboard
+from common_utils.keyboards.keyboards import (InlineBotMenuKeyboard, InlineBotSettingsMenuKeyboard,
+                                              InlineAdministratorsManageKeyboard)
 
-from database.config import bot_db, product_db, order_db, product_review_db, user_db, custom_bot_user_db, mailing_db
+from database.config import (bot_db, product_db, order_db, product_review_db, user_db, custom_bot_user_db, mailing_db,
+                             user_role_db)
 from database.exceptions import InstanceAlreadyExists
 from database.models.bot_model import BotSchemaWithoutId
+from database.models.user_role_model import UserRoleSchema, UserRoleValues
 from database.models.order_model import OrderSchema, OrderNotFound, OrderStatusValues
 from database.models.mailing_model import MailingNotFound
 from database.models.product_model import ProductWithoutId, NotEnoughProductsInStockToReduce
 from database.models.post_message_model import PostMessageType
 from database.models.product_review_model import ProductReviewNotFound
 
-from logs.config import logger
+from logs.config import logger, extra_params
 
 
 @admin_bot_menu_router.message(F.web_app_data)
@@ -322,13 +327,23 @@ async def waiting_for_the_token_handler(message: Message, state: FSMContext):
         )
         return await message.answer(":( Произошла ошибка при добавлении бота, попробуйте еще раз позже")
     user_bot = await bot_db.get_bot(bot_id)
+
+    user_role = UserRoleSchema(user_id=message.from_user.id, bot_id=user_bot.bot_id, role=UserRoleValues.OWNER)
+    try:
+        await user_role_db.add_user_role(user_role)
+    except InstanceAlreadyExists:
+        await user_role_db.update_user_role(user_role)
+    logger.info(f"user_id={message.from_user.id} bot_id={bot_id} : set user role to owner for user "
+                f"{message.from_user.id} of bot {bot_id}",
+                extra=extra_params(user_id=message.from_user.id, bot_id=bot_id))
+
     await message.answer(
         MessageTexts.BOT_INITIALIZING_MESSAGE.value.format(bot_fullname, bot_username),
         reply_markup=ReplyBotMenuKeyboard.get_keyboard(bot_id)
     )
     await message.answer(
         MessageTexts.BOT_MENU_MESSAGE.value.format(bot_username),
-        reply_markup=await InlineBotMenuKeyboard.get_keyboard(user_bot.bot_id)
+        reply_markup=await InlineBotMenuKeyboard.get_keyboard(user_bot.bot_id, message.from_user.id)
     )
     await state.set_state(States.BOT_MENU)
     await state.set_data({"bot_id": bot_id})
@@ -387,10 +402,28 @@ async def bot_menu_callback_handler(query: CallbackQuery, state: FSMContext):
     callback_data = InlineBotMenuKeyboard.Callback.model_validate_json(query.data)
 
     bot_id = callback_data.bot_id
+    db_bot_data = await bot_db.get_bot(bot_id)
+    custom_bot_data = await Bot(token=db_bot_data.token).get_me()
 
     match callback_data.a:
         case callback_data.ActionEnum.BOT_SETTINGS:
             await query.message.edit_reply_markup(reply_markup=await InlineBotSettingsMenuKeyboard.get_keyboard(bot_id))
+        case callback_data.ActionEnum.ADMINS:
+            await query.message.edit_reply_markup(
+                reply_markup=await InlineAdministratorsManageKeyboard.get_keyboard(bot_id))
+        case callback_data.ActionEnum.LEAVE_ADMINISTRATING:
+            await user_role_db.del_user_role(query.from_user.id, bot_id)
+            await query.message.edit_text("Вы больше не администратор этого бота. "
+                                          "Пропишите /start для рестарта бота",
+                                          reply_markup=None)
+            await state.clear()
+            await bot.send_message(
+                db_bot_data.created_by,
+                f"🔔 Пользователь больше не администратор ("
+                f"{'@' + query.from_user.username if query.from_user.username else query.from_user.full_name}"
+                f") для бота "
+                f"@{custom_bot_data.username}"
+            )
         case callback_data.ActionEnum.BOT_EDIT_POST_ORDER_MESSAGE:
             await query.message.answer(
                 "Введите текст, который будет отображаться у пользователей Вашего бота "
@@ -405,7 +438,7 @@ async def bot_menu_callback_handler(query: CallbackQuery, state: FSMContext):
             await query.message.edit_text(
                 query.message.text,
                 parse_mode=ParseMode.HTML,
-                reply_markup=await InlineBotMenuKeyboard.get_keyboard(bot_id)
+                reply_markup=await InlineBotMenuKeyboard.get_keyboard(bot_id, query.from_user.id)
             )
             await query.answer("Ваш бот запущен ✅", show_alert=True)
         case callback_data.ActionEnum.BOT_STOP:
@@ -413,7 +446,7 @@ async def bot_menu_callback_handler(query: CallbackQuery, state: FSMContext):
             await query.message.edit_text(
                 query.message.text,
                 parse_mode=ParseMode.HTML,
-                reply_markup=await InlineBotMenuKeyboard.get_keyboard(bot_id)
+                reply_markup=await InlineBotMenuKeyboard.get_keyboard(bot_id, query.from_user.id)
             )
             await query.answer("Ваш бот приостановлен ❌", show_alert=True)
         case callback_data.ActionEnum.PARTNERSHIP:
@@ -512,7 +545,56 @@ async def bot_settings_callback_handler(query: CallbackQuery, state: FSMContext)
         case callback_data.ActionEnum.BACK_TO_BOT_MENU:
             await query.message.edit_text(
                 MessageTexts.BOT_MENU_MESSAGE.value.format(custom_bot_data.username),
-                reply_markup=await InlineBotMenuKeyboard.get_keyboard(user_bot.bot_id)
+                reply_markup=await InlineBotMenuKeyboard.get_keyboard(user_bot.bot_id, query.from_user.id)
+            )
+
+
+@admin_bot_menu_router.callback_query(lambda query: InlineAdministratorsManageKeyboard.callback_validator(query.data))
+async def admins_manage_callback_handler(query: CallbackQuery):
+    callback_data = InlineAdministratorsManageKeyboard.Callback.model_validate_json(query.data)
+
+    bot_id = callback_data.bot_id
+    user_bot = await bot_db.get_bot(bot_id)
+    custom_bot_data = await Bot(token=user_bot.token).get_me()
+
+    main_bot_data = await query.bot.get_me()
+
+    match callback_data.a:
+        case callback_data.ActionEnum.ADD_ADMIN:
+            link_hash, link = generate_admin_invite_link(main_bot_data.username)
+            user_bot.admin_invite_link_hash = link_hash
+            await bot_db.update_bot(user_bot)
+
+            add_admin_link_text = Text("Администраторы бота ", Bold("@" + main_bot_data.username), ":",
+                                       "\n\nℹ️ Для добавления администратора в бота отправьте нужному ",
+                                       "пользователю ссылку приглашение:\n", Bold(link), "\n\n",
+                                       "Сгенерированная ссылка ", Italic("действует 1 раз"),
+                                       " для создания новой ссылки нажмите на кнопку добавить админа еще раз.")
+
+            await query.message.edit_text(**add_admin_link_text.as_kwargs(),
+                                          reply_markup=await InlineAdministratorsManageKeyboard.get_keyboard(bot_id))
+        case callback_data.ActionEnum.ADMIN_LIST:
+            admins = await user_role_db.get_bot_admin_ids(bot_id)
+            admins_text = ""
+            for ind, admin in enumerate(admins, start=1):
+                admin_user = await bot.get_chat(admin)
+                admins_text += (f"=== {ind} ===\n"
+                                f"👤 Имя: {admin_user.full_name}\n🆔 UID: {admin_user.id}"
+                                f"\n🔤 Username: @{admin_user.username}\n\n")
+            if not admins:
+                admins_text = Bold("Администраторы еще не добавлены")
+            else:
+                admins_text += "Для удаления админа введите команду:\n/rm_admin UID"
+
+            admins_list_text = Text("Администраторы бота ", Bold("@" + main_bot_data.username), ":\n\n",
+                                    admins_text)
+
+            await query.message.edit_text(**admins_list_text.as_kwargs(),
+                                          reply_markup=await InlineAdministratorsManageKeyboard.get_keyboard(bot_id))
+        case callback_data.ActionEnum.BACK_TO_BOT_MENU:
+            await query.message.edit_text(
+                MessageTexts.BOT_MENU_MESSAGE.value.format(custom_bot_data.username),
+                reply_markup=await InlineBotMenuKeyboard.get_keyboard(user_bot.bot_id, query.from_user.id)
             )
 
 
@@ -525,7 +607,7 @@ async def bot_menu_handler(message: Message, state: FSMContext):
         case ReplyBotMenuKeyboard.Callback.ActionEnum.SETTINGS.value:
             await message.answer(
                 MessageTexts.BOT_MENU_MESSAGE.value.format((await Bot(custom_bot.token).get_me()).username),
-                reply_markup=await InlineBotMenuKeyboard.get_keyboard(custom_bot.bot_id)
+                reply_markup=await InlineBotMenuKeyboard.get_keyboard(custom_bot.bot_id, message.from_user.id)
             )
 
         case ReplyBotMenuKeyboard.Callback.ActionEnum.CONTACTS.value:
@@ -539,7 +621,7 @@ async def bot_menu_handler(message: Message, state: FSMContext):
             )
             await message.answer(
                 MessageTexts.BOT_MENU_MESSAGE.value.format((await Bot(custom_bot.token).get_me()).username),
-                reply_markup=await InlineBotMenuKeyboard.get_keyboard(custom_bot.bot_id)
+                reply_markup=await InlineBotMenuKeyboard.get_keyboard(custom_bot.bot_id, message.from_user.id)
             )
 
 

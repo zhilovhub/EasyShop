@@ -15,7 +15,8 @@ def _get_env(var_name: str, raise_if_none: bool = True) -> str | None:
     return variable
 
 
-load_dotenv()
+load_dotenv()  # TODO back after docker compose
+# load_dotenv("/common_utils/.env")
 
 # COMMON
 PROJECT_ROOT = _get_env("PROJECT_ROOT")
@@ -56,9 +57,6 @@ SBP_URL = _get_env("SBP_PAYMENT_URL")
 CUSTOM_BOT_STORAGE_DB_URL = _get_env("CUSTOM_BOT_STORAGE_DB_URL")
 CUSTOM_BOT_STORAGE_TABLE_NAME = _get_env("CUSTOM_BOT_STORAGE_TABLE_NAME")
 
-WEBHOOK_LOCAL_API_URL = _get_env("WEBHOOK_LOCAL_API_URL")
-WEBHOOK_LOCAL_API_PORT = int(_get_env("WEBHOOK_LOCAL_API_PORT"))
-
 WEBHOOK_URL = _get_env("WEBHOOK_URL")
 WEBHOOK_HOST = _get_env("WEBHOOK_HOST")
 WEBHOOK_PORT = int(_get_env("WEBHOOK_PORT"))
@@ -66,7 +64,8 @@ WEBHOOK_PORT = int(_get_env("WEBHOOK_PORT"))
 WEB_APP_URL = _get_env("WEB_APP_URL")
 WEB_APP_PORT = _get_env("WEB_APP_PORT")
 
-LOCAL_API_SERVER_HOST = _get_env("WEBHOOK_LOCAL_API_URL")
+LOCAL_API_SERVER_HOST = _get_env("WEBHOOK_LOCAL_API_URL_HOST")
+LOCAL_API_SERVER_OUTSIDE = _get_env("WEBHOOK_LOCAL_API_URL_OUTSIDE")
 LOCAL_API_SERVER_PORT = int(_get_env("WEBHOOK_LOCAL_API_PORT"))
 
 try:

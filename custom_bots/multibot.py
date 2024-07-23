@@ -20,7 +20,7 @@ from aiogram.webhook.aiohttp_server import (
 from common_utils.bot_settings_config import BOT_PROPERTIES
 from common_utils.env_config import TIMEZONE, SCHEDULER_URL, WEBHOOK_URL, WEBHOOK_PORT, TELEGRAM_TOKEN, WEB_APP_URL, \
     WEB_APP_PORT, RESOURCES_PATH, SSL_CERT_PATH, \
-    SSL_KEY_PATH, TECH_ADMINS, LOCAL_API_SERVER_HOST, LOCAL_API_SERVER_PORT, WEBHOOK_HOST, \
+    SSL_KEY_PATH, TECH_ADMINS, LOCAL_API_SERVER_OUTSIDE, LOCAL_API_SERVER_PORT, WEBHOOK_HOST, \
     WEBHOOK_SERVER_PORT_TO_REDIRECT
 from common_utils.start_message import send_start_message_to_admins
 from common_utils.scheduler.scheduler import Scheduler
@@ -58,7 +58,13 @@ QUESTION_MESSAGES = JsonStore(
     json_store_name="QUESTION_MESSAGES"
 )
 
-scheduler = Scheduler(SCHEDULER_URL, "postgres", TIMEZONE)
+scheduler = Scheduler(
+    SCHEDULER_URL,
+    "postgres",
+    TIMEZONE,
+    tablename="custom_bot_apscheduler_jobs",
+    unique_id="multi_bot"
+)
 
 
 class CustomUserStates(StatesGroup):
@@ -198,7 +204,7 @@ async def main():
     await custom_bot_storage.connect()
 
     custom_bot_logger.debug(
-        f"[3/3] Setting up local api server on {LOCAL_API_SERVER_HOST}:{LOCAL_API_SERVER_PORT}")
+        f"[3/3] Setting up local api server on {LOCAL_API_SERVER_OUTSIDE}:{LOCAL_API_SERVER_PORT}")
     custom_bot_logger.info(
         f"[3/3] Setting up webhook server on {WEBHOOK_HOST}:{WEBHOOK_SERVER_PORT_TO_REDIRECT} "
         f"<- {WEBHOOK_PORT}")
@@ -208,7 +214,7 @@ async def main():
     await asyncio.gather(
         web._run_app(  # noqa
             local_app,
-            host=LOCAL_API_SERVER_HOST,
+            host=LOCAL_API_SERVER_OUTSIDE,
             port=LOCAL_API_SERVER_PORT,
             access_log=custom_bot_logger,
             print=custom_bot_logger.debug
