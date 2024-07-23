@@ -1,6 +1,6 @@
 FROM python:3.10
 
-WORKDIR /api
+WORKDIR /custom_bots
 
 COPY . .
 
@@ -8,6 +8,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 WORKDIR /
 
-EXPOSE 3024
+EXPOSE 88
+EXPOSE 7532
 
-CMD ["python3", "-m", "api.main"]
+CMD ["python3", "-m", "custom_bots.multibot"]

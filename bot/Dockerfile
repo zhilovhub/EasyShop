@@ -1,6 +1,6 @@
 FROM python:3.10
 
-WORKDIR /api
+WORKDIR /bot
 
 COPY . .
 
@@ -8,6 +8,4 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 WORKDIR /
 
-EXPOSE 3024
-
-CMD ["python3", "-m", "api.main"]
+CMD ["python3", "-m", "bot.main"]
