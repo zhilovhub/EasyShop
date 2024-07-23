@@ -2,11 +2,11 @@ from datetime import timedelta, datetime
 
 from aiogram import Bot
 from aiogram.enums import ContentType
-from aiogram.utils.formatting import Text, Bold, Italic
 from aiogram.types import CallbackQuery, FSInputFile, User, Message
 from aiogram.types import ReplyKeyboardRemove, InlineKeyboardMarkup, InlineKeyboardButton
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.storage.base import StorageKey
+from aiogram.utils.formatting import Text, Bold, Italic
 
 from bot.main import subscription, bot, dp, cache_resources_file_id_store, SENT_SUBSCRIPTION_NOTIFICATIONS
 from bot.utils import MessageTexts
@@ -254,7 +254,7 @@ async def approve_pay_callback(query: CallbackQuery):
     await query.answer("Оплата подтверждена", show_alert=True)
 
     payment_id = 0  # TODO payment generation
-    PAYMENT_APPROVED_TEXT = Text("\n\n✅ Оплата подписки подтверждена.",
+    payment_approved_text = Text("\n\n✅ Оплата подписки подтверждена.",
                                  "\n\n📆 Дата подтверждения: ",
                                  Bold(f"{datetime.now().strftime('%d.%m.%Y %H:%M:%S')}"),
                                  "\n\n👤 От админа: ",
@@ -263,14 +263,16 @@ async def approve_pay_callback(query: CallbackQuery):
                                  Italic(str(payment_id)))
 
     current_text = Text.from_entities(query.message.text, query.message.entities)
-    message_text = current_text + PAYMENT_APPROVED_TEXT
+    message_text = current_text + payment_approved_text
 
     json_data = SENT_SUBSCRIPTION_NOTIFICATIONS.get_data()
     if str(user_id) in json_data:
         message_ids = json_data[str(user_id)]
     else:
-        logger.warning(f"bot_id = {bot_id} : cant find old notification message ids for subscription for user {user_id}",
-                       extra_params(bot_id=bot_id, user_id=user_id))
+        logger.warning(
+            f"bot_id = {bot_id}: cant find old notification message ids for subscription for user {user_id}",
+            extra_params(bot_id=bot_id, user_id=user_id)
+        )
         message_ids = [(query.from_user.id, query.message.message_id), ]
 
     text, entities = message_text.render()
