@@ -71,13 +71,13 @@ async def process_web_app_request(event: Message):
         )
 
         if len(products_to_refill) != 0:
-            await main_bot.send_message(
+            await event.bot.send_message(
                 chat_id=admin_id,
                 reply_to_message_id=msg.message_id,
                 **CustomMessageTexts.generate_stock_info_to_refill(products_to_refill, order.id)
             )
         if len(products_not_enough) != 0:
-            await main_bot.send_message(
+            await event.bot.send_message(
                 chat_id=admin_id,
                 reply_to_message_id=msg.message_id,
                 **CustomMessageTexts.generate_not_enough_in_sctock(products_not_enough, order.id)
