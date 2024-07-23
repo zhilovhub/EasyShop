@@ -11,6 +11,7 @@
     "format": "prettier --write src/"
   },
   "dependencies": {
+    "heic2any": "^0.0.4",
     "swapper": "^1.1.6",
     "swiper": "^7.4.1",
     "vue": "^3.4.15",
