@@ -7,6 +7,12 @@ from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 from common_utils.keyboards.keyboard_utils import callback_json_validator, get_bot_channels, get_bot_username, \
     get_bot_mailing, get_bot_status
 
+from database.config import bot_db, user_role_db
+from database.exceptions import UserRoleNotFound
+from database.models.user_role_model import UserRoleValues, UserRoleSchema
+
+from logs.config import logger, extra_params
+
 
 class InlineBotMenuKeyboard:
     class Callback(BaseModel):
@@ -17,6 +23,7 @@ class InlineBotMenuKeyboard:
             MAILING_OPEN = "mailing_menu"
 
             BOT_SETTINGS = "settings"
+            ADMINS = "admins"
             BOT_EDIT_POST_ORDER_MESSAGE = "pom"
 
             BOT_STOP = "stop_bot"
@@ -26,6 +33,8 @@ class InlineBotMenuKeyboard:
             BOT_GOODS_OPEN = "goods"
 
             PARTNERSHIP = "partnership"
+
+            LEAVE_ADMINISTRATING = "leave_admin"
 
             BOT_DELETE = "delete_bot"
 
@@ -52,8 +61,23 @@ class InlineBotMenuKeyboard:
             return False
 
     @staticmethod
-    async def get_keyboard(bot_id: int) -> InlineKeyboardMarkup:
+    async def get_keyboard(bot_id: int, user_id: int) -> InlineKeyboardMarkup:
         actions = InlineBotMenuKeyboard.Callback.ActionEnum
+
+        # TODO ? remove after updating old users
+        try:
+            user_role = await user_role_db.get_user_role(user_id, bot_id)
+        except UserRoleNotFound as e:
+            logger.debug(
+                f"user_id={user_id} bot_id={bot_id}: role not found, auto creating new role",
+                extra=extra_params(user_id=user_id, bot_id=bot_id), exc_info=e)
+            bot = await bot_db.get_bot(bot_id)
+            if bot.created_by == user_id:
+                role = UserRoleValues.OWNER
+            else:
+                role = UserRoleValues.ADMINISTRATOR
+            await user_role_db.add_user_role(UserRoleSchema(user_id=user_id, bot_id=bot_id, role=role))
+            user_role = await user_role_db.get_user_role(user_id, bot_id)
 
         channel_inline_button = InlineKeyboardButton(
             text="📢 Добавить в канал",
@@ -79,6 +103,42 @@ class InlineBotMenuKeyboard:
                 )
             )
 
+        leave_admin_or_delete_bot_button = InlineKeyboardButton(
+                text="🗑 Удалить бота",
+                callback_data=InlineBotMenuKeyboard.callback_json(
+                    actions.BOT_DELETE, bot_id
+                )
+        ) if user_role.role == UserRoleValues.OWNER else \
+            InlineKeyboardButton(
+                text="🛑 Покинуть администрирование",
+                callback_data=InlineBotMenuKeyboard.callback_json(
+                    actions.LEAVE_ADMINISTRATING, bot_id
+                )
+            )
+
+        bot_setup_buttons = [
+            InlineKeyboardButton(
+                text="⚙️ Настройки бота",
+                callback_data=InlineBotMenuKeyboard.callback_json(
+                    actions.BOT_SETTINGS, bot_id
+                )
+            ),
+            InlineKeyboardButton(
+                text="👥 Администраторы",
+                callback_data=InlineBotMenuKeyboard.callback_json(
+                    actions.ADMINS, bot_id
+                )
+            ),
+        ] if user_role.role == UserRoleValues.OWNER else \
+            [
+                InlineKeyboardButton(
+                    text="⚙️ Настройки бота",
+                    callback_data=InlineBotMenuKeyboard.callback_json(
+                        actions.BOT_SETTINGS, bot_id
+                    )
+                ),
+            ]
+
         return InlineKeyboardMarkup(
             inline_keyboard=[
                 [
@@ -89,14 +149,7 @@ class InlineBotMenuKeyboard:
                         )
                     )
                 ],
-                [
-                    InlineKeyboardButton(
-                        text="⚙️ Настройки бота",
-                        callback_data=InlineBotMenuKeyboard.callback_json(
-                            actions.BOT_SETTINGS, bot_id
-                        )
-                    )
-                ],
+                bot_setup_buttons,
                 [
                     InlineKeyboardButton(
                         text="⛔ Остановить бота",
@@ -139,13 +192,8 @@ class InlineBotMenuKeyboard:
                     )
                 ],
                 [
-                    InlineKeyboardButton(
-                        text="🗑 Удалить бота",
-                        callback_data=InlineBotMenuKeyboard.callback_json(
-                            actions.BOT_DELETE, bot_id
-                        )
-                    )
-                ]
+                    leave_admin_or_delete_bot_button,
+                ],
             ],
         )
 
@@ -215,6 +263,70 @@ class InlineBotSettingsMenuKeyboard:
                     InlineKeyboardButton(
                         text="🔙 Назад",
                         callback_data=InlineBotSettingsMenuKeyboard.callback_json(
+                            actions.BACK_TO_BOT_MENU, bot_id
+                        )
+                    )
+                ],
+            ]
+        )
+
+
+class InlineAdministratorsManageKeyboard:
+    class Callback(BaseModel):
+        class ActionEnum(Enum):
+            ADD_ADMIN = "add"
+            ADMIN_LIST = "list"
+
+            BACK_TO_BOT_MENU = "back"
+
+        model_config = ConfigDict(from_attributes=True, populate_by_name=True)
+
+        n: str = Field(default="bot_admins_manage_menu", frozen=True)
+        a: ActionEnum
+
+        bot_id: int
+
+    @staticmethod
+    @callback_json_validator
+    def callback_json(action: Callback.ActionEnum, bot_id: int) -> str:
+        return InlineAdministratorsManageKeyboard.Callback(
+            a=action, bot_id=bot_id
+        ).model_dump_json(by_alias=True)
+
+    @staticmethod
+    def callback_validator(json_string: str) -> bool:
+        try:
+            InlineAdministratorsManageKeyboard.Callback.model_validate_json(json_string)
+            return True
+        except ValidationError:
+            return False
+
+    @staticmethod
+    async def get_keyboard(bot_id: int) -> InlineKeyboardMarkup:
+        actions = InlineAdministratorsManageKeyboard.Callback.ActionEnum
+
+        return InlineKeyboardMarkup(
+            inline_keyboard=[
+                [
+                    InlineKeyboardButton(
+                        text="➕ Добавить администратора",
+                        callback_data=InlineAdministratorsManageKeyboard.callback_json(
+                            actions.ADD_ADMIN, bot_id
+                        )
+                    ),
+                ],
+                [
+                    InlineKeyboardButton(
+                        text="👥 Список администраторов",
+                        callback_data=InlineAdministratorsManageKeyboard.callback_json(
+                            actions.ADMIN_LIST, bot_id
+                        )
+                    )
+                ],
+                [
+                    InlineKeyboardButton(
+                        text="🔙 Назад",
+                        callback_data=InlineAdministratorsManageKeyboard.callback_json(
                             actions.BACK_TO_BOT_MENU, bot_id
                         )
                     )

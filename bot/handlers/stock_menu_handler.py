@@ -100,7 +100,7 @@ async def stock_menu_handler(query: CallbackQuery, state: FSMContext):
             custom_bot = await bot_db.get_bot(bot_id)
             await query.message.edit_text(
                 MessageTexts.BOT_MENU_MESSAGE.value.format((await Bot(custom_bot.token).get_me()).username),
-                reply_markup=await InlineBotMenuKeyboard.get_keyboard(custom_bot.bot_id)
+                reply_markup=await InlineBotMenuKeyboard.get_keyboard(custom_bot.bot_id, query.from_user.id)
             )
 
 
