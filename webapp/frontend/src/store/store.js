@@ -49,8 +49,11 @@ export const Store = new Vuex.Store({
           },
           body: JSON.stringify(Store.state.reverse_order === true || Store.state.reverse_order === false ? [filters] : [])
         });
+        if (response.status === 406) {
+          console.log(406)
+        }
         if (!response.ok) {
-          throw new Error('Network response was not ok');
+          return 406;
         }
         const data = await response.json();
         commit('setItems', data);
