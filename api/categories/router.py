@@ -1,10 +1,10 @@
-from fastapi import HTTPException, APIRouter, Header
+from fastapi import APIRouter, Header
 
 from database.config import category_db
 from database.models.category_model import CategorySchema, CategorySchemaWithoutId, \
     SameCategoryNameAlreadyExists
 
-from api.utils import check_admin_authorization
+from api.utils import check_admin_authorization, RESPONSES_DICT, HTTPInternalError, HTTPConflict
 
 from logs.config import api_logger, extra_params
 
@@ -12,7 +12,7 @@ PATH = "/api/categories"
 router = APIRouter(
     prefix=PATH,
     tags=["categories"],
-    responses={404: {"description": "Category not found"}},
+    responses=RESPONSES_DICT,
 )
 
 
@@ -30,7 +30,7 @@ async def get_all_categories_api(bot_id: int) -> list[CategorySchema]:
             extra=extra_params(bot_id=bot_id),
             exc_info=e
         )
-        raise HTTPException(status_code=500, detail="Internal error.")
+        raise HTTPInternalError
     return categories
 
 
@@ -44,14 +44,17 @@ async def add_category_api(new_category: CategorySchemaWithoutId, authorization_
             extra=extra_params(bot_id=new_category.bot_id, category_id=cat_id)
         )
     except SameCategoryNameAlreadyExists:
-        raise HTTPException(status_code=409, detail="category with provided name already exists.")
+        raise HTTPConflict(
+            detail_message="Conflict while adding category (category with provided name already exists).",
+            category_name=new_category.name
+        )
     except Exception as e:
         api_logger.error(
             "Error while execute add_category db_method",
             extra=extra_params(bot_id=new_category.bot_id),
             exc_info=e
         )
-        raise HTTPException(status_code=500, detail="Internal error.")
+        raise HTTPInternalError
     return cat_id
 
 
@@ -64,11 +67,14 @@ async def edit_category_api(category: CategorySchema, authorization_data: str = 
             f"bot_id={category.bot_id}: updated category {category}",
             extra=extra_params(bot_id=category.bot_id, category_id=category.id)
         )
+    # TODO uncomment after pull request with db method updating
+    # except CategoryNotFound:
+    #     raise HTTPCategoryNotFound(bot_id=category.bot_id, category_id=category.id)
     except Exception as e:
         api_logger.error(
             "Error while execute update_category db_method",
             extra=extra_params(bot_id=category.bot_id, category_id=category.id),
             exc_info=e
         )
-        raise HTTPException(status_code=500, detail="Internal error.")
+        raise HTTPInternalError
     return True
