@@ -590,8 +590,13 @@ async def admins_manage_callback_handler(query: CallbackQuery):
             admins_list_text = Text("Администраторы бота ", Bold("@" + main_bot_data.username), ":\n\n",
                                     admins_text)
 
-            await query.message.edit_text(**admins_list_text.as_kwargs(),
-                                          reply_markup=await InlineAdministratorsManageKeyboard.get_keyboard(bot_id))
+            text, entities = admins_list_text.render()
+            if text != query.message.text:
+                await query.message.edit_text(**admins_list_text.as_kwargs(),
+                                              reply_markup=await InlineAdministratorsManageKeyboard.get_keyboard(bot_id),
+                                              disable_web_page_preview=True)
+            else:
+                await query.answer()
         case callback_data.ActionEnum.BACK_TO_BOT_MENU:
             await query.message.edit_text(
                 MessageTexts.BOT_MENU_MESSAGE.value.format(custom_bot_data.username),
