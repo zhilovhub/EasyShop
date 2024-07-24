@@ -4,6 +4,7 @@ from enum import Enum
 from aiogram.utils.formatting import Text, Bold
 
 from database.models.product_model import ProductSchema
+from database.models.order_option_model import OrderOptionSchema
 from database.models.post_message_model import PostMessageType
 
 
@@ -172,4 +173,26 @@ class MessageTexts(Enum):
         result = Text(f"На складе кончились эти товары\n\n")
         for product in products:
             result += Text(Bold(product.name), " артикул ", Bold(product.article) + "\n")
+        return result.as_kwargs()
+
+    @staticmethod
+    def generate_order_options_info(order_options: List[OrderOptionSchema]):
+        result = Text("Текущие опции при создании заказв \n\n")
+
+        for oo in sorted(order_options, key=lambda x: x.position_index):
+            required_status = "*" if oo.required else ""
+            result += Text(oo.position_index, ")  ", Text(oo.emoji), " ",
+                           Bold(oo.option_name), " ", required_status + "\n")
+        result += Text("\nОпции помеченные * являются обязательными")
+        return result.as_kwargs()
+
+    @staticmethod
+    def generate_order_option_info(order_option: OrderOptionSchema):
+        result = Text(
+            "Редактирование опции ",
+            order_option.emoji, " ",
+            Bold(order_option.option_name),
+            "\nномер опции ",
+            order_option.position_index,
+        )
         return result.as_kwargs()

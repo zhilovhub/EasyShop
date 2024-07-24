@@ -5,10 +5,12 @@ from pydantic import BaseModel, ConfigDict, Field, ValidationError
 from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 
 from common_utils.keyboards.keyboard_utils import callback_json_validator, get_bot_channels, get_bot_username, \
-    get_bot_mailing, get_bot_status, make_product_deep_link_url, make_product_webapp_info
+    get_bot_mailing, get_bot_status, make_product_deep_link_url, make_product_webapp_info, get_bot_order_options
 
-from database.config import user_role_db
-from database.models.user_role_model import UserRoleValues
+from database.config import bot_db, user_role_db, order_option_db
+from database.models.user_role_model import UserRoleValues, UserRoleSchema, UserRoleNotFoundError
+
+from logs.config import logger, extra_params
 
 
 class InlineBotMenuKeyboard:
@@ -72,7 +74,7 @@ class InlineBotMenuKeyboard:
                 callback_data=InlineBotMenuKeyboard.callback_json(
                     actions.CHANNEL_LIST, bot_id
                 )
-            )
+        )
 
         mailing_inline_button = InlineKeyboardButton(
             text="💌 Создать рассылку в ЛС",
@@ -85,20 +87,20 @@ class InlineBotMenuKeyboard:
                 callback_data=InlineBotMenuKeyboard.callback_json(
                     actions.MAILING_OPEN, bot_id
                 )
-            )
+        )
 
         leave_admin_or_delete_bot_button = InlineKeyboardButton(
-                text="🗑 Удалить бота",
-                callback_data=InlineBotMenuKeyboard.callback_json(
-                    actions.BOT_DELETE, bot_id
-                )
+            text="🗑 Удалить бота",
+            callback_data=InlineBotMenuKeyboard.callback_json(
+                actions.BOT_DELETE, bot_id
+            )
         ) if user_role.role == UserRoleValues.OWNER else \
             InlineKeyboardButton(
                 text="🛑 Покинуть администрирование",
                 callback_data=InlineBotMenuKeyboard.callback_json(
                     actions.LEAVE_ADMINISTRATING, bot_id
                 )
-            )
+        )
 
         bot_setup_buttons = [
             InlineKeyboardButton(
@@ -121,7 +123,7 @@ class InlineBotMenuKeyboard:
                         actions.BOT_SETTINGS, bot_id
                     )
                 ),
-            ]
+        ]
 
         return InlineKeyboardMarkup(
             inline_keyboard=[
@@ -188,6 +190,7 @@ class InlineBotSettingsMenuKeyboard:
             BOT_EDIT_HELLO_TEXT = "start_text"
             BOT_EDIT_EXPLANATION_TEXT = "explain_text"
             EDIT_BG_COLOR = "edit_color"
+            EDIT_ORDER_OPTIONS = "edit_ord_op"
 
             BACK_TO_BOT_MENU = "back"
 
@@ -245,12 +248,173 @@ class InlineBotSettingsMenuKeyboard:
                 ],
                 [
                     InlineKeyboardButton(
+                        text="⚙️ Редактировать опции заказа",
+                        callback_data=InlineBotSettingsMenuKeyboard.callback_json(
+                            actions.EDIT_ORDER_OPTIONS, bot_id
+                        )
+                    )
+                ],
+                [
+                    InlineKeyboardButton(
                         text="🔙 Назад",
                         callback_data=InlineBotSettingsMenuKeyboard.callback_json(
                             actions.BACK_TO_BOT_MENU, bot_id
                         )
                     )
                 ],
+            ]
+        )
+
+
+class InlineBotEditOrderOptionsKeyboard:
+    class Callback(BaseModel):
+        class ActionEnum(Enum):
+            EDIT_ORDER_OPTION = "eoo"
+            ADD_ORDER_OPTION = "aoo"
+
+            BACK_TO_BOT_MENU = "b"
+
+        model_config = ConfigDict(from_attributes=True, populate_by_name=True)
+
+        n: str = Field(default="bot_menu", frozen=True)
+        a: ActionEnum
+
+        bot_id: int
+        order_option_id: int | None
+
+    @staticmethod
+    @callback_json_validator
+    def callback_json(action: Callback.ActionEnum, bot_id: int, order_option_id: int | None = None) -> str:
+        return InlineBotEditOrderOptionsKeyboard.Callback(
+            a=action, bot_id=bot_id, order_option_id=order_option_id
+        ).model_dump_json(by_alias=True)
+
+    @staticmethod
+    def callback_validator(json_string: str) -> bool:
+        try:
+            InlineBotEditOrderOptionsKeyboard.Callback.model_validate_json(json_string)
+            return True
+        except ValidationError:
+            return False
+
+    @staticmethod
+    async def get_keyboard(bot_id: int) -> InlineKeyboardMarkup:
+        actions = InlineBotEditOrderOptionsKeyboard.Callback.ActionEnum
+        order_options = await get_bot_order_options(bot_id)
+        oo_btns = []
+        for oo in order_options:
+            oo_btns.append(
+                [InlineKeyboardButton(
+                    text=oo.option_name,
+                    callback_data=InlineBotEditOrderOptionsKeyboard.callback_json(
+                        actions.EDIT_ORDER_OPTION, bot_id, oo.id
+                    )
+                )]
+            )
+        return InlineKeyboardMarkup(
+            inline_keyboard=[
+                *oo_btns,
+                [
+                    InlineKeyboardButton(
+                        text="🛠️ Создать новую опцию",
+                        callback_data=InlineBotEditOrderOptionsKeyboard.callback_json(
+                            actions.ADD_ORDER_OPTION, bot_id
+                        )
+                    )
+                ],
+                [
+                    InlineKeyboardButton(
+                        text="🔙 Назад",
+                        callback_data=InlineBotEditOrderOptionsKeyboard.callback_json(
+                            actions.BACK_TO_BOT_MENU, bot_id
+                        )
+                    )
+                ],
+            ]
+        )
+
+
+class InlineBotEditOrderOptionKeyboard:
+    class Callback(BaseModel):
+        class ActionEnum(Enum):
+            EDIT_OPTION_NAME = "eon"
+            EDIT_EMOJI = "ee"
+            EDIT_POSITION_INDEX = "epi"
+            EDIT_REQUIRED_STATUS = "ers"
+            DELETE_ORDER_OPTION = "doo"
+
+            BACK_TO_ORDER_OPTIONS = "boo"
+
+        model_config = ConfigDict(from_attributes=True, populate_by_name=True)
+
+        n: str = Field(default="bot_menu", frozen=True)
+        a: ActionEnum
+
+        bot_id: int
+        order_option_id: int
+
+    @staticmethod
+    @callback_json_validator
+    def callback_json(action: Callback.ActionEnum, bot_id: int, order_option_id: int) -> str:
+        return InlineBotEditOrderOptionKeyboard.Callback(
+            a=action, bot_id=bot_id, order_option_id=order_option_id
+        ).model_dump_json(by_alias=True)
+
+    @staticmethod
+    def callback_validator(json_string: str) -> bool:
+        try:
+            InlineBotEditOrderOptionKeyboard.Callback.model_validate_json(json_string)
+            return True
+        except ValidationError:
+            return False
+
+    async def get_keyboard(bot_id: int, order_option_id: int) -> InlineKeyboardMarkup:
+        actions = InlineBotEditOrderOptionKeyboard.Callback.ActionEnum
+        oo = await order_option_db.get_order_option(order_option_id)
+        return InlineKeyboardMarkup(
+            inline_keyboard=[
+                [
+                    InlineKeyboardButton(
+                        text="Редактировать название",
+                        callback_data=InlineBotEditOrderOptionKeyboard.callback_json(
+                            actions.EDIT_OPTION_NAME, bot_id, order_option_id)
+                    )
+                ],
+                [
+                    InlineKeyboardButton(
+                        text="Редактировать эмодзи",
+                        callback_data=InlineBotEditOrderOptionKeyboard.callback_json(
+                            actions.EDIT_EMOJI, bot_id, order_option_id)
+                    )
+                ],
+                [
+                    InlineKeyboardButton(
+                        text="Обязательно " + ("✅" if oo.required else "❌"),
+                        callback_data=InlineBotEditOrderOptionKeyboard.callback_json(
+                            actions.EDIT_REQUIRED_STATUS, bot_id, order_option_id)
+                    )
+                ],
+                [
+                    InlineKeyboardButton(
+                        text="Редактировать позицию",
+                        callback_data=InlineBotEditOrderOptionKeyboard.callback_json(
+                            actions.EDIT_POSITION_INDEX, bot_id, order_option_id)
+                    )
+                ],
+                [
+                    InlineKeyboardButton(
+                        text="Удалить",
+                        callback_data=InlineBotEditOrderOptionKeyboard.callback_json(
+                            actions.DELETE_ORDER_OPTION, bot_id, order_option_id)
+                    )
+                ],
+                [
+                    InlineKeyboardButton(
+                        text="🔙 Назад",
+                        callback_data=InlineBotEditOrderOptionKeyboard.callback_json(
+                            actions.BACK_TO_ORDER_OPTIONS, bot_id, order_option_id)
+                    )
+                ]
             ]
         )
 

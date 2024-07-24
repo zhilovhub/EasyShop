@@ -6,7 +6,7 @@ from database.models.bot_model import BotNotFoundError
 
 from logs.config import custom_bot_logger, extra_params
 
-
+# delete TODO
 async def get_option(param: str, token: str):
     try:
         bot_info = await bot_db.get_bot_by_token(token)

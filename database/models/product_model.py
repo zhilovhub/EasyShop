@@ -126,7 +126,7 @@ class ProductSchema(ProductWithoutId):
         if used_extra_options:
             options_text = ""
             for option in used_extra_options:
-                options_text += f"\n • <i>{option.name}</i> : <u>{option.selected_variant}</u>"
+                options_text += f"\n • {option.name} : {option.selected_variant}"
                 if option.price:
                     option_price = option.price - self.price
                     if option_price <= 0:
@@ -135,8 +135,8 @@ class ProductSchema(ProductWithoutId):
                         option_price_text = f"+{option_price}"
                     options_text += f" ({option_price_text}₽)"
                 options_text += '\n'
-            return f"<b>{self.name} {self.price}₽ x {count}шт</b> {options_text}"
-        return f"<b>{self.name} {self.price}₽ x {count}шт</b>"
+            return f"{self.name} {self.price}₽ x {count}шт {options_text}"
+        return f"{self.name} {self.price}₽ x {count}шт"
 
     def convert_to_product_page_text(self) -> Text:
         res = Text(
