@@ -29,7 +29,6 @@ from common_utils.bot_settings_config import BOT_PROPERTIES
 
 from common_utils import generate_admin_invite_link
 from common_utils.env_config import FILES_PATH
-from common_utils.keyboards.keyboards import InlineBotMenuKeyboard, InlineBotSettingsMenuKeyboard
 from common_utils.order_utils.order_type import OrderType
 from common_utils.order_utils.order_utils import create_order
 from common_utils.storage.custom_bot_storage import custom_bot_storage
@@ -572,8 +571,11 @@ async def admins_manage_callback_handler(query: CallbackQuery):
                                        "Сгенерированная ссылка ", Italic("действует 1 раз"),
                                        " для создания новой ссылки нажмите на кнопку добавить админа еще раз.")
 
-            await query.message.edit_text(**add_admin_link_text.as_kwargs(),
-                                          reply_markup=await InlineAdministratorsManageKeyboard.get_keyboard(bot_id))
+            await query.message.edit_text(
+                **add_admin_link_text.as_kwargs(),
+                reply_markup=await InlineAdministratorsManageKeyboard.get_keyboard(bot_id),
+                disable_web_page_preview=True
+            )
         case callback_data.ActionEnum.ADMIN_LIST:
             admins = await user_role_db.get_bot_admin_ids(bot_id)
             admins_text = ""
@@ -592,9 +594,11 @@ async def admins_manage_callback_handler(query: CallbackQuery):
 
             text, entities = admins_list_text.render()
             if text != query.message.text:
-                await query.message.edit_text(**admins_list_text.as_kwargs(),
-                                              reply_markup=await InlineAdministratorsManageKeyboard.get_keyboard(bot_id),
-                                              disable_web_page_preview=True)
+                await query.message.edit_text(
+                    **admins_list_text.as_kwargs(),
+                    reply_markup=await InlineAdministratorsManageKeyboard.get_keyboard(bot_id),
+                    disable_web_page_preview=True
+                )
             else:
                 await query.answer()
         case callback_data.ActionEnum.BACK_TO_BOT_MENU:
