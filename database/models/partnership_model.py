@@ -6,23 +6,21 @@ from sqlalchemy import BigInteger, Column, ForeignKey, select, insert, delete, u
     Interval
 from sqlalchemy.ext.asyncio import AsyncEngine
 
+from database.exceptions.exceptions import KwargsException
 from database.models import Base
 from database.models.dao import Dao
-from database.exceptions import InvalidParameterFormat
 from database.models.bot_model import Bot
 from database.models.post_message_model import PostMessage
 
 from logs.config import extra_params
 
 
-class PartnershipNotFound(Exception):
+class PartnershipNotFoundError(KwargsException):
     """Raised when provided partnership not found in database"""
-    pass
 
 
-class CriteriaNotFound(Exception):
+class CriteriaNotFoundError(KwargsException):
     """Raised when provided criteria not found in database"""
-    pass
 
 
 class Criteria(Base):
@@ -106,6 +104,9 @@ class PartnershipDao(Dao):  # TODO write tests
 
     @validate_call(validate_return=True)
     async def get_partnership_by_post_message_id(self, post_message_id: int) -> PartnershipSchema:
+        """
+        :raises PartnershipNotFoundError:
+        """
         async with self.engine.begin() as conn:
             raw_res = await conn.execute(
                 select(Partnership).where(Partnership.post_message_id == post_message_id,  # noqa
@@ -115,12 +116,12 @@ class PartnershipDao(Dao):  # TODO write tests
 
         raw_res = raw_res.fetchone()
         if not raw_res:
-            raise PartnershipNotFound
+            raise PartnershipNotFoundError(post_message_id=post_message_id)
 
         res = PartnershipSchema.model_validate(raw_res)
 
         self.logger.debug(
-            f"bot_id={res.bot_id}: partnership is found: {res}",
+            f"bot_id={res.bot_id}: found partnership {res}",
             extra=extra_params(bot_id=res.bot_id, partnership_id=res.partnership_id)
         )
 
@@ -128,6 +129,9 @@ class PartnershipDao(Dao):  # TODO write tests
 
     @validate_call(validate_return=True)
     async def get_partnership_by_bot_id(self, bot_id: int) -> PartnershipSchema:
+        """
+        :raises PartnershipNotFoundError:
+        """
         async with self.engine.begin() as conn:
             raw_res = await conn.execute(
                 select(Partnership).where(Partnership.bot_id == bot_id, Partnership.is_finished == False)  # noqa
@@ -136,12 +140,12 @@ class PartnershipDao(Dao):  # TODO write tests
 
         raw_res = raw_res.fetchone()
         if not raw_res:
-            raise PartnershipNotFound
+            raise PartnershipNotFoundError(bot_id=bot_id)
 
         res = PartnershipSchema.model_validate(raw_res)
 
         self.logger.debug(
-            f"bot_id={res.bot_id}: partnership is found: {res}",
+            f"bot_id={res.bot_id}: found partnership {res}",
             extra=extra_params(bot_id=res.bot_id, partnership_id=res.partnership_id)
         )
 
@@ -149,46 +153,45 @@ class PartnershipDao(Dao):  # TODO write tests
 
     @validate_call(validate_return=True)
     async def get_partnership_by_id(self, partnership_id: int) -> PartnershipSchema:
+        """
+        :raises PartnershipNotFoundError:
+        """
         async with self.engine.begin() as conn:
             raw_res = await conn.execute(select(Partnership).where(Partnership.partnership_id == partnership_id))  # noqa
         await self.engine.dispose()
 
         raw_res = raw_res.fetchone()
         if not raw_res:
-            raise PartnershipNotFound
+            raise PartnershipNotFoundError(partnership_id=partnership_id)
 
         res = PartnershipSchema.model_validate(raw_res)
 
         self.logger.debug(
-            f"bot_id={res.bot_id}: partnership is found: {res}",
+            f"bot_id={res.bot_id}: found partnership {res}",
             extra=extra_params(bot_id=res.bot_id, partnership_id=res.partnership_id)
         )
 
         return res
 
-    @validate_call
+    @validate_call(validate_return=True)
     async def add_partnership(self, new_partnership: PartnershipSchemaWithoutId) -> int:
-        if not isinstance(new_partnership, PartnershipSchemaWithoutId):
-            raise InvalidParameterFormat(
-                "new_partnership must be type of PartnershipSchemaWithoutId")
-
+        """
+        :raises IntegrityError:
+        """
         async with self.engine.begin() as conn:
             partnership_id = (
                 await conn.execute(insert(Partnership).values(new_partnership.model_dump()))
             ).inserted_primary_key[0]
 
         self.logger.debug(
-            f"bot_id={new_partnership.bot_id}: partnership {partnership_id} is added",
+            f"bot_id={new_partnership.bot_id}: added partnership {partnership_id} {new_partnership}",
             extra=extra_params(bot_id=new_partnership.bot_id, partnership_id=partnership_id)
         )
 
         return partnership_id
 
-    @validate_call
+    @validate_call(validate_return=True)
     async def update_partnership(self, updated_partnership: PartnershipSchema) -> None:
-        if not isinstance(updated_partnership, PartnershipSchema):
-            raise InvalidParameterFormat(
-                "updated_partnership must be type of PartnershipSchema")
         async with self.engine.begin() as conn:
             await conn.execute(update(Partnership).where(Partnership.contest_id == updated_partnership.contest_id).  # noqa
                                values(**updated_partnership.model_dump(by_alias=True)))
@@ -196,16 +199,12 @@ class PartnershipDao(Dao):  # TODO write tests
 
         self.logger.debug(
             f"partnership_id={updated_partnership.partnership_id}: "
-            f"partnership {updated_partnership.partnership_id} is updated",
+            f"updated partnership {updated_partnership}",
             extra=extra_params(partnership_id=updated_partnership.partnership_id, bot_id=updated_partnership.bot_id)
         )
 
-    @validate_call
+    @validate_call(validate_return=True)
     async def delete_partnership(self, partnership: PartnershipSchema) -> None:
-        if not isinstance(partnership, PartnershipSchema):
-            raise InvalidParameterFormat(
-                "partnership must be type of PartnershipSchema")
-
         async with self.engine.begin() as conn:
             await conn.execute(
                 delete(Partnership).where(
@@ -214,10 +213,11 @@ class PartnershipDao(Dao):  # TODO write tests
             )
 
         self.logger.debug(
-            f"bot_id={partnership.bot_id}: partnership {partnership.partnership_id} is deleted",
+            f"bot_id={partnership.bot_id}: deleted partnership {partnership}",
             extra=extra_params(bot_id=partnership.bot_id, partnership_id=partnership.partnership_id)
         )
 
+    @validate_call(validate_return=True)
     async def get_partnership_criteria(self, criteria_id: int) -> CriteriaSchema:
         async with self.engine.begin() as conn:
             raw_res = await conn.execute(select(Criteria).where(Criteria.criteria_id == criteria_id))  # noqa
@@ -226,7 +226,7 @@ class PartnershipDao(Dao):  # TODO write tests
 
         raw_res = raw_res.fetchone()
         if not raw_res:
-            raise CriteriaNotFound
+            raise CriteriaNotFoundError(criteria_id=criteria_id)
 
         res = CriteriaSchema.model_validate(raw_res)
 
@@ -237,7 +237,11 @@ class PartnershipDao(Dao):  # TODO write tests
 
         return res
 
-    async def create_partnership_criteria(self, new_criteria: CriteriaSchemaWithoutId) -> int:
+    @validate_call(validate_return=True)
+    async def add_partnership_criteria(self, new_criteria: CriteriaSchemaWithoutId) -> int:
+        """
+        :raises IntegrityError:
+        """
         async with self.engine.begin() as conn:
             criteria_id = await conn.execute(insert(Criteria).values(
                 **new_criteria.model_dump(by_alias=True))
@@ -245,12 +249,13 @@ class PartnershipDao(Dao):  # TODO write tests
         await self.engine.dispose()
 
         self.logger.debug(
-            f"criteria_id={criteria_id}: criteria added to database",
+            f"criteria_id={criteria_id}: added criteria {new_criteria}",
             extra=extra_params(criteria_id=criteria_id)
         )
 
         return criteria_id
 
+    @validate_call(validate_return=True)
     async def update_partnership_criteria(self, updated_criteria: CriteriaSchema):
         async with self.engine.begin() as conn:
             await conn.execute(update(Criteria).where(Criteria.criteria_id == updated_criteria.criteria_id).  # noqa
@@ -258,6 +263,6 @@ class PartnershipDao(Dao):  # TODO write tests
         await self.engine.dispose()
 
         self.logger.debug(
-            f"criteria_id={updated_criteria.criteria_id}: criteria {updated_criteria.criteria_id} is updated",
+            f"criteria_id={updated_criteria.criteria_id}: updated criteria {updated_criteria}",
             extra=extra_params(criteria_id=updated_criteria.criteria_id)
         )

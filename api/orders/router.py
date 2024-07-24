@@ -9,7 +9,7 @@ from fastapi import APIRouter, Depends, Header
 from api.utils import check_admin_authorization, HTTPBadRequest, HTTPInternalError, RESPONSES_DICT
 
 from database.config import order_db
-from database.models.order_model import OrderNotFound, OrderSchema
+from database.models.order_model import OrderNotFoundError, OrderSchema
 
 from logs.config import api_logger, extra_params
 
@@ -29,7 +29,7 @@ async def generate_order_id_api() -> str:
 
     try:
         await order_db.get_order(order_id)
-    except OrderNotFound:
+    except OrderNotFoundError:
         api_logger.debug(
             f"order_id={random_string}: order_id has been generated",
             extra=extra_params(order_id=random_string)

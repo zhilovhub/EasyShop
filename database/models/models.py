@@ -1,7 +1,6 @@
 from sqlalchemy.ext.asyncio import create_async_engine
 
 from database.models.bot_model import BotDao
-from database.models.adv_model import AdvDao
 from database.models.user_model import UserDao
 from database.models.order_model import OrderDao
 from database.models.product_model import ProductDao
@@ -30,7 +29,6 @@ class Database:
         self.logger = logger
 
         self.bot_dao = BotDao(self.engine, self.logger)
-        self.adv_dao = AdvDao(self.engine, self.logger)
         self.user_dao = UserDao(self.engine, self.logger)
         self.order_dao = OrderDao(self.engine, self.logger)
         self.product_dao = ProductDao(self.engine, self.logger)
@@ -51,6 +49,7 @@ class Database:
         self.logger.debug("Database class is initialized")
 
     async def connect(self) -> None:
+        """Creates all tables"""
         async with self.engine.begin() as conn:
             await conn.run_sync(Base.metadata.create_all)
 
@@ -58,9 +57,6 @@ class Database:
 
     def get_bot_dao(self) -> BotDao:
         return self.bot_dao
-
-    def get_adv_dao(self) -> AdvDao:
-        return self.adv_dao
 
     def get_user_dao(self) -> UserDao:
         return self.user_dao

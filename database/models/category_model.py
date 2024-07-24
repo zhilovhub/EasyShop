@@ -3,7 +3,7 @@ from pydantic import BaseModel, ConfigDict, Field, validate_call
 from sqlalchemy import Column, BigInteger, String, select, ForeignKey, insert, update, delete
 from sqlalchemy.ext.asyncio import AsyncEngine
 
-from database.exceptions import InvalidParameterFormat
+from database.exceptions.exceptions import KwargsException
 
 from database.models import Base
 from database.models.dao import Dao
@@ -12,12 +12,12 @@ from database.models.bot_model import Bot
 from logs.config import extra_params
 
 
-class SameCategoryNameAlreadyExists(Exception):
-    """Raised when trying to add category with name already exists in bot"""
+class CategoryNotFoundError(KwargsException):
+    """Raised when provided category not found in database"""
 
-    def __init__(self, message: str, cat_id: int = 0) -> None:
-        super().__init__(message)
-        self.cat_id = cat_id
+
+class CategoryNameAlreadyExistsError(KwargsException):
+    """Raised when provided category name is already taken from bot"""
 
 
 class Category(Base):
@@ -45,6 +45,11 @@ class CategoryDao(Dao):  # TODO write tests
 
     @validate_call(validate_return=True)
     async def get_all_categories(self, bot_id: int) -> list[CategorySchema]:
+        """
+
+        :param bot_id: bot_id from search
+        :return: list of CategorySchema
+        """
         async with self.engine.begin() as conn:
             raw_res = await conn.execute(
                 select(Category).where(Category.bot_id == bot_id)
@@ -63,8 +68,14 @@ class CategoryDao(Dao):  # TODO write tests
 
         return res
 
-    @validate_call
-    async def get_category(self, category_id: int) -> CategorySchema | None:
+    @validate_call(validate_return=True)
+    async def get_category(self, category_id: int) -> CategorySchema:
+        """
+        :param category_id: category_id
+        :return: CategorySchema
+
+        :raises CategoryNotFoundError: no category in db
+        """
         async with self.engine.begin() as conn:
             raw_res = await conn.execute(
                 select(Category).where(Category.id == category_id)
@@ -72,60 +83,74 @@ class CategoryDao(Dao):  # TODO write tests
         await self.engine.dispose()
 
         res = raw_res.fetchone()
+        if res is None:
+            raise CategoryNotFoundError(category_id=category_id)
 
-        if res is not None:
-            self.logger.debug(
-                f"category_id={category_id}: category {category_id} is found",
-                extra=extra_params(category_id=category_id)
-            )
+        res = CategorySchema.model_validate(res)
+        self.logger.debug(
+            f"category_id={category_id}: found category {res}",
+            extra=extra_params(category_id=category_id)
+        )
 
         return res
 
-    @validate_call
+    @validate_call(validate_return=True)
     async def add_category(self, new_category: CategorySchemaWithoutId) -> int:
-        if type(new_category) != CategorySchemaWithoutId:
-            raise InvalidParameterFormat("category_schema must be type of CategorySchemaWithoutId")
-
+        """
+        :raises CategoryNameAlreadyExistsError:
+        """
         async with self.engine.begin() as conn:
             all_categories = await self.get_all_categories(new_category.bot_id)
             for cat in all_categories:
                 if new_category.name == cat.name:
-                    raise SameCategoryNameAlreadyExists(
-                        f"category name {new_category.name} already exists in bot_id = {new_category.bot_id}",
-                        cat_id=cat.id)
+                    raise CategoryNameAlreadyExistsError(
+                        category_name=new_category.name,
+                        bot_id=new_category.bot_id,
+                        category_id=cat.id
+                    )
             cat_id = (await conn.execute(insert(Category).values(new_category.model_dump()))).inserted_primary_key[0]
 
         self.logger.debug(
-            f"category_id={cat_id}: category {cat_id} is added to database",
+            f"category_id={cat_id}: new added category {new_category}",
             extra=extra_params(bot_id=new_category.bot_id, category_id=cat_id)
         )
 
         return cat_id
 
-    @validate_call
+    @validate_call(validate_return=True)
     async def update_category(self, updated_category: CategorySchema) -> None:
-        await self.get_category(updated_category.id)
+        """
+        :raises CategoryNameAlreadyExistsError:
+        """
+        bot_id, category_id = updated_category.bot_id, updated_category.id
+        await self.get_category(category_id)
+
         async with self.engine.begin() as conn:
-            all_categories = await self.get_all_categories(updated_category.bot_id)
+            all_categories = await self.get_all_categories(bot_id)
             if updated_category.name in list(map(lambda x: x.name, all_categories)):
-                raise SameCategoryNameAlreadyExists(
-                    f"category name {updated_category.name} already exists in bot_id = {updated_category.bot_id}"
+                raise CategoryNameAlreadyExistsError(
+                    category_name=updated_category.name,
+                    bot_id=bot_id,
+                    category_id=category_id
                 )
             await conn.execute(
-                update(Category).where(Category.id == updated_category.id).values(updated_category.model_dump())
+                update(Category).where(Category.id == category_id).values(updated_category.model_dump())
             )
 
         self.logger.debug(
-            f"category_id={updated_category.id}: category {updated_category.id} is updated",
-            extra=extra_params(bot_id=updated_category.bot_id, category_id=updated_category.id)
+            f"category_id={category_id}: updated category {updated_category}",
+            extra=extra_params(bot_id=bot_id, category_id=category_id)
         )
 
     @validate_call
-    async def delete_category(self, category_id: int):
+    async def delete_category(self, category_id: int) -> None:
+        """
+        Deletes the category from database
+        """
         async with self.engine.begin() as conn:
             await conn.execute(delete(Category).where(Category.id == category_id))
 
         self.logger.debug(
-            f"category_id={category_id}: category {category_id} is deleted",
+            f"category_id={category_id}: deleted category {category_id}",
             extra=extra_params(category_id=category_id)
         )

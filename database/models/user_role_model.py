@@ -4,17 +4,21 @@ from sqlalchemy.ext.asyncio import AsyncEngine
 from sqlalchemy import select, update, delete, insert
 from sqlalchemy import Column, String, TypeDecorator, Unicode, Dialect, ForeignKey
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, validate_call
 
 from database.models import Base
-from database.exceptions import *
 from database.models.dao import Dao
 from database.models.bot_model import Bot, BotSchema
 from database.models.user_model import User
+from database.exceptions.exceptions import KwargsException
 
 from typing import *
 
 from logs.config import extra_params
+
+
+class UserRoleNotFoundError(KwargsException):
+    """Raised when provided user's role not found in database"""
 
 
 class UserRoleValues(Enum):
@@ -23,6 +27,7 @@ class UserRoleValues(Enum):
 
 
 class UserRoleEnum(TypeDecorator):  # noqa
+    """Class to convert Enum values to db values (and reverse)"""
     impl = Unicode
     cache_ok = True
 
@@ -57,12 +62,16 @@ class UserRoleDao(Dao):
     def __init__(self, engine: AsyncEngine, logger) -> None:
         super().__init__(engine, logger)
 
+    @validate_call(validate_return=True)
     async def get_user_bots(self, user_id: int) -> list[BotSchema]:
+        """
+        :raises UserRoleNotFoundError
+        """
         async with self.engine.begin() as conn:
             raw_data = await conn.execute(select(UserRole).where(UserRole.user_id == user_id))
             raw_data = raw_data.fetchall()
             if raw_data is None:
-                raise UserRoleNotFound(f"user_id={user_id} user role not found in database.")
+                raise UserRoleNotFoundError(user_id=user_id)
             data = []
             for user_role in raw_data:
                 data.append(UserRoleSchema.model_validate(user_role))
@@ -75,9 +84,18 @@ class UserRoleDao(Dao):
                 if raw_bot:
                     bots.append(BotSchema.model_validate(raw_bot))
 
+        self.logger.debug(
+            f"user_id={user_id}: has {len(bots)} roles in different bots",
+            extra=extra_params(user_id=user_id)
+        )
+
         return bots
 
+    @validate_call(validate_return=True)
     async def get_user_role(self, user_id: int, bot_id: int) -> UserRoleSchema:
+        """
+        :raises UserRoleNotFoundError
+        """
         async with self.engine.begin() as conn:
             raw_res = await conn.execute(select(UserRole).where(UserRole.user_id == user_id,
                                                                 UserRole.bot_id == bot_id))
@@ -85,30 +103,32 @@ class UserRoleDao(Dao):
 
         res = raw_res.fetchone()
         if res is None:
-            raise UserRoleNotFound(f"user_id={user_id} bot_id={bot_id} user role not found in database.")
+            raise UserRoleNotFoundError(user_id=user_id, bot_id=bot_id)
 
         res = UserRoleSchema.model_validate(res)
 
         self.logger.debug(
-            f"user_id={user_id} bot_id={bot_id}: user role is found",
+            f"user_id={user_id} bot_id={bot_id}: found user_role {res}",
             extra=extra_params(user_id=user_id, bot_id=bot_id)
         )
 
         return res
 
+    @validate_call(validate_return=True)
     async def add_user_role(self, new_role: UserRoleSchema) -> None:
-        try:
-            await self.get_user_role(user_id=new_role.user_id, bot_id=new_role.bot_id)
-            raise InstanceAlreadyExists(
-                f"user_role with user_id={new_role.user_id} bot_id={new_role.bot_id} already exists in db.")
-        except UserRoleNotFound:
-            async with self.engine.begin() as conn:
-                await conn.execute(insert(UserRole).values(**new_role.model_dump(by_alias=True)))
-            await self.engine.dispose()
-        self.logger.debug(
-            f"user_id={new_role.user_id} bot_id={new_role.bot_id}: new user role created with role {new_role.role}",
-            extra=extra_params(user_id=new_role.user_id, bot_id=new_role.bot_id))
+        """
+        :raises IntegrityError
+        """
+        async with self.engine.begin() as conn:
+            await conn.execute(insert(UserRole).values(**new_role.model_dump(by_alias=True)))
+        await self.engine.dispose()
 
+        self.logger.debug(
+            f"user_id={new_role.user_id} bot_id={new_role.bot_id}: added user_role {new_role}",
+            extra=extra_params(user_id=new_role.user_id, bot_id=new_role.bot_id)
+        )
+
+    @validate_call(validate_return=True)
     async def update_user_role(self, updated_role: UserRoleSchema) -> None:
         async with self.engine.begin() as conn:
             await conn.execute(update(UserRole).where(UserRole.user_id == updated_role.user_id,
@@ -117,10 +137,11 @@ class UserRoleDao(Dao):
         await self.engine.dispose()
 
         self.logger.debug(
-            f"user_id={updated_role.user_id} bot_id={updated_role.bot_id}: user role is updated",
+            f"user_id={updated_role.user_id} bot_id={updated_role.bot_id}: updated user_role {updated_role}",
             extra=extra_params(user_id=updated_role.user_id, bot_id=updated_role.bot_id)
         )
 
+    @validate_call(validate_return=True)
     async def del_user_role(self, user_id: int, bot_id: int) -> None:
         async with self.engine.begin() as conn:
             await conn.execute(delete(UserRole).where(UserRole.user_id == user_id,
@@ -128,11 +149,15 @@ class UserRoleDao(Dao):
         await self.engine.dispose()
 
         self.logger.debug(
-            f"user_id={user_id} bot_id={bot_id}: user role is deleted",
+            f"user_id={user_id} bot_id={bot_id}: deleted user_role",
             extra=extra_params(user_id=user_id, bot_id=bot_id)
         )
 
+    @validate_call(validate_return=True)
     async def get_bot_admin_ids(self, bot_id: int) -> list[int]:
+        """
+        Returns all user ids who has ADMINISTRATOR role in bot
+        """
         async with self.engine.begin() as conn:
             raw_res = await conn.execute(select(UserRole).where(UserRole.bot_id == bot_id,
                                                                 UserRole.role == UserRoleValues.ADMINISTRATOR))

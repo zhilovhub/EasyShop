@@ -10,15 +10,15 @@ from api.utils import (check_admin_authorization, SearchWordMustNotBeEmpty, HTTP
                        HTTPBadRequest, HTTPConflict, RESPONSES_DICT, HTTPCustomBotIsOffline, HTTPBotNotFound)
 from common_utils.env_config import FILES_PATH
 
-from database.models.bot_model import BotNotFound
+from database.models.bot_model import BotNotFoundError
 from database.config import product_db, category_db, bot_db
 from database.models.product_model import (
     ProductSchema,
-    ProductNotFound,
+    ProductNotFoundError,
     ProductWithoutId,
     ProductFilter,
     ProductFilterWithoutBot,
-    FilterNotFound,
+    FilterNotFoundError,
     PRODUCT_FILTERS)
 
 from logs.config import api_logger, extra_params
@@ -66,7 +66,7 @@ async def get_all_products_api(payload: GetProductsRequest = Depends(
         GetProductsRequest)) -> list[ProductSchema]:
     try:
         bot = await bot_db.get_bot(payload.bot_id)
-    except BotNotFound:
+    except BotNotFoundError:
         raise HTTPBotNotFound(bot_id=payload.bot_id)
 
     if bot.status != "online":
@@ -119,7 +119,7 @@ async def get_all_products_api(payload: GetProductsRequest = Depends(
                                                          price_min=payload.price_min,
                                                          price_max=payload.price_max,
                                                          filters=filters)
-    except FilterNotFound as ex:
+    except FilterNotFoundError as ex:
         api_logger.error(
             f"bot_id={payload.bot_id}: {ex.message}",
             extra=extra_params(bot_id=payload.bot_id)
@@ -154,7 +154,7 @@ async def get_product_api(bot_id: int, product_id: int) -> ProductSchema:
     try:
         product = await product_db.get_product(product_id)
 
-    except ProductNotFound as e:
+    except ProductNotFoundError as e:
         api_logger.error(
             f"bot_id={bot_id}: product_id={product_id} is not found in database",
             extra=extra_params(bot_id=bot_id, product_id=product_id),
@@ -243,7 +243,7 @@ async def create_file(bot_id: int,
             product.picture.append(photo_path)
         await product_db.update_product(product)
 
-    except ProductNotFound as e:
+    except ProductNotFoundError as e:
         api_logger.error(
             f"bot_id={bot_id}: product_id={product_id} is not found in database",
             extra=extra_params(bot_id=bot_id, product_id=product_id),
@@ -300,7 +300,7 @@ async def delete_product_api(
 
     try:
         await product_db.delete_product(product_id)
-    except ProductNotFound as e:
+    except ProductNotFoundError as e:
         api_logger.error(
             f"bot_id={bot_id}: product_id={product_id} is not found in database",
             extra=extra_params(bot_id=bot_id, product_id=product_id),

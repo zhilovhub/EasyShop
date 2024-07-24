@@ -1,9 +1,9 @@
 import aiohttp
 
 from common_utils.env_config import LOCAL_API_SERVER_PORT, LOCAL_API_SERVER_HOST
+from common_utils.exceptions.local_api_exceptions import LocalAPIException
 
 from database.config import bot_db
-from database.exceptions import LocalAPIException
 
 
 async def start_custom_bot(bot_id: int):

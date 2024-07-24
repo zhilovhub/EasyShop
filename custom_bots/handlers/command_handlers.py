@@ -9,8 +9,8 @@ from custom_bots.utils.custom_bot_options import get_option
 from custom_bots.keyboards.custom_bot_menu_keyboards import ReplyCustomBotMenuKeyboard, InlineShopCustomBotKeyboard
 
 from database.config import custom_bot_user_db, bot_db
-from database.models.bot_model import BotNotFound
-from database.models.custom_bot_user_model import CustomBotUserNotFound
+from database.models.bot_model import BotNotFoundError
+from database.models.custom_bot_user_model import CustomBotUserNotFoundError
 
 from logs.config import custom_bot_logger, extra_params
 
@@ -30,13 +30,14 @@ async def start_cmd(message: Message, state: FSMContext):
 
         try:
             await custom_bot_user_db.get_custom_bot_user(bot.bot_id, user_id)
-        except CustomBotUserNotFound:
+        except CustomBotUserNotFoundError:
             custom_bot_logger.info(
                 f"user_id={user_id}: user not found in database, trying to add to it",
                 extra=extra_params(user_id=user_id, bot_id=bot.bot_id)
             )
             await custom_bot_user_db.add_custom_bot_user(bot.bot_id, user_id)
-    except BotNotFound:
+    except BotNotFoundError as e:
+        custom_bot_logger.warning("Бот не инициализирован", exc_info=e)
         await Bot(message.bot.token).delete_webhook()
         return await message.answer("Бот не инициализирован")
 

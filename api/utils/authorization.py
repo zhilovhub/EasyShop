@@ -10,7 +10,7 @@ from fastapi import HTTPException
 from common_utils.env_config import API_DEBUG_MODE, TELEGRAM_TOKEN
 
 from database.config import bot_db
-from database.models.bot_model import BotNotFound
+from database.models.bot_model import BotNotFoundError
 
 
 async def check_admin_authorization(bot_id: int, data_string: str) -> bool:
@@ -27,7 +27,7 @@ async def check_admin_authorization(bot_id: int, data_string: str) -> bool:
 
         try:
             bot = await bot_db.get_bot(bot_id)
-        except BotNotFound:
+        except BotNotFoundError:
             raise HTTPException(status_code=404, detail=f"Bot with provided id ({bot_id}) not found in database.")
 
         if bot.created_by != json.loads(parsed_data['user'])['id']:

@@ -25,10 +25,10 @@ from bot.keyboards.main_menu_keyboards import ReplyBotMenuKeyboard, ReplyBackBot
 from bot.keyboards.stock_menu_keyboards import InlineStockMenuKeyboard, InlineWebStockKeyboard
 from bot.keyboards.post_message_keyboards import InlinePostMessageMenuKeyboard
 from bot.post_message.post_message_create import post_message_create
-from common_utils.bot_settings_config import BOT_PROPERTIES
 
 from common_utils import generate_admin_invite_link
 from common_utils.env_config import FILES_PATH
+from common_utils.bot_settings_config import BOT_PROPERTIES
 from common_utils.order_utils.order_type import OrderType
 from common_utils.order_utils.order_utils import create_order
 from common_utils.storage.custom_bot_storage import custom_bot_storage
@@ -39,14 +39,13 @@ from common_utils.keyboards.keyboards import (InlineBotMenuKeyboard, InlineBotSe
 
 from database.config import (bot_db, product_db, order_db, product_review_db, user_db, custom_bot_user_db, mailing_db,
                              user_role_db)
-from database.exceptions import InstanceAlreadyExists
-from database.models.bot_model import BotSchemaWithoutId
+from database.models.bot_model import BotSchemaWithoutId, BotIntegrityError
 from database.models.user_role_model import UserRoleSchema, UserRoleValues
-from database.models.order_model import OrderSchema, OrderNotFound, OrderStatusValues
-from database.models.mailing_model import MailingNotFound
+from database.models.order_model import OrderSchema, OrderNotFoundError, OrderStatusValues
+from database.models.mailing_model import MailingNotFoundError
 from database.models.product_model import ProductWithoutId, NotEnoughProductsInStockToReduce
 from database.models.post_message_model import PostMessageType
-from database.models.product_review_model import ProductReviewNotFound
+from database.models.product_review_model import ProductReviewNotFoundError
 
 from logs.config import logger, extra_params
 
@@ -85,7 +84,8 @@ async def handle_reply_to_question(message: Message, state: FSMContext):
     order_id = question_messages_data[question_message_id]["order_id"]
     try:
         order = await order_db.get_order(order_id)
-    except OrderNotFound:
+    except OrderNotFoundError as e:
+        logger.warning("", exc_info=e, extra=extra_params(user_id=message.from_user.id))
         return await message.answer(f"Заказ с номером №{order_id} не найден")
 
     custom_bot = await bot_db.get_bot_by_created_by(created_by=message.from_user.id)
@@ -122,7 +122,8 @@ async def handler_order_cancel_callback(query: CallbackQuery, state: FSMContext)
 
     try:
         order = await order_db.get_order(callback_data.order_id)
-    except OrderNotFound:
+    except OrderNotFoundError as e:
+        logger.warning("", exc_info=e, extra=extra_params(user_id=query.from_user.id))
         await query.answer("Ошибка при работе с заказом, возможно статус уже изменился.", show_alert=True)
         return await query.message.edit_reply_markup(None)
 
@@ -176,7 +177,8 @@ async def handle_review_request(query: CallbackQuery):
     callback_data = InlineAcceptReviewKeyboard.Callback.model_validate_json(query.data)
     try:
         review = await product_review_db.get_product_review(callback_data.product_review_id)
-    except ProductReviewNotFound:
+    except ProductReviewNotFoundError as e:
+        logger.warning("", exc_info=e, extra=extra_params(user_id=query.from_user.id))
         return await query.answer("Продукт уже удален", show_alert=True)
 
     match callback_data.a:
@@ -204,7 +206,8 @@ async def handle_callback(query: CallbackQuery, state: FSMContext):
 
     try:
         order = await order_db.get_order(callback_data.order_id)
-    except OrderNotFound:
+    except OrderNotFoundError as e:
+        logger.warning("", exc_info=e, extra=extra_params(user_id=query.from_user.id))
         await query.answer("Ошибка при работе с заказом, возможно статус уже изменился.", show_alert=True)
         return await query.message.edit_reply_markup(None)
 
@@ -289,7 +292,8 @@ async def handle_callback(query: CallbackQuery, state: FSMContext):
 
 @admin_bot_menu_router.message(States.WAITING_FOR_TOKEN)
 async def waiting_for_the_token_handler(message: Message, state: FSMContext):
-    user = await user_db.get_user(message.from_user.id)
+    user_id = message.from_user.id
+    user = await user_db.get_user(user_id)
     lang = user.locale
     token = message.text
     try:
@@ -303,7 +307,7 @@ async def waiting_for_the_token_handler(message: Message, state: FSMContext):
             bot_token=token,  # noqa
             status="new",
             created_at=datetime.utcnow(),
-            created_by=message.from_user.id,
+            created_by=user_id,
             settings={"start_msg": MessageTexts.DEFAULT_START_MESSAGE.value,
                       "default_msg":
                           f"Приветствую, этот бот создан с помощью @{(await bot.get_me()).username}",
@@ -317,7 +321,8 @@ async def waiting_for_the_token_handler(message: Message, state: FSMContext):
         return await message.answer(MessageTexts.INCORRECT_BOT_TOKEN_MESSAGE.value)
     except TelegramUnauthorizedError:
         return await message.answer(MessageTexts.BOT_WITH_TOKEN_NOT_FOUND_MESSAGE.value)
-    except InstanceAlreadyExists:
+    except BotIntegrityError as e:
+        logger.warning("", exc_info=e, extra=extra_params(user_id=user_id))
         return await message.answer("Бот с таким токеном в системе уже найден.\n"
                                     "Введите другой токен или перейдите в список ботов и поищите Вашего бота там")
     except ClientConnectorError:
@@ -330,14 +335,14 @@ async def waiting_for_the_token_handler(message: Message, state: FSMContext):
         return await message.answer(":( Произошла ошибка при добавлении бота, попробуйте еще раз позже")
     user_bot = await bot_db.get_bot(bot_id)
 
-    user_role = UserRoleSchema(user_id=message.from_user.id, bot_id=user_bot.bot_id, role=UserRoleValues.OWNER)
+    user_role = UserRoleSchema(user_id=user_id, bot_id=user_bot.bot_id, role=UserRoleValues.OWNER)
     try:
         await user_role_db.add_user_role(user_role)
-    except InstanceAlreadyExists:
+    except IntegrityError:
         await user_role_db.update_user_role(user_role)
-    logger.info(f"user_id={message.from_user.id} bot_id={bot_id} : set user role to owner for user "
-                f"{message.from_user.id} of bot {bot_id}",
-                extra=extra_params(user_id=message.from_user.id, bot_id=bot_id))
+    logger.info(f"user_id={user_id} bot_id={bot_id} : set user role to owner for user "
+                f"{user_id} of bot {bot_id}",
+                extra=extra_params(user_id=user_id, bot_id=bot_id))
 
     await message.answer(
         MessageTexts.BOT_INITIALIZING_MESSAGE.value.format(bot_fullname, bot_username),
@@ -345,7 +350,7 @@ async def waiting_for_the_token_handler(message: Message, state: FSMContext):
     )
     await message.answer(
         MessageTexts.BOT_MENU_MESSAGE.value.format(bot_username),
-        reply_markup=await InlineBotMenuKeyboard.get_keyboard(user_bot.bot_id, message.from_user.id)
+        reply_markup=await InlineBotMenuKeyboard.get_keyboard(user_bot.bot_id, user_id)
     )
     await state.set_state(States.BOT_MENU)
     await state.set_data({"bot_id": bot_id})
@@ -474,7 +479,7 @@ async def bot_menu_callback_handler(query: CallbackQuery, state: FSMContext):
                 mailing = await mailing_db.get_mailing_by_bot_id(bot_id=bot_id)
                 if callback_data.a == callback_data.ActionEnum.MAILING_ADD:
                     await query.answer("Рассылка уже создана", show_alert=True)
-            except MailingNotFound:
+            except MailingNotFoundError:
                 mailing = None
 
             if not mailing and callback_data.a == callback_data.ActionEnum.MAILING_ADD:

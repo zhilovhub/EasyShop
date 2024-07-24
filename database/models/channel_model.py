@@ -4,18 +4,16 @@ from sqlalchemy import BigInteger, Column, ForeignKey, UniqueConstraint, \
     select, insert, delete, BOOLEAN, update
 from sqlalchemy.ext.asyncio import AsyncEngine
 
-
 from database.models import Base
-from database.exceptions import InvalidParameterFormat
 from database.models.dao import Dao
 from database.models.bot_model import Bot
+from database.exceptions.exceptions import KwargsException
 
 from logs.config import extra_params
 
 
-class ChannelNotFound(Exception):
+class ChannelNotFoundError(KwargsException):
     """Raised when provided channel not found in database"""
-    pass
 
 
 class Channel(Base):
@@ -46,6 +44,9 @@ class ChannelDao(Dao):  # TODO write tests
 
     @validate_call(validate_return=True)
     async def get_all_channels(self, bot_id: int) -> list[ChannelSchema]:
+        """
+        Returns list of ChannelSchema of bot_id
+        """
         async with self.engine.begin() as conn:
             raw_res = await conn.execute(
                 select(Channel).where(Channel.bot_id == bot_id)
@@ -66,59 +67,62 @@ class ChannelDao(Dao):  # TODO write tests
 
     @validate_call(validate_return=True)
     async def get_channel(self, channel_id: int) -> ChannelSchema:
+        """
+        :raises ChannelNotFoundError:
+        """
         async with self.engine.begin() as conn:
             raw_res = await conn.execute(select(Channel).where(Channel.channel_id == channel_id))
         await self.engine.dispose()
 
         raw_res = raw_res.fetchone()
         if not raw_res:
-            raise ChannelNotFound
+            raise ChannelNotFoundError(
+                channel_id=channel_id
+            )
 
         res = ChannelSchema.model_validate(raw_res)
 
         self.logger.debug(
-            f"bot_id={res.bot_id}: channel {channel_id} is found",
+            f"bot_id={res.bot_id}: found channel {res}",
             extra=extra_params(bot_id=res.bot_id, channel_id=channel_id)
         )
 
         return res
 
-    @validate_call
+    @validate_call(validate_return=True)
     async def add_channel(self, new_channel: ChannelSchema) -> None:
-        if not isinstance(new_channel, ChannelSchema):
-            raise InvalidParameterFormat(
-                "new_channel must be type of ChannelSchema")
-
+        """
+        :raises IntegrityError:
+        """
         async with self.engine.begin() as conn:
             await conn.execute(insert(Channel).values(new_channel.model_dump()))
 
         self.logger.debug(
-            f"bot_id={new_channel.bot_id}: channel {new_channel.channel_id} is added",
+            f"bot_id={new_channel.bot_id}: added channel {new_channel}",
             extra=extra_params(bot_id=new_channel.bot_id,
                                channel_id=new_channel.channel_id)
         )
 
-    @validate_call
+    @validate_call(validate_return=True)
     async def update_channel(self, updated_channel: ChannelSchema) -> None:
-        if not isinstance(updated_channel, ChannelSchema):
-            raise InvalidParameterFormat(
-                "new_channel must be type of ChannelSchema")
+        """
+        Updates Channel in database
+        """
         async with self.engine.begin() as conn:
             await conn.execute(update(Channel).where(Channel.channel_id == updated_channel.channel_id).
                                values(**updated_channel.model_dump(by_alias=True)))
         await self.engine.dispose()
 
         self.logger.debug(
-            f"channel_id={updated_channel.channel_id}: channel {updated_channel.channel_id} is updated",
+            f"channel_id={updated_channel.channel_id}: updated channel {updated_channel}",
             extra=extra_params(channel_id=updated_channel.channel_id, bot_id=updated_channel.bot_id)
         )
 
-    @validate_call
+    @validate_call(validate_return=True)
     async def delete_channel(self, channel: ChannelSchema) -> None:
-        if not isinstance(channel, ChannelSchema):
-            raise InvalidParameterFormat(
-                "new_channel must be type of ChannelSchema")
-
+        """
+        Deletes Channel from database
+        """
         async with self.engine.begin() as conn:
             await conn.execute(
                 delete(Channel).where(
@@ -127,7 +131,7 @@ class ChannelDao(Dao):  # TODO write tests
             )
 
         self.logger.debug(
-            f"bot_id={channel.bot_id}: channel {channel.channel_id} is deleted",
+            f"bot_id={channel.bot_id}: deleted channel {channel}",
             extra=extra_params(bot_id=channel.bot_id,
                                channel_id=channel.channel_id)
         )

@@ -3,7 +3,7 @@ from aiogram.types import CallbackQuery
 from bot.keyboards.post_message_keyboards import UnknownPostMessageType
 
 from database.config import post_message_db, contest_db
-from database.models.post_message_model import PostMessageSchema, PostMessageNotFound, PostMessageType
+from database.models.post_message_model import PostMessageSchema, PostMessageNotFoundError, PostMessageType
 from database.models.post_message_media_files import PostMessageMediaFileSchema
 
 from logs.config import extra_params, logger
@@ -59,7 +59,7 @@ async def get_post_message(
     try:
         post_message = await post_message_db.get_post_message(post_message_id)
         return post_message
-    except PostMessageNotFound as e:
+    except PostMessageNotFoundError as e:
         logger.info(
             f"user_id={user_id}: tried to edit post_message_id={post_message_id} but it doesn't exist",
             extra=extra_params(user_id=user_id, bot_idf=bot_id, post_message_id=post_message_id)

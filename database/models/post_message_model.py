@@ -9,9 +9,9 @@ from sqlalchemy import BigInteger, Column, ForeignKey, select, insert, delete, B
 from sqlalchemy.ext.asyncio import AsyncEngine
 
 from database.models import Base
-from database.exceptions import InvalidParameterFormat
 from database.models.dao import Dao
 from database.models.bot_model import Bot
+from database.exceptions.exceptions import KwargsException
 
 from logs.config import extra_params
 
@@ -24,12 +24,12 @@ class PostMessageType(Enum):
     PARTNERSHIP_POST = "4"
 
 
-class PostMessageNotFound(Exception):
+class PostMessageNotFoundError(KwargsException):
     """Raised when provided PostMessage not found in database"""
-    pass
 
 
 class PostMessageTypeModel(TypeDecorator):  # noqa
+    """Class to convert Enum values to db values (and reverse)"""
     impl = Unicode
     cache_ok = True
 
@@ -113,6 +113,9 @@ class PostMessageDao(Dao):  # TODO write tests
 
     @validate_call(validate_return=True)
     async def get_post_message(self, post_message_id: int) -> PostMessageSchema:
+        """
+        :raises PostMessageNotFoundError:
+        """
         async with self.engine.begin() as conn:
             raw_res = await conn.execute(
                 select(PostMessage).where(and_(PostMessage.post_message_id == post_message_id, or_(PostMessage.is_sent == False, and_(PostMessage.is_sent == True, PostMessage.is_running == True))))  # noqa: E712
@@ -121,12 +124,12 @@ class PostMessageDao(Dao):  # TODO write tests
 
         raw_res = raw_res.fetchone()
         if not raw_res:
-            raise PostMessageNotFound
+            raise PostMessageNotFoundError(post_message_id=post_message_id)
 
         res = PostMessageSchema.model_validate(raw_res)
 
         self.logger.debug(
-            f"bot_id={res.bot_id}: post_message {res.post_message_id} is found",
+            f"bot_id={res.bot_id}: found post_message {post_message_id}",
             extra=extra_params(post_message_id=post_message_id, bot_id=res.bot_id)
         )
 
@@ -134,6 +137,9 @@ class PostMessageDao(Dao):  # TODO write tests
 
     @validate_call(validate_return=True)
     async def get_post_message_by_bot_id(self, bot_id: int, post_message_type: PostMessageType) -> PostMessageSchema:
+        """
+        :raises PostMessageNotFoundError:
+        """
         async with self.engine.begin() as conn:
             raw_res = await conn.execute(
                 select(PostMessage).where(
@@ -151,36 +157,36 @@ class PostMessageDao(Dao):  # TODO write tests
 
         raw_res = raw_res.fetchone()
         if not raw_res:
-            raise PostMessageNotFound
+            raise PostMessageNotFoundError(bot_id=bot_id, post_message_type=post_message_type)
 
         res = PostMessageSchema.model_validate(raw_res)
 
         self.logger.debug(
-            f"bot_id={res.bot_id}: post_message {res.post_message_id} is found",
+            f"bot_id={res.bot_id}: found post_message {res}",
             extra=extra_params(post_message_id=res.post_message_id, bot_id=bot_id)
         )
 
         return res
 
-    @validate_call
+    @validate_call(validate_return=True)
     async def add_post_message(self, new_post_message: PostMessageSchemaWithoutId) -> int:
-        if type(new_post_message) != PostMessageSchemaWithoutId:
-            raise InvalidParameterFormat("new_post_message must be type of PostMessageSchema")
-
+        """
+        :raises IntegrityError:
+        """
         async with self.engine.begin() as conn:
             post_message_id = (
                 await conn.execute(insert(PostMessage).values(new_post_message.model_dump()))
             ).inserted_primary_key[0]
 
         self.logger.debug(
-            f"bot_id={new_post_message.bot_id}: post_message_id {post_message_id} is added",
+            f"bot_id={new_post_message.bot_id}: added post_message_id {post_message_id} -> {new_post_message}",
             extra=extra_params(post_message_id=post_message_id, bot_id=new_post_message.bot_id)
         )
 
         return post_message_id
 
-    @validate_call
-    async def update_post_message(self, updated_post_message: PostMessageSchema):
+    @validate_call(validate_return=True)
+    async def update_post_message(self, updated_post_message: PostMessageSchema) -> None:
         async with self.engine.begin() as conn:
             await conn.execute(
                 update(PostMessage).where(
@@ -189,15 +195,12 @@ class PostMessageDao(Dao):  # TODO write tests
             )
 
         self.logger.debug(
-            f"bot_id={updated_post_message.bot_id}: post_message {updated_post_message.post_message_id} is updated",
+            f"bot_id={updated_post_message.bot_id}: updated post_message {updated_post_message}",
             extra=extra_params(post_message_id=updated_post_message.post_message_id, bot_id=updated_post_message.bot_id)
         )
 
-    @validate_call
+    @validate_call(validate_return=True)
     async def delete_post_message(self, post_message_id: int) -> None:
-        if type(post_message_id) != int:
-            raise InvalidParameterFormat("new_post_message must be type of int")
-
         async with self.engine.begin() as conn:
             await conn.execute(
                 delete(PostMessage).where(
@@ -206,6 +209,6 @@ class PostMessageDao(Dao):  # TODO write tests
             )
 
         self.logger.debug(
-            f"post_message_id={post_message_id}: post_message {post_message_id} is deleted",
+            f"post_message_id={post_message_id}: deleted post_message {post_message_id}",
             extra=extra_params(post_message_id=post_message_id)
         )

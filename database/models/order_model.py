@@ -8,6 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncEngine
 
 from pydantic import BaseModel, Field, validate_call, ConfigDict
 
+from database.exceptions.exceptions import KwargsException
 from database.models import Base
 from database.models.dao import Dao
 from database.models.bot_model import Bot
@@ -25,6 +26,7 @@ class OrderStatusValues(Enum):
 
 
 class OrderStatus(TypeDecorator):  # noqa
+    """Class to convert Enum values to db values (and reverse)"""
     impl = Unicode
     cache_ok = True
 
@@ -45,9 +47,8 @@ class OrderStatus(TypeDecorator):  # noqa
                 return OrderStatusValues.FINISHED
 
 
-class OrderNotFound(Exception):
+class OrderNotFoundError(KwargsException):
     """Raised when provided product not found in database"""
-    pass
 
 
 class Order(Base):
@@ -123,9 +124,10 @@ class OrderSchema(BaseModel):
                                      username: str = '@username',
                                      is_admin: bool = False) -> str:
         """
+        Translate OrderSchema into the text for notifications
+        :param username: the username of the person created an order
+        :param is_admin: True if the order is from Admin test web app and False if from custom bot
         :param list products: [(ProductSchema, amount, [OrderItemExtraOption(), ...]), ...]
-        :param username:
-        :param is_admin:
         """
 
         products_converted = []
@@ -175,7 +177,7 @@ class OrderDao(Dao):
     def __init__(self, engine: AsyncEngine, logger) -> None:
         super().__init__(engine, logger)
 
-    @validate_call
+    @validate_call(validate_return=True)
     async def get_all_orders(self, bot_id: int) -> list[OrderSchema]:
         async with self.engine.begin() as conn:
             raw_res = await conn.execute(select(Order).where(Order.bot_id == bot_id))
@@ -193,53 +195,59 @@ class OrderDao(Dao):
 
         return res
 
-    @validate_call
+    @validate_call(validate_return=True)
     async def get_order(self, order_id: str) -> OrderSchema:
+        """
+        :raises OrderNotFoundError:
+        """
         async with self.engine.begin() as conn:
             raw_res = await conn.execute(select(Order).where(Order.id == order_id))
         await self.engine.dispose()
 
         raw_res = raw_res.fetchone()
         if not raw_res:
-            raise OrderNotFound
+            raise OrderNotFoundError(order_id=order_id)
 
         res = OrderSchema.model_validate(raw_res)
 
         self.logger.debug(
-            f"bot_id={res.bot_id}: order {order_id} is found",
+            f"bot_id={res.bot_id}: found order {res}",
             extra=extra_params(order_id=order_id, bot_id=res.bot_id)
         )
 
         return res
 
-    @validate_call
+    @validate_call(validate_return=True)
     async def add_order(self, new_order: OrderSchema):
+        """
+        :raises IntegrityError:
+        """
         async with self.engine.begin() as conn:
             await conn.execute(insert(Order).values(new_order.model_dump()))
 
         self.logger.debug(
-            f"bot_id={new_order.bot_id}: order {new_order.id} is added",
+            f"bot_id={new_order.bot_id}: added order {new_order}",
             extra=extra_params(order_id=new_order.id, bot_id=new_order.bot_id)
         )
 
-    @validate_call
+    @validate_call(validate_return=True)
     async def update_order(self, updated_order: OrderSchema):
         await self.get_order(updated_order.id)
         async with self.engine.begin() as conn:
             await conn.execute(update(Order).where(Order.id == updated_order.id).values(updated_order.model_dump()))
 
         self.logger.debug(
-            f"bot_id={updated_order.bot_id}: order {updated_order.id} is updated",
+            f"bot_id={updated_order.bot_id}: updated order {updated_order}",
             extra=extra_params(order_id=updated_order.id, bot_id=updated_order.bot_id)
         )
 
-    @validate_call
+    @validate_call(validate_return=True)
     async def delete_order(self, order_id: str):
         await self.get_order(order_id)
         async with self.engine.begin() as conn:
             await conn.execute(delete(Order).where(Order.id == order_id))
 
         self.logger.debug(
-            f"order_id={order_id}: order {order_id} is deleted",
+            f"order_id={order_id}: deleted order {order_id}",
             extra=extra_params(order_id=order_id)
         )

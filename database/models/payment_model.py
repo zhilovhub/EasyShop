@@ -4,25 +4,23 @@ from sqlalchemy import BigInteger, Column, String, DateTime, ForeignKey
 from sqlalchemy import select, update, insert
 from sqlalchemy.ext.asyncio import AsyncEngine
 
-from pydantic import BaseModel, Field, ConfigDict, field_validator
+from pydantic import BaseModel, Field, ConfigDict, field_validator, validate_call
 
 from database.models import Base
 from database.models.dao import Dao
-from database.exceptions import *
 from database.models.user_model import User
+from database.exceptions.exceptions import KwargsException
 
 
 from logs.config import extra_params
 
 
-class PaymentNotFound(Exception):
+class PaymentNotFoundError(KwargsException):
     """Raised when provided user not found in database"""
-    pass
 
 
-class NotInPaymentStatusesList(ValueError):
+class NotInPaymentStatusesListError(ValueError):
     """Error when value of user status not in values list"""
-    pass
 
 
 PAYMENT_STATUSES = ("waiting_payment", "success", "error", "refund")
@@ -38,12 +36,6 @@ class Payment(Base):
     created_at = Column(DateTime, nullable=False)
     last_update = Column(DateTime, nullable=False)
 
-    # Telegram payments system
-    # telegram_payment_charge_id = Column(String, nullable=False)
-    # provider_payment_charge_id = Column(String, nullable=False)
-    # invoice_payload = Column(String)
-    # shipping_option_id = Column(String)
-
 
 class PaymentSchemaWithoutId(BaseModel):
     model_config = ConfigDict(from_attributes=True)
@@ -54,17 +46,14 @@ class PaymentSchemaWithoutId(BaseModel):
     created_at: datetime
     last_update: datetime
 
-    # Telegram payments system
-    # telegram_payment_charge_id: str
-    # provider_payment_charge_id: str
-    # invoice_payload: Optional | str
-    # shipping_option_id: Optional | str
-
     @classmethod
     @field_validator("status")
     def validate_request_status(cls, value: str):
+        """
+        :raises NotInPaymentStatusesListError:
+        """
         if value.lower() not in PAYMENT_STATUSES:
-            raise NotInPaymentStatusesList(f"status value must be one of {', '.join(PAYMENT_STATUSES)}")
+            raise NotInPaymentStatusesListError(f"status value must be one of {', '.join(PAYMENT_STATUSES)}")
         return value.lower()
 
 
@@ -75,7 +64,8 @@ class PaymentSchema(PaymentSchemaWithoutId):
 class PaymentDao(Dao):
     def __init__(self, engine: AsyncEngine, logger) -> None:
         super().__init__(engine, logger)
-        
+
+    @validate_call(validate_return=True)
     async def get_all_payments(self) -> list[PaymentSchema]:
         async with self.engine.begin() as conn:
             raw_res = await conn.execute(select(Payment))
@@ -91,36 +81,34 @@ class PaymentDao(Dao):
         )
 
         return res
-    
+
+    @validate_call(validate_return=True)
     async def get_payment(self, payment_id: int) -> PaymentSchema:
-        if not isinstance(payment_id, int):
-            raise InvalidParameterFormat("payment_id must be type of int.")
-        
+        """
+        :raises PaymentNotFoundError
+        """
         async with self.engine.begin() as conn:
             raw_res = await conn.execute(select(Payment).where(Payment.payment_id == payment_id))
         await self.engine.dispose()
         
         res = raw_res.fetchone()
         if res is None:
-            raise PaymentNotFound(f"id {payment_id} not found in database.")
+            raise PaymentNotFoundError(payment_id=payment_id)
 
         res = PaymentSchema.model_validate(res)
 
         self.logger.debug(
-            f"payment_id={payment_id}: payment {payment_id} is found",
+            f"payment_id={payment_id}: found payment {res}",
             extra=extra_params(payment_id=payment_id, user_id=res.from_user)
         )
 
         return res
 
+    @validate_call(validate_return=True)
     async def add_payment(self, payment: PaymentSchemaWithoutId) -> int:
-        if not isinstance(payment, PaymentSchemaWithoutId):
-            raise InvalidParameterFormat("payment must be type of database.PaymentSchema.")
-
-        # try:
-        #     await self.get_payment(payment_id=payment.id)
-        #     raise InstanceAlreadyExists(f"payment with {payment.id} already exists in db.")
-        # except PaymentNotFound:
+        """
+        :raises IntegrityError:
+        """
         async with self.engine.begin() as conn:
             payment_id = (
                 await conn.execute(insert(Payment).values(**payment.model_dump(by_alias=True)))
@@ -128,16 +116,14 @@ class PaymentDao(Dao):
         await self.engine.dispose()
 
         self.logger.debug(
-            f"user_id={payment.from_user}: payment {payment_id} is added",
+            f"user_id={payment.from_user}: added payment {payment_id} {payment}",
             extra=extra_params(payment_id=payment_id, user_id=payment.from_user)
         )
 
         return payment_id
 
+    @validate_call(validate_return=True)
     async def update_payment(self, updated_payment: PaymentSchema) -> None:
-        if not isinstance(updated_payment, PaymentSchema):
-            raise InvalidParameterFormat("updated_payment must be type of database.PaymentSchema.")
-
         updated_payment.last_update = datetime.now()
 
         async with self.engine.begin() as conn:
@@ -146,6 +132,6 @@ class PaymentDao(Dao):
         await self.engine.dispose()
 
         self.logger.debug(
-            f"user_id={updated_payment.from_user}: payment {updated_payment.id} is updated",
+            f"user_id={updated_payment.from_user}: updated payment {updated_payment}",
             extra=extra_params(payment_id=updated_payment.id, user_id=updated_payment.from_user)
         )

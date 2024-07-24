@@ -14,7 +14,7 @@ from custom_bots.utils.custom_message_texts import CustomMessageTexts
 from custom_bots.keyboards.custom_bot_menu_keyboards import ReplyCustomBotMenuKeyboard
 
 from database.config import product_db, order_db
-from database.models.bot_model import BotNotFound
+from database.models.bot_model import BotNotFoundError
 from database.models.product_model import NotEnoughProductsInStockToReduce
 
 from common_utils.keyboards.order_manage_keyboards import InlineOrderStatusesKeyboard, InlineOrderCustomBotKeyboard
@@ -133,7 +133,7 @@ async def process_web_app_request(event: Message):
 async def main_menu_handler(message: Message):
     try:
         bot = await bot_db.get_bot_by_token(message.bot.token)
-    except BotNotFound:
+    except BotNotFoundError:
         custom_bot_logger.warning(
             f"bot_token={message.bot.token}: this bot is not in db",
             extra=extra_params(bot_token=message.bot.token)

@@ -1,17 +1,21 @@
 from datetime import datetime
 from datetime import timedelta
 
-from pydantic import BaseModel, Field, ConfigDict
+from pydantic import BaseModel, Field, ConfigDict, validate_call
 
 from sqlalchemy import ForeignKey, BOOLEAN, BigInteger, Column, DateTime, select, update, delete, insert
 from sqlalchemy.ext.asyncio import AsyncEngine
 
 from database.models import Base
-from database.exceptions import InvalidParameterFormat, ChannelUserNotFound, InstanceAlreadyExists
 from database.models.dao import Dao
 from database.models.channel_model import Channel
+from database.exceptions.exceptions import KwargsException
 
 from logs.config import extra_params
+
+
+class ChannelUserNotFoundError(KwargsException):
+    """Raised when provided channel user not found in database"""
 
 
 class ChannelUser(Base):
@@ -41,7 +45,11 @@ class ChannelUserDao(Dao):
     def __init__(self, engine: AsyncEngine, logger) -> None:
         super().__init__(engine, logger)
 
+    @validate_call(validate_return=True)
     async def get_joined_channel_users_by_channel_id(self, channel_id: int) -> list[ChannelUserSchema]:
+        """
+        Return a list of Channel Users joined the channel in less that 24 hours
+        """
         async with self.engine.begin() as conn:
             raw_res = await conn.execute(
                 select(ChannelUser).where(
@@ -58,11 +66,16 @@ class ChannelUserDao(Dao):
             res.append(ChannelUserSchema.model_validate(channel_user))
 
         self.logger.debug(
-            f"There are {len(res)} ChannelUsers in our service"
+            f"There are {len(res)} ChannelUsers in our service",
+            extra=extra_params(channel_id=channel_id)
         )
         return res
 
+    @validate_call(validate_return=True)
     async def get_left_channel_users_by_channel_id(self, channel_id: int) -> list[ChannelUserSchema]:
+        """
+        Return a list of Channel Users left the channel in less that 24 hours
+        """
         async with self.engine.begin() as conn:
             raw_res = await conn.execute(
                 select(ChannelUser).where(
@@ -79,34 +92,20 @@ class ChannelUserDao(Dao):
             res.append(ChannelUserSchema.model_validate(channel_user))
 
         self.logger.debug(
-            f"There are {len(res)} ChannelUsers in our service"
+            f"There are {len(res)} ChannelUsers in our service",
+            extra=extra_params(channel_id=channel_id)
         )
         return res
 
-    async def get_channel_users(self) -> list[ChannelUserSchema]:
-        async with self.engine.begin() as conn:
-            raw_res = await conn.execute(select(ChannelUser))
-        await self.engine.dispose()
-
-        raw_res = raw_res.fetchall()
-        res = []
-        for channel_user in raw_res:
-            res.append(ChannelUserSchema.model_validate(channel_user))
-
-        self.logger.debug(
-            f"There are {len(res)} ChannelUsers in our service"
-        )
-
-        return res
-
+    @validate_call(validate_return=True)
     async def get_channel_user_by_channel_user_id_and_channel_id(
             self,
             channel_user_id: int,
             channel_id: int
     ) -> ChannelUserSchema:
-        if not isinstance(channel_user_id, int):
-            raise InvalidParameterFormat("ChannelUser_id must be type of int.")
-
+        """
+        :raises ChannelUserNotFoundError:
+        """
         async with self.engine.begin() as conn:
             raw_res = await conn.execute(
                 select(ChannelUser).where(
@@ -118,44 +117,36 @@ class ChannelUserDao(Dao):
 
         res = raw_res.fetchone()
         if res is None:
-            raise ChannelUserNotFound(
-                f"id {channel_user_id} not found in database.")
+            raise ChannelUserNotFoundError(channel_user_id=channel_user_id)
 
         res = ChannelUserSchema.model_validate(res)
 
         self.logger.debug(
-            f"channel_user_id={channel_user_id}: ChannelUser {channel_user_id} is found",
+            f"channel_user_id={channel_user_id}: found ChannelUser {res}",
             extra=extra_params(channel_user_id=channel_user_id)
         )
 
         return res
 
+    @validate_call(validate_return=True)
     async def add_channel_user(self, channel_user: ChannelUserSchemaWithoutId) -> None:
-        if not isinstance(channel_user, ChannelUserSchemaWithoutId):
-            raise InvalidParameterFormat(
-                "ChannelUser must be type of database.DbChannelUser.")
-
-        try:
-            await self.get_channel_user_by_channel_user_id_and_channel_id(
-                channel_user_id=channel_user.channel_user_id, channel_id=channel_user.channel_id
-            )
-            raise InstanceAlreadyExists(
-                f"ChannelUser with {channel_user.channel_user_id} already exists in db.")
-        except ChannelUserNotFound:
-            async with self.engine.begin() as conn:
-                await conn.execute(insert(ChannelUser).values(**channel_user.model_dump(by_alias=True)))
-            await self.engine.dispose()
+        """
+        :raises IntegrityError:
+        """
+        async with self.engine.begin() as conn:
+            await conn.execute(insert(ChannelUser).values(**channel_user.model_dump(by_alias=True)))
+        await self.engine.dispose()
 
         self.logger.debug(
-            f"channel_user_id={channel_user.channel_user_id}: ChannelUser {channel_user.channel_user_id} is added",
+            f"channel_user_id={channel_user.channel_user_id}: added ChannelUser {channel_user}",
             extra=extra_params(channel_user_id=channel_user.channel_user_id)
         )
 
+    @validate_call(validate_return=True)
     async def update_channel_user(self, updated_channel_user: ChannelUserSchema) -> None:
-        if not isinstance(updated_channel_user, ChannelUserSchema):
-            raise InvalidParameterFormat(
-                "updated_ChannelUser must be type of database.DbChannelUser.")
-
+        """
+        Updates Channel User in database
+        """
         async with self.engine.begin() as conn:
             await conn.execute(
                 update(ChannelUser).where(
@@ -166,22 +157,20 @@ class ChannelUserDao(Dao):
 
         self.logger.debug(
             f"channel_user_id={updated_channel_user.channel_user_id}: "
-            f"ChannelUser {updated_channel_user.channel_user_id} is updated",
+            f"updated ChannelUser {updated_channel_user}",
             extra=extra_params(
                 channel_user_id=updated_channel_user.channel_user_id
             )
         )
 
+    @validate_call(validate_return=True)
     async def del_channel_user(self, channel_user_id: int) -> None:
-        if not isinstance(channel_user_id, int):
-            raise InvalidParameterFormat(
-                "channel_user_id must be type of int.")
-
+        """Deletes Channel User from database"""
         async with self.engine.begin() as conn:
             await conn.execute(delete(ChannelUser).where(ChannelUser.channel_user_id == channel_user_id))
         await self.engine.dispose()
 
         self.logger.debug(
-            f"channel_user_id={channel_user_id}: ChannelUser {channel_user_id} is deleted",
+            f"channel_user_id={channel_user_id}: deleted ChannelUser {channel_user_id}",
             extra=extra_params(channel_user_id=channel_user_id)
         )

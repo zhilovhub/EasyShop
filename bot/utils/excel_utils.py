@@ -14,8 +14,8 @@ from aiogram.types import BufferedInputFile
 from common_utils.env_config import FILES_PATH
 
 from database.config import bot_db, contest_db, category_db, product_db
-from database.exceptions import BotNotFound
-from database.models.contest_model import ContestUserSchema, ContestNotFound
+from database.models.bot_model import BotNotFoundError
+from database.models.contest_model import ContestUserSchema, ContestNotFoundError
 from database.models.product_model import ProductSchema
 
 from bot.main import bot as main_bot
@@ -116,9 +116,9 @@ async def send_demo_import_xlsx(bot_id):
     try:
         bot = await bot_db.get_bot(bot_id=bot_id)
         created_by = bot.created_by
-    except BotNotFound:
+    except BotNotFoundError as e:
         logger.error(f"Provided to excel function bot not found bot_id={bot_id}",
-                     extra_params(bot_id=bot_id))
+                     extra_params(bot_id=bot_id), exc_info=e)
         return
     wb_data = [{"Имя": "шаблон", "Описание": "шаблон", "Цена": 0,
                "Остаток": 0, "Артикул": "шаблон", "Категория": "Шаблон"}]
@@ -131,9 +131,9 @@ async def send_ban_users_xlsx(users_list: List[int], bot_id: int):
     try:
         bot = await bot_db.get_bot(bot_id=bot_id)
         created_by = bot.created_by
-    except BotNotFound:
+    except BotNotFoundError as e:
         logger.error(f"Provided to excel function bot not found bot_id={bot_id}",
-                     extra_params(bot_id=bot_id))
+                     extra_params(bot_id=bot_id), exc_info=e)
         return
     custom_bot = Bot(token=bot.token)
     wb_data = []
@@ -151,7 +151,7 @@ async def send_ban_users_xlsx(users_list: List[int], bot_id: int):
 async def send_contest_results_xlsx(users: list[ContestUserSchema], contest_id: int):
     try:
         contest = await contest_db.get_contest_by_contest_id(contest_id)
-    except ContestNotFound:
+    except ContestNotFoundError:
         logger.error(f"Provided to excel function contest not found contest_id={contest_id}",
                      extra_params(contest_id=contest_id))
         return
@@ -159,7 +159,7 @@ async def send_contest_results_xlsx(users: list[ContestUserSchema], contest_id: 
     try:
         bot = await bot_db.get_bot(bot_id=contest.bot_id)
         created_by = bot.created_by
-    except BotNotFound:
+    except BotNotFoundError:
         logger.error(f"Provided to excel function bot not found bot_id={contest.bot_id}",
                      extra_params(bot_id=contest.bot_id))
         return
@@ -182,7 +182,7 @@ async def send_products_info_xlsx(bot_id: int, products: list[ProductSchema], wi
     try:
         bot = await bot_db.get_bot(bot_id=bot_id)
         created_by = bot.created_by
-    except BotNotFound:
+    except BotNotFoundError:
         logger.error(f"bot_id={bot_id}: Provided to excel function bot not found bot_id={bot_id}",
                      extra_params(bot_id=bot_id))
         return
