@@ -1,7 +1,7 @@
 name: ci
 on:
   push:
-    branches: [ product_review ]
+    branches: [ autoreduce_stock ]
 
 jobs:
 

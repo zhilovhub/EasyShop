@@ -257,24 +257,26 @@ async def handle_callback(query: CallbackQuery, state: FSMContext):
                     order.id, callback_data.msg_id, callback_data.chat_id, order.status)
             )
 
+            msg = await Bot(bot_token, default=BOT_PROPERTIES).send_message(
+                chat_id=callback_data.chat_id,
+                text=f"Новый статус заказа <b>#{order.id}</b>\n<b>{order.translate_order_status()}</b>"
+            )
+
             if callback_data.a == callback_data.ActionEnum.FINISH:
                 if bot_data.settings and "auto_reduce" in bot_data.settings and \
-                        bot_data.settings['auto_reduce']:
+                        bot_data.settings["auto_reduce"]:
                     zero_products = []
                     for item_id, item in order.items.items():
                         product = await product_db.get_product(item_id)
+                        product.count = max(product.count - item['amount'], 0)
+                        await product_db.update_product(product)
                         if product.count == 0:
                             zero_products.append(product)
                     if zero_products:
-                        msg = await query.message.answer(
-                            "⚠️ Внимание, кол-во следующих товаров на складе равно 0.")
-                        await msg.reply("\n".join([f"{p.name} [{p.id}]" for p in zero_products]))
+                        await query.message.answer(
+                            **MessageTexts.generate_post_order_product_info(zero_products)
+                        )
 
-            msg = await Bot(bot_token, default=BOT_PROPERTIES).send_message(
-                chat_id=callback_data.chat_id,
-                text=f"Новый статус заказа <b>#{order.id}</b>\n<b>{order.translate_order_status()}</b>")
-
-            if callback_data.a == callback_data.ActionEnum.FINISH:
                 await Bot(bot_token, default=BOT_PROPERTIES).send_message(
                     reply_to_message_id=msg.message_id,
                     chat_id=callback_data.chat_id,
