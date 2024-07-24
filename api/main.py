@@ -2,6 +2,7 @@ import os
 import datetime
 
 from fastapi import FastAPI
+from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 
 from api.files.router import router as files_router
@@ -10,7 +11,7 @@ from api.products.router import router as product_router
 from api.settings.router import router as settings_router
 from api.categories.router import router as category_router
 
-from common_utils.env_config import LOGS_PATH, API_PROTOCOL, API_HOST, SSL_KEY_PATH, SSL_CERT_PATH, API_PORT, UDS_PATH
+from common_utils.env_config import LOGS_PATH, API_PROTOCOL, API_HOST, SSL_KEY_PATH, SSL_CERT_PATH, API_PORT, UDS_PATH, FILES_PATH
 
 from logs.config import logger_configuration
 
@@ -42,6 +43,7 @@ app.include_router(order_router)
 app.include_router(category_router)
 app.include_router(product_router)
 app.include_router(files_router)
+app.mount("/static", StaticFiles(directory=FILES_PATH), name="static")
 
 ROOT_PATH = "/api/"
 

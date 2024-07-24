@@ -8,11 +8,11 @@ from aiogram.enums.chat_type import ChatType
 from common_utils.keyboards.keyboards import InlineBotMenuKeyboard
 from common_utils.keyboards.channel_keyboards import InlineJoinContestKeyboard
 
-from custom_bots.multibot import bot_db, main_bot
+from custom_bots.multibot import main_bot
 from custom_bots.handlers.routers import multi_bot_channel_router
 from custom_bots.utils.custom_message_texts import CustomMessageTexts
 
-from database.config import channel_user_db, channel_db, contest_db
+from database.config import channel_user_db, channel_db, contest_db, bot_db
 from database.models.channel_model import ChannelSchema
 from database.models.contest_model import ContestUserNotFoundError, ContestNotFoundError
 from database.models.channel_user_model import ChannelUserSchemaWithoutId, ChannelUserNotFoundError

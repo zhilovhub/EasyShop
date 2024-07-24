@@ -59,7 +59,7 @@ async def process_web_app_request(event: Message):
 
     user_id = event.from_user.id
     try:
-        order = await create_order(event, OrderType.MAIN_BOT_TEST_ORDER)
+        order = await create_order(event.from_user.id, event.web_app_data.data, OrderType.MAIN_BOT_TEST_ORDER)
 
         logger.info(f"order with id #{order.id} created")
     except NotEnoughProductsInStockToReduce as e:

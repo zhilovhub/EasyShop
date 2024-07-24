@@ -6,6 +6,7 @@ RESPONSES_DICT = {  # keep it sorted by keys
     404: {"description": "Item not found"},
     406: {"description": "Custom bot is offline"},
     409: {"description": "Conflict"},
+    401: {"description": "Unauthorized"},
     500: {"description": "Internal server error"},
 }
 
@@ -29,6 +30,15 @@ class HTTPBadRequestError(HTTPException):
 
     def __init__(self, detail_message: str = RESPONSES_DICT[400]['description'], **extra_params):
         self.status_code = 400
+        self.detail = detail_message + _generate_extra_params_text(**extra_params)
+        super().__init__(status_code=self.status_code, detail=self.detail)
+
+
+class HTTPUnauthorizedError(HTTPException):
+    """Raised when Bad request error occurred: status 400"""
+
+    def __init__(self, detail_message: str = RESPONSES_DICT[401]['description'], **extra_params):
+        self.status_code = 401
         self.detail = detail_message + _generate_extra_params_text(**extra_params)
         super().__init__(status_code=self.status_code, detail=self.detail)
 

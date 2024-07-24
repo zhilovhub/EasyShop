@@ -18,19 +18,15 @@ from bot.middlewaries.subscription_middleware import CheckSubscriptionMiddleware
 
 from common_utils.keyboards.keyboards import InlineBotMenuKeyboard
 from common_utils.subscription.subscription import UserHasAlreadyStartedTrial
-from common_utils.broadcasting.broadcasting import send_event, EventTypes
+from common_utils.exceptions.bot_exceptions import UnknownDeepLinkArgument
+from common_utils.broadcasting.broadcasting import send_event, EventTypes, success_event
 
 from database.config import user_db, bot_db, user_role_db
 from database.models.bot_model import BotNotFoundError
 from database.models.user_model import UserSchema, UserStatusValues, UserNotFoundError
-from database.exceptions.exceptions import KwargsException
 from database.models.user_role_model import UserRoleSchema, UserRoleValues, UserRoleNotFoundError
 
 from logs.config import logger
-
-
-class _UnknownDeepLinkArgument(KwargsException):
-    """Raised if provided deep link argument is not expected"""
 
 
 async def _handle_admin_invite_link(message: Message, state: FSMContext, deep_link_params: list[str]):
@@ -113,7 +109,7 @@ async def deep_link_start_command_handler(message: Message, state: FSMContext, c
     """
     Проверяет команду /start с параметрами: admin,
 
-    :raises _UnknownDeepLinkArgument:
+    :raises UnknownDeepLinkArgument:
     """
     user_id = message.from_user.id
     deep_link_params = command.args.split()
@@ -129,7 +125,7 @@ async def deep_link_start_command_handler(message: Message, state: FSMContext, c
         else:
             await _handle_admin_invite_link(message, state, deep_link_params)
     else:
-        raise _UnknownDeepLinkArgument(arg=deep_link_params)
+        raise UnknownDeepLinkArgument(arg=deep_link_params)
 
 
 async def _check_if_new_user(message: Message, state: FSMContext) -> None:
