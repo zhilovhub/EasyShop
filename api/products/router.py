@@ -19,8 +19,8 @@ from database.models.product_model import (
     ProductFilter,
     ProductFilterWithoutBot,
     FilterNotFoundError,
-    PRODUCT_FILTERS,
-    SameArticleProductError
+    SameArticleProductError,
+    PRODUCT_FILTERS
 )
 
 from logs.config import api_logger, extra_params
@@ -209,7 +209,7 @@ async def add_product_api(
     try:
         new_product = _remove_empty_variants(new_product)
         product_id = await product_db.add_product(new_product)
-    except SameArticleProduct:
+    except SameArticleProductError:
         raise HTTPConflictError(detail_message="Conflict while adding product (Item already exists)",
                                 conflicted_param="article")
     except IntegrityError as ex:
