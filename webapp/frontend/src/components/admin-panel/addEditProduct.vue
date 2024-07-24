@@ -140,6 +140,9 @@ export default {
       if (!this.imageFiles) {
         this.imageFiles = [];
       }
+      if (!this.imagePreviews) {
+        this.imagePreviews = [];
+      }
       if (event) {
         const newFiles = Array.from(event.target.files);
         if (this.imageFiles.length + newFiles.length > 5) {
@@ -147,7 +150,7 @@ export default {
           return;
         }
 
-        function convertHEIC(file) {
+        function convertHEIC(file, imagePreviews, imageFiles) {
             return new Promise(function(resolve) {
                 {
                     heic2any({
@@ -156,70 +159,87 @@ export default {
                       quality: 1.0
                     }).then(function (convertedFile) {
                       convertedFile.name = file.name.substring(0, file.name.lastIndexOf('.')) + '.jpeg';
-                      resolve(convertedFile);
-                    }).catch(err => {console.log("file type is not heic, skipping converting.."); resolve(file)});
+                      resolve([convertedFile, imagePreviews, imageFiles]);
+                    }).catch(err => {console.log("file type is not heic, skipping converting.."); resolve([file, imagePreviews, imageFiles])});
                 }
             });
         }
 
-        // function get_file_type(header) {
-        //   console.log(header);
-        //     let first_part = header.slice(0, 4 * 2);
-        //     let second_part = header.slice(5, 9 * 2 + 1)
-        //     console.log(first_part)
-        //     console.log(second_part)
-        //     if (first_part === "89504e47") {
-        //       type = "image/png";
-        //     } else if (["ffd8ffe8", "ffd8ffe3", "ffd8ffe2", "ffd8ffe1", "ffd8ffe0"].includes(first_part)) {
-        //       type = "image/jpeg";
-        //     } else if (["66747970686569", "63667479706d"].includes(second_part)) {
-        //       type = "image/heic";
-        //     } else {
-        //       type = "unknown";
-        //     }
-        //     console.log("uploaded file MIME type: " + type)
-        //
-        //     switch (type){
-        //       case "image/heic":
-        //         console.log("heic file uploaded");
-        //         break;
-        //       case "image/jpeg":
-        //       case "image/png":
-        //         break;
-        //     }
-        //     return type
-        // }
+        function get_file_type(header) {
+          console.log(header);
+            let first_part = header.slice(0, 4 * 2);
+            let second_part = header.slice(5, 9 * 2 + 1)
+            console.log(first_part)
+            console.log(second_part)
+            if (first_part === "89504e47") {
+              type = "image/png";
+            } else if (["ffd8ffe8", "ffd8ffe3", "ffd8ffe2", "ffd8ffe1", "ffd8ffe0"].includes(first_part)) {
+              type = "image/jpeg";
+            } else if (["66747970686569", "63667479706d"].includes(second_part)) {
+              type = "image/heic";
+            } else {
+              type = "unknown";
+            }
+            console.log("uploaded file MIME type: " + type)
 
-        // function add_to_images(file) {
-        //   this.imagePreviews.push(URL.createObjectURL(file));
-        //   this.imageFiles.push(file);
-        // }
+            switch (type){
+              case "image/heic":
+                console.log("heic file uploaded");
+                break;
+              case "image/jpeg":
+              case "image/png":
+                break;
+            }
+            return type
+        }
 
         let fileReader = new FileReader(), type = "unknown";
 
         newFiles.forEach(file => {
           console.log(file);
 
-          // fileReader.onload = function(e, _this) {
-          //   let arr = (new Uint8Array(e.target.result)).subarray(0, 12);
-          //   let header = "";
-          //
-          //   for(var i = 0; i < arr.length; i++) {
-          //      header += arr[i].toString(16);
-          //   }
-          //
-          //   type = get_file_type(header)
-          //
-          //   add_to_images(file);
-          // }
-          // fileReader.readAsArrayBuffer(file);
+          let imagePreviews = this.imagePreviews;
+          let imageFiles = this.imageFiles;
+          console.log("this", this.imagePreviews)
+          console.log("foreach", imagePreviews)
 
-          convertHEIC(file).then((data) => {
-                console.log(data);
-                let modified_file = data;
-                this.imagePreviews.push(URL.createObjectURL(modified_file));
-                this.imageFiles.push(modified_file);
-              });
+           fileReader.onload = function(e) {
+             console.log(e)
+             console.log(file)
+             console.log("filereader", imagePreviews)
+            let arr = (new Uint8Array(e.target.result)).subarray(0, 12);
+            let header = "";
+
+            for(var i = 0; i < arr.length; i++) {
+               header += arr[i].toString(16);
+            }
+
+            type = get_file_type(header)
+
+            if (type === "image/heic") {
+              convertHEIC(file, imagePreviews, imageFiles
+              ).then((data) => {
+                  console.log(data);
+                  let modified_file = data[0];
+                  data[1].push(URL.createObjectURL(modified_file));
+                  data[2].push(modified_file);
+                });
+            } else if (type === "unknown") {
+              alert("incorrect photo type")
+            } else {
+              imagePreviews.push(URL.createObjectURL(file))
+              imageFiles.push(file)
+            }
+          }
+
+          fileReader.readAsArrayBuffer(file);
+
+          // convertHEIC(file).then((data) => {
+          //       console.log(data);
+          //       let modified_file = data;
+          //       this.imagePreviews.push(URL.createObjectURL(modified_file));
+          //       this.imageFiles.push(modified_file);
+          //     });
         });
       }
     },
