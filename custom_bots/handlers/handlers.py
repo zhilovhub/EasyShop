@@ -3,7 +3,6 @@ import json
 from aiogram import F, Bot
 from aiogram.enums import ParseMode
 from aiogram.types import Message
-from aiogram.utils.formatting import Text, Bold
 
 from custom_bots.multibot import bot_db, main_bot, PREV_ORDER_MSGS, \
     CustomUserStates, format_locales
@@ -49,17 +48,15 @@ async def process_web_app_request(event: Message):
                 True
             ))
 
-        if custom_bot.settings.get("auto_reduce", None) is True:
-            products_to_refill = []
-            products_not_enough = []
+        products_to_refill = []
+        products_not_enough = []
+        if await get_option("auto_reduce", event.bot.token) is True:
             for ind, product_item in enumerate(products, start=1):
                 product_schema, amount, extra_options = product_item
-                if product_schema.count == 0:
+                if product_schema.count <= amount:
                     products_to_refill.append(product_schema)
-                if product_schema.count < 0:
-                    products_not_enough.append(product_schema)
-                    product_schema.count = 0
-                    await product_db.update_product(product_schema)
+                    if product_schema.count < amount:
+                        products_not_enough.append(product_schema)
 
         msg_id_data = PREV_ORDER_MSGS.get_data()
         msg_id_data[order.id] = (main_msg.chat.id, main_msg.message_id)
@@ -82,7 +79,7 @@ async def process_web_app_request(event: Message):
             await main_bot.send_message(
                 chat_id=admin_id,
                 reply_to_message_id=main_msg.message_id,
-                **CustomMessageTexts.generate_not_enough_in_sctock(products_not_enough, order.id)
+                **CustomMessageTexts.generate_not_enough_in_stock(products_not_enough, order.id)
             )
 
         post_order_text = await get_option("post_order_msg", event.bot.token)

@@ -12,7 +12,6 @@ from common_utils.order_utils.order_type import OrderType, UnknownOrderType
 
 from database.config import bot_db, product_db
 from database.models.order_model import OrderSchema, OrderItem, OrderItemExtraOption
-from database.models.product_model import NotEnoughProductsInStockToReduce
 
 from logs.config import logger, custom_bot_logger, extra_params
 
@@ -43,8 +42,6 @@ async def create_order(event: Message, order_type: OrderType) -> OrderSchema:
 
     items: dict[int, OrderItem] = {}
 
-    zero_products = []
-
     for product_id, item in data['raw_items'].items():
         product = await product_db.get_product(int(product_id))
         chosen_options = []
@@ -72,17 +69,9 @@ async def create_order(event: Message, order_type: OrderType) -> OrderSchema:
         )
 
         if bot_data.settings and "auto_reduce" in bot_data.settings and bot_data.settings["auto_reduce"]:
-            # check if owner wants to get order or not
-            # if product.count < item['amount']:
-            #     raise NotEnoughProductsInStockToReduce(product, item['amount'])
-
-            product.count -= item['amount']
-            # if product.count == 0:
-            #     zero_products.append(product)
+            product.count = max(product.count - item['amount'], 0)
 
             await product_db.update_product(product)
-
-    # await _handle_zero_products(event, bot_data.created_by, zero_products, order_type)
 
     data['items'] = items
 
