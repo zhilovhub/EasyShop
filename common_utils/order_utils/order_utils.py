@@ -10,7 +10,7 @@ from common_utils.bot_settings_config import BOT_PROPERTIES
 from common_utils.env_config import TELEGRAM_TOKEN
 from common_utils.order_utils.order_type import OrderType, UnknownOrderType
 
-from database.config import product_db
+from database.config import bot_db, product_db
 from database.models.order_model import OrderSchema, OrderItem, OrderItemExtraOption
 
 from logs.config import logger, custom_bot_logger, extra_params
@@ -21,7 +21,18 @@ async def create_order(user_id: int, web_app_data, order_type: OrderType, _json:
         data = json.loads(web_app_data)
     else:
         data = web_app_data
+    # data = {
+    #     "bot_id": "1",
+    #     "raw_items": {
+    #         "2": {
+    #             "amount": 1
+    #         }
+    #     },
+    #     "ordered_at": "2024-07-26T14:10:07.336Z",
+    #     "order_options": {4: "test"}
+    # }
     bot_id = data["bot_id"]
+    bot_data = await bot_db.get_bot(int(bot_id))
 
     match order_type:
         case OrderType.MAIN_BOT_TEST_ORDER:

@@ -3,17 +3,20 @@ import json
 from aiogram import F, Bot
 from aiogram.types import Message
 
+from common_utils.bot_utils import create_bot_options
 from custom_bots.multibot import CustomUserStates
 from custom_bots.utils.utils import format_locales
 from custom_bots.handlers.routers import multi_bot_router
 from common_utils.order_utils.order_type import OrderType
-from custom_bots.utils.custom_bot_options import get_option
+# from custom_bots.utils.custom_bot_options import get_option
 from common_utils.order_utils.order_utils import create_order
 from custom_bots.utils.order_creation import order_creation_process
 from custom_bots.keyboards.custom_bot_menu_keyboards import ReplyCustomBotMenuKeyboard
 
+from database.config import option_db
 from database.config import bot_db
 from database.models.bot_model import BotNotFoundError
+from database.models.option_model import OptionNotFoundError
 from database.models.product_model import NotEnoughProductsInStockToReduce
 
 from logs.config import custom_bot_logger, extra_params
@@ -67,7 +70,16 @@ async def main_menu_handler(message: Message):
 
     match message.text:
         case _:
-            default_msg = await get_option("default_msg", message.bot.token)
+            # default_msg = await get_option("default_msg", message.bot.token)
+            try:
+                options = await option_db.get_option(bot.options_id)
+            except OptionNotFoundError:
+                new_options_id = await create_bot_options()
+                bot.options_id = new_options_id
+                await bot_db.update_bot(bot)
+                options = await option_db.get_option(new_options_id)
+
+            default_msg = options.default_msg
 
             await message.answer(
                 format_locales(default_msg, message.from_user, message.chat),

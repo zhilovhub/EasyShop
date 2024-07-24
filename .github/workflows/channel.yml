@@ -1,7 +1,7 @@
 name: ci
 on:
   push:
-    branches: [ autoreduce_stock ]
+    branches: [ new_options ]
 
 jobs:
 

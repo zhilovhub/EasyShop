@@ -3,10 +3,11 @@ from aiogram.types import WebAppInfo
 
 from common_utils.env_config import WEB_APP_URL, WEB_APP_PORT
 
-from database.config import bot_db, channel_db, channel_post_db, contest_db, post_message_db, mailing_db
+from database.config import bot_db, channel_db, channel_post_db, contest_db, post_message_db, mailing_db, order_option_db
 from database.models.channel_model import ChannelSchema
 from database.models.mailing_model import MailingSchema, MailingNotFoundError
 from database.models.contest_model import ContestSchema, ContestNotFoundError
+from database.models.order_option_model import OrderOptionSchema
 from database.models.channel_post_model import ChannelPostSchema, ChannelPostNotFoundError
 from database.models.post_message_model import PostMessageSchema, PostMessageNotFoundError, PostMessageType
 
@@ -42,6 +43,15 @@ async def get_bot_channels(bot_id: int) -> list[tuple[ChannelSchema, str]]:
     custom_bot = Bot((await bot_db.get_bot(bot_id=bot_id)).token)
     return [(i, (await custom_bot.get_chat(i.channel_id)).username)
             for i in (await channel_db.get_all_channels(bot_id=bot_id))]
+
+
+async def get_bot_order_options(bot_id: int) -> list[OrderOptionSchema]:
+    """
+    :return: List of OrderOptionSchema with chosen bot_id
+    """
+    custom_bot = Bot((await bot_db.get_bot(bot_id=bot_id)).token)
+    order_options = await order_option_db.get_all_order_options(bot_id)
+    return sorted(order_options, key=lambda x: x.position_index)
 
 
 async def get_bot_channel_post(bot_id: int) -> ChannelPostSchema | None:

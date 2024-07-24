@@ -58,15 +58,10 @@ class Order(Base):
     bot_id = Column(ForeignKey(Bot.bot_id, ondelete="CASCADE"))
     items = Column(JSON, default="{}")
     from_user = Column(BigInteger, nullable=False)  # TODO make it Foreign
+    order_options = Column(JSON)
+    status = Column(OrderStatus)
     payment_method = Column(String, nullable=False)
     ordered_at = Column(DateTime, default=datetime.now())
-    address = Column(String)
-    delivery_method = Column(String)
-    status = Column(OrderStatus)
-    comment = Column(String)
-    town = Column(String)
-    name = Column(String)
-    phone_number = Column(String)
     time = Column(String)
 
 
@@ -97,14 +92,9 @@ class OrderSchema(BaseModel):
     )
     from_user: int
     payment_method: str | None = None
-    ordered_at: datetime
-    address: str
-    delivery_method: str
     status: OrderStatusValues
-    comment: str
-    town: str
-    name: str | None = None
-    phone_number: str | None = None
+    ordered_at: datetime
+    order_options: dict
     time: str | None = None
 
     def translate_order_status(self) -> str:

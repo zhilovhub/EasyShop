@@ -37,7 +37,7 @@ async def get_web_app_options_api(bot_id: int) -> WebAppOptions:
     """
     try:
         bot = await bot_db.get_bot(bot_id)
-
+        # TODO change to options
         if not bot.settings or "bg_color" not in bot.settings:
             options = WebAppOptions(bg_color=None)
             return options

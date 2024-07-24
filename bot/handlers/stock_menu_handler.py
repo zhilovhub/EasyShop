@@ -15,10 +15,12 @@ from bot.keyboards.main_menu_keyboards import ReplyBotMenuKeyboard
 from bot.keyboards.stock_menu_keyboards import InlineStockImportConfirmKeyboard, InlineStockImportFileTypeKeyboard, \
     InlineStockMenuKeyboard, ReplyBackStockMenuKeyboard, InlineStockImportMenuKeyboard
 
+from common_utils.bot_utils import create_bot_options
 from common_utils.env_config import FILES_PATH
 from common_utils.keyboards.keyboards import InlineBotMenuKeyboard
 
-from database.config import product_db, bot_db
+from database.config import product_db, bot_db, option_db
+from database.models.option_model import OptionNotFoundError
 
 from logs.config import logger, extra_params
 
@@ -30,6 +32,15 @@ async def stock_menu_handler(query: CallbackQuery, state: FSMContext):
     callback_data = InlineStockMenuKeyboard.Callback.model_validate_json(query.data)
 
     bot_id = callback_data.bot_id
+
+    bot_data = await bot_db.get_bot(bot_id)
+    try:
+        options = await option_db.get_option(bot_data.options_id)
+    except OptionNotFoundError:
+        new_options_id = await create_bot_options()
+        bot_data.options_id = new_options_id
+        await bot_db.update_bot(bot_data)
+        options = await option_db.get_option(new_options_id)
 
     match callback_data.a:
         case callback_data.ActionEnum.GOODS_COUNT:
@@ -53,22 +64,16 @@ async def stock_menu_handler(query: CallbackQuery, state: FSMContext):
                 await state.set_data({'bot_id': bot_id})
 
         case callback_data.ActionEnum.AUTO_REDUCE:
-            bot_data = await bot_db.get_bot(bot_id)
-            if not bot_data.settings:
-                bot_data.settings = {}
-            if "auto_reduce" not in bot_data.settings:
-                bot_data.settings["auto_reduce"] = True
-            else:
-                bot_data.settings["auto_reduce"] = not bot_data.settings["auto_reduce"]
-            await bot_db.update_bot(bot_data)
-            if bot_data.settings["auto_reduce"]:
+            options.auto_reduce = not options.auto_reduce
+            await option_db.update_option(options)
+            if options.auto_reduce:
                 await query.message.answer("✅ Автоуменьшение кол-ва товаров после заказа <b>включено</b>.")
             else:
                 await query.message.answer("❌ Автоуменьшение кол-ва товаров после заказа <b>выключено</b>.")
             try:
                 await query.message.edit_text(
                     query.message.text,
-                    reply_markup=await InlineStockMenuKeyboard.get_keyboard(bot_id, bot_data.settings["auto_reduce"]),
+                    reply_markup=await InlineStockMenuKeyboard.get_keyboard(bot_id, options.auto_reduce),
                     parse_mode=ParseMode.HTML
                 )
             except Exception as e:
@@ -84,17 +89,10 @@ async def stock_menu_handler(query: CallbackQuery, state: FSMContext):
                 parse_mode=ParseMode.HTML
             )
         case callback_data.ActionEnum.EXPORT:
-            bot_data = await bot_db.get_bot(bot_id)
-
-            if not bot_data.settings or "auto_reduce" not in bot_data.settings:
-                button_data = False
-            else:
-                button_data = True
-
             if await _check_goods_exist(query, bot_id, with_pictures=True):
                 await query.message.answer(
                     "Меню склада:",
-                    reply_markup=await InlineStockMenuKeyboard.get_keyboard(bot_id, button_data)
+                    reply_markup=await InlineStockMenuKeyboard.get_keyboard(bot_id, options.auto_reduce)
                 )
 
         case callback_data.ActionEnum.BACK_TO_BOT_MENU:
@@ -112,18 +110,20 @@ async def import_menu_handler(query: CallbackQuery, state: FSMContext):
     callback_data = InlineStockImportMenuKeyboard.Callback.model_validate_json(query.data)
 
     bot_id = callback_data.bot_id
+    bot_data = await bot_db.get_bot(bot_id)
+    try:
+        options = await option_db.get_option(bot_data.options_id)
+    except OptionNotFoundError:
+        new_options_id = await create_bot_options()
+        bot_data.options_id = new_options_id
+        await bot_db.update_bot(bot_data)
+        options = await option_db.get_option(new_options_id)
 
     if callback_data.a == callback_data.ActionEnum.BACK_TO_STOCK_MENU:
-        bot_data = await bot_db.get_bot(bot_id)
-
-        if not bot_data.settings or "auto_reduce" not in bot_data.settings:
-            auto_reduce = False
-        else:
-            auto_reduce = True
 
         return await query.message.edit_text(
             "Меню склада:",
-            reply_markup=await InlineStockMenuKeyboard.get_keyboard(bot_id, auto_reduce),
+            reply_markup=await InlineStockMenuKeyboard.get_keyboard(bot_id, options.auto_reduce),
             parse_mode=ParseMode.HTML
         )
 
@@ -328,11 +328,13 @@ async def _back_to_stock_menu(message: Message, state: FSMContext) -> None:
 
     bot_id = (await state.get_data())['bot_id']
     bot_data = await bot_db.get_bot(bot_id)
-
-    if not bot_data.settings or "auto_reduce" not in bot_data.settings:
-        auto_reduce = False
-    else:
-        auto_reduce = True
+    try:
+        options = await option_db.get_option(bot_data.options_id)
+    except OptionNotFoundError:
+        new_options_id = await create_bot_options()
+        bot_data.options_id = new_options_id
+        await bot_db.update_bot(bot_data)
+        options = await option_db.get_option(new_options_id)
 
     await message.answer(
         "Возвращаемся в меню склада...",
@@ -340,7 +342,7 @@ async def _back_to_stock_menu(message: Message, state: FSMContext) -> None:
     )
     await message.answer(
         "Меню склада:",
-        reply_markup=await InlineStockMenuKeyboard.get_keyboard(bot_id, auto_reduce)
+        reply_markup=await InlineStockMenuKeyboard.get_keyboard(bot_id, options.auto_reduce)
     )
     await state.set_state(States.BOT_MENU)
     await state.set_data({'bot_id': bot_id})
