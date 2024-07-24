@@ -268,7 +268,7 @@ async def handle_callback(query: CallbackQuery, state: FSMContext):
                     zero_products = []
                     for item_id, item in order.items.items():
                         product = await product_db.get_product(item_id)
-                        product.count = max(product.count - item['amount'], 0)
+                        product.count = max(product.count - item.amount, 0)
                         await product_db.update_product(product)
                         if product.count == 0:
                             zero_products.append(product)
