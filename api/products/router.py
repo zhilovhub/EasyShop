@@ -20,7 +20,7 @@ from database.models.product_model import (
     ProductFilterWithoutBot,
     FilterNotFoundError,
     SameArticleProductError,
-    PRODUCT_FILTERS,
+    PRODUCT_FILTERS
 )
 
 from logs.config import api_logger, extra_params
@@ -71,8 +71,7 @@ async def get_filters_api():
 
 
 @router.post("/get_all_products/")
-async def get_all_products_api(payload: GetProductsRequest = Depends(
-        GetProductsRequest)) -> list[ProductSchema]:
+async def get_all_products_api(payload: GetProductsRequest = Depends(GetProductsRequest)) -> list[ProductSchema]:
     """
     :raises HTTPBadRequestError:
     :raises HTTPBotNotFoundError:
@@ -212,7 +211,7 @@ async def add_product_api(
         product_id = await product_db.add_product(new_product)
     except SameArticleProductError:
         raise HTTPConflictError(detail_message="Conflict while adding product (Item already exists)",
-                           conflicted_param="article")
+                                conflicted_param="article")
     except IntegrityError as ex:
         api_logger.error(
             f"bot_id={new_product.bot_id}: "
@@ -221,8 +220,8 @@ async def add_product_api(
             exc_info=ex
         )
         raise HTTPConflictError(detail_message="Conflict while adding product (Item already exists)",
-                           conflicted_param="unknown",
-                           ex_msg=ex.detail)
+                                conflicted_param="unknown",
+                                ex_msg=ex.detail)
 
     except Exception as e:
         api_logger.error(
