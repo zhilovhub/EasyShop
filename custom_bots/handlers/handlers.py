@@ -10,6 +10,7 @@ from custom_bots.handlers.routers import multi_bot_router
 from common_utils.order_utils.order_type import OrderType
 from custom_bots.utils.custom_bot_options import get_option
 from common_utils.order_utils.order_utils import create_order
+from custom_bots.utils.custom_message_texts import CustomMessageTexts
 from custom_bots.keyboards.custom_bot_menu_keyboards import ReplyCustomBotMenuKeyboard
 
 from database.config import product_db, order_db
@@ -35,13 +36,27 @@ async def process_web_app_request(event: Message):
         products = [(await product_db.get_product(product_id), product_item.amount, product_item.used_extra_options)
                     for product_id, product_item in order.items.items()]
         username = "@" + order_user_data.username if order_user_data.username else order_user_data.full_name
-        admin_id = (await bot_db.get_bot_by_token(event.bot.token)).created_by
+
+        custom_bot = await bot_db.get_bot_by_token(event.bot.token)
+
+        admin_id = custom_bot.created_by
+
         main_msg = await main_bot.send_message(
             admin_id, order.convert_to_notification_text(
                 products,
                 username,
                 True
             ))
+
+        products_to_refill = []
+        products_not_enough = []
+        if await get_option("auto_reduce", event.bot.token) is True:
+            for ind, product_item in enumerate(products, start=1):
+                product_schema, amount, extra_options = product_item
+                if product_schema.count <= amount:
+                    products_to_refill.append(product_schema)
+                    if product_schema.count < amount:
+                        products_not_enough.append(product_schema)
 
         msg_id_data = PREV_ORDER_MSGS.get_data()
         msg_id_data[order.id] = (main_msg.chat.id, main_msg.message_id)
@@ -53,6 +68,20 @@ async def process_web_app_request(event: Message):
                 False
             ), reply_markup=InlineOrderCustomBotKeyboard.get_keyboard(order.id)
         )
+
+        if len(products_to_refill) != 0:
+            await main_bot.send_message(
+                chat_id=admin_id,
+                reply_to_message_id=main_msg.message_id,
+                **CustomMessageTexts.generate_stock_info_to_refill(products_to_refill, order.id)
+            )
+        if len(products_not_enough) != 0:
+            await main_bot.send_message(
+                chat_id=admin_id,
+                reply_to_message_id=main_msg.message_id,
+                **CustomMessageTexts.generate_not_enough_in_stock(products_not_enough, order.id)
+            )
+
         post_order_text = await get_option("post_order_msg", event.bot.token)
         if post_order_text:
             await event.bot.send_message(

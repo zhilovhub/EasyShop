@@ -145,14 +145,13 @@ class InlineStockMenuKeyboard:
                             actions.GOODS_COUNT_MANAGE, bot_id
                         )
                     ),
+                    InlineKeyboardButton(
+                        text=f"{'✅' if auto_reduce else '❌'} Автоуменьшение на складе",
+                        callback_data=InlineStockMenuKeyboard.callback_json(
+                            actions.AUTO_REDUCE, bot_id
+                        )
+                    ),
                 ],
-                #     InlineKeyboardButton(
-                #         text=f"{'✅' if auto_reduce else '❌'} Автоуменьшение на складе",
-                #         callback_data=InlineStockMenuKeyboard.callback_json(
-                #             actions.AUTO_REDUCE, bot_id
-                #         )
-                #     ),
-                # ],
                 [
                     InlineKeyboardButton(
                         text="🔙 Назад",
@@ -181,14 +180,14 @@ class InlineStockImportMenuKeyboard:
 
         bot_id: int
 
-    @staticmethod
-    @callback_json_validator
+    @ staticmethod
+    @ callback_json_validator
     def callback_json(action: Callback.ActionEnum, bot_id: int) -> str:
         return InlineStockImportMenuKeyboard.Callback(
             a=action, bot_id=bot_id
         ).model_dump_json(by_alias=True)
 
-    @staticmethod
+    @ staticmethod
     def callback_validator(json_string: str) -> bool:
         try:
             InlineStockImportMenuKeyboard.Callback.model_validate_json(json_string)
@@ -196,7 +195,7 @@ class InlineStockImportMenuKeyboard:
         except ValidationError:
             return False
 
-    @staticmethod
+    @ staticmethod
     def get_keyboard(bot_id: int) -> InlineKeyboardMarkup:
         actions = InlineStockImportMenuKeyboard.Callback.ActionEnum
 
@@ -253,8 +252,8 @@ class InlineStockImportConfirmKeyboard:
         import_action: str = Field(alias="ia")
         file_type: str = Field(alias="t")
 
-    @staticmethod
-    @callback_json_validator
+    @ staticmethod
+    @ callback_json_validator
     def callback_json(
             action: Callback.ActionEnum,
             bot_id: int,

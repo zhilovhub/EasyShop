@@ -1,6 +1,9 @@
+from typing import List
 from datetime import datetime
 from enum import Enum
+from aiogram.utils.formatting import Text, Bold
 
+from database.models.product_model import ProductSchema
 from database.models.post_message_model import PostMessageType
 
 
@@ -162,3 +165,10 @@ class MessageTexts(Enum):
         return f"📅 Пожалуйста, отправьте дату и время <b>{name}</b> в следующем формате: " \
             f"\n<b>ДД.ММ.ГГГГ ЧЧ:ММ</b>\n\nНапример: <code>{date_now}</code>" \
             f"\n\n<i>* нажмите на дату в примере ☝️ чтобы её скопировать.</i>"
+
+    @staticmethod
+    def generate_post_order_product_info(products: List[ProductSchema]):
+        result = Text(f"На складе кончились эти товары\n\n")
+        for product in products:
+            result += Text(Bold(product.name), " артикул ", Bold(product.article) + "\n")
+        return result.as_kwargs()

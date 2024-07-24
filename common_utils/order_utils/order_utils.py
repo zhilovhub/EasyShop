@@ -12,7 +12,6 @@ from common_utils.order_utils.order_type import OrderType, UnknownOrderType
 
 from database.config import bot_db, product_db
 from database.models.order_model import OrderSchema, OrderItem, OrderItemExtraOption
-from database.models.product_model import NotEnoughProductsInStockToReduce
 
 from logs.config import logger, custom_bot_logger, extra_params
 
@@ -43,8 +42,6 @@ async def create_order(event: Message, order_type: OrderType) -> OrderSchema:
 
     items: dict[int, OrderItem] = {}
 
-    zero_products = []
-
     for product_id, item in data['raw_items'].items():
         product = await product_db.get_product(int(product_id))
         chosen_options = []
@@ -71,18 +68,6 @@ async def create_order(event: Message, order_type: OrderType) -> OrderSchema:
             used_extra_options=chosen_options
         )
 
-        if bot_data.settings and "auto_reduce" in bot_data.settings and bot_data.settings["auto_reduce"]:
-            if product.count < item['amount']:
-                raise NotEnoughProductsInStockToReduce(product, item['amount'])
-
-            product.count -= item['amount']
-            if product.count == 0:
-                zero_products.append(product)
-
-            await product_db.update_product(product)
-
-    await _handle_zero_products(event, bot_data.created_by, zero_products, order_type)
-
     data['items'] = items
 
     date = datetime.now().strftime("%d%m%y")
@@ -92,6 +77,7 @@ async def create_order(event: Message, order_type: OrderType) -> OrderSchema:
     return _form_order(data, order_type)
 
 
+# Old text generation
 async def _handle_zero_products(event: Message, bot_owner: int, zero_products: list, order_type: OrderType) -> None:
     if zero_products:
         text = "⚠️ Внимание, после этого заказа кол-во следующих товаров будет равно 0"
