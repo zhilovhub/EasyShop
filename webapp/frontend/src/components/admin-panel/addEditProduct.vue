@@ -140,6 +140,9 @@ export default {
       if (!this.imageFiles) {
         this.imageFiles = [];
       }
+      if (!this.imagePreviews) {
+        this.imagePreviews = [];
+      }
       if (event) {
         const newFiles = Array.from(event.target.files);
         if (this.imageFiles.length + newFiles.length > 5) {
@@ -147,7 +150,7 @@ export default {
           return;
         }
 
-        function convertHEIC(file) {
+        function convertHEIC(file, imagePreviews, imageFiles) {
             return new Promise(function(resolve) {
                 {
                     heic2any({
@@ -156,8 +159,8 @@ export default {
                       quality: 1.0
                     }).then(function (convertedFile) {
                       convertedFile.name = file.name.substring(0, file.name.lastIndexOf('.')) + '.jpeg';
-                      resolve(convertedFile);
-                    }).catch(err => {console.log("file type is not heic, skipping converting.."); resolve(file)});
+                      resolve([convertedFile, imagePreviews, imageFiles]);
+                    }).catch(err => {console.log("file type is not heic, skipping converting.."); resolve([file, imagePreviews, imageFiles])});
                 }
             });
         }
@@ -190,19 +193,20 @@ export default {
             return type
         }
 
-        // function add_to_images(file) {
-        //   this.imagePreviews.push(URL.createObjectURL(file));
-        //   this.imageFiles.push(file);
-        // }
-
         let fileReader = new FileReader(), type = "unknown";
 
         newFiles.forEach(file => {
           console.log(file);
 
+          let imagePreviews = this.imagePreviews;
+          let imageFiles = this.imageFiles;
+          console.log("this", this.imagePreviews)
+          console.log("foreach", imagePreviews)
+
            fileReader.onload = function(e) {
              console.log(e)
              console.log(file)
+             console.log("filereader", imagePreviews)
             let arr = (new Uint8Array(e.target.result)).subarray(0, 12);
             let header = "";
 
@@ -213,15 +217,19 @@ export default {
             type = get_file_type(header)
 
             if (type === "image/heic") {
-              convertHEIC(file).then((data) => {
+              convertHEIC(file, imagePreviews, imageFiles
+              ).then((data) => {
                   console.log(data);
-                  let modified_file = data;
-                  this.imagePreviews.push(URL.createObjectURL(modified_file));
-                  this.imageFiles.push(modified_file);
+                  let modified_file = data[0];
+                  data[1].push(URL.createObjectURL(modified_file));
+                  data[2].push(modified_file);
                 });
+            } else if (type === "unknown") {
+              alert("incorrect photo type")
+            } else {
+              imagePreviews.push(URL.createObjectURL(file))
+              imageFiles.push(file)
             }
-
-            // add_to_images(file);
           }
 
           fileReader.readAsArrayBuffer(file);
