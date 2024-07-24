@@ -162,33 +162,33 @@ export default {
             });
         }
 
-        // function get_file_type(header) {
-        //   console.log(header);
-        //     let first_part = header.slice(0, 4 * 2);
-        //     let second_part = header.slice(5, 9 * 2 + 1)
-        //     console.log(first_part)
-        //     console.log(second_part)
-        //     if (first_part === "89504e47") {
-        //       type = "image/png";
-        //     } else if (["ffd8ffe8", "ffd8ffe3", "ffd8ffe2", "ffd8ffe1", "ffd8ffe0"].includes(first_part)) {
-        //       type = "image/jpeg";
-        //     } else if (["66747970686569", "63667479706d"].includes(second_part)) {
-        //       type = "image/heic";
-        //     } else {
-        //       type = "unknown";
-        //     }
-        //     console.log("uploaded file MIME type: " + type)
-        //
-        //     switch (type){
-        //       case "image/heic":
-        //         console.log("heic file uploaded");
-        //         break;
-        //       case "image/jpeg":
-        //       case "image/png":
-        //         break;
-        //     }
-        //     return type
-        // }
+        function get_file_type(header) {
+          console.log(header);
+            let first_part = header.slice(0, 4 * 2);
+            let second_part = header.slice(5, 9 * 2 + 1)
+            console.log(first_part)
+            console.log(second_part)
+            if (first_part === "89504e47") {
+              type = "image/png";
+            } else if (["ffd8ffe8", "ffd8ffe3", "ffd8ffe2", "ffd8ffe1", "ffd8ffe0"].includes(first_part)) {
+              type = "image/jpeg";
+            } else if (["66747970686569", "63667479706d"].includes(second_part)) {
+              type = "image/heic";
+            } else {
+              type = "unknown";
+            }
+            console.log("uploaded file MIME type: " + type)
+
+            switch (type){
+              case "image/heic":
+                console.log("heic file uploaded");
+                break;
+              case "image/jpeg":
+              case "image/png":
+                break;
+            }
+            return type
+        }
 
         // function add_to_images(file) {
         //   this.imagePreviews.push(URL.createObjectURL(file));
@@ -200,26 +200,38 @@ export default {
         newFiles.forEach(file => {
           console.log(file);
 
-          // fileReader.onload = function(e, _this) {
-          //   let arr = (new Uint8Array(e.target.result)).subarray(0, 12);
-          //   let header = "";
-          //
-          //   for(var i = 0; i < arr.length; i++) {
-          //      header += arr[i].toString(16);
-          //   }
-          //
-          //   type = get_file_type(header)
-          //
-          //   add_to_images(file);
-          // }
-          // fileReader.readAsArrayBuffer(file);
+           fileReader.onload = function(e) {
+             console.log(e)
+             console.log(file)
+            let arr = (new Uint8Array(e.target.result)).subarray(0, 12);
+            let header = "";
 
-          convertHEIC(file).then((data) => {
-                console.log(data);
-                let modified_file = data;
-                this.imagePreviews.push(URL.createObjectURL(modified_file));
-                this.imageFiles.push(modified_file);
-              });
+            for(var i = 0; i < arr.length; i++) {
+               header += arr[i].toString(16);
+            }
+
+            type = get_file_type(header)
+
+            if (type === "image/heic") {
+              convertHEIC(file).then((data) => {
+                  console.log(data);
+                  let modified_file = data;
+                  this.imagePreviews.push(URL.createObjectURL(modified_file));
+                  this.imageFiles.push(modified_file);
+                });
+            }
+
+            // add_to_images(file);
+          }
+
+          fileReader.readAsArrayBuffer(file);
+
+          // convertHEIC(file).then((data) => {
+          //       console.log(data);
+          //       let modified_file = data;
+          //       this.imagePreviews.push(URL.createObjectURL(modified_file));
+          //       this.imageFiles.push(modified_file);
+          //     });
         });
       }
     },
