@@ -15,9 +15,9 @@ from common_utils.keyboards.order_manage_keyboards import InlineOrderCancelKeybo
     InlineCreateReviewKeyboard, InlineAcceptReviewKeyboard
 
 from database.config import product_review_db, order_db, product_db, bot_db
-from database.exceptions import BotNotFound
-from database.models.order_model import OrderStatusValues, OrderNotFound
-from database.models.product_model import ProductNotFound
+from database.models.bot_model import BotNotFoundError
+from database.models.order_model import OrderStatusValues, OrderNotFoundError
+from database.models.product_model import ProductNotFoundError
 from database.models.product_review_model import ProductReviewSchemaWithoutID
 
 from logs.config import custom_bot_logger, extra_params
@@ -31,7 +31,7 @@ async def handle_cancel_order_callback(query: CallbackQuery):
 
     try:
         order = await order_db.get_order(order_id)
-    except OrderNotFound:
+    except OrderNotFoundError:
         custom_bot_logger.warning(
             f"user_id={user_id}: unable to change the status of order_id={order_id}",
             extra=extra_params(user_id=user_id, order_id=order_id)
@@ -92,7 +92,7 @@ async def handle_order_callback(query: CallbackQuery, state: FSMContext):
 
     try:
         await order_db.get_order(order_id)
-    except OrderNotFound:
+    except OrderNotFoundError:
         custom_bot_logger.warning(
             f"user_id={user_id}: tried to ask the question regarding order by order_id={order_id} is not found",
             extra=extra_params(user_id=user_id, order_id=order_id)
@@ -134,7 +134,7 @@ async def create_order_review(query: CallbackQuery):
     user_id = query.from_user.id
     try:
         order = await order_db.get_order(order_id)
-    except OrderNotFound:
+    except OrderNotFoundError:
         custom_bot_logger.warning(
             f"user_id={user_id}: tried to tried to create reviw to order_id={order_id} is not found",
             extra=extra_params(user_id=user_id, order_id=order_id)
@@ -161,7 +161,7 @@ async def get_product_id(query: CallbackQuery, state: FSMContext):
             if product:
                 try:
                     await bot_db.get_bot_by_token(query.message.bot.token)
-                except BotNotFound:
+                except BotNotFoundError:
                     custom_bot_logger.warning(
                         f"bot_token={query.message.bot.token}: this bot is not in db",
                         extra=extra_params(bot_token=query.message.bot.token)
@@ -191,7 +191,7 @@ async def get_product_id(query: CallbackQuery, state: FSMContext):
 async def get_review_mark(message: Message, state: FSMContext):
     try:
         bot = await bot_db.get_bot_by_token(message.bot.token)
-    except BotNotFound:
+    except BotNotFoundError:
         custom_bot_logger.warning(
             f"bot_token={message.bot.token}: this bot is not in db",
             extra=extra_params(bot_token=message.bot.token)
@@ -233,7 +233,7 @@ async def get_review_text(message: Message, state: FSMContext):
     state_data = await state.get_data()
     try:
         bot = await bot_db.get_bot_by_token(message.bot.token)
-    except BotNotFound:
+    except BotNotFoundError:
         custom_bot_logger.warning(
             f"bot_token={message.bot.token}: this bot is not in db",
             extra=extra_params(bot_token=message.bot.token)
@@ -267,5 +267,5 @@ async def get_review_text(message: Message, state: FSMContext):
             reply_markup=InlineAcceptReviewKeyboard.get_keyboard(review_id)
         )
         await state.set_state(CustomUserStates.MAIN_MENU)
-    except ProductNotFound:
+    except ProductNotFoundError:
         pass

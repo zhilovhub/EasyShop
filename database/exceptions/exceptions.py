@@ -1,33 +1,12 @@
-class ChannelUserNotFound(Exception):
-    """Raised when provided channel_user not found in database"""
-    pass
+class KwargsException(Exception):
+    """Is used to get detailed information about exception with params
 
+    example: raise KwargsException(a=12, b=None, c=[1, 2, 3])
+    """
+    def __init__(self, **kwargs):
+        if "bot_token" in kwargs:  # hide bot token
+            bot_token = kwargs["bot_token"]
+            kwargs["bot_token"] = bot_token[:5] + '*' * (len(bot_token) - 5)
 
-class UserNotFound(Exception):
-    """Raised when provided user not found in database"""
-    pass
-
-
-class UserRoleNotFound(Exception):
-    """Raised when provided user role not found in database"""
-    pass
-
-
-class BotNotFound(Exception):
-    """Raised when provided bot not found in database"""
-    pass
-
-
-class InvalidParameterFormat(Exception):
-    """Raised when provided invalid data format to function"""
-    pass
-
-
-class InstanceAlreadyExists(Exception):
-    """Raised when trying to add already existed db instance"""
-    pass
-
-
-class LocalAPIException(Exception):
-    """Raise when local api dont return success status code"""
-    pass
+        str_kwargs = ", ".join(map(lambda x: f"{x[0]}={x[1]}", kwargs.items()))
+        super().__init__(str_kwargs)

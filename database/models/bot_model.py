@@ -1,30 +1,29 @@
 from datetime import datetime
 
-from aiogram.utils.token import validate_token, TokenValidationError
+from aiogram.utils.token import validate_token
 
 from sqlalchemy import BigInteger, Column, String, DateTime, JSON, ForeignKey
 from sqlalchemy import select, update, delete, insert
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncEngine
 
-from pydantic import BaseModel, Field, ConfigDict
+from pydantic import BaseModel, Field, ConfigDict, validate_call
 
 from database.models import Base
 from database.models.dao import Dao
 from database.models.user_model import User
-from database.exceptions.exceptions import BotNotFound
+from database.exceptions.exceptions import KwargsException
 
 from logs.config import extra_params
 
 
-class InvalidParameterFormat(Exception):
-    """Raised when provided invalid data format to function"""
-    pass
+class BotNotFoundError(KwargsException):
+    """Raised when provided bot not found in database"""
 
 
-class InstanceAlreadyExists(Exception):
-    """Raised when trying to add already existed db instance"""
-    pass
+class BotIntegrityError(KwargsException):
+    """Raised when there is an IntegrityError with provided bot and hides the token"""
+    # TODO hide bot_token
 
 
 class Bot(Base):
@@ -60,7 +59,12 @@ class BotDao(Dao):
     def __init__(self, engine: AsyncEngine, logger) -> None:
         super().__init__(engine, logger)
 
+    @validate_call(validate_return=True)
     async def get_bots(self, user_id: int | None = None) -> list[BotSchema]:
+        """
+        :param user_id: user_id of user
+        :return: The list of the BotSchema
+        """
         async with self.engine.begin() as conn:
             if user_id:
                 raw_res = await conn.execute(select(Bot).where(Bot.created_by == user_id))
@@ -80,18 +84,21 @@ class BotDao(Dao):
 
         return res
 
+    @validate_call(validate_return=True)
     async def get_bot(self, bot_id: int) -> BotSchema:
-        if not isinstance(bot_id, int):
-            raise InvalidParameterFormat(
-                "bot_id must be type of int")
+        """
+        :param bot_id: bot_id of the bot
+        :return: BotSchema with specific bot_id
 
+        :raises BotNotFoundError:
+        """
         async with self.engine.begin() as conn:
             raw_res = await conn.execute(select(Bot).where(Bot.bot_id == bot_id))
         await self.engine.dispose()
 
         res = raw_res.fetchone()
         if res is None:
-            raise BotNotFound(f"bot_id={bot_id}: not found in database.")
+            raise BotNotFoundError(bot_id=bot_id)
 
         self.logger.debug(
             f"bot_id={bot_id}: bot {bot_id} is found",
@@ -100,29 +107,36 @@ class BotDao(Dao):
 
         return BotSchema.model_validate(res)
 
+    @validate_call(validate_return=True)
     async def get_bot_by_invite_link_hash(self, link_hash: str) -> BotSchema:
+        """
+        :raises BotNotFoundError
+        """
         async with self.engine.begin() as conn:
             raw_res = await conn.execute(select(Bot).where(Bot.admin_invite_link_hash == link_hash))
         await self.engine.dispose()
 
         res = raw_res.fetchone()
         if res is None:
-            raise BotNotFound(f"link_hash={link_hash}: bot with provided invite link not found in database.")
+            raise BotNotFoundError(link_hash=link_hash)
 
         return BotSchema.model_validate(res)
 
+    @validate_call(validate_return=True)
     async def get_bot_by_created_by(self, created_by: int) -> BotSchema:
-        if not isinstance(created_by, int):
-            raise InvalidParameterFormat(
-                "created_by must be type of int")
+        """
+        :param created_by: user_id of the owner of the bot
+        :return: BotSchema
 
+        :raises BotNotFoundError:
+        """
         async with self.engine.begin() as conn:
             raw_res = await conn.execute(select(Bot).where(Bot.created_by == created_by))
         await self.engine.dispose()
 
         res = raw_res.fetchone()
         if res is None:
-            raise BotNotFound(f"bot with created_by={created_by} not found in database")
+            raise BotNotFoundError(created_by=created_by)
 
         res = BotSchema.model_validate(res)
 
@@ -133,12 +147,16 @@ class BotDao(Dao):
 
         return res
 
+    @validate_call(validate_return=True)
     async def get_bot_by_token(self, bot_token: str) -> BotSchema:
-        try:
-            validate_token(bot_token)
-        except TokenValidationError:
-            raise InvalidParameterFormat(
-                "bot_token must be type of str with format 0000000000:AaAaAaAaAaAaAaAaAaAaAaAaAaAaAaAaAaA")
+        """
+        :param bot_token: telegram token of the Bot
+        :return: BotSchema
+
+        :raises BotNotFoundError:
+        :raises TokenValidationError:
+        """
+        validate_token(bot_token)
 
         async with self.engine.begin() as conn:
             raw_res = await conn.execute(select(Bot).where(Bot.bot_token == bot_token))
@@ -146,7 +164,7 @@ class BotDao(Dao):
 
         res = raw_res.fetchone()
         if res is None:
-            raise BotNotFound(f"bot with bot_token = {bot_token} not found in database")
+            raise BotNotFoundError(bot_token=bot_token)
 
         res = BotSchema.model_validate(res)
 
@@ -157,18 +175,26 @@ class BotDao(Dao):
 
         return res
 
+    @validate_call(validate_return=True)
     async def add_bot(self, bot: BotSchemaWithoutId) -> int:
-        if type(bot) != BotSchemaWithoutId:
-            raise InvalidParameterFormat("bot must be type of BotSchemaWithoutId")
+        """
 
+        :param bot: BotSchema without primary key
+        :return: id of inserted Bot
+
+        :raises BotIntegrityError
+        """
         async with self.engine.begin() as conn:
             try:
                 bot_id = (await conn.execute(insert(Bot).values(
                     **bot.model_dump(by_alias=True))
                 )).inserted_primary_key[0]
-            except IntegrityError:
-                raise InstanceAlreadyExists(f"bot with {bot.token} already exists in db or user with "
-                                            f"user_id = {bot.created_by} not exists")
+            except IntegrityError as e:
+                raise BotIntegrityError(
+                    bot_token=bot.token,
+                    e=e
+                )
+
         await self.engine.dispose()
 
         self.logger.debug(
@@ -178,10 +204,13 @@ class BotDao(Dao):
 
         return bot_id
 
+    @validate_call(validate_return=True)
     async def update_bot(self, updated_bot: BotSchema) -> None:
-        if not isinstance(updated_bot, BotSchema):
-            raise InvalidParameterFormat("updated_user must be type of BotSchema")
+        """
 
+        :param updated_bot: New BotSchema
+        :return: None
+        """
         async with self.engine.begin() as conn:
             await conn.execute(update(Bot).where(Bot.bot_id == updated_bot.bot_id).
                                values(**updated_bot.model_dump(by_alias=True)))
@@ -192,11 +221,13 @@ class BotDao(Dao):
             extra=extra_params(user_id=updated_bot.created_by, bot_id=updated_bot.bot_id)
         )
 
+    @validate_call(validate_return=True)
     async def del_bot(self, bot_id: int) -> None:
-        if not isinstance(bot_id, int):
-            raise InvalidParameterFormat(
-                "bot_id must be type of int")
+        """
 
+        :param bot_id: bot_id of the BotSchema to delete
+        :return: None
+        """
         async with self.engine.begin() as conn:
             await conn.execute(delete(Bot).where(Bot.bot_id == bot_id))
         await self.engine.dispose()

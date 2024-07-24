@@ -12,8 +12,8 @@ from bot.keyboards.post_message_keyboards import InlinePostMessageMenuKeyboard
 from bot.post_message.post_message_create import post_message_create
 
 from database.config import bot_db, channel_user_db, channel_post_db, contest_db, post_message_db
-from database.models.contest_model import ContestNotFound
-from database.models.channel_post_model import ChannelPostNotFound
+from database.models.contest_model import ContestNotFoundError
+from database.models.channel_post_model import ChannelPostNotFoundError
 from database.models.post_message_model import PostMessageType
 
 from logs.config import logger, extra_params
@@ -86,7 +86,7 @@ async def channel_menu_callback_handler(query: CallbackQuery):
                 channel_post = await channel_post_db.get_channel_post_by_bot_id(bot_id=bot_id)
                 if callback_data.a == callback_data.ActionEnum.CREATE_POST_MESSAGE:
                     await query.answer("Запись уже создана", show_alert=True)
-            except ChannelPostNotFound:
+            except ChannelPostNotFoundError:
                 channel_post = None
 
             if not channel_post and callback_data.a == callback_data.ActionEnum.CREATE_POST_MESSAGE:
@@ -129,7 +129,7 @@ async def channel_menu_callback_handler(query: CallbackQuery):
                     )
                 )
                 return
-            except ContestNotFound:
+            except ContestNotFoundError:
                 if callback_data.a == callback_data.ActionEnum.CREATE_CONTEST:
                     return await query.message.edit_text(
                         MessageTexts.SELECT_CONTEST_TYPE.value,
@@ -165,7 +165,7 @@ async def contest_type_callback_handler(query: CallbackQuery):
             try:
                 await contest_db.get_contest_by_bot_id(bot_id=bot_id)
                 return await query.answer("В канале уже есть активный конкурс", show_alert=True)
-            except ContestNotFound:
+            except ContestNotFoundError:
                 await post_message_create(bot_id, PostMessageType.CONTEST, contest_winners_count=1)
 
             await query.message.edit_text(

@@ -20,13 +20,12 @@ from common_utils.keyboards.keyboards import InlineBotMenuKeyboard
 from common_utils.subscription.subscription import UserHasAlreadyStartedTrial
 from common_utils.broadcasting.broadcasting import send_event, EventTypes, success_event
 
-from database.config import user_db, adv_db, bot_db, user_role_db
-from database.exceptions import *
-from database.models.adv_model import EmptyAdvTable, AdvSchemaWithoutId
-from database.models.user_model import UserSchema, UserStatusValues
-from database.models.user_role_model import UserRoleSchema, UserRoleValues
+from database.config import user_db, bot_db, user_role_db
+from database.models.bot_model import BotNotFoundError
+from database.models.user_model import UserSchema, UserStatusValues, UserNotFoundError
+from database.models.user_role_model import UserRoleSchema, UserRoleValues, UserRoleNotFoundError
 
-from logs.config import logger, adv_logger, extra_params
+from logs.config import logger
 
 
 async def _handle_admin_invite_link(message: Message, params: list[str], state: FSMContext):
@@ -60,7 +59,7 @@ async def _handle_admin_invite_link(message: Message, params: list[str], state: 
         await state.set_state(States.BOT_MENU)
         await state.set_data({'bot_id': db_bot.bot_id})
 
-    except BotNotFound:
+    except BotNotFoundError:
         return await message.answer("🚫 Пригласительная ссылка не найдена.")
 
 
@@ -75,23 +74,7 @@ async def deep_link_start_command_handler(message: Message, state: FSMContext, c
     try:
         await user_db.get_user(user_id)
 
-        if params and params[0] == "/start from_adv":
-            adv_logger.info(
-                f"user {user_id}, @{message.from_user.username}: tapped to adv again",
-                extra=extra_params(user_id=user_id)
-            )
-            try:
-                current_adv = await adv_db.get_last_adv()
-                current_adv.total_count += 1
-                await adv_db.add_adv(current_adv)
-            except EmptyAdvTable:
-                await adv_db.add_adv(AdvSchemaWithoutId.model_validate({"total_count": 1}))
-            except Exception as e:
-                logger.error(
-                    e.__str__(),
-                    extra=extra_params(user_id=user_id)
-                )
-        elif params and params[0].startswith("admin_"):
+        if params and params[0].startswith("admin_"):
             user_bots = await user_role_db.get_user_bots(user_id)
             if user_bots:
                 return await message.answer("🚫 Вы не можете быть одновременно и админом и владельцем бота.")
@@ -100,25 +83,7 @@ async def deep_link_start_command_handler(message: Message, state: FSMContext, c
                 if res is not None:
                     return res
 
-    except UserNotFound:
-        if params and params[0] == "/start from_adv":
-            adv_logger.info(
-                f"user {user_id}, {message.from_user.username}: came here from adv",
-                extra=extra_params(user_id=user_id)
-            )
-            try:
-                current_adv = await adv_db.get_last_adv()
-                current_adv.total_count += 1
-                current_adv.total_unique_count += 1
-                await adv_db.add_adv(current_adv)
-            except EmptyAdvTable:
-                await adv_db.add_adv(AdvSchemaWithoutId.model_validate({"total_count": 1, "total_unique_count": 1}))
-            except Exception as e:
-                logger.error(
-                    e.__str__(),
-                    extra=extra_params(user_id=user_id)
-                )
-
+    except UserNotFoundError:
         logger.info(f"user {user_id} not found in db, creating new instance...")
 
         await send_event(message.from_user, EventTypes.NEW_USER)
@@ -138,7 +103,7 @@ async def clear_start_command_handler(message: Message, state: FSMContext):
     user_id = message.from_user.id
     try:
         await user_db.get_user(user_id)
-    except UserNotFound:
+    except UserNotFoundError:
         logger.info(f"user {user_id} not found in db, creating new instance...")
 
         await send_event(message.from_user, EventTypes.NEW_USER)
@@ -186,7 +151,7 @@ async def rm_admin_command_handler(message: Message, state: FSMContext, command:
         user_role = await user_role_db.get_user_role(user_id, bot_id)
     except ValueError:
         return await message.answer("🚫 UID должен быть числом")
-    except UserRoleNotFound:
+    except UserRoleNotFoundError:
         return await message.answer("🔍 Админ с таким UID не найден.")
 
     await user_role_db.del_user_role(user_role.user_id, user_role.bot_id)

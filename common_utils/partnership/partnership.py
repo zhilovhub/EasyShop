@@ -25,7 +25,7 @@ class Partnership:
                                  criteria: CriteriaSchemaWithoutId) -> int:
         logger.info(f"bot_id={bot_id} : creating new criteria for partnership",
                     exc_info=extra_params(bot_id=bot_id, post_message_id=post_message_id))
-        criteria_id = await self.partnership_db.create_partnership_criteria(criteria)
+        criteria_id = await self.partnership_db.add_partnership_criteria(criteria)
 
         new_partnership = PartnershipSchemaWithoutId(bot_id=bot_id,
                                                      post_message_id=post_message_id,

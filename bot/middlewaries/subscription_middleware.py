@@ -11,8 +11,7 @@ from common_utils.env_config import ADMINS
 from common_utils.broadcasting.broadcasting import EventTypes, send_event
 
 from database.config import user_db
-from database.exceptions import UserNotFound
-from database.models.user_model import UserSchema, UserStatusValues
+from database.models.user_model import UserSchema, UserStatusValues, UserNotFoundError
 
 from logs.config import logger
 
@@ -28,7 +27,7 @@ class CheckSubscriptionMiddleware(BaseMiddleware):
         message, is_message = (event, True) if isinstance(event, Message) else (event.message, False)
         try:
             await user_db.get_user(user_id)
-        except UserNotFound:
+        except UserNotFoundError:
             logger.info(f"user {user_id} not found in db, creating new instance...")
             await send_event(event.from_user, EventTypes.NEW_USER)
             await user_db.add_user(UserSchema(

@@ -28,7 +28,7 @@ from common_utils.cache_json.cache_json import JsonStore
 from common_utils.storage.custom_bot_storage import custom_bot_storage
 
 from database.config import bot_db
-from database.models.bot_model import BotNotFound
+from database.models.bot_model import BotNotFoundError
 
 from logs.config import custom_bot_logger, extra_params
 
@@ -104,7 +104,7 @@ async def add_bot_handler(request):
     bot_id = request.match_info['bot_id']
     try:
         bot = await bot_db.get_bot(int(bot_id))
-    except BotNotFound:
+    except BotNotFoundError:
         return web.Response(status=404, text=f"Bot with provided id not found (id: {bot_id}).")
     if not is_bot_token(bot.token):
         return web.Response(status=400, text="Incorrect bot token format.")
@@ -144,7 +144,7 @@ async def stop_bot_handler(request):
     bot_id = request.match_info['bot_id']
     try:
         bot = await bot_db.get_bot(int(bot_id))
-    except BotNotFound:
+    except BotNotFoundError:
         return web.Response(status=404, text=f"Bot with provided id not found (id: {bot_id}).")
     if not is_bot_token(bot.token):
         return web.Response(status=400, text="Incorrect bot token format.")

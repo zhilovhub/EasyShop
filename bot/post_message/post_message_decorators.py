@@ -10,7 +10,7 @@ from bot.keyboards.post_message_keyboards import InlinePostMessageMenuKeyboard, 
 from bot.post_message.post_message_utils import get_post_message
 
 from database.config import bot_db
-from database.models.post_message_model import PostMessageNotFound, PostMessageType
+from database.models.post_message_model import PostMessageNotFoundError, PostMessageType
 
 from logs.config import logger, extra_params
 
@@ -46,7 +46,7 @@ def check_callback_conflicts(func):
             post_message = await get_post_message(
                 query, user_id, bot_id, callback_data.post_message_id, post_message_type
             )
-        except PostMessageNotFound:
+        except PostMessageNotFoundError:
             return
 
         custom_bot_token = (await bot_db.get_bot(bot_id)).token

@@ -8,8 +8,7 @@ from common_utils.keyboards.keyboard_utils import callback_json_validator, get_b
     get_bot_mailing, get_bot_status
 
 from database.config import bot_db, user_role_db
-from database.exceptions import UserRoleNotFound
-from database.models.user_role_model import UserRoleValues, UserRoleSchema
+from database.models.user_role_model import UserRoleValues, UserRoleSchema, UserRoleNotFoundError
 
 from logs.config import logger, extra_params
 
@@ -67,7 +66,7 @@ class InlineBotMenuKeyboard:
         # TODO ? remove after updating old users
         try:
             user_role = await user_role_db.get_user_role(user_id, bot_id)
-        except UserRoleNotFound as e:
+        except UserRoleNotFoundError as e:
             logger.debug(
                 f"user_id={user_id} bot_id={bot_id}: role not found, auto creating new role",
                 extra=extra_params(user_id=user_id, bot_id=bot_id), exc_info=e)

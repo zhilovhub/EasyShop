@@ -5,10 +5,10 @@ from common_utils.env_config import WEB_APP_URL, WEB_APP_PORT
 
 from database.config import bot_db, channel_db, channel_post_db, contest_db, post_message_db, mailing_db
 from database.models.channel_model import ChannelSchema
-from database.models.mailing_model import MailingSchema, MailingNotFound
-from database.models.contest_model import ContestSchema, ContestNotFound
-from database.models.channel_post_model import ChannelPostSchema, ChannelPostNotFound
-from database.models.post_message_model import PostMessageSchema, PostMessageNotFound, PostMessageType
+from database.models.mailing_model import MailingSchema, MailingNotFoundError
+from database.models.contest_model import ContestSchema, ContestNotFoundError
+from database.models.channel_post_model import ChannelPostSchema, ChannelPostNotFoundError
+from database.models.post_message_model import PostMessageSchema, PostMessageNotFoundError, PostMessageType
 
 from logs.config import logger, extra_params
 
@@ -36,7 +36,7 @@ async def get_bot_channel_post(bot_id: int) -> ChannelPostSchema | None:
     try:
         channel_post = await channel_post_db.get_channel_post_by_bot_id(bot_id=bot_id)
         return channel_post
-    except ChannelPostNotFound:
+    except ChannelPostNotFoundError:
         logger.debug(
             f"bot_id={bot_id}: there is no channel posts",
             extra=extra_params(bot_id=bot_id),
@@ -48,7 +48,7 @@ async def get_bot_mailing(bot_id: int) -> MailingSchema | None:
     try:
         mailing = await mailing_db.get_mailing_by_bot_id(bot_id=bot_id)
         return mailing
-    except MailingNotFound:
+    except MailingNotFoundError:
         logger.debug(
             f"bot_id={bot_id}: there is no mailings",
             extra=extra_params(bot_id=bot_id),
@@ -60,7 +60,7 @@ async def get_bot_contest(bot_id: int) -> ContestSchema | None:
     try:
         contest = await contest_db.get_contest_by_bot_id(bot_id=bot_id)
         return contest
-    except ContestNotFound:
+    except ContestNotFoundError:
         logger.debug(
             f"bot_id={bot_id}: there is no contests",
             extra=extra_params(bot_id=bot_id),
@@ -72,7 +72,7 @@ async def get_bot_post_message(bot_id: int, post_message_type: PostMessageType) 
     try:
         post_message = await post_message_db.get_post_message_by_bot_id(bot_id, post_message_type)
         return post_message
-    except PostMessageNotFound as e:
+    except PostMessageNotFoundError as e:
         logger.warning(
             f"bot_id={bot_id}: there is no post_message",
             extra=extra_params(bot_id=bot_id),
