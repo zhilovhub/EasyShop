@@ -68,11 +68,6 @@ async def create_order(event: Message, order_type: OrderType) -> OrderSchema:
             used_extra_options=chosen_options
         )
 
-        if bot_data.settings and "auto_reduce" in bot_data.settings and bot_data.settings["auto_reduce"]:
-            product.count = max(product.count - item['amount'], 0)
-
-            await product_db.update_product(product)
-
     data['items'] = items
 
     date = datetime.now().strftime("%d%m%y")

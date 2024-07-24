@@ -264,11 +264,13 @@ async def handle_callback(query: CallbackQuery, state: FSMContext):
 
             if callback_data.a == callback_data.ActionEnum.FINISH:
                 if bot_data.settings and "auto_reduce" in bot_data.settings and \
-                        bot_data.settings['auto_reduce']:
+                        bot_data.settings["auto_reduce"]:
                     zero_products = []
                     for item_id, item in order.items.items():
                         product = await product_db.get_product(item_id)
-                        if product.count <= item.amount:
+                        product.count = max(product.count - item['amount'], 0)
+                        await product_db.update_product(product)
+                        if product.count == 0:
                             zero_products.append(product)
                     if zero_products:
                         await query.message.answer(
