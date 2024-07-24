@@ -267,8 +267,11 @@ async def handle_callback(query: CallbackQuery, state: FSMContext):
                             zero_products.append(product)
                     if zero_products:
                         msg = await query.message.answer(
-                            "⚠️ Внимание, кол-во следующих товаров на складе равно 0.")
-                        await msg.reply("\n".join([f"{p.name} [{p.id}]" for p in zero_products]))
+                            **MessageTexts.generate_post_order_product_info(zero_products)
+                        )
+                        # msg = await query.message.answer(
+                        #     "⚠️ Внимание, кол-во следующих товаров на складе равно 0.")
+                        # await msg.reply("\n".join([f"{p.name} [{p.id}]" for p in zero_products]))
 
             msg = await Bot(bot_token, default=BOT_PROPERTIES).send_message(
                 chat_id=callback_data.chat_id,
