@@ -63,6 +63,43 @@ async def _handle_admin_invite_link(message: Message, params: list[str], state: 
         return await message.answer("🚫 Пригласительная ссылка не найдена.")
 
 
+async def _send_bot_menu(user_id: int, user_state: FSMContext, user_bots: list | None):
+    user_status = (await user_db.get_user(user_id)).status
+
+    if user_status == UserStatusValues.SUBSCRIPTION_ENDED:  # TODO do not send it from States.WAITING_PAYMENT_APPROVE
+        await bot.send_message(
+            user_id,
+            MessageTexts.SUBSCRIBE_END_NOTIFY.value,
+            reply_markup=InlineSubscriptionContinueKeyboard.get_keyboard(bot_id=None)
+        )
+        return await user_state.set_state(States.SUBSCRIBE_ENDED)
+
+    if not user_bots:
+        return
+    else:
+        bot_id = user_bots[0].bot_id
+        user_bot = Bot(user_bots[0].token)
+        user_bot_data = await user_bot.get_me()
+        await bot.send_message(
+            user_id,
+            MessageTexts.BOT_MENU_MESSAGE.value.format(user_bot_data.username),
+            reply_markup=await InlineBotMenuKeyboard.get_keyboard(user_bots[0].bot_id, user_id)
+        )
+        await user_state.set_state(States.BOT_MENU)
+        await user_state.set_data({'bot_id': bot_id})
+
+
+async def remove_bot_admin(user_id: int, user_state: FSMContext):
+    user_bots = await user_role_db.get_user_bots(user_id)
+
+    if not user_bots:
+        await send_instructions(bot, user_bots[0].bot_id if user_bots else None, user_id, cache_resources_file_id_store)
+        await user_state.set_state(States.WAITING_FOR_TOKEN)
+        await user_state.set_data({'bot_id': -1})
+    else:
+        await _send_bot_menu(user_id, user_state, user_bots)
+
+
 @commands_router.message(CommandStart(deep_link=True))
 async def deep_link_start_command_handler(message: Message, state: FSMContext, command: CommandObject):
     user_id = message.from_user.id
@@ -119,27 +156,10 @@ async def clear_start_command_handler(message: Message, state: FSMContext):
 
     await send_instructions(bot, user_bots[0].bot_id if user_bots else None, user_id, cache_resources_file_id_store)
 
-    user_status = (await user_db.get_user(user_id)).status
-
-    if user_status == UserStatusValues.SUBSCRIPTION_ENDED:  # TODO do not send it from States.WAITING_PAYMENT_APPROVE
-        await message.answer(
-            MessageTexts.SUBSCRIBE_END_NOTIFY.value,
-            reply_markup=InlineSubscriptionContinueKeyboard.get_keyboard(bot_id=None)
-        )
-        return await state.set_state(States.SUBSCRIBE_ENDED)
-
     if not user_bots:
         await state.set_state(States.WAITING_FOR_TOKEN)
     else:
-        bot_id = user_bots[0].bot_id
-        user_bot = Bot(user_bots[0].token)
-        user_bot_data = await user_bot.get_me()
-        await message.answer(
-            MessageTexts.BOT_MENU_MESSAGE.value.format(user_bot_data.username),
-            reply_markup=await InlineBotMenuKeyboard.get_keyboard(user_bots[0].bot_id, message.from_user.id)
-        )
-        await state.set_state(States.BOT_MENU)
-        await state.set_data({'bot_id': bot_id})
+        await _send_bot_menu(user_id, state, user_bots)
 
 
 @commands_router.message(Command("rm_admin"), StateFilter(States.BOT_MENU))
@@ -159,7 +179,6 @@ async def rm_admin_command_handler(message: Message, state: FSMContext, command:
     await user_role_db.del_user_role(user_role.user_id, user_role.bot_id)
 
     custom_bot_data = await Bot((await bot_db.get_bot(bot_id)).token).get_me()
-    bot_data = await bot.get_me()
 
     await message.answer(f"🔔 Пользователь больше не администратор ({user_id}) для бота "
                          f"@{custom_bot_data.username}")
@@ -171,16 +190,9 @@ async def rm_admin_command_handler(message: Message, state: FSMContext, command:
         )
     )
 
-    await user_state.clear()
+    await bot.send_message(user_id, "Вы больше не администратор этого бота.", reply_markup=ReplyKeyboardRemove())
 
-    await bot.send_message(user_id,
-                           "Вы больше не администратор этого бота.",
-                           reply_markup=InlineKeyboardMarkup(inline_keyboard=[
-                               [
-                                   InlineKeyboardButton(text="Перезапустить бота",
-                                                        url=f"t.me/{bot_data.username}?start=restart")
-                               ]
-                           ]))
+    await remove_bot_admin(user_id, user_state)
 
 
 @commands_router.message(F.text == "/clear")

@@ -26,6 +26,8 @@ from bot.keyboards.stock_menu_keyboards import InlineStockMenuKeyboard, InlineWe
 from bot.keyboards.post_message_keyboards import InlinePostMessageMenuKeyboard
 from bot.post_message.post_message_create import post_message_create
 
+from bot.handlers.command_handlers import remove_bot_admin
+
 from common_utils import generate_admin_invite_link
 from common_utils.env_config import FILES_PATH
 from common_utils.bot_settings_config import BOT_PROPERTIES
@@ -420,10 +422,11 @@ async def bot_menu_callback_handler(query: CallbackQuery, state: FSMContext):
                 reply_markup=await InlineAdministratorsManageKeyboard.get_keyboard(bot_id))
         case callback_data.ActionEnum.LEAVE_ADMINISTRATING:
             await user_role_db.del_user_role(query.from_user.id, bot_id)
-            await query.message.edit_text("Вы больше не администратор этого бота. "
-                                          "Пропишите /start для рестарта бота",
+            await query.message.edit_text("Вы больше не администратор этого бота.",
                                           reply_markup=None)
-            await state.clear()
+
+            await remove_bot_admin(query.from_user.id, state)
+
             await bot.send_message(
                 db_bot_data.created_by,
                 f"🔔 Пользователь больше не администратор ("

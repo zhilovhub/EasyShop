@@ -2,7 +2,9 @@ from typing import Callable, Dict, Any, Awaitable
 
 from aiogram import BaseMiddleware
 from aiogram.fsm.context import FSMContext
-from aiogram.types import CallbackQuery, Message
+from aiogram.types import CallbackQuery, Message, ReplyKeyboardRemove
+
+from bot.states.states import States
 
 from database.config import user_role_db
 from database.models.user_role_model import UserRoleValues, UserRoleNotFoundError
@@ -21,6 +23,8 @@ class CheckRoleMiddleware(BaseMiddleware):
         user_id = event.from_user.id
         state: FSMContext = data["state"]
         state_data = await state.get_data()
+        if isinstance(event, Message) and state_data and 'bot_id' in state_data and state_data['bot_id'] == -1:
+            return await handler(event, data)
         if not state_data or 'bot_id' not in state_data:
             if isinstance(event, CallbackQuery):
                 await event.message.edit_reply_markup(reply_markup=None)
@@ -30,9 +34,11 @@ class CheckRoleMiddleware(BaseMiddleware):
             if user_role.role not in (UserRoleValues.ADMINISTRATOR, UserRoleValues.OWNER):
                 raise UserRoleNotFoundError
         except UserRoleNotFoundError:
+            await state.set_data({'bot_id': -1})
             if isinstance(event, CallbackQuery):
                 await event.message.edit_reply_markup(reply_markup=None)
                 return await event.answer("Вы больше не админ этого бота.", show_alert=True)
             else:
-                return await event.answer("Вы больше не админ этого бота.")
+                await state.set_data({})
+                return await event.answer("Вы больше не админ этого бота.", reply_markup=ReplyKeyboardRemove())
         return await handler(event, data)
