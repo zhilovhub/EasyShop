@@ -67,6 +67,18 @@ class UserRoleDao(Dao):
         """
         :raises UserRoleNotFoundError
         """
+        # check if user is bot creator and add owner role to bots if it not exists
+        async with self.engine.begin() as conn:
+            raw_own_bots = await conn.execute(select(Bot).where(Bot.created_by == user_id))
+            own_bots = raw_own_bots.fetchall()
+            for bot in own_bots:
+                try:
+                    await self.get_user_role(user_id, bot.bot_id)
+                except UserRoleNotFoundError:
+                    new_role = UserRoleSchema(user_id=user_id, bot_id=bot.bot_id, role=UserRoleValues.OWNER)
+                    await self.add_user_role(new_role)
+
+        # get all user roles
         async with self.engine.begin() as conn:
             raw_data = await conn.execute(select(UserRole).where(UserRole.user_id == user_id))
             raw_data = raw_data.fetchall()
@@ -76,6 +88,7 @@ class UserRoleDao(Dao):
             for user_role in raw_data:
                 data.append(UserRoleSchema.model_validate(user_role))
 
+        # get bots by user role objects
         async with self.engine.begin() as conn:
             bots = []
             for user_role in data:
