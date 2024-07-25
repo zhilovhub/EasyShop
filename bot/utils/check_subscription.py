@@ -6,7 +6,7 @@ from bot.keyboards.subscription_keyboards import InlineSubscriptionContinueKeybo
 
 from database.models.user_model import UserStatusValues, UnknownUserStatus
 
-from logs.config import logger
+from logs.config import logger, extra_params
 
 
 async def check_subscription(event: Message | CallbackQuery, state: FSMContext = None) -> None:
@@ -16,7 +16,10 @@ async def check_subscription(event: Message | CallbackQuery, state: FSMContext =
     try:
         bot_id = (await state.get_data())["bot_id"]
     except (KeyError, AttributeError):
-        logger.warning(f"check_sub_cmd: bot_id of user {user_id} not found, setting it to None")
+        logger.warning(
+            f"check_sub_cmd: bot_id of user {user_id} not found, setting it to None",
+            extra=extra_params(user_id=user_id)
+        )
         bot_id = None
 
     user_status = await subscription.get_user_status(user_id)

@@ -6,9 +6,8 @@ from common_utils.env_config import TECH_ADMINS
 from logs.config import logger, extra_params
 
 
-class IsAdmin(BaseFilter):
-    def __init__(self):
-        pass
+class IsTechAdmin(BaseFilter):
+    """The filter that checks if written user is TECH ADMIN or not"""
 
     async def __call__(self, event: Message | CallbackQuery) -> bool:
         if event.from_user.id in TECH_ADMINS:

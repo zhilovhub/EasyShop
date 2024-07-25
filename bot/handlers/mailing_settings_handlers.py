@@ -15,6 +15,8 @@ from logs.config import logger, extra_params
 
 
 async def send_post_messages(custom_bot, post_message, media_files, chat_id):
+    """Запускает цикл отправления сообщения подписчикам бота"""
+
     post_message_id = post_message.post_message_id
     all_custom_bot_users = await custom_bot_user_db.get_custom_bot_users(custom_bot.bot_id)
     custom_bot_tg = Bot(custom_bot.token, default=BOT_PROPERTIES)

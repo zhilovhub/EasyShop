@@ -25,6 +25,9 @@ from logs.config import logger, extra_params
 
 
 def _create_zip_buffer(images) -> BufferedInputFile:
+    """
+    :return: Zip File with images
+    """
     zip_buffer = BytesIO()
     with ZipFile(zip_buffer, 'w') as zip_file:
         for file_path in images:
@@ -37,6 +40,9 @@ def _create_zip_buffer(images) -> BufferedInputFile:
 
 
 def _make_xlsx_buffer(name: str, wb_data) -> BufferedInputFile:
+    """
+    :return: xlsx file with data
+    """
     wb = create_excel(wb_data, name, name)
     buffer = BytesIO()
     wb.save(buffer)
@@ -46,7 +52,7 @@ def _make_xlsx_buffer(name: str, wb_data) -> BufferedInputFile:
     return buffer_file
 
 
-def create_excel(data: dict, sheet_name, table_type):
+def create_excel(data: dict, sheet_name, table_type) -> Workbook:
     wb = Workbook()
     ws = wb.active
     ws.title = sheet_name

@@ -20,9 +20,8 @@ from database.models.product_model import ProductNotFoundError, ProductWithoutId
 from database.models.category_model import CategorySchemaWithoutId, CategoryNameAlreadyExistsError
 
 
-class UnknownFileExstension(Exception):
-    def __init__(self, message):
-        super.__init__(message)
+class UnknownFileExtensionError(Exception):
+    """Raised when unknown file's extension is provided"""
 
 
 @singleton
@@ -142,7 +141,7 @@ class Stoke:
 
         return path_to_file, path_to_images
 
-    async def update_count_xlsx(self, path_to_file: str, bot_id: int):
+    async def update_count_xlsx(self, path_to_file: str, bot_id: int) -> tuple[bool, str]:
         """Expects the xlsx file without pictures column"""
         status, err_message = await self.check_xlsx(path_to_file)
         if status is False:
@@ -160,7 +159,8 @@ class Stoke:
         return True, ""
 
     @staticmethod
-    async def check_xlsx(path_to_file: str):
+    async def check_xlsx(path_to_file: str) -> tuple[bool, str]:
+        """Checks the amount of columns in xlsx file and some specific columns"""
         wb = load_workbook(filename=path_to_file)
         ws = wb.active
         for ind, row in enumerate(list(ws.values)[1:]):

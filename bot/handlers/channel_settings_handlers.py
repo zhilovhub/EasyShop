@@ -21,6 +21,8 @@ from logs.config import logger, extra_params
 
 @channel_menu_router.callback_query(lambda query: InlineChannelsListKeyboard.callback_validator(query.data))
 async def channels_list_callback_handler(query: CallbackQuery):
+    """Срабатывает, когда пользователь просматривает список каналов"""
+
     callback_data = InlineChannelsListKeyboard.Callback.model_validate_json(query.data)
 
     bot_id = callback_data.bot_id
@@ -48,6 +50,8 @@ async def channels_list_callback_handler(query: CallbackQuery):
 
 @channel_menu_router.callback_query(lambda query: InlineChannelMenuKeyboard.callback_validator(query.data))
 async def channel_menu_callback_handler(query: CallbackQuery):
+    """Когда пользователь находится в меню управления каналом"""
+
     callback_data = InlineChannelMenuKeyboard.Callback.model_validate_json(query.data)
 
     bot_id = callback_data.bot_id
@@ -142,6 +146,8 @@ async def channel_menu_callback_handler(query: CallbackQuery):
 
 @channel_menu_router.callback_query(lambda query: InlineContestTypeKeyboard.callback_validator(query.data))
 async def contest_type_callback_handler(query: CallbackQuery):
+    """Выбор типа конкурсной записи в канал"""
+
     callback_data = InlineContestTypeKeyboard.Callback.model_validate_json(query.data)
 
     bot_id = callback_data.bot_id

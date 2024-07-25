@@ -5,12 +5,17 @@ from database.models.contest_model import ContestSchemaWithoutId
 from database.models.mailing_model import MailingSchemaWithoutId
 from database.models.partnership_model import PartnershipSchemaWithoutId
 from database.models.channel_post_model import ChannelPostSchemaWithoutId
-from database.models.post_message_model import PostMessageSchemaWithoutId, PostMessageType
+from database.models.post_message_model import PostMessageSchemaWithoutId, PostMessageType, UnknownPostMessageTypeError
 
 
 async def post_message_create(bot_id: int,
                               post_message_type: PostMessageType,
                               contest_winners_count: int = None) -> None:
+    """
+    Creates post message
+
+    :raises  UnknownPostMessageTypeError:
+    """
     post_message_id = await post_message_db.add_post_message(PostMessageSchemaWithoutId.model_validate(
         {"bot_id": bot_id, "created_at": datetime.now().replace(tzinfo=None), "post_message_type": post_message_type}
     ))
@@ -28,3 +33,5 @@ async def post_message_create(bot_id: int,
             await contest_db.add_contest(ContestSchemaWithoutId.model_validate(data))
         case PostMessageType.PARTNERSHIP_POST:
             await partnership_db.add_partnership(PartnershipSchemaWithoutId.model_validate(data))
+        case _:
+            raise UnknownPostMessageTypeError

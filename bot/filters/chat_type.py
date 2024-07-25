@@ -5,6 +5,8 @@ from aiogram.filters import BaseFilter
 
 
 class ChatTypeFilter(BaseFilter):
+    """The filter that checks whether bot is ready to work in specific chat_type or not"""
+
     def __init__(self, chat_type: Union[str, list]):
         self.chat_type = chat_type
 

@@ -10,7 +10,10 @@ from common_utils.env_config import ADMINS
 
 
 class CheckSubscriptionMiddleware(BaseMiddleware):
-    """Даем доступ, если пользователь:
+    """
+    Middleware that doesn't allow user communicate to the bot without subscription
+
+    Даем доступ, если пользователь:
     1. Админ
     2. Имеет статус TRIAL, SUBSCRIBED
     """

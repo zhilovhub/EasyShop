@@ -9,6 +9,7 @@ from database.models.user_role_model import UserRoleValues, UserRoleNotFoundErro
 
 
 class CheckRoleMiddleware(BaseMiddleware):
+    """Middleware that checks user state and user's role"""
     async def __call__(
             self,
             handler: Callable[[CallbackQuery | Message, Dict[str, Any]], Awaitable[Any]],

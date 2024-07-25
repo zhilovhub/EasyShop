@@ -55,6 +55,8 @@ from logs.config import logger, extra_params
 
 @admin_bot_menu_router.message(F.web_app_data)
 async def process_web_app_request(event: Message):
+    """Срабатывает, когда админ в главном боте делает тестовый заказ"""
+
     user_id = event.from_user.id
     try:
         order = await create_order(event, OrderType.MAIN_BOT_TEST_ORDER)
@@ -75,6 +77,8 @@ async def process_web_app_request(event: Message):
 
 @admin_bot_menu_router.message(F.reply_to_message)
 async def handle_reply_to_question(message: Message, state: FSMContext):
+    """Срабатывает, когда админ в главном боте отвечает на вопрос от его клиента"""
+
     question_messages_data = QUESTION_MESSAGES.get_data()
     question_message_id = str(message.reply_to_message.message_id)
     if question_message_id not in question_messages_data:
@@ -117,6 +121,8 @@ async def handle_reply_to_question(message: Message, state: FSMContext):
 
 @admin_bot_menu_router.callback_query(lambda query: InlineOrderCancelKeyboard.callback_validator(query.data))
 async def handler_order_cancel_callback(query: CallbackQuery, state: FSMContext):
+    """Подтверждение отмены заказа"""
+
     state_data = await state.get_data()
     bot_data = await bot_db.get_bot(state_data['bot_id'])
     bot_token = bot_data.token
@@ -177,6 +183,8 @@ async def handler_order_cancel_callback(query: CallbackQuery, state: FSMContext)
 
 @admin_bot_menu_router.callback_query(lambda query: InlineAcceptReviewKeyboard.callback_validator(query.data))
 async def handle_review_request(query: CallbackQuery):
+    """Управление отзывом - принять или проигнорировать его"""
+
     callback_data = InlineAcceptReviewKeyboard.Callback.model_validate_json(query.data)
     try:
         review = await product_review_db.get_product_review(callback_data.product_review_id)
@@ -201,6 +209,8 @@ async def handle_review_request(query: CallbackQuery):
 
 @admin_bot_menu_router.callback_query(lambda query: InlineOrderStatusesKeyboard.callback_validator(query.data))
 async def handle_callback(query: CallbackQuery, state: FSMContext):
+    """Изменение статуса заказа админом"""
+
     state_data = await state.get_data()
     bot_data = await bot_db.get_bot(state_data['bot_id'])
     bot_token = bot_data.token
@@ -295,6 +305,8 @@ async def handle_callback(query: CallbackQuery, state: FSMContext):
 
 @admin_bot_menu_router.message(States.WAITING_FOR_TOKEN)
 async def waiting_for_the_token_handler(message: Message, state: FSMContext):
+    """Состояние, при котором у пользователя нет бота и от него требуется токен"""
+
     user_id = message.from_user.id
     user = await user_db.get_user(user_id)
     lang = user.locale
@@ -364,6 +376,8 @@ async def waiting_for_the_token_handler(message: Message, state: FSMContext):
 
 @admin_bot_menu_router.message(States.BOT_MENU, F.photo)
 async def bot_menu_photo_handler(message: Message, state: FSMContext):
+    """Обрабатывает добавление товара через чат"""
+
     state_data = await state.get_data()
     photo_file_id = message.photo[-1].file_id
 
@@ -411,6 +425,8 @@ async def bot_menu_photo_handler(message: Message, state: FSMContext):
 
 @admin_bot_menu_router.callback_query(lambda query: InlineBotMenuKeyboard.callback_validator(query.data))
 async def bot_menu_callback_handler(query: CallbackQuery, state: FSMContext):
+    """Обрабатывает главную клавиатуру меню бота"""
+
     state_data = await state.get_data()
     callback_data = InlineBotMenuKeyboard.Callback.model_validate_json(query.data)
 
@@ -524,6 +540,8 @@ async def bot_menu_callback_handler(query: CallbackQuery, state: FSMContext):
 
 @admin_bot_menu_router.callback_query(lambda query: InlineBotSettingsMenuKeyboard.callback_validator(query.data))
 async def bot_settings_callback_handler(query: CallbackQuery, state: FSMContext):
+    """Обрабатывает настройки кастомного бота"""
+
     state_data = await state.get_data()
     callback_data = InlineBotSettingsMenuKeyboard.Callback.model_validate_json(query.data)
 
@@ -565,6 +583,8 @@ async def bot_settings_callback_handler(query: CallbackQuery, state: FSMContext)
 
 @admin_bot_menu_router.callback_query(lambda query: InlineAdministratorsManageKeyboard.callback_validator(query.data))
 async def admins_manage_callback_handler(query: CallbackQuery):
+    """Обрабатывает настройки администраторов бота"""
+
     callback_data = InlineAdministratorsManageKeyboard.Callback.model_validate_json(query.data)
 
     bot_id = callback_data.bot_id
@@ -624,6 +644,8 @@ async def admins_manage_callback_handler(query: CallbackQuery):
 
 @admin_bot_menu_router.message(States.BOT_MENU)
 async def bot_menu_handler(message: Message, state: FSMContext):
+    """Срабатывает, если админ просто написал сообщение. Указывает администратору что делать."""
+
     state_data = await state.get_data()
     custom_bot = await bot_db.get_bot(state_data['bot_id'])
 
@@ -650,6 +672,8 @@ async def bot_menu_handler(message: Message, state: FSMContext):
 
 
 async def send_new_order_notify(order: OrderSchema, user_id: int):
+    """Sends demo order notifications to the admin"""
+
     order_user_data = await bot.get_chat(order.from_user)
 
     products = []
@@ -668,6 +692,8 @@ async def send_new_order_notify(order: OrderSchema, user_id: int):
 
 
 async def send_order_change_status_notify(order: OrderSchema):
+    """Sends notification about changed status of specific order"""
+
     user_bot = await bot_db.get_bot(order.bot_id)
     text = f"Новый статус заказ <b>#{order.id}</b>\n<b>{order.status}</b>"
     await bot.send_message(user_bot.created_by, text)

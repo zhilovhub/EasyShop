@@ -12,8 +12,9 @@ from bot.main import bot
 from bot.utils import MessageTexts, excel_utils
 from bot.states import States
 from bot.keyboards.main_menu_keyboards import ReplyBotMenuKeyboard
+from bot.post_message.post_message_utils import get_channel_id_from_state_data
 from bot.keyboards.post_message_keyboards import InlinePostMessageMenuKeyboard, ReplyBackPostMessageMenuKeyboard, \
-    ReplyConfirmMediaFilesKeyboard, UnknownPostMessageType
+    ReplyConfirmMediaFilesKeyboard
 
 from common_utils.env_config import WEB_APP_URL, WEB_APP_PORT
 from common_utils.keyboards.keyboard_utils import make_webapp_info
@@ -21,17 +22,10 @@ from common_utils.keyboards.channel_keyboards import InlineJoinContestKeyboard
 
 from database.config import post_message_db, post_message_media_file_db, bot_db, contest_db
 from database.models.bot_model import BotSchema
-from database.models.post_message_model import PostMessageSchema, PostMessageType
+from database.models.post_message_model import PostMessageSchema, PostMessageType, UnknownPostMessageTypeError
 from database.models.post_message_media_files import PostMessageMediaFileSchema
 
 from logs.config import logger, extra_params
-
-
-def get_channel_id(state_data, post_message_type):
-    if post_message_type in (PostMessageType.CHANNEL_POST, PostMessageType.CONTEST):
-        return state_data["channel_id"]
-    else:
-        return None
 
 
 class PostActionType(Enum):
@@ -63,7 +57,7 @@ async def edit_media_files(
                 state,
                 bot_id,
                 post_message_type,
-                channel_id=get_channel_id(state_data, post_message_type)
+                channel_id=get_channel_id_from_state_data(state_data, post_message_type)
             )
 
         case ReplyConfirmMediaFilesKeyboard.Callback.ActionEnum.CLEAR.value:
@@ -90,6 +84,9 @@ async def _media_confirm(
 
 
 async def _media_clear(message: Message, post_message_id, post_message_type):
+    """
+    :raises UnknownPostMessageTypeError:
+        """
     await message.answer("Очищаем все файлы...")
     await post_message_media_file_db.delete_post_message_media_files(post_message_id=post_message_id)
 
@@ -115,13 +112,16 @@ async def _media_clear(message: Message, post_message_id, post_message_type):
                 "Отправьте одним сообщением <b>один</b> медиафайл для сообщения с конкурсом\n\n"
                 "❗ Старый медиафайл к этой записи в канал <b>перезапишется</b>\n\n")
         case _:
-            raise UnknownPostMessageType
+            raise UnknownPostMessageTypeError
 
 
 async def _media_save(
         message: Message,
         post_message_id: int,
         post_message_type: PostMessageType) -> str | None:
+    """
+    :raises UnknownPostMessageTypeError:
+    """
     if message.photo:
         photo = message.photo[-1]
         file_id = photo.file_id
@@ -158,7 +158,7 @@ async def _media_save(
                 text = "Пришлите медиафайл (фото, видео, аудио, документ), " \
                        "который должен быть прикреплен к записи в канал"
             case _:
-                raise UnknownPostMessageType
+                raise UnknownPostMessageTypeError
 
         await message.answer(
             text,
@@ -197,7 +197,7 @@ async def edit_button_text(
             state,
             bot_id,
             post_message_type,
-            channel_id=get_channel_id(state_data, post_message_type)
+            channel_id=get_channel_id_from_state_data(state_data, post_message_type)
         )
 
     if message_text:
@@ -206,14 +206,14 @@ async def edit_button_text(
                 message,
                 bot_id,
                 post_message_type,
-                channel_id=get_channel_id(state_data, post_message_type)
+                channel_id=get_channel_id_from_state_data(state_data, post_message_type)
             )
         else:
             await _button_text_save(
                 message,
                 post_message,
                 post_message_type,
-                channel_id=get_channel_id(state_data, post_message_type)
+                channel_id=get_channel_id_from_state_data(state_data, post_message_type)
             )
 
         await state.set_state(States.BOT_MENU)
@@ -228,6 +228,9 @@ async def _button_text_save(
         post_message_type: PostMessageType,
         channel_id: int | None
 ):
+    """
+    :raises UnknownPostMessageTypeError:
+    """
     post_message.button_text = message.text
 
     await post_message_db.update_post_message(post_message)
@@ -254,7 +257,7 @@ async def _button_text_save(
         case PostMessageType.CHANNEL_POST | PostMessageType.CONTEST | PostMessageType.PARTNERSHIP_POST:
             username = (await Bot(custom_bot_token).get_chat(channel_id)).username
         case _:
-            raise UnknownPostMessageType
+            raise UnknownPostMessageTypeError
 
     await message.answer(
         MessageTexts.bot_post_message_menu_message(post_message_type).format(username),
@@ -283,14 +286,14 @@ async def edit_message(
                 message,
                 bot_id,
                 post_message_type,
-                channel_id=get_channel_id(state_data, post_message_type)
+                channel_id=get_channel_id_from_state_data(state_data, post_message_type)
             )
         else:
             await _message_save(
                 message,
                 post_message,
                 post_message_type,
-                channel_id=get_channel_id(state_data, post_message_type)
+                channel_id=get_channel_id_from_state_data(state_data, post_message_type)
             )
 
         await state.set_state(States.BOT_MENU)
@@ -306,6 +309,11 @@ async def edit_winners_count(
         message: Message,
         state: FSMContext,
         post_message_type: PostMessageType):
+    """
+    Edit the amount of contest winners
+
+    :raises UnknownPostMessageTypeError:
+    """
     message_text = message.html_text
 
     state_data = await state.get_data()
@@ -321,7 +329,7 @@ async def edit_winners_count(
                 message,
                 bot_id,
                 post_message_type,
-                channel_id=get_channel_id(state_data, post_message_type)
+                channel_id=get_channel_id_from_state_data(state_data, post_message_type)
             )
         else:
             try:
@@ -332,7 +340,7 @@ async def edit_winners_count(
                 message,
                 post_message,
                 post_message_type,
-                channel_id=get_channel_id(state_data, post_message_type)
+                channel_id=get_channel_id_from_state_data(state_data, post_message_type)
             )
 
         await state.set_state(States.BOT_MENU)
@@ -350,6 +358,9 @@ async def _winners_count_save(
         post_message_type: PostMessageType,
         channel_id: int
 ):
+    """
+    :raises UnknownPostMessageTypeError:
+    """
     contest = await contest_db.get_contest_by_bot_id(post_message.bot_id)
     contest.winners_count = int(message.text.strip())
     await contest_db.update_contest(contest)
@@ -364,7 +375,7 @@ async def _winners_count_save(
         case PostMessageType.CONTEST:
             username = (await Bot(custom_bot_token).get_chat(channel_id)).username
         case _:
-            raise UnknownPostMessageType
+            raise UnknownPostMessageTypeError
 
     await message.answer(
         MessageTexts.bot_post_message_menu_message(post_message_type).format(username),
@@ -380,6 +391,9 @@ async def _message_save(
         post_message_type: PostMessageType,
         channel_id: int | None
 ):
+    """
+    :raises UnknownPostMessageTypeError:
+    """
     post_message.description = message.html_text
     media_files = await post_message_media_file_db.get_all_post_message_media_files(post_message.post_message_id)
 
@@ -408,7 +422,7 @@ async def _message_save(
         case PostMessageType.CONTEST:
             username = (await Bot(custom_bot_token).get_chat(channel_id)).username
         case _:
-            raise UnknownPostMessageType
+            raise UnknownPostMessageTypeError
 
     await message.answer(
         MessageTexts.bot_post_message_menu_message(post_message_type).format(username),
@@ -422,6 +436,8 @@ async def edit_delay_date(
         message: Message,
         state: FSMContext,
         post_message_type: PostMessageType):
+    """Edits the time on which the Post Message should be postponed"""
+
     message_text = message.html_text
 
     state_data = await state.get_data()
@@ -437,7 +453,7 @@ async def edit_delay_date(
                 message,
                 bot_id,
                 post_message_type,
-                channel_id=get_channel_id(state_data, post_message_type)
+                channel_id=get_channel_id_from_state_data(state_data, post_message_type)
             )
             await state.set_state(States.BOT_MENU)
             await state.set_data(state_data)
@@ -447,7 +463,7 @@ async def edit_delay_date(
                     message,
                     post_message,
                     post_message_type,
-                    channel_id=get_channel_id(state_data, post_message_type)
+                    channel_id=get_channel_id_from_state_data(state_data, post_message_type)
                 )
                 if result:
                     await state.set_state(States.BOT_MENU)
@@ -478,7 +494,7 @@ async def edit_contest_finish_date(
                 message,
                 bot_id,
                 post_message_type,
-                channel_id=get_channel_id(state_data, post_message_type)
+                channel_id=get_channel_id_from_state_data(state_data, post_message_type)
             )
             await state.set_state(States.BOT_MENU)
             await state.set_data(state_data)
@@ -488,7 +504,7 @@ async def edit_contest_finish_date(
                     message,
                     post_message,
                     post_message_type,
-                    channel_id=get_channel_id(state_data, post_message_type)
+                    channel_id=get_channel_id_from_state_data(state_data, post_message_type)
                 )
                 if result:
                     await state.set_state(States.BOT_MENU)
@@ -501,6 +517,8 @@ async def edit_contest_finish_date(
 
 
 async def pre_finish_contest(contest_id: int):
+    """Finishes contest by admin before it should be finished"""
+    
     contest = await contest_db.get_contest_by_contest_id(contest_id)
     db_bot = await bot_db.get_bot(contest.bot_id)
     contest_users = await contest_db.get_contest_users(contest_id)
@@ -539,6 +557,9 @@ async def _contest_finish_date_save(
         post_message_type: PostMessageType,
         channel_id: int | None
 ) -> bool:
+    """
+    :raises UnknownPostMessageTypeError:
+    """
     datetime_obj = datetime.strptime(message.text, "%d.%m.%Y %H:%M")
     datetime_obj.replace(tzinfo=None)
 
@@ -564,7 +585,7 @@ async def _contest_finish_date_save(
         case PostMessageType.CHANNEL_POST | PostMessageType.CONTEST | PostMessageType.PARTNERSHIP_POST:
             username = (await Bot(custom_bot_token).get_chat(channel_id)).username
         case _:
-            raise UnknownPostMessageType
+            raise UnknownPostMessageTypeError
 
     await message.answer(
         MessageTexts.bot_post_message_menu_message(post_message_type).format(username),
@@ -582,6 +603,9 @@ async def _delay_save(
         post_message_type: PostMessageType,
         channel_id: int | None
 ) -> bool:
+    """
+    :raises UnknownPostMessageTypeError:
+    """
     datetime_obj = datetime.strptime(message.text, "%d.%m.%Y %H:%M")
     datetime_obj.replace(tzinfo=None)
 
@@ -607,7 +631,7 @@ async def _delay_save(
         case PostMessageType.CHANNEL_POST | PostMessageType.CONTEST | PostMessageType.PARTNERSHIP_POST:
             username = (await Bot(custom_bot_token).get_chat(channel_id)).username
         case _:
-            raise UnknownPostMessageType
+            raise UnknownPostMessageTypeError
 
     await message.answer(
         MessageTexts.bot_post_message_menu_message(post_message_type).format(username),
@@ -638,7 +662,7 @@ async def edit_button_url(
             state,
             bot_id,
             post_message_type,
-            channel_id=get_channel_id(state_data, post_message_type)
+            channel_id=get_channel_id_from_state_data(state_data, post_message_type)
         )
 
     if message_text:
@@ -647,7 +671,7 @@ async def edit_button_url(
                 message,
                 bot_id,
                 post_message_type,
-                channel_id=get_channel_id(state_data, post_message_type)
+                channel_id=get_channel_id_from_state_data(state_data, post_message_type)
             )
         else:
             pattern = r"(?i)\b((?:https?://|www\d{0,3}[.]|[a-z0-9.\-]+[.][a-z]{2,4}/)(?:[^\s()<>]+|\(([^\s()<>]+" \
@@ -662,7 +686,7 @@ async def edit_button_url(
                 message,
                 post_message,
                 post_message_type,
-                channel_id=get_channel_id(state_data, post_message_type)
+                channel_id=get_channel_id_from_state_data(state_data, post_message_type)
             )
 
         await state.set_state(States.BOT_MENU)
@@ -677,6 +701,9 @@ async def _button_url_save(
         post_message_type: PostMessageType,
         channel_id: int | None
 ):
+    """
+    :raises UnknownPostMessageTypeError:
+    """
     post_message.button_url = message.text
     media_files = await post_message_media_file_db.get_all_post_message_media_files(post_message.post_message_id)
     await post_message_db.update_post_message(post_message)
@@ -702,7 +729,7 @@ async def _button_url_save(
         case PostMessageType.CHANNEL_POST | PostMessageType.CONTEST | PostMessageType.PARTNERSHIP_POST:
             username = (await Bot(custom_bot_token).get_chat(channel_id)).username
         case _:
-            raise UnknownPostMessageType
+            raise UnknownPostMessageTypeError
 
     await message.answer(
         MessageTexts.bot_post_message_menu_message(post_message_type).format(username),
@@ -721,6 +748,17 @@ async def send_post_message(
         message: Message = None,
         is_delayed: bool = True
 ) -> None:
+    """
+    Sends post message
+    
+    :param bot_from_send: BotSchema for postponed messages and Bot for immediately
+    :param to_chat_id: chat_id of the chat to send to
+    :param post_message_schema: the schema of PostMessageSchema
+    :param media_files: media files that should be send with message
+    :param post_action_type: sometimes it is demo, sometimes it is release
+    :param message: need when PostActionType is not Release. It is used for better UX experience
+    :param is_delayed: True if should not send it at one else False
+    """
     if isinstance(bot_from_send, BotSchema):
         bot_from_send = Bot(bot_from_send.token)
 
@@ -883,6 +921,11 @@ async def _reply_no_button(
         post_message_type: PostMessageType,
         channel_id: int | None
 ) -> None:
+    """
+    Tells the admin that button is removed
+    
+    :raises UnknownPostMessageTypeError:
+    """
     state_data = await state.get_data()
 
     await message.answer(
@@ -897,7 +940,7 @@ async def _reply_no_button(
         case PostMessageType.CHANNEL_POST | PostMessageType.CONTEST | PostMessageType.PARTNERSHIP_POST:
             username = (await Bot(custom_bot_token).get_chat(channel_id)).username
         case _:
-            raise UnknownPostMessageType
+            raise UnknownPostMessageTypeError
 
     await message.answer(
         post_message_type.value.format(username),
@@ -916,6 +959,11 @@ async def _back_to_post_message_menu(
         post_message_type: PostMessageType,
         channel_id: int | None
 ) -> None:
+    """
+    Returns to post message menu from everywhere
+    
+    :raises UnknownPostMessageTypeError:
+    """
     await message.answer(
         "Возвращаемся в меню...",
         reply_markup=ReplyBotMenuKeyboard.get_keyboard(bot_id)
@@ -928,7 +976,7 @@ async def _back_to_post_message_menu(
         case PostMessageType.CHANNEL_POST | PostMessageType.CONTEST | PostMessageType.PARTNERSHIP_POST:
             username = (await Bot(custom_bot_token).get_chat(channel_id)).username
         case _:
-            raise UnknownPostMessageType
+            raise UnknownPostMessageTypeError
 
     await message.answer(
         text=MessageTexts.bot_post_message_menu_message(post_message_type).format(username),
