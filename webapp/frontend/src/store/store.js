@@ -179,6 +179,9 @@ export const Store = new Vuex.Store({
             "extra_options": extra_options || []
           })
         });
+        if (response.status === 409) {
+          return 409;
+        }
 
         console.log("addProduct Test picture", images)
         const formData = new FormData();
