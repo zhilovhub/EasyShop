@@ -6,7 +6,7 @@ from pydantic import ValidationError
 
 from fastapi import APIRouter, Depends, Header
 
-from api.utils import check_admin_authorization, HTTPBadRequest, HTTPInternalError, RESPONSES_DICT
+from api.utils import check_admin_authorization, HTTPBadRequestError, HTTPInternalError, RESPONSES_DICT
 
 from database.config import order_db
 from database.models.order_model import OrderNotFoundError, OrderSchema
@@ -23,6 +23,9 @@ router = APIRouter(
 
 @router.get("/generate_order_id")
 async def generate_order_id_api() -> str:
+    """
+    :return: The unique order id for order
+    """
     date = datetime.now().strftime("%d%m%y")
     random_string = ''.join(random.sample(string.digits + string.ascii_letters, 5))
     order_id = date + random_string
@@ -42,6 +45,11 @@ async def generate_order_id_api() -> str:
 
 @router.get("/get_all_orders/{bot_id}")
 async def get_all_orders_api(bot_id: int, authorization_data: str = Header()) -> list[OrderSchema]:
+    """
+    :raises HTTPException:
+    :raises HTTPBadRequestError:
+    :raises HTTPInternalError:
+    """
     await check_admin_authorization(bot_id, authorization_data)
     try:
         orders = await order_db.get_all_orders(bot_id)
@@ -51,7 +59,7 @@ async def get_all_orders_api(bot_id: int, authorization_data: str = Header()) ->
             extra=extra_params(bot_id=bot_id),
             exc_info=ex
         )
-        raise HTTPBadRequest(detail_message=f"Incorrect input data.", ex_msg=str(ex))
+        raise HTTPBadRequestError(detail_message=f"Incorrect input data.", ex_msg=str(ex))
     except Exception as e:
         api_logger.error(
             f"bot_id={bot_id}: Error while execute get_all_orders db_method",
@@ -70,6 +78,10 @@ async def get_all_orders_api(bot_id: int, authorization_data: str = Header()) ->
 
 @router.post("/add_order")
 async def add_order_api(new_order: OrderSchema = Depends(), authorization_data: str = Header()) -> str:
+    """
+    :raises HTTPException:
+    :raises HTTPInternalError:
+    """
     await check_admin_authorization(new_order.bot_id, authorization_data)
     try:
         new_order.ordered_at = new_order.ordered_at.replace(tzinfo=None)
