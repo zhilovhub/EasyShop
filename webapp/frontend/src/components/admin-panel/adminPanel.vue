@@ -300,8 +300,6 @@ export default {
       this.updateItems();
     },
     closeAddProductComponent() {
-      tg.BackButton.hide();
-
       this.addProductComponentIsActive = false;
       this.isLoading = true;
 

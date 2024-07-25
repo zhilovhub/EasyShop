@@ -141,7 +141,9 @@ export const Store = new Vuex.Store({
             "extra_options": extra_options || []
           })
         });
-
+        if (response.status === 409) {
+          return 409;
+        }
         const formData = new FormData();
         for (let i = 0; i< images.length; i++) {
            formData.append(`files`, images[i]);
