@@ -63,6 +63,8 @@ class InlineBotMenuKeyboard:
     async def get_keyboard(bot_id: int, user_id: int) -> InlineKeyboardMarkup:
         actions = InlineBotMenuKeyboard.Callback.ActionEnum
 
+        user_role = await user_role_db.get_user_role(user_id, bot_id)
+
         channel_inline_button = InlineKeyboardButton(
             text="📢 Добавить в канал",
             url=f"https://t.me/{await get_bot_username(bot_id)}?startchannel"
