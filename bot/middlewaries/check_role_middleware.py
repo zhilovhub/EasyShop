@@ -4,6 +4,8 @@ from aiogram import BaseMiddleware
 from aiogram.fsm.context import FSMContext
 from aiogram.types import CallbackQuery, Message, ReplyKeyboardRemove
 
+from bot.states.states import States
+
 from database.config import user_role_db
 from database.models.user_role_model import UserRoleValues, UserRoleNotFoundError
 

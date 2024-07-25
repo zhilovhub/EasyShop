@@ -8,6 +8,8 @@ from custom_bots.handlers.routers import multi_bot_router
 from custom_bots.utils.custom_bot_options import get_option
 from custom_bots.keyboards.custom_bot_menu_keyboards import ReplyCustomBotMenuKeyboard, InlineShopCustomBotKeyboard
 
+from common_utils.broadcasting.broadcasting import send_event, EventTypes
+
 from database.config import custom_bot_user_db, bot_db
 from database.models.bot_model import BotNotFoundError
 from database.models.custom_bot_user_model import CustomBotUserNotFoundError
@@ -36,6 +38,10 @@ async def start_cmd(message: Message, state: FSMContext):
                 extra=extra_params(user_id=user_id, bot_id=bot.bot_id)
             )
             await custom_bot_user_db.add_custom_bot_user(bot.bot_id, user_id)
+            if user_id == bot.created_by:
+                await send_event(message.from_user, EventTypes.FIRST_ADMIN_MESSAGE, event_bot=message.bot)
+            else:
+                await send_event(message.from_user, EventTypes.FIRST_USER_MESSAGE, event_bot=message.bot)
     except BotNotFoundError as e:
         custom_bot_logger.warning("Бот не инициализирован", exc_info=e)
         await Bot(message.bot.token).delete_webhook()

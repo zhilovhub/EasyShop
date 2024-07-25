@@ -30,10 +30,11 @@ from bot.handlers.command_handlers import remove_bot_admin
 
 from common_utils import generate_admin_invite_link
 from common_utils.env_config import FILES_PATH
-from common_utils.bot_settings_config import BOT_PROPERTIES
 from common_utils.order_utils.order_type import OrderType
+from common_utils.bot_settings_config import BOT_PROPERTIES
 from common_utils.order_utils.order_utils import create_order
 from common_utils.storage.custom_bot_storage import custom_bot_storage
+from common_utils.broadcasting.broadcasting import send_event, EventTypes
 from common_utils.keyboards.order_manage_keyboards import InlineOrderCancelKeyboard, InlineOrderStatusesKeyboard, \
     InlineAcceptReviewKeyboard, InlineOrderCustomBotKeyboard, InlineCreateReviewKeyboard
 from common_utils.keyboards.keyboards import (InlineBotMenuKeyboard, InlineBotSettingsMenuKeyboard,
@@ -354,6 +355,9 @@ async def waiting_for_the_token_handler(message: Message, state: FSMContext):
         MessageTexts.BOT_MENU_MESSAGE.value.format(bot_username),
         reply_markup=await InlineBotMenuKeyboard.get_keyboard(user_bot.bot_id, user_id)
     )
+
+    await send_event(message.from_user, EventTypes.USER_CREATED_FIRST_BOT, event_bot=Bot(user_bot.token))
+
     await state.set_state(States.BOT_MENU)
     await state.set_data({"bot_id": bot_id})
 

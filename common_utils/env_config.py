@@ -30,6 +30,7 @@ SCHEDULER_URL = _get_env("SCHEDULER_URL")
 ADMINS = [int(uid.strip()) for uid in _get_env("ADMINS").split(',')]
 TECH_ADMINS = [int(uid.strip()) for uid in _get_env("TECH_ADMINS").split(',')]
 ADMIN_GROUP_ID = _get_env("ADMIN_GROUP_ID")
+ADMIN_BUGS_GROUP_ID = _get_env("ADMIN_BUGS_GROUP_ID")
 
 LOGS_PATH = _get_env("PROJECT_ROOT") + "logs/"
 
