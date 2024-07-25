@@ -4,7 +4,7 @@ from database.config import category_db
 from database.models.category_model import CategorySchema, CategorySchemaWithoutId, \
     CategoryNameAlreadyExistsError
 
-from api.utils import check_admin_authorization, RESPONSES_DICT, HTTPInternalError, HTTPConflict
+from api.utils import check_admin_authorization, RESPONSES_DICT, HTTPInternalError, HTTPConflictError
 
 from logs.config import api_logger, extra_params
 
@@ -18,6 +18,9 @@ router = APIRouter(
 
 @router.get("/get_all_categories/{bot_id}")
 async def get_all_categories_api(bot_id: int) -> list[CategorySchema]:
+    """
+    :raises HTTPInternalError:
+    """
     try:
         categories = await category_db.get_all_categories(bot_id)
         api_logger.debug(
@@ -36,6 +39,11 @@ async def get_all_categories_api(bot_id: int) -> list[CategorySchema]:
 
 @router.post("/add_category")
 async def add_category_api(new_category: CategorySchemaWithoutId, authorization_data: str = Header()) -> int:
+    """
+    :raises HTTPInternalError:
+    :raises HTTPConflictError:
+    :raises HTTPException:
+    """
     await check_admin_authorization(new_category.bot_id, authorization_data)
     try:
         cat_id = await category_db.add_category(new_category)
@@ -44,7 +52,7 @@ async def add_category_api(new_category: CategorySchemaWithoutId, authorization_
             extra=extra_params(bot_id=new_category.bot_id, category_id=cat_id)
         )
     except CategoryNameAlreadyExistsError:
-        raise HTTPConflict(
+        raise HTTPConflictError(
             detail_message="Conflict while adding category (category with provided name already exists).",
             category_name=new_category.name
         )
@@ -60,6 +68,10 @@ async def add_category_api(new_category: CategorySchemaWithoutId, authorization_
 
 @router.post("/edit_category")
 async def edit_category_api(category: CategorySchema, authorization_data: str = Header()) -> bool:
+    """
+    :raises HTTPInternalError:
+    :raises HTTPException:
+    """
     await check_admin_authorization(category.bot_id, authorization_data)
     try:
         await category_db.update_category(category)

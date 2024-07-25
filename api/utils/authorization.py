@@ -14,6 +14,13 @@ from database.models.bot_model import BotNotFoundError
 
 
 async def check_admin_authorization(bot_id: int, data_string: str) -> bool:
+    """
+    See: https://core.telegram.org/bots/webapps#validating-data-received-via-the-mini-app
+
+    :returns: True if (hash from telegram is valid) or the (mode is DEBUG and data_string is "DEBUG") else False
+
+    :raises HTTPException:
+    """
     if API_DEBUG_MODE and data_string == "DEBUG":
         return True
     if data_string:
