@@ -26,6 +26,7 @@ class CheckRoleMiddleware(BaseMiddleware):
         if isinstance(event, Message) and state_data and 'bot_id' in state_data and state_data['bot_id'] == -1:
             return await handler(event, data)
         if not state_data or 'bot_id' not in state_data:
+            await state.set_data({'bot_id': -1})
             if isinstance(event, CallbackQuery):
                 await event.message.edit_reply_markup(reply_markup=None)
             return await event.answer("Ошибка состояния. Перезапустите бота.")
