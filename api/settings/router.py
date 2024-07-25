@@ -7,7 +7,7 @@ from pydantic import BaseModel
 from database.config import bot_db
 from database.models.bot_model import BotNotFoundError
 
-from api.utils import HTTPBotNotFound, HTTPInternalError, RESPONSES_DICT
+from api.utils import HTTPBotNotFoundError, HTTPInternalError, RESPONSES_DICT
 
 
 PATH = "/api/settings"
@@ -18,12 +18,18 @@ router = APIRouter(
 )
 
 
-class WebAppOptions(BaseModel):
+class WebAppOptions(BaseModel):  # TODO remove after Arsen has finished his task with Custom Bot Options
     bg_color: str | None
 
 
 @router.get("/get_web_app_options/{bot_id}/")
-async def get_product_api(bot_id: int) -> WebAppOptions:
+async def get_web_app_options_api(bot_id: int) -> WebAppOptions:
+    """
+    :returns: Pydantic WebAppOptions Model with options
+
+    :raises HTTPBotNotFoundError:
+    :raises HTTPInternalError:
+    """
     try:
         bot = await bot_db.get_bot(bot_id)
 
@@ -39,7 +45,7 @@ async def get_product_api(bot_id: int) -> WebAppOptions:
             extra=extra_params(bot_id=bot_id),
             exc_info=e
         )
-        raise HTTPBotNotFound(bot_id=bot_id)
+        raise HTTPBotNotFoundError(bot_id=bot_id)
 
     except Exception as e:
         api_logger.error(

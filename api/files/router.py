@@ -17,6 +17,13 @@ router = APIRouter(
 
 @router.get("/{file_name}")
 async def get_file(file_name: str) -> FileResponse:
+    """
+    :param file_name: the name of the requiring file on server
+    :return: File in bytes
+
+    :raises HTTPFileNotFound:
+    :raises HTTPInternalError:
+    """
     try:
         with open(FILES_PATH + file_name, 'rb'):
             pass
