@@ -113,8 +113,10 @@ async def clear_start_command_handler(message: Message, state: FSMContext):
         )
         await _start_trial(message, state)
 
-    # user_bots = await bot_db.get_bots(user_id)
     user_bots = await user_role_db.get_user_bots(user_id)
+    if not user_bots:
+        user_bots = await bot_db.get_bots(user_id)
+
     await send_instructions(bot, user_bots[0].bot_id if user_bots else None, user_id, cache_resources_file_id_store)
 
     user_status = (await user_db.get_user(user_id)).status
