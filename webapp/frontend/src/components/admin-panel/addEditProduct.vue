@@ -213,12 +213,16 @@ export default {
             if (type === "image/heic") {
               my_store.dispatch("convertHEIC", [f, imagePreviews, imageFiles, vm]).then((data) => {
                 let that = data[3];
-                that.reasonLoading = "Загрузка предпросмотрa файла...";
-                let modified_file = data[0];
-                data[1].push(URL.createObjectURL(modified_file));
-                data[2].push(modified_file);
-                that.isLoading = false;
-                that.reasonLoading = "";
+                that.reasonLoading = "Загрузка предпросмотрa обработанного файла...";
+                try {
+                  let modified_file = data[0];
+                  data[1].push(URL.createObjectURL(modified_file));
+                  data[2].push(modified_file);
+                  that.isLoading = false;
+                  that.reasonLoading = "";
+                } catch (err) {
+                  that.reasonLoading = "Ошибка при добавлении обработанной фотографии. " + err
+                }
               });
             } else if (type === "unknown") {
               vm.isLoading = false;
@@ -226,10 +230,14 @@ export default {
               alert("incorrect photo type")
             } else {
               vm.reasonLoading = "Загрузка предпросмотрa файла...";
-              imagePreviews.push(URL.createObjectURL(f))
-              imageFiles.push(f)
-              vm.isLoading = false;
-              vm.reasonLoading = "";
+              try {
+                imagePreviews.push(URL.createObjectURL(f))
+                imageFiles.push(f)
+                vm.isLoading = false;
+                vm.reasonLoading = "";
+              } catch (err) {
+                vm.reasonLoading = "Ошибка при добавлении фотографии. " + err
+              }
             }
             // console.log(vm.isLoading);
           }
@@ -431,7 +439,7 @@ export default {
     </div>
     <div v-if="isLoading" style="position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; flex-direction: column; font-size: 32px; background-color: var(--app-background-color)">
       <h1 style="font-size: 32px; margin: 10px">Загрузка...</h1>
-      <p v-show="this.reasonLoading" style="margin: 10px">{{reasonLoading}}</p>
+      <p v-show="this.reasonLoading" style="margin: 10px; text-wrap: wrap; max-width: 80%; text-align: center;">{{reasonLoading}}</p>
     </div>
     <div v-else class="card">
       <h1>Фото товара</h1>
