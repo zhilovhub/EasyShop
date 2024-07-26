@@ -7,10 +7,8 @@ from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 from common_utils.keyboards.keyboard_utils import callback_json_validator, get_bot_channels, get_bot_username, \
     get_bot_mailing, get_bot_status
 
-from database.config import bot_db, user_role_db
-from database.models.user_role_model import UserRoleValues, UserRoleSchema, UserRoleNotFoundError
-
-from logs.config import logger, extra_params
+from database.config import user_role_db
+from database.models.user_role_model import UserRoleValues
 
 
 class InlineBotMenuKeyboard:
@@ -63,20 +61,7 @@ class InlineBotMenuKeyboard:
     async def get_keyboard(bot_id: int, user_id: int) -> InlineKeyboardMarkup:
         actions = InlineBotMenuKeyboard.Callback.ActionEnum
 
-        # TODO ? remove after updating old users
-        try:
-            user_role = await user_role_db.get_user_role(user_id, bot_id)
-        except UserRoleNotFoundError as e:
-            logger.debug(
-                f"user_id={user_id} bot_id={bot_id}: role not found, auto creating new role",
-                extra=extra_params(user_id=user_id, bot_id=bot_id), exc_info=e)
-            bot = await bot_db.get_bot(bot_id)
-            if bot.created_by == user_id:
-                role = UserRoleValues.OWNER
-            else:
-                role = UserRoleValues.ADMINISTRATOR
-            await user_role_db.add_user_role(UserRoleSchema(user_id=user_id, bot_id=bot_id, role=role))
-            user_role = await user_role_db.get_user_role(user_id, bot_id)
+        user_role = await user_role_db.get_user_role(user_id, bot_id)
 
         channel_inline_button = InlineKeyboardButton(
             text="📢 Добавить в канал",

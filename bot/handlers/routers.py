@@ -24,6 +24,7 @@ custom_bot_editing_router.callback_query.middleware(CheckSubscriptionMiddleware(
 custom_bot_editing_router.message.middleware(ErrorMiddleware())
 custom_bot_editing_router.callback_query.middleware(ErrorMiddleware())
 custom_bot_editing_router.callback_query.middleware(CheckRoleMiddleware())
+custom_bot_editing_router.message.middleware(CheckRoleMiddleware())
 
 admin_bot_menu_router = Router(name="admin_bot_menu")  # only for SUBSCRIBERS
 admin_bot_menu_router.message.filter(ChatTypeFilter(chat_type="private"))
@@ -36,6 +37,7 @@ admin_bot_menu_router.callback_query.middleware(CheckSubscriptionMiddleware())
 admin_bot_menu_router.message.middleware(ErrorMiddleware())
 admin_bot_menu_router.callback_query.middleware(ErrorMiddleware())
 admin_bot_menu_router.callback_query.middleware(CheckRoleMiddleware())
+admin_bot_menu_router.message.middleware(CheckRoleMiddleware())
 
 post_message_router = Router(name="post_message")  # only for SUBSCRIBERS
 post_message_router.message.filter(ChatTypeFilter(chat_type="private"))
@@ -48,6 +50,7 @@ post_message_router.callback_query.middleware(CheckSubscriptionMiddleware())
 post_message_router.message.middleware(ErrorMiddleware())
 post_message_router.callback_query.middleware(ErrorMiddleware())
 post_message_router.callback_query.middleware(CheckRoleMiddleware())
+post_message_router.message.middleware(CheckRoleMiddleware())
 
 channel_menu_router = Router(name="channel_menu")  # only for SUBSCRIBERS
 channel_menu_router.message.filter(ChatTypeFilter(chat_type="private"))
@@ -60,6 +63,7 @@ channel_menu_router.callback_query.middleware(CheckSubscriptionMiddleware())
 channel_menu_router.message.middleware(ErrorMiddleware())
 channel_menu_router.callback_query.middleware(ErrorMiddleware())
 channel_menu_router.callback_query.middleware(CheckRoleMiddleware())
+channel_menu_router.message.middleware(CheckRoleMiddleware())
 
 stock_menu_router = Router(name="stock_menu")  # only for SUBSCRIBERS
 stock_menu_router.message.filter(ChatTypeFilter(chat_type="private"))
@@ -72,6 +76,7 @@ stock_menu_router.callback_query.outer_middleware(log_middleware)
 stock_menu_router.message.outer_middleware(MaintenanceMiddleware())
 stock_menu_router.callback_query.outer_middleware(MaintenanceMiddleware())
 stock_menu_router.callback_query.middleware(CheckRoleMiddleware())
+stock_menu_router.message.middleware(CheckRoleMiddleware())
 
 subscribe_router = Router(name="subscribe_router")
 subscribe_router.message.filter(ChatTypeFilter(chat_type="private"))
