@@ -52,12 +52,19 @@ export default {
       this.productPrice = this.itemEditData.price;
       this.productCount = this.itemEditData.count;
       this.options = this.itemEditData.extra_options || [];
-      this.imageFiles = new Object(this.itemEditData.picture);
-      this.imagePreviews = new Object(this.itemEditData.picture);
 
-      console.log("itemEditData.picture", this.itemEditData.picture)
-      console.log("this.imageFiles", this.imageFiles)
-      console.log("this.imagePreviews", this.imagePreviews)
+      this.imageFiles = [];
+      this.imagePreviews = [];
+
+      if (this.itemEditData.picture) {
+        this.itemEditData.picture.forEach(item => {
+          if (item) {
+            this.imagePreviews.push(item)
+            this.imageFiles.push(item)
+          }
+        })
+
+      }
 
       if (!this.imagePreviews) {
         this.imagePreviews = [];
