@@ -1,5 +1,5 @@
 from aiogram import Bot
-from aiogram.types import FSInputFile, InlineKeyboardMarkup, InlineKeyboardButton
+from aiogram.types import FSInputFile, InlineKeyboardMarkup, InlineKeyboardButton, ReplyKeyboardRemove
 from aiogram.exceptions import TelegramBadRequest
 
 from bot.utils import MessageTexts
@@ -43,6 +43,11 @@ async def send_instructions(
                 chat_id=chat_id,
                 text="✅ У Вас уже есть бот",
                 reply_markup=ReplyBotMenuKeyboard.get_keyboard(bot_id=custom_bot_id)
+            )
+            await bot.send_message(
+                chat_id=chat_id,
+                text="❌ Вы всё ещё не создали бота",
+                reply_markup=ReplyKeyboardRemove()
             )
     except (TelegramBadRequest, KeyError) as e:
         logger.info(f"error while sending instructions.... cache is empty, sending raw files {e}")

@@ -19,6 +19,10 @@ class UserNotFoundError(KwargsException):
     """Raised when provided user not found in database"""
 
 
+class UnknownUserStatus(KwargsException):
+    """Raised when provided user status is not expected"""
+
+
 class UserStatusValues(Enum):
     BANNED = "banned"
     NEW = "new"

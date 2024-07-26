@@ -23,13 +23,18 @@ from common_utils.broadcasting.broadcasting import send_event, EventTypes, succe
 from database.config import user_db, bot_db, user_role_db
 from database.models.bot_model import BotNotFoundError
 from database.models.user_model import UserSchema, UserStatusValues, UserNotFoundError
+from database.exceptions.exceptions import KwargsException
 from database.models.user_role_model import UserRoleSchema, UserRoleValues, UserRoleNotFoundError
 
 from logs.config import logger
 
 
-async def _handle_admin_invite_link(message: Message, params: list[str], state: FSMContext):
-    link_hash = params[0].split('_', maxsplit=1)[-1]
+class _UnknownDeepLinkArgument(KwargsException):
+    """Raised if provided deep link argument is not expected"""
+
+
+async def _handle_admin_invite_link(message: Message, state: FSMContext, deep_link_params: list[str]):
+    link_hash = deep_link_params[0].split('_', maxsplit=1)[-1]
     try:
         db_bot = await bot_db.get_bot_by_invite_link_hash(link_hash)
 
@@ -63,7 +68,7 @@ async def _handle_admin_invite_link(message: Message, params: list[str], state: 
         return await message.answer("🚫 Пригласительная ссылка не найдена.")
 
 
-async def _send_bot_menu(user_id: int, user_state: FSMContext, user_bots: list | None):
+async def _send_bot_menu(user_id: int, state: FSMContext, user_bots: list | None):
     user_status = (await user_db.get_user(user_id)).status
 
     if user_status == UserStatusValues.SUBSCRIPTION_ENDED:  # TODO do not send it from States.WAITING_PAYMENT_APPROVE
@@ -72,7 +77,7 @@ async def _send_bot_menu(user_id: int, user_state: FSMContext, user_bots: list |
             MessageTexts.SUBSCRIBE_END_NOTIFY.value,
             reply_markup=InlineSubscriptionContinueKeyboard.get_keyboard(bot_id=None)
         )
-        return await user_state.set_state(States.SUBSCRIBE_ENDED)
+        return await state.set_state(States.SUBSCRIBE_ENDED)
 
     if not user_bots:
         return
@@ -85,8 +90,8 @@ async def _send_bot_menu(user_id: int, user_state: FSMContext, user_bots: list |
             MessageTexts.BOT_MENU_MESSAGE.value.format(user_bot_data.username),
             reply_markup=await InlineBotMenuKeyboard.get_keyboard(user_bots[0].bot_id, user_id)
         )
-        await user_state.set_state(States.BOT_MENU)
-        await user_state.set_data({'bot_id': bot_id})
+        await state.set_state(States.BOT_MENU)
+        await state.set_data({'bot_id': bot_id})
 
 
 async def remove_bot_admin(user_id: int, user_state: FSMContext):
@@ -102,24 +107,31 @@ async def remove_bot_admin(user_id: int, user_state: FSMContext):
 
 @commands_router.message(CommandStart(deep_link=True))
 async def deep_link_start_command_handler(message: Message, state: FSMContext, command: CommandObject):
+    """
+    :raises _UnknownDeepLinkArgument:
+    """
     user_id = message.from_user.id
-    params = command.args.split()
+    deep_link_params = command.args.split()
 
-    if params[0] == "restart":
-        await clear_start_command_handler(message, state)
+    if deep_link_params[0] == "restart":
+        await start_command_handler(message, state)
+    elif deep_link_params[0].startswith("admin_"):
+        await _check_if_new_user(message, state)  # Проверяем, новый ли пользователь
 
-    try:
+        user_bots = await user_role_db.get_user_bots(user_id)
+        if user_bots:
+            await message.answer("🚫 Вы не можете быть одновременно и админом и владельцем бота.")
+        else:
+            await _handle_admin_invite_link(message, state, deep_link_params)
+    else:
+        raise _UnknownDeepLinkArgument(arg=deep_link_params)
+
+
+async def _check_if_new_user(message: Message, state: FSMContext) -> None:
+    user_id = message.from_user.id
+
+    try:  # Проверка, есть ли такой пользователь (если нет то это новый пользователь)
         await user_db.get_user(user_id)
-
-        if params and params[0].startswith("admin_"):
-            user_bots = await user_role_db.get_user_bots(user_id)
-            if user_bots:
-                return await message.answer("🚫 Вы не можете быть одновременно и админом и владельцем бота.")
-            else:
-                res = await _handle_admin_invite_link(message, params, state)
-                if res is not None:
-                    return res
-
     except UserNotFoundError:
         logger.info(f"user {user_id} not found in db, creating new instance...")
 
@@ -128,38 +140,37 @@ async def deep_link_start_command_handler(message: Message, state: FSMContext, c
             user_id=user_id, username=message.from_user.username, registered_at=datetime.utcnow(),
             status=UserStatusValues.NEW, locale="default", subscribed_until=None)
         )
-
-        if params and params[0].startswith("admin_"):
-            res = await _handle_admin_invite_link(message, params, state)
-            if res is not None:
-                return res
+        await _start_trial(message, state)  # Задаём новому пользователю пробный период (статус TRIAL)
 
 
 @commands_router.message(CommandStart())
-async def clear_start_command_handler(message: Message, state: FSMContext):
+async def start_command_handler(message: Message, state: FSMContext):
+    """
+    1. Встречает пользователя, проверяет, есть ли он в базе данных. Если нет, то создаёт, так как видимо пользователь
+    новый.
+    2. ВСЕГДА присылает инструкцию
+    3. Проверяет, есть ли у пользователя боты, которыми он может управлять.
+        3.1 Если есть боты, то переводит в состояние BOT_MENU и присылает все клавиатуры для главного меню бота.
+        3.2 Если нет ботов, то переводит в состояние WAITING_FOR_TOKEN
+    """
     user_id = message.from_user.id
-    try:
-        await user_db.get_user(user_id)
-    except UserNotFoundError:
-        logger.info(f"user {user_id} not found in db, creating new instance...")
 
-        await send_event(message.from_user, EventTypes.NEW_USER)
-        await user_db.add_user(UserSchema(
-            user_id=user_id, username=message.from_user.username, registered_at=datetime.utcnow(),
-            status=UserStatusValues.NEW, locale="default", subscribed_until=None)
-        )
-        await _start_trial(message, state)
-
+    await _check_if_new_user(message, state)  # Проверяем, новый ли пользователь
     user_bots = await user_role_db.get_user_bots(user_id)
-    if not user_bots:
-        user_bots = await bot_db.get_bots(user_id)
 
-    await send_instructions(bot, user_bots[0].bot_id if user_bots else None, user_id, cache_resources_file_id_store)
+    # Отправляем инструкцию. Если у человека есть бот, к инструкции добавится клавиатурное (не inline) меню бота.
+    # Если ботов нет, то клавиатура удаляется с помощью ReplyKeyboardRemove
+    await send_instructions(
+        bot=bot,
+        custom_bot_id=user_bots[0].bot_id if user_bots else None,
+        chat_id=user_id,
+        cache_resources_file_id_store=cache_resources_file_id_store
+    )
 
     if not user_bots:
-        await state.set_state(States.WAITING_FOR_TOKEN)
+        await state.set_state(States.WAITING_FOR_TOKEN)  # Просто ожидаем токен, так как ботов у человека нет
     else:
-        await _send_bot_menu(user_id, state, user_bots)
+        await _send_bot_menu(user_id, state, user_bots)  # Присылаем inline меню бота, так как у человека бот есть
 
 
 @commands_router.message(Command("rm_admin"), StateFilter(States.BOT_MENU))

@@ -1,34 +1,54 @@
-from aiogram.types import Message
+from aiogram.types import Message, CallbackQuery
 from aiogram.fsm.context import FSMContext
 
 from bot.main import subscription
 from bot.keyboards.subscription_keyboards import InlineSubscriptionContinueKeyboard
 
-from database.models.user_model import UserStatusValues
+from database.models.user_model import UserStatusValues, UnknownUserStatus
 
 from logs.config import logger
 
 
-async def check_subscription(message: Message, state: FSMContext = None):
-    # TODO https://tracker.yandex.ru/BOT-17 Учесть часовые пояса клиентов
-    user_id = message.from_user.id
+async def check_subscription(event: Message | CallbackQuery, state: FSMContext = None) -> None:
+    """Checks user status and handles the event considering it"""
+
+    user_id = event.from_user.id
     try:
         bot_id = (await state.get_data())["bot_id"]
     except (KeyError, AttributeError):
         logger.warning(f"check_sub_cmd: bot_id of user {user_id} not found, setting it to None")
         bot_id = None
-    kb = InlineSubscriptionContinueKeyboard.get_keyboard(bot_id=bot_id)
 
     user_status = await subscription.get_user_status(user_id)
     match user_status:
         case UserStatusValues.SUBSCRIPTION_ENDED:
-            await message.answer(f"Твоя подписка закончилась, чтобы продлить её на месяц нажми на кнопку ниже.",
-                                 reply_markup=kb)
+            message_text = f"Твоя подписка закончилась, чтобы продлить её на месяц нажми на кнопку ниже."
+            if isinstance(event, Message):
+                await event.answer(
+                    message_text,
+                    reply_markup=InlineSubscriptionContinueKeyboard.get_keyboard(bot_id=bot_id)
+                )
+            else:
+                await event.answer(
+                    message_text,
+                    show_alert=True
+                )
         case UserStatusValues.TRIAL | UserStatusValues.SUBSCRIBED:
-            await message.answer(
-                await subscription.get_when_expires_text(user_id, is_trial=(user_status == UserStatusValues.TRIAL)),
-                reply_markup=kb
+            message_text = await subscription.get_when_expires_text(
+                user_id=user_id,
+                is_trial=(user_status == UserStatusValues.TRIAL)
             )
-        case _:
-            await message.answer("Произошла ошибка. Администраторы уже уведомлены")
-            raise Exception("Как они сюда попали?")
+            if isinstance(event, Message):
+                await event.answer(
+                    message_text,
+                    reply_markup=InlineSubscriptionContinueKeyboard.get_keyboard(bot_id=bot_id)
+                )
+            else:
+                await event.answer(
+                    message_text,
+                    show_alert=True
+                )
+        case _:  # Здесь не должно оказаться пользователя со статусом NEW, ведь мы сразу оформляем для них TRIAL
+            raise UnknownUserStatus(
+                user_status=user_status, user_id=user_id
+            )
