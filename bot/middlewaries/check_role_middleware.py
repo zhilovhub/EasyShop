@@ -9,9 +9,6 @@ from database.models.user_role_model import UserRoleValues, UserRoleNotFoundErro
 
 
 class CheckRoleMiddleware(BaseMiddleware):
-    def __init__(self) -> None:
-        pass
-
     async def __call__(
             self,
             handler: Callable[[CallbackQuery | Message, Dict[str, Any]], Awaitable[Any]],
@@ -21,23 +18,31 @@ class CheckRoleMiddleware(BaseMiddleware):
         user_id = event.from_user.id
         state: FSMContext = data["state"]
         state_data = await state.get_data()
+
+        empty_bot_state_data = {'bot_id': -1}
+
         if isinstance(event, Message) and state_data and 'bot_id' in state_data and state_data['bot_id'] == -1:
             return await handler(event, data)
+
         if not state_data or 'bot_id' not in state_data:
-            await state.set_data({'bot_id': -1})
+            await state.set_data(empty_bot_state_data)
             if isinstance(event, CallbackQuery):
                 await event.message.edit_reply_markup(reply_markup=None)
-            return await event.answer("Ошибка состояния. Перезапустите бота.")
+            return await event.answer("Ошибка состояния. Напишите /start")
+
         try:
             user_role = await user_role_db.get_user_role(user_id, state_data['bot_id'])
             if user_role.role not in (UserRoleValues.ADMINISTRATOR, UserRoleValues.OWNER):
                 raise UserRoleNotFoundError
         except UserRoleNotFoundError:
-            await state.set_data({'bot_id': -1})
+            await state.set_data(empty_bot_state_data)
+            message_text = "Вы больше не админ этого бота. Напишите /start для возврата к своему или созданию нового"
+
             if isinstance(event, CallbackQuery):
                 await event.message.edit_reply_markup(reply_markup=None)
-                return await event.answer("Вы больше не админ этого бота.", show_alert=True)
+                return await event.answer(message_text, show_alert=True)
             else:
-                await state.set_data({})
-                return await event.answer("Вы больше не админ этого бота.", reply_markup=ReplyKeyboardRemove())
+                await state.set_data(empty_bot_state_data)
+                return await event.answer(message_text, reply_markup=ReplyKeyboardRemove())
+
         return await handler(event, data)

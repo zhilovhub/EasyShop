@@ -107,7 +107,7 @@ class UserRoleDao(Dao):
     @validate_call(validate_return=True)
     async def get_user_role(self, user_id: int, bot_id: int) -> UserRoleSchema:
         """
-        :raises UserRoleNotFoundError
+        :raises UserRoleNotFoundError:
         """
         async with self.engine.begin() as conn:
             raw_res = await conn.execute(select(UserRole).where(UserRole.user_id == user_id,
