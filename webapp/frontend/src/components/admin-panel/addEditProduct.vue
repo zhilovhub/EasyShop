@@ -54,6 +54,21 @@ export default {
       this.options = this.itemEditData.extra_options || [];
       this.imageFiles = new Object(this.itemEditData.picture);
       this.imagePreviews = new Object(this.itemEditData.picture);
+
+      console.log("itemEditData.picture", this.itemEditData.picture)
+      console.log("this.imageFiles", this.imageFiles)
+      console.log("this.imagePreviews", this.imagePreviews)
+
+      if (!this.imagePreviews) {
+        this.imagePreviews = [];
+      }
+      if (!this.imageFiles) {
+        this.imageFiles = [];
+      }
+
+      console.log("this.imageFiles", this.imageFiles)
+      console.log("this.imagePreviews", this.imagePreviews)
+
       tg.MainButton.show();
       tg.BackButton.show();
       tg.MainButton.text = "Изменить товар";
