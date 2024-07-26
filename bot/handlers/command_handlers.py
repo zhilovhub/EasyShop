@@ -4,7 +4,7 @@ from aiogram import F, Bot
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.storage.base import StorageKey
 from aiogram.filters import CommandStart, Command, CommandObject, StateFilter
-from aiogram.types import Message, ReplyKeyboardRemove, InlineKeyboardMarkup, InlineKeyboardButton
+from aiogram.types import Message, ReplyKeyboardRemove
 
 from bot.main import bot, cache_resources_file_id_store, subscription, dp
 from bot.utils import MessageTexts

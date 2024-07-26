@@ -7,10 +7,8 @@ from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 from common_utils.keyboards.keyboard_utils import callback_json_validator, get_bot_channels, get_bot_username, \
     get_bot_mailing, get_bot_status
 
-from database.config import bot_db, user_role_db
-from database.models.user_role_model import UserRoleValues, UserRoleSchema, UserRoleNotFoundError
-
-from logs.config import logger, extra_params
+from database.config import user_role_db
+from database.models.user_role_model import UserRoleValues
 
 
 class InlineBotMenuKeyboard:
