@@ -229,6 +229,7 @@ async def delete_bot_handler(message: Message, state: FSMContext):
             )
             await send_instructions(bot, None, message.from_user.id, cache_resources_file_id_store)
             await state.set_state(States.WAITING_FOR_TOKEN)
+            await state.set_data({"bot_id": -1})
 
         case _:
             await message.answer("Напишите ПОДТВЕРДИТЬ для подтверждения удаления или вернитесь назад")
