@@ -1,6 +1,7 @@
 import Vuex from 'vuex'
 import { tg } from '@/main.js'
 import '@/assets/base.css'
+import heic2any from "heic2any";
 
 
 export const Store = new Vuex.Store({
@@ -119,6 +120,43 @@ export const Store = new Vuex.Store({
         }
         return {msg: "error", cat_id: -1}
       }
+    },
+    async convertHEIC(t, dt) {
+      console.log("dt", dt)
+      let vm = dt[3];
+      vm.reasonLoading = "Обработка HEIC файла...";
+      let file = dt[0];
+      console.log("file", file)
+      let imagePreviews = dt[1];
+      console.log("imagePreviews", imagePreviews)
+      let imageFiles = dt[2];
+      try {
+        let converted_file = await heic2any({
+          blob: file,
+          toType: "image/jpeg",
+          quality: 1.0
+      })
+        vm.reasonLoading = "HEIC файл конвертирован.";
+        console.log(converted_file)
+        converted_file.name = file.name.substring(0, file.name.lastIndexOf('.')) + '.jpeg';
+        return [converted_file, imagePreviews, imageFiles, vm]
+      } catch (err) {
+        alert(err)
+        vm.isLoading = false;
+        vm.reasonLoading = '';
+      }
+
+
+      // ).then(function (convertedFile) {
+      //   alert("convert heic then called")
+      //     convertedFile.name = file.name.substring(0, file.name.lastIndexOf('.')) + '.jpeg';
+      //     return [convertedFile, imagePreviews, imageFiles];
+      // }).catch(err => {
+      //   alert("convert heic catch called")
+      //   alert(err)
+      //     console.log("file type is not heic, skipping converting..");
+      //     return [file, imagePreviews, imageFiles]
+      // });
     },
     async addProduct({commit, dispatch}, productInformation) {
       try {

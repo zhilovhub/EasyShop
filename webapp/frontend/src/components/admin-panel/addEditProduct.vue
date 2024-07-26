@@ -2,7 +2,6 @@
 import { Swiper, SwiperSlide } from '@SwiperVue'
 import { Navigation, Scrollbar } from '@Swiper'
 import { tg } from '@/main.js'
-import heic2any from "heic2any";
 
 export default {
   computed: {
@@ -40,6 +39,8 @@ export default {
       selectingCategoryIsActive: false,
       permChosenOption: '',
       permCategoryInput: '',
+      isLoading: false,
+      reasonLoading: '',
       isMounted: false,
     };
   },
@@ -149,40 +150,26 @@ export default {
           alert("Вы можете загрузить максимум 5 фоток.");
           return;
         }
-
-        function convertHEIC(file, imagePreviews, imageFiles) {
-            return new Promise(function(resolve) {
-                {
-                    heic2any({
-                      blob: file,
-                      toType: "image/jpeg",
-                      quality: 1.0
-                    }).then(function (convertedFile) {
-                      convertedFile.name = file.name.substring(0, file.name.lastIndexOf('.')) + '.jpeg';
-                      resolve([convertedFile, imagePreviews, imageFiles]);
-                    }).catch(err => {console.log("file type is not heic, skipping converting.."); resolve([file, imagePreviews, imageFiles])});
-                }
-            });
-        }
-
+        this.isLoading = true;
         function get_file_type(header) {
+          let _type;
           console.log(header);
             let first_part = header.slice(0, 4 * 2);
             let second_part = header.slice(5, 9 * 2 + 1)
             console.log(first_part)
             console.log(second_part)
             if (first_part === "89504e47") {
-              type = "image/png";
+              _type = "image/png";
             } else if (["ffd8ffe8", "ffd8ffe3", "ffd8ffe2", "ffd8ffe1", "ffd8ffe0"].includes(first_part)) {
-              type = "image/jpeg";
+              _type = "image/jpeg";
             } else if (["66747970686569", "63667479706d"].includes(second_part)) {
-              type = "image/heic";
+              _type = "image/heic";
             } else {
-              type = "unknown";
+              _type = "unknown";
             }
-            console.log("uploaded file MIME type: " + type)
+            console.log("uploaded file MIME type: " + _type)
 
-            switch (type){
+            switch (_type){
               case "image/heic":
                 console.log("heic file uploaded");
                 break;
@@ -190,47 +177,63 @@ export default {
               case "image/png":
                 break;
             }
-            return type
+            return _type
         }
-
-        let fileReader = new FileReader(), type = "unknown";
+        let vm = this;
+        let imagePreviews = this.imagePreviews;
+        let imageFiles = this.imageFiles;
+        let my_store = this.$store
+        console.log("this", this.imagePreviews)
+        console.log("foreach", imagePreviews)
 
         newFiles.forEach(file => {
           console.log(file);
 
-          let imagePreviews = this.imagePreviews;
-          let imageFiles = this.imageFiles;
-          console.log("this", this.imagePreviews)
-          console.log("foreach", imagePreviews)
+          let fileReader = new FileReader();
 
-           fileReader.onload = function(e) {
-             console.log(e)
-             console.log(file)
-             console.log("filereader", imagePreviews)
-            let arr = (new Uint8Array(e.target.result)).subarray(0, 12);
+        fileReader.onloadend = (function (f) {
+          return function (e) {
+            vm.reasonLoading = "Загрузка файла...";
+            console.log(e)
+            console.log(f)
+            console.log("filereader", imagePreviews)
+            let arr = (new Uint8Array(e.target.result));
             let header = "";
 
-            for(var i = 0; i < arr.length; i++) {
-               header += arr[i].toString(16);
+            for (var i = 0; i < arr.length; i++) {
+              header += arr[i].toString(16);
             }
+            vm.reasonLoading = "Распознаем тип файла...";
 
-            type = get_file_type(header)
+            let type;
+            type = get_file_type(header);
+
+            vm.reasonLoading = "Обработка полученного файла с типом " + type + " ...";
 
             if (type === "image/heic") {
-              convertHEIC(file, imagePreviews, imageFiles
-              ).then((data) => {
-                  console.log(data);
-                  let modified_file = data[0];
-                  data[1].push(URL.createObjectURL(modified_file));
-                  data[2].push(modified_file);
-                });
+              my_store.dispatch("convertHEIC", [f, imagePreviews, imageFiles, vm]).then((data) => {
+                let that = data[3];
+                that.reasonLoading = "Загрузка предпросмотрa файла...";
+                let modified_file = data[0];
+                data[1].push(URL.createObjectURL(modified_file));
+                data[2].push(modified_file);
+                that.isLoading = false;
+                that.reasonLoading = "";
+              });
             } else if (type === "unknown") {
+              vm.isLoading = false;
+              vm.reasonLoading = "";
               alert("incorrect photo type")
             } else {
-              imagePreviews.push(URL.createObjectURL(file))
-              imageFiles.push(file)
+              vm.reasonLoading = "Загрузка предпросмотрa файла...";
+              imagePreviews.push(URL.createObjectURL(f))
+              imageFiles.push(f)
+              vm.isLoading = false;
+              vm.reasonLoading = "";
             }
+            // console.log(vm.isLoading);
           }
+        })(file);
 
           fileReader.readAsArrayBuffer(file);
 
@@ -426,7 +429,11 @@ export default {
         </div>
       </div>
     </div>
-    <div class="card">
+    <div v-if="isLoading" style="position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; flex-direction: column; font-size: 32px; background-color: var(--app-background-color)">
+      <h1 style="font-size: 32px; margin: 10px">Загрузка...</h1>
+      <p v-show="this.reasonLoading" style="margin: 10px">{{reasonLoading}}</p>
+    </div>
+    <div v-else class="card">
       <h1>Фото товара</h1>
       <div class="upload-image-block">
         <div class="image-preview-block" v-if="imagePreviews && imagePreviews.length>0">
@@ -441,7 +448,7 @@ export default {
               <img v-else-if="this.itemEditData && this.itemEditData.id" :src="`${this.$store.state.api_url}/files/`+ preview" alt="Uploaded image" class="image-preview"/>
             </swiper-slide>
           </swiper>
-          <input type="file" id="images-input" name="avatar" accept="image/png, image/jpeg" @change="handleFileUpload"/>
+          <input type="file" id="images-input" name="avatar" accept="image/png, image/jpeg, .heic, .heif" @change="handleFileUpload"/>
           <svg width="66" height="66" viewBox="0 0 66 66" fill="none" xmlns="http://www.w3.org/2000/svg">
             <g clip-path="url(#clip0_1326_10836)">
               <path d="M35.75 56.375C35.75 57.134 35.134 57.75 34.375 57.75H12.375C5.55225 57.75 0 52.1978 0 45.375V12.375C0 5.55225 5.55225 0 12.375 0H45.375C52.1978 0 57.75 5.55225 57.75 12.375V34.375C57.75 35.134 57.134 35.75 56.375 35.75C55.616 35.75 55 35.134 55 34.375V12.375C55 7.0675 50.6825 2.75 45.375 2.75H12.375C7.0675 2.75 2.75 7.0675 2.75 12.375V35.299L13.2302 24.8187C16.8657 21.1832 23.2072 21.1832 26.8427 24.8187L46.3512 44.4042C46.8875 44.9405 46.8848 45.8123 46.3512 46.3485C46.0817 46.6152 45.7298 46.75 45.3805 46.75C45.0285 46.75 44.6765 46.6153 44.407 46.3458L24.8985 26.763C22.3053 24.1698 17.7733 24.167 15.1772 26.763L2.75 39.1875V45.375C2.75 50.6825 7.0675 55 12.375 55H34.375C35.134 55 35.75 55.616 35.75 56.375ZM46.75 15.125C46.75 18.9172 43.6645 22 39.875 22C36.0855 22 33 18.9172 33 15.125C33 11.3328 36.0855 8.25 39.875 8.25C43.6645 8.25 46.75 11.3328 46.75 15.125ZM44 15.125C44 12.8507 42.1493 11 39.875 11C37.6007 11 35.75 12.8507 35.75 15.125C35.75 17.3993 37.6007 19.25 39.875 19.25C42.1493 19.25 44 17.3993 44 15.125ZM64.625 52.25H55V42.625C55 41.866 54.384 41.25 53.625 41.25C52.866 41.25 52.25 41.866 52.25 42.625V52.25H42.625C41.866 52.25 41.25 52.866 41.25 53.625C41.25 54.384 41.866 55 42.625 55H52.25V64.625C52.25 65.384 52.866 66 53.625 66C54.384 66 55 65.384 55 64.625V55H64.625C65.384 55 66 54.384 66 53.625C66 52.866 65.384 52.25 64.625 52.25Z" fill="#878787"/>
@@ -454,7 +461,7 @@ export default {
           </svg>
         </div>
         <div v-else>
-          <input type="file" id="avatar" name="avatar" accept="image/png, image/jpeg" @change="handleFileUpload"/>
+          <input type="file" id="avatar" name="avatar" accept="image/png, image/jpeg, .heic, .heif" @change="handleFileUpload"/>
           <div>
             <svg width="66" height="66" viewBox="0 0 66 66" fill="none" xmlns="http://www.w3.org/2000/svg">
               <g clip-path="url(#clip0_1326_10836)">
