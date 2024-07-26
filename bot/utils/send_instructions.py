@@ -44,6 +44,7 @@ async def send_instructions(
                 text="✅ У Вас уже есть бот",
                 reply_markup=ReplyBotMenuKeyboard.get_keyboard(bot_id=custom_bot_id)
             )
+        else:
             await bot.send_message(
                 chat_id=chat_id,
                 text="❌ Вы всё ещё не создали бота",
