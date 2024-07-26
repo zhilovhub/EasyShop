@@ -190,7 +190,7 @@ export const Store = new Vuex.Store({
            formData.append(`files`, images[i]);
         }
         const productId = await response.json()
-        if (productId) {
+        if (productId && typeof productId !== 'object') {
           try {
             await fetch(`${Store.state.api_url}/api/products/add_product_photo?bot_id=${Store.state.bot_id}&product_id=${productId}`, {
               method: 'POST',

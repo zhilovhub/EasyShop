@@ -158,7 +158,7 @@ export default {
           }
           this.isMounted = false;
           setTimeout(() => {
-            tg.MainButton.close();
+            tg.MainButton.hide();
             tg.BackButton.hide();
             this.$emit("close");
           }, 100);
@@ -167,7 +167,7 @@ export default {
       } else {
         const requiredItems = document.querySelectorAll('.required');
         requiredItems.forEach(item => {
-          if (item) {
+          if (item.value === '') {
             item.style.border = '1px solid #ff003c';
             item.placeholder = 'Поле не может быть пустым';
             item.classList.add('red-placeholder');
@@ -188,7 +188,7 @@ export default {
         extra_options: this.options,
         id: this.itemEditData.id
       }).then(() => {
-        tg.MainButton.close();
+        tg.MainButton.hide();
         tg.BackButton.hide();
         this.$emit("close");
       }, 100);
