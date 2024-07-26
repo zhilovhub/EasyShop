@@ -180,11 +180,11 @@ export default {
             return _type
         }
         let vm = this;
-        let imagePreviews = this.imagePreviews;
-        let imageFiles = this.imageFiles;
-        let my_store = this.$store
+        // let imagePreviews = this.imagePreviews;
+        // let imageFiles = this.imageFiles;
+        // let my_store = this.$store
         console.log("this", this.imagePreviews)
-        console.log("foreach", imagePreviews)
+        console.log("foreach", vm.imagePreviews)
 
         newFiles.forEach(file => {
           console.log(file);
@@ -196,7 +196,7 @@ export default {
             vm.reasonLoading = "Загрузка файла...";
             console.log(e)
             console.log(f)
-            console.log("filereader", imagePreviews)
+            console.log("filereader", vm.imagePreviews)
             let arr = (new Uint8Array(e.target.result));
             let header = "";
 
@@ -211,13 +211,19 @@ export default {
             vm.reasonLoading = "Обработка полученного файла с типом " + type + " ...";
 
             if (type === "image/heic") {
-              my_store.dispatch("convertHEIC", [f, imagePreviews, imageFiles, vm]).then((data) => {
+              vm.$store.dispatch("convertHEIC", [f, vm.imagePreviews, vm.imageFiles, vm]).then((data) => {
                 let that = data[3];
                 that.reasonLoading = "Загрузка предпросмотрa обработанного файла...";
                 try {
+                  if (!that.imagePreviews) {
+                    that.imagePreviews = [];
+                  }
+                  if (!that.imageFiles) {
+                    that.imageFiles = [];
+                  }
                   let modified_file = data[0];
-                  data[1].push(URL.createObjectURL(modified_file));
-                  data[2].push(modified_file);
+                  that.imagePreviews.push(URL.createObjectURL(modified_file));
+                  that.imageFiles.push(modified_file);
                   that.isLoading = false;
                   that.reasonLoading = "";
                 } catch (err) {
@@ -231,8 +237,14 @@ export default {
             } else {
               vm.reasonLoading = "Загрузка предпросмотрa файла...";
               try {
-                imagePreviews.push(URL.createObjectURL(f))
-                imageFiles.push(f)
+                if (!vm.imagePreviews) {
+                  vm.imagePreviews = [];
+                }
+                if (!vm.imageFiles) {
+                  vm.imageFiles = [];
+                }
+                vm.imagePreviews.push(URL.createObjectURL(f))
+                vm.imageFiles.push(f)
                 vm.isLoading = false;
                 vm.reasonLoading = "";
               } catch (err) {
