@@ -231,6 +231,8 @@ export default {
             } else {
               vm.reasonLoading = "Загрузка предпросмотрa файла...";
               try {
+                let x;
+                x.push(1)
                 imagePreviews.push(URL.createObjectURL(f))
                 imageFiles.push(f)
                 vm.isLoading = false;
