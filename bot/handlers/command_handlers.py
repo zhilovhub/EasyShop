@@ -77,10 +77,11 @@ async def _send_bot_menu(user_id: int, state: FSMContext, user_bots: list | None
             MessageTexts.SUBSCRIBE_END_NOTIFY.value,
             reply_markup=InlineSubscriptionContinueKeyboard.get_keyboard(bot_id=None)
         )
-        return await state.set_state(States.SUBSCRIBE_ENDED)
+        await state.set_state(States.SUBSCRIBE_ENDED)
+        return await state.set_data({"bot_id": -1})
 
     if not user_bots:
-        return
+        return await state.set_data({"bot_id": -1})
     else:
         bot_id = user_bots[0].bot_id
         user_bot = Bot(user_bots[0].token)
@@ -169,6 +170,7 @@ async def start_command_handler(message: Message, state: FSMContext):
 
     if not user_bots:
         await state.set_state(States.WAITING_FOR_TOKEN)  # Просто ожидаем токен, так как ботов у человека нет
+        await state.set_data({"bot_id": -1})
     else:
         await _send_bot_menu(user_id, state, user_bots)  # Присылаем inline меню бота, так как у человека бот есть
 
