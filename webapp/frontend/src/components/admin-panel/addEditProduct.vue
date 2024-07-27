@@ -44,6 +44,11 @@ export default {
       isMounted: false,
     };
   },
+  unmounted() {
+    tg.offEvent('mainButtonClicked', this.addProduct);
+    tg.offEvent('mainButtonClicked', this.editProduct);
+    tg.offEvent('backButtonClicked', this.closingComponent);
+  },
   mounted() {
     if (this.itemEditData && this.itemEditData.id) {
       this.productName = this.itemEditData.name;
@@ -127,7 +132,6 @@ export default {
             this.$emit("close");
           }, 100);
         });
-        tg.offEvent('mainButtonClicked', this);
 
       } else {
         const requiredItems = document.querySelectorAll('.required');
@@ -155,7 +159,6 @@ export default {
       }).then(() => {
         this.$emit("close");
       }, 100);
-      tg.offEvent('mainButtonClicked', this);
     },
     closingComponent() {
       this.isMounted = false;
