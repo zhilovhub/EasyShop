@@ -58,6 +58,7 @@ export default {
       this.productCount = this.itemEditData.count;
       this.options = this.itemEditData.extra_options || [];
 
+
       this.imageFiles = [];
       this.imagePreviews = [];
 
@@ -187,6 +188,8 @@ export default {
       }, 100);
     },
     handleFileUpload(event) {
+      console.log("cats", this.categories)
+      console.log('CCAT', this.chosenCategory)
       if (!this.imageFiles) {
         this.imageFiles = [];
       }
@@ -400,7 +403,7 @@ export default {
       this.categories.map(category => {
         category.isSelected = category.id === item.id || item.category && category.id === item.category[0];
       });
-      this.chosenCategory = item;
+      this.chosenCategory = item.category[0];
     },
   }
 };
