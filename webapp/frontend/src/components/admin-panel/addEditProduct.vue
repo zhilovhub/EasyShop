@@ -146,7 +146,7 @@ export default {
         article: this.productArticle,
         price: this.productPrice,
         count: this.productCount,
-        pictures: this.imageFiles,
+        picture: this.imageFiles,
         extra_options: this.options,
         id: this.itemEditData.id
       }).then(() => {
