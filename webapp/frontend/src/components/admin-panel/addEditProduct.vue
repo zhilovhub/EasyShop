@@ -127,6 +127,8 @@ export default {
             this.$emit("close");
           }, 100);
         });
+        tg.offEvent('mainButtonClicked', this);
+
       } else {
         const requiredItems = document.querySelectorAll('.required');
         requiredItems.forEach(item => {
@@ -153,6 +155,7 @@ export default {
       }).then(() => {
         this.$emit("close");
       }, 100);
+      tg.offEvent('mainButtonClicked', this);
     },
     closingComponent() {
       this.isMounted = false;
