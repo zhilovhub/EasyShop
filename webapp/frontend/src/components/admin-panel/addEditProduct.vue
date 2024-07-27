@@ -61,11 +61,25 @@ export default {
       this.imageFiles = [];
       this.imagePreviews = [];
 
+      let vm = this;
+
       if (this.itemEditData.picture) {
         this.itemEditData.picture.forEach(item => {
           if (item) {
-            this.imagePreviews.push(item)
-            this.imageFiles.push(item)
+            let api_url = this.$store.state.api_url + "/files/" + item;
+            this.imagePreviews.push(item);
+
+            console.log(api_url)
+
+            fetch(api_url)
+              .then(res => {
+                console.log(res);
+                return res.blob();
+              })
+              .then(blob => {
+                  console.log(blob);
+                  vm.imageFiles.push(blob);
+              });
           }
         })
 
