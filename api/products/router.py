@@ -250,6 +250,8 @@ async def create_file(bot_id: int,
 
     try:
         product = await product_db.get_product(product_id)
+        product.picture = []
+
         for file in files:
             random_string = ''.join(
                 random.sample(
@@ -266,8 +268,6 @@ async def create_file(bot_id: int,
             with open(FILES_PATH + photo_path, "wb") as photo:
                 photo.write(await file.read())
 
-            if not product.picture:
-                product.picture = []
             product.picture.append(photo_path)
         await product_db.update_product(product)
 
@@ -304,10 +304,9 @@ async def edit_product_api(
     """
 
     await check_admin_authorization(product.bot_id, authorization_data)
-
     try:
         product = _remove_empty_variants(product)
-        await product_db.update_product(product)
+        await product_db.update_product(product, exclude_pictures=True)
     except Exception as e:
         api_logger.error(
             f"bot_id={product.bot_id}: Error while execute update_product db_method with product={product}",

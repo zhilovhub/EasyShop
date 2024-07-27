@@ -318,11 +318,21 @@ class ProductDao(Dao):
         return product_id
 
     @validate_call(validate_return=True)
-    async def update_product(self, updated_product: ProductSchema):
+    async def update_product(self, updated_product: ProductSchema, exclude_pictures: bool = False) -> None:
+        """
+        :param updated_product: Product Schema to update
+        :param exclude_pictures: True when we edit the product from frontend and we don't want to change the pictures
+        because we have another logic with pictures
+        """
+        if exclude_pictures:
+            updated_product_dump = updated_product.model_dump(exclude={"picture"})
+        else:
+            updated_product_dump = updated_product.model_dump()
+
         await self.get_product(updated_product.id)
         async with self.engine.begin() as conn:
             await conn.execute(
-                update(Product).where(Product.id == updated_product.id).values(updated_product.model_dump())
+                update(Product).where(Product.id == updated_product.id).values(updated_product_dump)
             )
 
         self.logger.debug(
