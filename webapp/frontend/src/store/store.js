@@ -180,8 +180,10 @@ export const Store = new Vuex.Store({
           })
         });
 
+        console.log("addProduct Test picture", images)
         const formData = new FormData();
         for (let i = 0; i< images.length; i++) {
+          console.log("addProduct foreach picture", images[i])
            formData.append(`files`, images[i]);
         }
         const productId = await response.json()
@@ -226,11 +228,16 @@ export const Store = new Vuex.Store({
             })
           });
 
+
+          console.log("editProduct Test picture", picture)
           const formData = new FormData();
           for (let i = 0; i< picture.length; i++) {
+            console.log("editProduct foreach picture", picture[i])
             formData.append(`files`, picture[i]);
           }
           const productId = id
+          console.log("editProduct Test productId", productId)
+
           if (productId) {
             try {
               await fetch(`${Store.state.api_url}/api/products/add_product_photo?bot_id=${Store.state.bot_id}&product_id=${productId}`, {
