@@ -44,6 +44,11 @@ export default {
       isMounted: false,
     };
   },
+  unmounted() {
+    tg.offEvent('mainButtonClicked', this.addProduct);
+    tg.offEvent('mainButtonClicked', this.editProduct);
+    tg.offEvent('backButtonClicked', this.closingComponent);
+  },
   mounted() {
     if (this.itemEditData && this.itemEditData.id) {
       this.productName = this.itemEditData.name;
@@ -52,8 +57,51 @@ export default {
       this.productPrice = this.itemEditData.price;
       this.productCount = this.itemEditData.count;
       this.options = this.itemEditData.extra_options || [];
-      this.imageFiles = new Object(this.itemEditData.picture);
-      this.imagePreviews = new Object(this.itemEditData.picture);
+
+
+      this.imageFiles = [];
+      this.imagePreviews = [];
+
+      let vm = this;
+
+      this.isLoading = true;
+      this.reasonLoading = "Загрузка фотографий товара...";
+      try {
+        if (this.itemEditData.picture) {
+          this.itemEditData.picture.forEach(item => {
+          if (item) {
+            let api_url = this.$store.state.api_url + "/files/" + item;
+            this.imagePreviews.push(item);
+
+            console.log(api_url)
+
+            fetch(api_url)
+              .then(res => {
+                console.log(res);
+                return res.blob();
+              })
+              .then(blob => {
+                  console.log(blob);
+                  vm.imageFiles.push(blob);
+              });
+          }
+        })
+      }
+        this.isLoading = false;
+      } catch (err) {
+          this.reasonLoading = "Произошла ошибка при загрузке фотографий. " + err
+        }
+
+      if (!this.imagePreviews) {
+        this.imagePreviews = [];
+      }
+      if (!this.imageFiles) {
+        this.imageFiles = [];
+      }
+
+      console.log("this.imageFiles", this.imageFiles)
+      console.log("this.imagePreviews", this.imagePreviews)
+
       tg.MainButton.show();
       tg.BackButton.show();
       tg.MainButton.text = "Изменить товар";
@@ -77,7 +125,7 @@ export default {
     this.$store.dispatch('getCategories').then(() => {
       this.categories = this.$store.state.categories;
       if (this.itemEditData) {
-        this.chooseCategory(this.itemEditData);
+        this.initChooseCategory(this.itemEditData);
         this.handleFileUpload(null);
       }
     });
@@ -89,10 +137,10 @@ export default {
   },
   methods: {
     addProduct() {
-      if (this.productName && this.productArticle && this.productPrice && this.productCount && this.chosenCategory && this.chosenCategory.id) {
+      if (this.productName && this.productArticle && this.productPrice && this.productCount && this.chosenCategory) {
         this.$store.dispatch("addProduct", {
           name: this.productName,
-          category: [this.chosenCategory.id],
+          category: [this.chosenCategory],
           description: this.productDescription,
           article: this.productArticle,
           price: this.productPrice,
@@ -105,6 +153,7 @@ export default {
             this.$emit("close");
           }, 100);
         });
+
       } else {
         const requiredItems = document.querySelectorAll('.required');
         requiredItems.forEach(item => {
@@ -117,14 +166,15 @@ export default {
       }
     },
     editProduct() {
+      console.log("editProduct", this.imageFiles)
       this.$store.dispatch("editProduct", {
         name: this.productName,
-        category: [this.chosenCategory.id],
+        category: [this.chosenCategory],
         description: this.productDescription,
         article: this.productArticle,
         price: this.productPrice,
         count: this.productCount,
-        pictures: this.imageFiles,
+        picture: this.imageFiles,
         extra_options: this.options,
         id: this.itemEditData.id
       }).then(() => {
@@ -138,6 +188,8 @@ export default {
       }, 100);
     },
     handleFileUpload(event) {
+      console.log("cats", this.categories)
+      console.log('CCAT', this.chosenCategory)
       if (!this.imageFiles) {
         this.imageFiles = [];
       }
@@ -343,15 +395,32 @@ export default {
         return error
       }
     },
-    chooseCategory(item) {
+    initChooseCategory(editData) {
       const allSizes = document.querySelectorAll('.category-main');
       allSizes.forEach(size => {
         size.classList.remove('chosenCategory');
       });
       this.categories.map(category => {
-        category.isSelected = category.id === item.id || item.category && category.id === item.category[0];
+        if (editData.category && category.id === editData.category[0]) {
+          category.isSelected = true;
+          this.chosenCategory = editData.category[0];
+        } else {
+          category.isSelected = false;
+        }
       });
-      this.chosenCategory = item;
+      console.log("chosen cat", this.chosenCategory)
+    },
+    chooseCategory(item) {
+      // item is category object
+      const allSizes = document.querySelectorAll('.category-main');
+      allSizes.forEach(size => {
+        size.classList.remove('chosenCategory');
+      });
+      this.categories.map(category => {
+        category.isSelected = category.id === item.id;
+      });
+      this.chosenCategory = item.id;
+      console.log("new chosen cat", this.chosenCategory)
     },
   }
 };
