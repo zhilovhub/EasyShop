@@ -125,7 +125,7 @@ export default {
     this.$store.dispatch('getCategories').then(() => {
       this.categories = this.$store.state.categories;
       if (this.itemEditData) {
-        this.chooseCategory(this.itemEditData);
+        this.initChooseCategory(this.itemEditData);
         this.handleFileUpload(null);
       }
     });
@@ -395,15 +395,31 @@ export default {
         return error
       }
     },
-    chooseCategory(item) {
+    initChooseCategory(editData) {
       const allSizes = document.querySelectorAll('.category-main');
       allSizes.forEach(size => {
         size.classList.remove('chosenCategory');
       });
       this.categories.map(category => {
-        category.isSelected = category.id === item.id || item.category && category.id === item.category[0];
+        if (editData.category && category.id === editData.category[0]) {
+          category.isSelected = true;
+          this.chosenCategory = editData.category[0];
+        } else {
+          category.isSelected = false;
+        }
       });
-      this.chosenCategory = item.category[0];
+
+    },
+    chooseCategory(item) {
+      // item is category object
+      const allSizes = document.querySelectorAll('.category-main');
+      allSizes.forEach(size => {
+        size.classList.remove('chosenCategory');
+      });
+      this.categories.map(category => {
+        category.isSelected = category.id === item.id;
+      });
+      this.chosenCategory = item;
     },
   }
 };
