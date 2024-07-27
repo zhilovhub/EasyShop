@@ -221,11 +221,31 @@ export const Store = new Vuex.Store({
               "article": article,
               "price": price || 0,
               "count": count || 0,
-              "picture": picture,
               "extra_options": extra_options || {},
               "id": id,
             })
           });
+
+          const formData = new FormData();
+          for (let i = 0; i< picture.length; i++) {
+            formData.append(`files`, picture[i]);
+          }
+          const productId = id
+          if (productId) {
+            try {
+              await fetch(`${Store.state.api_url}/api/products/add_product_photo?bot_id=${Store.state.bot_id}&product_id=${productId}`, {
+                method: 'POST',
+                headers: {
+                  'Access-Control-Allow-Origin': '*',
+                  'authorization-data': tg.initData,
+                },
+                body: formData
+              });
+            } catch (error) {
+              console.error('There was a problem with the fetch operation:', error);
+            }
+          }
+
         } catch (error) {
           console.error('There was a problem with the fetch operation:', error);
         }
