@@ -139,6 +139,7 @@ export default {
       }
     },
     editProduct() {
+      console.log("editProduct", this.imageFiles)
       this.$store.dispatch("editProduct", {
         name: this.productName,
         category: [this.chosenCategory.id],
