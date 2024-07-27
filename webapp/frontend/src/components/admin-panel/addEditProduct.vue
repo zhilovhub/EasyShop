@@ -169,7 +169,7 @@ export default {
       console.log("editProduct", this.imageFiles)
       this.$store.dispatch("editProduct", {
         name: this.productName,
-        category: [this.chosenCategory.id],
+        category: [this.chosenCategory],
         description: this.productDescription,
         article: this.productArticle,
         price: this.productPrice,
@@ -408,7 +408,7 @@ export default {
           category.isSelected = false;
         }
       });
-
+      console.log("chosen cat", this.chosenCategory)
     },
     chooseCategory(item) {
       // item is category object
@@ -419,7 +419,8 @@ export default {
       this.categories.map(category => {
         category.isSelected = category.id === item.id;
       });
-      this.chosenCategory = item;
+      this.chosenCategory = item.id;
+      console.log("new chosen cat", this.chosenCategory)
     },
   }
 };
