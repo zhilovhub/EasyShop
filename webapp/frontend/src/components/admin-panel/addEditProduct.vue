@@ -63,8 +63,11 @@ export default {
 
       let vm = this;
 
-      if (this.itemEditData.picture) {
-        this.itemEditData.picture.forEach(item => {
+      this.isLoading = true;
+      this.reasonLoading = "Загрузка фотографий товара...";
+      try {
+        if (this.itemEditData.picture) {
+          this.itemEditData.picture.forEach(item => {
           if (item) {
             let api_url = this.$store.state.api_url + "/files/" + item;
             this.imagePreviews.push(item);
@@ -82,8 +85,11 @@ export default {
               });
           }
         })
-
       }
+        this.isLoading = false;
+      } catch (err) {
+          this.reasonLoading = "Произошла ошибка при загрузке фотографий. " + err
+        }
 
       if (!this.imagePreviews) {
         this.imagePreviews = [];
