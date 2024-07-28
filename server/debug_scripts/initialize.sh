@@ -1,30 +1,18 @@
-if [ $# -ne 1 ]
-then
-  "There must be only one argument - label (debug, arsen, vova, ilya, front)"
-  exit 1
-fi
-
-label=$1
-directory_path=/home/debug/${label}EzShop
-services_path=${directory_path}/server/debug_services
-
-if [ ! -d "${directory_path}/venv" ]; then
+if [ ! -d "/home/debug/EasyShop/venv" ]; then
   echo "venv does not exist creating..."
-  python -m venv ${directory_path}/venv
+  python -m venv /home/debug/EasyShop/venv
 else echo "venv directory found."
 fi
-
-source ${directory_path}/venv/bin/activate
+source /home/debug/EasyShop/venv/bin/activate
 echo "Installing python requirements..."
-pip install -r ${directory_path}/api/requirements.txt
-pip install -r ${directory_path}/bot/requirements.txt
+pip install -r /home/debug/EasyShop/api/requirements.txt
+pip install -r /home/debug/EasyShop/bot/requirements.txt
 echo "Complete."
 echo "Creating systemd services..."
-cp ${services_path}/dev_api@.service ~/.config/systemd/user/dev_api@.service
-cp ${services_path}/dev_bot@.service ~/.config/systemd/user/dev_bot@.service
-cp ${services_path}/dev_multibot@.service ~/.config/systemd/user/dev_multibot@.service
+cp /home/debug/EasyShop/debug_services/debug_api.service ~/.config/systemd/user/debug_api.service
+cp /home/debug/EasyShop/debug_services/debug_bot.service ~/.config/systemd/user/debug_bot.service
+cp /home/debug/EasyShop/debug_services/debug_multibot.service ~/.config/systemd/user/debug_multibot.service
 echo "Restarting systemd daemon..."
-
 systemctl --user daemon-reload
 echo "Services created."
 echo "Trying upgrade migrations..."

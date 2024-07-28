@@ -1,0 +1,17 @@
+[Unit]
+Description=debug bot service
+
+Wants=network.target
+After=syslog.target network-online.target
+
+[Service]
+Environment="PYTHONPATH=/home/debug/EasyShop"
+Type=simple
+WorkingDirectory=/home/debug/EasyShop/bot
+ExecStart=/home/debug/EasyShop/venv/bin/python3 /home/debug/EasyShop/bot/main.py
+KillMode=process
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target
