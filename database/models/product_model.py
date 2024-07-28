@@ -301,7 +301,7 @@ class ProductDao(Dao):
         async with self.engine.begin() as conn:
             if replace_duplicates:
                 upsert_query = upsert(Product).values(new_product_dict).on_conflict_do_update(
-                    constraint=f"products_name_key",
+                    constraint=f"products_pkey",
                     set_=new_product_dict
                 )
                 product_id = (await conn.execute(upsert_query)).inserted_primary_key[0]
@@ -310,10 +310,14 @@ class ProductDao(Dao):
                     extra=extra_params(product_id=product_id, bot_id=new_product.bot_id)
                 )
             else:
-                upsert(Product).values(new_product_dict).on_conflict_do_nothing(
-                    constraint=f"products_name_key",
-                )  # TODO что-то тут странное. Почему запрос есть, но не исполняется?
-                product_id = -1
+                upsert_query = upsert(Product).values(new_product_dict).on_conflict_do_nothing(
+                    constraint=f"products_pkey",
+                )
+                product_id = (await conn.execute(upsert_query)).inserted_primary_key[0]
+                self.logger.debug(
+                    f"bot_id={new_product.bot_id}: upserted product {product_id} {new_product}",
+                    extra=extra_params(product_id=product_id, bot_id=new_product.bot_id)
+                )
 
         return product_id
 
