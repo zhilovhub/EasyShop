@@ -1,0 +1,14 @@
+[Unit]
+Description=%I dev_multibot service
+
+Wants=network.target
+After=syslog.target network-online.target
+
+[Service]
+Environment="PYTHONPATH=/home/debug/%IEzShop"
+Type=oneshot
+WorkingDirectory=/home/debug/%IEzShop/custom_bots
+ExecStart=/home/debug/%IEzShop/venv/bin/python3 /home/debug/%IEzShop/custom_bots/multibot.py
+
+[Install]
+WantedBy=multi-user.target

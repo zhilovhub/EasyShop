@@ -10,7 +10,7 @@ from api.products.router import router as product_router
 from api.settings.router import router as settings_router
 from api.categories.router import router as category_router
 
-from common_utils.env_config import LOGS_PATH, API_PROTOCOL, API_HOST, SSL_KEY_PATH, SSL_CERT_PATH, API_PORT
+from common_utils.env_config import LOGS_PATH, API_PROTOCOL, API_HOST, SSL_KEY_PATH, SSL_CERT_PATH, API_PORT, UDS_PATH
 
 from logs.config import logger_configuration
 
@@ -76,10 +76,10 @@ if __name__ == "__main__":
                       f'=============================\n')
 
     if API_PROTOCOL == "http":
-        uvicorn.run("api.main:app", host=API_HOST, port=API_PORT, log_level="info",
+        uvicorn.run("api.main:app", host=API_HOST, port=API_PORT, log_level="info", uds=UDS_PATH,
                     log_config=logger_configuration)
     elif API_PROTOCOL == "https":
-        uvicorn.run("api.main:app", host=API_HOST, port=API_PORT, log_level="info",
+        uvicorn.run("api.main:app", host=API_HOST, port=API_PORT, log_level="info", uds=UDS_PATH,
                     ssl_keyfile=SSL_KEY_PATH, ssl_certfile=SSL_CERT_PATH,
                     log_config=logger_configuration)
 
