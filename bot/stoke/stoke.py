@@ -200,11 +200,11 @@ class Stoke:
                     filter(lambda x: x.name == row[5], await category_db.get_all_categories(bot_id=bot_id))
                 )[0].id
             products.append(ProductWithoutId(
-                article=row[4],
+                article=str(row[4]),
                 category=[cat_id],
                 bot_id=bot_id,
-                name=row[0],
-                description=row[1] if row[1] is not None else "",
+                name=str(row[0]),
+                description=str(row[1]) if row[1] is not None else "",
                 price=int(row[2]),
                 count=int(row[3])
             ))
