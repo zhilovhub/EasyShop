@@ -15,6 +15,7 @@ from common_utils.env_config import FILES_PATH
 
 from database.config import bot_db, contest_db, category_db, product_db
 from database.models.bot_model import BotNotFoundError
+from database.models.category_model import CategoryNotFoundError
 from database.models.contest_model import ContestUserSchema, ContestNotFoundError
 from database.models.product_model import ProductSchema
 
@@ -190,12 +191,20 @@ async def send_products_info_xlsx(bot_id: int, products: list[ProductSchema], wi
     for product in products:
         categories = []
         unexisted_categories = set()
-        if product.category:
+        if product.category and product.category != [0]:
             for cat_id in product.category:
-                cat_obj = await category_db.get_category(cat_id)
-                if cat_obj is None:
-                    unexisted_categories.add(cat_id)
+                try:
+                    cat_obj = await category_db.get_category(cat_id)
+                except CategoryNotFoundError as e:
+                    logger.warning(
+                        f"bot_id={bot_id}: got unreal category_id={cat_id}",
+                        exc_info=e,
+                        extra=extra_params(bot_id=bot_id, category_id=cat_id)
+                    )
+                    if cat_id != 0:
+                        unexisted_categories.add(cat_id)
                     continue
+
                 categories.append(cat_obj)
             categories_text = "/".join(map(lambda x: x.name, categories))
 
