@@ -165,7 +165,7 @@ class Stoke:
         ws = wb.active
         for ind, row in enumerate(list(ws.values)[1:]):
             err_message = f"Строка {ind+1}: "
-            if len(row) != 6:
+            if len(row) not in (6, 7):
                 return False, err_message + "Неверное количество колонок"
             try:
                 price = int(row[2])
@@ -195,14 +195,16 @@ class Stoke:
         for row in list(ws.values)[1:]:
             try:
                 cat_id = await category_db.add_category(CategorySchemaWithoutId(bot_id=bot_id, name=row[5]))
-            except CategoryNameAlreadyExistsError as err:
-                cat_id = err.cat_id
+            except CategoryNameAlreadyExistsError:
+                cat_id = list(
+                    filter(lambda x: x.name == row[5], await category_db.get_all_categories(bot_id=bot_id))
+                )[0].id
             products.append(ProductWithoutId(
-                article=row[4],
+                article=str(row[4]),
                 category=[cat_id],
                 bot_id=bot_id,
-                name=row[0],
-                description=row[1] if row[1] is not None else "",
+                name=str(row[0]),
+                description=str(row[1]) if row[1] is not None else "",
                 price=int(row[2]),
                 count=int(row[3])
             ))
