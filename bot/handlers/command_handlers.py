@@ -18,7 +18,7 @@ from bot.middlewaries.subscription_middleware import CheckSubscriptionMiddleware
 
 from common_utils.keyboards.keyboards import InlineBotMenuKeyboard
 from common_utils.subscription.subscription import UserHasAlreadyStartedTrial
-from common_utils.broadcasting.broadcasting import send_event, EventTypes, success_event
+from common_utils.broadcasting.broadcasting import send_event, EventTypes
 
 from database.config import user_db, bot_db, user_role_db
 from database.models.bot_model import BotNotFoundError
@@ -221,7 +221,7 @@ async def check_subscription_command_handler(message: Message, state: FSMContext
 
 
 async def _start_trial(message: Message, state: FSMContext):
-    admin_message = await send_event(message.from_user, EventTypes.STARTED_TRIAL)
+    await send_event(message.from_user, EventTypes.STARTED_TRIAL_TRY)
 
     user_id = message.from_user.id
 
@@ -253,4 +253,4 @@ async def _start_trial(message: Message, state: FSMContext):
         MessageTexts.FREE_TRIAL_MESSAGE.value,
         reply_markup=ReplyKeyboardRemove()
     )
-    await success_event(message.from_user, bot, admin_message, EventTypes.STARTED_TRIAL)
+    await send_event(message.from_user, EventTypes.STARTED_TRIAL_SUCCESS)

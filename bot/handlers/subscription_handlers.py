@@ -19,7 +19,7 @@ from bot.keyboards.subscription_keyboards import InlineSubscriptionContinueKeybo
 
 from common_utils.env_config import RESOURCES_PATH, SBP_URL, ADMINS
 from common_utils.keyboards.keyboards import InlineBotMenuKeyboard
-from common_utils.broadcasting.broadcasting import send_event, EventTypes, success_event
+from common_utils.broadcasting.broadcasting import send_event, EventTypes
 
 from database.config import user_db, bot_db
 from database.models.user_model import UserSchema, UserStatusValues
@@ -203,7 +203,7 @@ async def approve_pay_callback(query: CallbackQuery):
     user_to_approve = User(
         id=user_id, is_bot=False, first_name=user_chat_to_approve.first_name, username=user_chat_to_approve.username
     )
-    admin_message = await send_event(user_to_approve, EventTypes.SUBSCRIBED)
+    await send_event(user_to_approve, EventTypes.SUBSCRIBED_PROCESS)
 
     subscribed_until = await subscription.approve_payment(user_id)
 
@@ -283,7 +283,7 @@ async def approve_pay_callback(query: CallbackQuery):
                                     entities=entities,
                                     reply_markup=InlineAdminRefundKeyboard.get_keyboard(bot_id, payment_id))
 
-    await success_event(user_to_approve, bot, admin_message, EventTypes.SUBSCRIBED)
+    await send_event(user_to_approve, EventTypes.SUBSCRIBED_SUCCESS)
 
 
 @subscribe_router.callback_query(lambda q: q.data.startswith("cancel_pay"))
