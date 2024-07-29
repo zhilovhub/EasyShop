@@ -238,7 +238,7 @@ async def approve_pay_callback(query: CallbackQuery):
         await bot.send_message(
             user_id,
             MessageTexts.BOT_MENU_MESSAGE.value.format(user_bot_data.username),
-            reply_markup=await InlineBotMenuKeyboard.get_keyboard(user_bots[0].bot_id, query.from_user.id)
+            reply_markup=await InlineBotMenuKeyboard.get_keyboard(user_bots[0].bot_id, user_id)
         )
         await user_state.set_state(States.BOT_MENU)
         await user_state.set_data({'bot_id': bot_id})
