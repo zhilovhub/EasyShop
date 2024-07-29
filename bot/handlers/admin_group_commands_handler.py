@@ -8,6 +8,9 @@ from logs.config import logger
 
 
 def _get_maintenance_data() -> dict:
+    """
+    :return: Maintenance options of the main bot
+    """
     json_data = MAINTENANCE.get_data()
     if not json_data:
         json_data = {
@@ -24,6 +27,8 @@ def _get_maintenance_data() -> dict:
 
 @admin_group_commands_router.message(Command("bot_status"))
 async def bot_status_command_handler(message: Message) -> None:
+    """Показывает, на тех обс"""
+
     data = _get_maintenance_data()
     text = "<b><i>Статус бота:</i></b>\n"
     if data['maintenance_status']:

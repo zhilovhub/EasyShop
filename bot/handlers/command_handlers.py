@@ -34,6 +34,8 @@ class _UnknownDeepLinkArgument(KwargsException):
 
 
 async def _handle_admin_invite_link(message: Message, state: FSMContext, deep_link_params: list[str]):
+    """Проверяет пригласительную ссылку и добавляет пользователя в администраторы"""
+
     link_hash = deep_link_params[0].split('_', maxsplit=1)[-1]
     try:
         db_bot = await bot_db.get_bot_by_invite_link_hash(link_hash)
@@ -109,6 +111,8 @@ async def remove_bot_admin(user_id: int, user_state: FSMContext):
 @commands_router.message(CommandStart(deep_link=True))
 async def deep_link_start_command_handler(message: Message, state: FSMContext, command: CommandObject):
     """
+    Проверяет команду /start с параметрами: admin,
+
     :raises _UnknownDeepLinkArgument:
     """
     user_id = message.from_user.id
@@ -177,6 +181,8 @@ async def start_command_handler(message: Message, state: FSMContext):
 
 @commands_router.message(Command("rm_admin"), StateFilter(States.BOT_MENU))
 async def rm_admin_command_handler(message: Message, state: FSMContext, command: CommandObject):
+    """Обрабатывает удаление администратора, ожидая в параметрах UID администратора"""
+
     state_data = await state.get_data()
     bot_id = state_data['bot_id']
     if command.args is None:
@@ -210,31 +216,34 @@ async def rm_admin_command_handler(message: Message, state: FSMContext, command:
 
 @commands_router.message(F.text == "/clear")
 async def clear_command_handler(message: Message, state: FSMContext) -> None:
-    """ONLY FOR DEBUG BOT"""
+    """
+    ONLY FOR DEBUG BOT: сносит пользователя из БД.
+    Но не удаляет его состояние, поэтому нужно не забыть после этой команды вызвать /start
+    """
     await user_db.del_user(user_id=message.from_user.id)
     await CheckSubscriptionMiddleware().__call__(start_command_handler, message, state)  # noqa
 
 
 @commands_router.message(F.text == "/check_subscription")
 async def check_subscription_command_handler(message: Message, state: FSMContext):
+    """Проверяет статус подписки"""
     await check_subscription(message, state)
 
 
 async def _start_trial(message: Message, state: FSMContext):
+    """Оформляет пробный период пользователю"""
+
     await send_event(message.from_user, EventTypes.STARTED_TRIAL_TRY)
 
     user_id = message.from_user.id
 
-    # logger.info(f"starting trial subscription for user with id ({user_id} until date {subscribe_until}")
-    # TODO move logger into to subscription module
     logger.info(
-        f"starting trial subscription for user with id ({user_id} until date ТУТ нужно выполнить TODO"
+        f"starting trial subscription for user with id ({user_id} until date"
     )
 
     try:
         user = await subscription.start_trial(user_id)
     except UserHasAlreadyStartedTrial:
-        # TODO выставлять счет на оплату если триал уже был но пользователь все равно как то сюда попал
         return await message.answer("Вы уже оформляли пробную подписку")
 
     logger.info(f"adding scheduled subscription notifies for user {user_id}")
@@ -244,7 +253,7 @@ async def _start_trial(message: Message, state: FSMContext):
         on_end_notification=send_subscription_end_notify,
         subscribed_until=user.subscribed_until,
     )
-    user.subscription_job_ids = notification_job_ids  # + [finish_job_id]
+    user.subscription_job_ids = notification_job_ids
     await user_db.update_user(user)
 
     await state.set_state(States.WAITING_FOR_TOKEN)

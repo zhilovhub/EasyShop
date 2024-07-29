@@ -18,7 +18,9 @@ from database.config import bot_db
 from logs.config import logger
 
 
-def is_valid_hex_code(string: str):
+def _is_valid_hex_code(string: str) -> bool:
+    """Проверяет, валидный ли цвет передал пользователь"""
+
     regex = "^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$"
 
     p = re.compile(regex)
@@ -34,6 +36,8 @@ def is_valid_hex_code(string: str):
 
 @custom_bot_editing_router.message(States.EDITING_START_MESSAGE)
 async def editing_start_message_handler(message: Message, state: FSMContext):
+    """Настраивает стартовое сообщение кастомного бота"""
+
     message_text = message.text
     if message_text:
         state_data = await state.get_data()
@@ -75,6 +79,8 @@ async def editing_start_message_handler(message: Message, state: FSMContext):
 
 @custom_bot_editing_router.message(States.EDITING_DEFAULT_MESSAGE)
 async def editing_default_message_handler(message: Message, state: FSMContext):
+    """Настраивает дефолтное сообщение кастомного бота"""
+
     message_text = message.text
     if message_text:
         state_data = await state.get_data()
@@ -115,6 +121,8 @@ async def editing_default_message_handler(message: Message, state: FSMContext):
 
 @custom_bot_editing_router.message(States.EDITING_BG_COLOR)
 async def editing_bg_color_handler(message: Message, state: FSMContext):
+    """Настраивает bg_color веб приложения магазина"""
+
     message_text = message.text.strip()
     if message_text:
         state_data = await state.get_data()
@@ -133,7 +141,7 @@ async def editing_bg_color_handler(message: Message, state: FSMContext):
                 await state.set_state(States.BOT_MENU)
                 await state.set_data(state_data)
             case _:
-                if not is_valid_hex_code(message_text) and message_text != "telegram":
+                if not _is_valid_hex_code(message_text) and message_text != "telegram":
                     return await message.answer("Не получилось распознать ввод. Введите еще раз цвет в формате "
                                                 "<i>#FFFFFF</i> или напишите <i>telegram</i> для дефолтных цветов.")
 
@@ -161,6 +169,8 @@ async def editing_bg_color_handler(message: Message, state: FSMContext):
 
 @custom_bot_editing_router.message(States.EDITING_POST_ORDER_MESSAGE)
 async def editing_post_order_message_handler(message: Message, state: FSMContext):
+    """Настраивает сообщение, которое будет отправляться клиентам после оформления заказа"""
+
     message_text = message.html_text
     if message_text:
         state_data = await state.get_data()
@@ -201,6 +211,8 @@ async def editing_post_order_message_handler(message: Message, state: FSMContext
 
 @custom_bot_editing_router.message(States.DELETE_BOT)
 async def delete_bot_handler(message: Message, state: FSMContext):
+    """Обрабатывает подтверждение удаления бота"""
+
     message_text = message.text
     state_data = await state.get_data()
     custom_bot = await bot_db.get_bot(state_data['bot_id'])

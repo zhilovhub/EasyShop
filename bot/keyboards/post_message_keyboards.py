@@ -6,11 +6,7 @@ from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup, ReplyKeybo
 
 from common_utils.keyboards.keyboard_utils import callback_json_validator, get_bot_post_message
 
-from database.models.post_message_model import PostMessageType
-
-
-class UnknownPostMessageType(Exception):
-    pass
+from database.models.post_message_model import PostMessageType, UnknownPostMessageTypeError
 
 
 class ReplyConfirmMediaFilesKeyboard:
@@ -236,7 +232,7 @@ class InlinePostMessageMenuKeyboard:
             case PostMessageType.PARTNERSHIP_POST:
                 delete_button_text = "🗑 Удалить партнерский пост"
             case _:
-                raise UnknownPostMessageType
+                raise UnknownPostMessageTypeError
 
         if post_message.is_delayed:
             delay_btn = InlineKeyboardButton(
@@ -318,7 +314,7 @@ class InlinePostMessageMenuKeyboard:
                         ]
                     )
                 case _:
-                    raise UnknownPostMessageType
+                    raise UnknownPostMessageTypeError
         else:
             if post_message.has_button:
                 button_buttons = [

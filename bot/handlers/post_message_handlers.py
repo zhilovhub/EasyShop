@@ -12,31 +12,24 @@ from bot.states import States
 from bot.handlers.routers import post_message_router
 from bot.keyboards.channel_keyboards import InlineChannelMenuKeyboard
 from bot.keyboards.main_menu_keyboards import ReplyBotMenuKeyboard
-from bot.post_message.post_message_utils import is_post_message_valid
+from bot.post_message.post_message_utils import is_post_message_valid, get_channel_id_from_query
 from bot.keyboards.post_message_keyboards import InlinePostMessageStartConfirmKeyboard, InlinePostMessageMenuKeyboard, \
-    InlinePostMessageExtraSettingsKeyboard, InlinePostMessageAcceptDeletingKeyboard, UnknownPostMessageType
+    InlinePostMessageExtraSettingsKeyboard, InlinePostMessageAcceptDeletingKeyboard
 from bot.post_message.post_message_editors import edit_delay_date, edit_message, edit_button_text, edit_button_url, \
     edit_media_files, send_post_message, PostActionType, edit_winners_count, edit_contest_finish_date, \
     pre_finish_contest
 from bot.handlers.mailing_settings_handlers import send_post_messages
 from bot.post_message.post_message_decorators import check_callback_conflicts
 from bot.post_message.post_message_callback_handler import post_message_handler
-from common_utils.bot_settings_config import BOT_PROPERTIES
 
+from common_utils.bot_settings_config import BOT_PROPERTIES
 from common_utils.keyboards.keyboards import InlineBotMenuKeyboard
 
 from database.config import post_message_media_file_db, post_message_db, contest_db, bot_db
-from database.models.post_message_model import PostMessageSchema, PostMessageType
+from database.models.post_message_model import PostMessageSchema, PostMessageType, UnknownPostMessageTypeError
 
 
 from logs.config import logger, extra_params
-
-
-def get_channel_id(callback_data, post_message_type):
-    if post_message_type in (PostMessageType.CHANNEL_POST, PostMessageType.CONTEST):
-        return callback_data.channel_id
-    else:
-        return None
 
 
 @post_message_router.callback_query(lambda query: InlinePostMessageMenuKeyboard.callback_validator(query.data))
@@ -47,6 +40,7 @@ async def post_message_menu_callback_handler(
         callback_data: InlinePostMessageMenuKeyboard.Callback,
         post_message: PostMessageSchema
 ):
+    """Обрабатывает кнопки по настройки сообщения Post Message"""
     await post_message_handler(query, state, callback_data, post_message)
 
 
@@ -60,6 +54,8 @@ async def post_message_menu_callback_handler(
     States.EDITING_CONTEST_WINNERS_COUNT,
 ))
 async def editing_post_message_handler(message: Message, state: FSMContext):
+    """Обрабатывает различные состояния, отвечающие за настройки конкретных параметров сообщения"""
+
     state_data = await state.get_data()
     current_state = await state.get_state()
 
@@ -71,7 +67,7 @@ async def editing_post_message_handler(message: Message, state: FSMContext):
         case PostMessageType.CONTEST.value:
             post_message_type = PostMessageType.CONTEST
         case _:
-            raise UnknownPostMessageType
+            raise UnknownPostMessageTypeError
 
     match current_state:
         case States.EDITING_POST_DELAY_DATE:
@@ -99,6 +95,8 @@ async def post_message_extra_settings_callback_handler(
         callback_data: InlinePostMessageExtraSettingsKeyboard.Callback,
         post_message: PostMessageSchema
 ):
+    """Обрабатывает кнопки по настройки дополнительных опций Post Message"""
+
     bot_id = callback_data.bot_id
     post_message_type = callback_data.post_message_type
 
@@ -108,21 +106,21 @@ async def post_message_extra_settings_callback_handler(
                 query,
                 post_message,
                 post_message_type,
-                channel_id=get_channel_id(callback_data, post_message_type)
+                channel_id=get_channel_id_from_query(callback_data, post_message_type)
             )
         case callback_data.ActionEnum.NOTIFICATION_SOUND:
             await _notification_sound(
                 query,
                 post_message,
                 post_message_type,
-                channel_id=get_channel_id(callback_data, post_message_type)
+                channel_id=get_channel_id_from_query(callback_data, post_message_type)
             )
         case callback_data.ActionEnum.BACK_TO_POST_MESSAGE_MENU:
             await _inline_back_to_post_message_menu(
                 query,
                 bot_id,
                 post_message_type,
-                channel_id=get_channel_id(callback_data, post_message_type)
+                channel_id=get_channel_id_from_query(callback_data, post_message_type)
             )
 
 
@@ -135,6 +133,8 @@ async def post_message_confirm_start_callback_handler(
         callback_data: InlinePostMessageStartConfirmKeyboard.Callback,
         post_message: PostMessageSchema
 ):
+    """Запускает отправление Post Message"""
+
     bot_id = callback_data.bot_id
     post_message_type = callback_data.post_message_type
 
@@ -144,14 +144,14 @@ async def post_message_confirm_start_callback_handler(
                 query,
                 post_message,
                 post_message_type,
-                channel_id=get_channel_id(callback_data, post_message_type)
+                channel_id=get_channel_id_from_query(callback_data, post_message_type)
             )
         case callback_data.ActionEnum.BACK_TO_POST_MESSAGE_MENU:
             await _inline_back_to_post_message_menu(
                 query,
                 bot_id,
                 post_message_type,
-                channel_id=get_channel_id(callback_data, post_message_type)
+                channel_id=get_channel_id_from_query(callback_data, post_message_type)
             )
 
 
@@ -164,6 +164,8 @@ async def post_message_accept_deleting_callback_handler(
         callback_data: InlinePostMessageAcceptDeletingKeyboard.Callback,
         post_message: PostMessageSchema
 ):
+    """Подтверждает удаление настраиваемого сообщения"""
+
     bot_id = callback_data.bot_id
     post_message_type = callback_data.post_message_type
 
@@ -173,14 +175,14 @@ async def post_message_accept_deleting_callback_handler(
                 query,
                 post_message,
                 post_message_type,
-                channel_id=get_channel_id(callback_data, post_message_type)
+                channel_id=get_channel_id_from_query(callback_data, post_message_type)
             )
         case callback_data.ActionEnum.BACK_TO_POST_MESSAGE_MENU:
             await _inline_back_to_post_message_menu(
                 query,
                 bot_id,
                 post_message_type,
-                channel_id=get_channel_id(callback_data, post_message_type)
+                channel_id=get_channel_id_from_query(callback_data, post_message_type)
             )
 
 
@@ -190,6 +192,8 @@ async def _start_confirm(
         post_message_type: PostMessageType,
         channel_id: int = None
 ):
+    """Starts sending of Post Message"""
+
     media_files = await post_message_media_file_db.get_all_post_message_media_files(post_message.post_message_id)
 
     if await is_post_message_valid(query, post_message, post_message_type, media_files):
@@ -320,7 +324,7 @@ async def _start_confirm(
                     )
 
             case _:
-                raise UnknownPostMessageType
+                raise UnknownPostMessageTypeError
 
 
 async def _delete_post_message(
@@ -329,6 +333,8 @@ async def _delete_post_message(
         post_message_type: PostMessageType,
         channel_id: int = None
 ):
+    """Deletes Post Message"""
+
     await post_message_db.delete_post_message(post_message.post_message_id)
     custom_bot = await bot_db.get_bot(post_message.bot_id)
     custom_bot_username = (await Bot(custom_bot.token).get_me()).username
@@ -372,7 +378,7 @@ async def _delete_post_message(
             )
 
         case _:
-            raise UnknownPostMessageType
+            raise UnknownPostMessageTypeError
 
 
 async def _link_preview(
@@ -381,6 +387,8 @@ async def _link_preview(
         post_message_type: PostMessageType,
         channel_id: int | None
 ):
+    """Enables/Disable link preview"""
+
     post_message.enable_link_preview = not post_message.enable_link_preview
     await post_message_db.update_post_message(post_message)
 
@@ -402,6 +410,8 @@ async def _notification_sound(
         post_message_type: PostMessageType,
         channel_id: int | None
 ):
+    """Enables/Disable notification's sound"""
+
     post_message.enable_notification_sound = not post_message.enable_notification_sound
     await post_message_db.update_post_message(post_message)
 
@@ -423,6 +433,8 @@ async def _inline_back_to_post_message_menu(
         post_message_type: PostMessageType,
         channel_id: int | None
 ) -> None:
+    """Returns to Post Message Menu from everywhere"""
+
     custom_bot_token = (await bot_db.get_bot(bot_id)).token
 
     match post_message_type:
@@ -431,7 +443,7 @@ async def _inline_back_to_post_message_menu(
         case PostMessageType.CHANNEL_POST | PostMessageType.CONTEST | PostMessageType.PARTNERSHIP_POST:
             username = (await Bot(custom_bot_token).get_chat(channel_id)).username
         case _:
-            raise UnknownPostMessageType
+            raise UnknownPostMessageTypeError
 
     await query.message.edit_text(
         text=MessageTexts.bot_post_message_menu_message(post_message_type).format(username),

@@ -6,7 +6,7 @@ from aiogram.types import CallbackQuery, Message
 from aiogram.fsm.context import FSMContext
 
 from bot.main import stock_manager, bot
-from bot.stoke.stoke import UnknownFileExstension
+from bot.stoke.stoke import UnknownFileExtensionError
 from bot.utils import MessageTexts
 from bot.states import States
 from bot.handlers.routers import stock_menu_router
@@ -25,6 +25,8 @@ from logs.config import logger, extra_params
 
 @stock_menu_router.callback_query(lambda query: InlineStockMenuKeyboard.callback_validator(query.data))
 async def stock_menu_handler(query: CallbackQuery, state: FSMContext):
+    """Обрабатывает нажатия на кнопки в меню настроек склада"""
+
     callback_data = InlineStockMenuKeyboard.Callback.model_validate_json(query.data)
 
     bot_id = callback_data.bot_id
@@ -70,7 +72,6 @@ async def stock_menu_handler(query: CallbackQuery, state: FSMContext):
                     parse_mode=ParseMode.HTML
                 )
             except Exception as e:
-                # TODO handle telegram api error "message not modified"
                 logger.error(
                     f"user_id={query.from_user.id}: TODO handle telegram api error message not modified",
                     extra=extra_params(user_id=query.from_user.id, bot_id=bot_id),
@@ -106,6 +107,8 @@ async def stock_menu_handler(query: CallbackQuery, state: FSMContext):
 
 @stock_menu_router.callback_query(lambda query: InlineStockImportMenuKeyboard.callback_validator(query.data))
 async def import_menu_handler(query: CallbackQuery, state: FSMContext):
+    """Обрабатывает нажатия на кнопки при импорте товаров"""
+
     callback_data = InlineStockImportMenuKeyboard.Callback.model_validate_json(query.data)
 
     bot_id = callback_data.bot_id
@@ -133,6 +136,8 @@ async def import_menu_handler(query: CallbackQuery, state: FSMContext):
 
 @stock_menu_router.callback_query(lambda query: InlineStockImportFileTypeKeyboard.callback_validator(query.data))
 async def pick_import_file_type(query: CallbackQuery, state: FSMContext):
+    """Обрабатывает выбор типа импортируемого файла: xlsx,"""
+
     callback_data = InlineStockImportFileTypeKeyboard.Callback.model_validate_json(query.data)
 
     bot_id = callback_data.bot_id
@@ -149,7 +154,7 @@ async def pick_import_file_type(query: CallbackQuery, state: FSMContext):
         case callback_data.ActionEnum.EXCEL:
             example_file = send_demo_import_xlsx
         case _:
-            raise UnknownFileExstension(callback_data.a.value)
+            raise UnknownFileExtensionError(callback_data.a.value)
 
     await query.message.answer(
         "Теперь отправьте боту xlsx файл с товарами в таком же формате, как файл ниже",
@@ -163,6 +168,8 @@ async def pick_import_file_type(query: CallbackQuery, state: FSMContext):
 
 @stock_menu_router.message(States.GOODS_COUNT_MANAGE)
 async def handle_stock_manage_input(message: Message, state: FSMContext):
+    """Ожидает от пользователя xlsx файл с новыми остатками"""
+
     state_data = await state.get_data()
     if message.text == ReplyBackStockMenuKeyboard.Callback.ActionEnum.BACK_TO_STOCK_MENU.value:
         return await _back_to_stock_menu(message, state)
@@ -190,7 +197,6 @@ async def handle_stock_manage_input(message: Message, state: FSMContext):
         await _back_to_stock_menu(message, state)
 
     except Exception as e:
-        # TODO
         logger.error(
             f"user_id={message.from_user.id}: TODO exception is not dispatched",
             extra=extra_params(user_id=message.from_user.id),
@@ -201,6 +207,8 @@ async def handle_stock_manage_input(message: Message, state: FSMContext):
 
 @stock_menu_router.message(States.IMPORT_PRODUCTS)
 async def handle_stock_import_input(message: Message, state: FSMContext):
+    """Ожидает от пользователя xlsx файл с новыми товарами для импорта"""
+
     state_data = await state.get_data()
 
     bot_id = state_data["bot_id"]
@@ -236,7 +244,7 @@ async def handle_stock_import_input(message: Message, state: FSMContext):
                     reply_markup=ReplyBackStockMenuKeyboard.get_keyboard()
                 )
         case _:
-            raise UnknownFileExstension(file_type)
+            raise UnknownFileExtensionError(file_type)
 
     try:
         file_path = f"{FILES_PATH}docs/{datetime.now().strftime('%d$m%Y_%H%M%S')}.{file_extension}"
@@ -246,7 +254,7 @@ async def handle_stock_import_input(message: Message, state: FSMContext):
             case "xlsx":
                 status, err_message = await stock_manager.check_xlsx(file_path)
             case _:
-                raise UnknownFileExstension(file_extension)
+                raise UnknownFileExtensionError(file_extension)
 
         if not status:
             return await message.answer(f"Файл не соответствует формату ({err_message})")
@@ -270,6 +278,8 @@ async def handle_stock_import_input(message: Message, state: FSMContext):
 
 @stock_menu_router.callback_query(lambda query: InlineStockImportConfirmKeyboard.callback_validator(query.data))
 async def confirm_file_import(query: CallbackQuery, state: FSMContext):
+    """Ожидает от пользователя подтверждение импорта товаров"""
+
     callback_data = InlineStockImportConfirmKeyboard.Callback.model_validate_json(query.data)
 
     bot_id = callback_data.bot_id
@@ -305,7 +315,7 @@ async def confirm_file_import(query: CallbackQuery, state: FSMContext):
                         bot_id=bot_id, path_to_file=file_path, replace=replace, replace_duplicates=replace_d
                     )
                 case _:
-                    raise UnknownFileExstension(file_type)
+                    raise UnknownFileExtensionError(file_type)
 
             await query.message.answer("Товары обновлены")
             await query.message.delete()
@@ -314,6 +324,8 @@ async def confirm_file_import(query: CallbackQuery, state: FSMContext):
 
 
 async def _back_to_stock_menu(message: Message, state: FSMContext) -> None:
+    """Returns to stock menu from everywhere"""
+
     bot_id = (await state.get_data())['bot_id']
     bot_data = await bot_db.get_bot(bot_id)
 
@@ -335,6 +347,8 @@ async def _back_to_stock_menu(message: Message, state: FSMContext) -> None:
 
 
 async def _check_goods_exist(query: CallbackQuery, bot_id: int, with_pictures: bool) -> bool:
+    """Check whether there are goods or no"""
+
     products = await product_db.get_all_products(bot_id)
     if len(products) == 0:
         await query.answer("Товаров на складе нет")

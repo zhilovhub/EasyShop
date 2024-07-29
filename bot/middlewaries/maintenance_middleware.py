@@ -9,8 +9,7 @@ from logs.config import logger
 
 
 class MaintenanceMiddleware(BaseMiddleware):
-    def __init__(self) -> None:
-        pass
+    """Middleware that doesn't allow user communicate to the bot during Maintenance"""
 
     async def __call__(
             self,

@@ -29,6 +29,8 @@ from logs.config import logger, extra_params
 
 @subscribe_router.callback_query(lambda query: InlineSubscriptionContinueKeyboard.callback_validator(query.data))
 async def continue_subscription_callback(query: CallbackQuery, state: FSMContext):
+    """Обрабатывает нажатине на продление подписки"""
+
     callback_data = InlineSubscriptionContinueKeyboard.Callback.model_validate_json(query.data)
 
     state_data = await state.get_data()
@@ -54,6 +56,8 @@ async def continue_subscription_callback(query: CallbackQuery, state: FSMContext
 
 
 async def send_subscription_expire_notify(user: UserSchema) -> None:
+    """Usually postponed function that sends notification about expiring subscription to the admin"""
+
     actual_user = await user_db.get_user(user.id)
 
     if datetime.now() > actual_user.subscribed_until:
@@ -80,6 +84,8 @@ async def send_subscription_expire_notify(user: UserSchema) -> None:
 
 @subscribe_router.message(States.WAITING_PAYMENT_PAY)
 async def waiting_payment_pay_handler(message: Message, state: FSMContext):
+    """Ожидает от пользователя валидные платежные данные и отсылает подтверждение подписки ADMINS"""
+
     user_id = message.from_user.id
     user_status = (await user_db.get_user(user_id)).status
     state_data = await state.get_data()
@@ -90,7 +96,7 @@ async def waiting_payment_pay_handler(message: Message, state: FSMContext):
             await message.answer(
                 MessageTexts.SUBSCRIBE_END_NOTIFY.value,
                 reply_markup=InlineSubscriptionContinueKeyboard.get_keyboard(bot_id=None)
-            )  # TODO change to keyboard markup
+            )
         elif state_data and "bot_id" in state_data:
             await state.set_state(States.BOT_MENU)
             await state.set_data(state_data)
@@ -159,6 +165,8 @@ async def waiting_payment_pay_handler(message: Message, state: FSMContext):
 
 @subscribe_router.message(States.WAITING_PAYMENT_APPROVE)
 async def waiting_payment_approve_handler(message: Message, state: FSMContext):
+    """Обрабатывает состояние, когда пользователь ожидает решения админов по его подписке"""
+
     user_id = message.from_user.id
     user_status = (await user_db.get_user(user_id)).status
 
@@ -189,6 +197,8 @@ async def waiting_payment_approve_handler(message: Message, state: FSMContext):
 
 @subscribe_router.message(States.SUBSCRIBE_ENDED)
 async def subscribe_ended_handler(message: Message) -> None:
+    """Перенаправляет пользователя со состояния оконченной подписки в продление"""
+
     await message.answer(
         MessageTexts.SUBSCRIBE_END_NOTIFY.value,
         reply_markup=InlineSubscriptionContinueKeyboard.get_keyboard(bot_id=None)
@@ -197,6 +207,8 @@ async def subscribe_ended_handler(message: Message) -> None:
 
 @subscribe_router.callback_query(lambda q: q.data.startswith("approve_pay"))
 async def approve_pay_callback(query: CallbackQuery):
+    """Обрабатывает подтверждение подписки админом и делает пользователя подписчиком"""
+
     user_id = int(query.data.split(':')[-1])
 
     user_chat_to_approve = await bot.get_chat(user_id)
@@ -205,7 +217,7 @@ async def approve_pay_callback(query: CallbackQuery):
     )
     await send_event(user_to_approve, EventTypes.SUBSCRIBED_PROCESS)
 
-    subscribed_until = await subscription.approve_payment(user_id)
+    payment_id, subscribed_until = await subscription.approve_payment(user_id)
 
     user = await user_db.get_user(user_id)
 
@@ -253,7 +265,6 @@ async def approve_pay_callback(query: CallbackQuery):
         )
     await query.answer("Оплата подтверждена", show_alert=True)
 
-    payment_id = 0  # TODO payment generation
     payment_approved_text = Text("\n\n✅ Оплата подписки подтверждена.",
                                  "\n\n📆 Дата подтверждения: ",
                                  Bold(f"{datetime.now().strftime('%d.%m.%Y %H:%M:%S')}"),
@@ -288,6 +299,8 @@ async def approve_pay_callback(query: CallbackQuery):
 
 @subscribe_router.callback_query(lambda q: q.data.startswith("cancel_pay"))
 async def cancel_pay_callback(query: CallbackQuery, state: FSMContext):
+    """Обрабатывает отклонение подписки админом"""
+
     state_data = await state.get_data()
     user_id = int(query.data.split(':')[-1])
     await query.message.edit_text(query.message.text + "\n\n<b>ОТКЛОНЕНО</b>", reply_markup=None)
@@ -311,7 +324,8 @@ async def cancel_pay_callback(query: CallbackQuery, state: FSMContext):
 
 
 async def send_subscription_end_notify(user: UserSchema) -> None:
-    # TODO https://tracker.yandex.ru/BOT-29 очищать джобы в бд
+    """Usually postponed function that sends notification about ending subscription to the admin and stops his bot"""
+
     actual_user = await user_db.get_user(user.id)
 
     # check if there any new subscription (in this case we should not end it)

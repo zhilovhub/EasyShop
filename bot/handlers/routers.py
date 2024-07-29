@@ -1,6 +1,6 @@
 from aiogram import Router
 
-from bot.filters import ChatTypeFilter, ChatId, IsAdmin
+from bot.filters import ChatTypeFilter, ChatId, IsTechAdmin
 from bot.middlewaries.check_role_middleware import CheckRoleMiddleware
 from bot.middlewaries.maintenance_middleware import MaintenanceMiddleware
 from bot.middlewaries.subscription_middleware import CheckSubscriptionMiddleware
@@ -87,11 +87,11 @@ subscribe_router.callback_query.middleware(ErrorMiddleware())
 subscribe_router.message.outer_middleware(MaintenanceMiddleware())
 subscribe_router.callback_query.outer_middleware(MaintenanceMiddleware())
 
-admin_group_commands_router = Router(name="admin_group_commands_router")
+admin_group_commands_router = Router(name="admin_group_commands_router")  # only for ADMINS' GROUP
 admin_group_commands_router.message.filter(ChatTypeFilter(chat_type=["group", "supergroup"]))
 admin_group_commands_router.message.filter(ChatId(chat_id=int(ADMIN_GROUP_ID)))
-admin_group_commands_router.message.filter(IsAdmin())
-admin_group_commands_router.callback_query.filter(IsAdmin())
+admin_group_commands_router.message.filter(IsTechAdmin())
+admin_group_commands_router.callback_query.filter(IsTechAdmin())
 admin_group_commands_router.message.outer_middleware(log_middleware)
 admin_group_commands_router.callback_query.outer_middleware(log_middleware)
 admin_group_commands_router.message.middleware(ErrorMiddleware())
@@ -105,12 +105,3 @@ commands_router.callback_query.outer_middleware(log_middleware)
 commands_router.callback_query.middleware(ErrorMiddleware())
 commands_router.message.outer_middleware(MaintenanceMiddleware())
 commands_router.callback_query.outer_middleware(MaintenanceMiddleware())
-
-empty_router = Router(name="empty_router")
-empty_router.message.filter(ChatTypeFilter(chat_type="private"))
-empty_router.message.outer_middleware(log_middleware)
-empty_router.message.middleware(ErrorMiddleware())
-empty_router.callback_query.outer_middleware(log_middleware)
-empty_router.callback_query.middleware(ErrorMiddleware())
-empty_router.message.outer_middleware(MaintenanceMiddleware())
-empty_router.callback_query.outer_middleware(MaintenanceMiddleware())

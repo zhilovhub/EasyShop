@@ -1,9 +1,8 @@
 from aiogram.types import CallbackQuery
 
-from bot.keyboards.post_message_keyboards import UnknownPostMessageType
-
 from database.config import post_message_db, contest_db
-from database.models.post_message_model import PostMessageSchema, PostMessageNotFoundError, PostMessageType
+from database.models.post_message_model import PostMessageSchema, PostMessageNotFoundError, PostMessageType, \
+    UnknownPostMessageTypeError
 from database.models.post_message_media_files import PostMessageMediaFileSchema
 
 from logs.config import extra_params, logger
@@ -15,6 +14,11 @@ async def is_post_message_valid(
         post_message_type: PostMessageType,
         media_files: list[PostMessageMediaFileSchema]
 ) -> bool:
+    """
+    Check if Post Message is valid for telegram and specific post_message_type
+
+    :raises UnknownPostMessageTypeError:
+    """
     match post_message_type:
         case PostMessageType.MAILING:
             pass
@@ -31,7 +35,7 @@ async def is_post_message_valid(
         case PostMessageType.PARTNERSHIP_POST:
             pass
         case _:
-            raise UnknownPostMessageType
+            raise UnknownPostMessageTypeError
 
     if len(media_files) > 1 and post_message.has_button:
         await query.answer(
@@ -56,6 +60,12 @@ async def get_post_message(
         post_message_id: int,
         post_message_type: PostMessageType
 ) -> PostMessageSchema:
+    """
+    Returns post message or answers that it doesn't exists anymore
+
+    :raises UnknownPostMessageTypeError:
+    """
+
     try:
         post_message = await post_message_db.get_post_message(post_message_id)
         return post_message
@@ -75,8 +85,26 @@ async def get_post_message(
             case PostMessageType.PARTNERSHIP_POST:
                 await query.answer("🚫 Партнерский пост в канал уже отправлен или удалён", show_alert=True)
             case _:
-                raise UnknownPostMessageType
+                raise UnknownPostMessageTypeError
 
         await query.message.delete()
 
         raise e
+
+
+def get_channel_id_from_query(callback_data, post_message_type: PostMessageType) -> int | None:
+    """Пытается достать channel_id из определенных типов PostMessage, которые хранят в себе информацию о канале"""
+
+    if post_message_type in (PostMessageType.CHANNEL_POST, PostMessageType.CONTEST):
+        return callback_data.channel_id
+    else:
+        return None
+
+
+def get_channel_id_from_state_data(state_data, post_message_type: PostMessageType) -> int | None:
+    """Пытается достать channel_id из определенных типов PostMessage, которые хранят в себе информацию о канале"""
+
+    if post_message_type in (PostMessageType.CHANNEL_POST, PostMessageType.CONTEST):
+        return state_data["channel_id"]
+    else:
+        return None

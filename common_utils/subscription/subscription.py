@@ -56,7 +56,7 @@ class Subscription:
 
         return user
 
-    async def approve_payment(self, user_id: int) -> datetime:
+    async def approve_payment(self, user_id: int) -> tuple[int, datetime]:
         """Approves user's payment"""
         user = await self.user_db.get_user(user_id)
         payment_id = await self.create_payment(user_id)
@@ -76,7 +76,7 @@ class Subscription:
             extra=extra_params(user_id=user_id, payment_id=payment_id)
         )
 
-        return user.subscribed_until
+        return payment_id, user.subscribed_until
 
     async def create_payment(self, user_id: int) -> int:
         """Creates a new payment"""

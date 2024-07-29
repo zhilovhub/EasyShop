@@ -17,6 +17,7 @@ async def send_instructions(
         chat_id: int,
         cache_resources_file_id_store: JsonStore
 ) -> None:
+    """Sends instruction and considers whether user has bots or not. Usually is called from /start"""
     file_ids = cache_resources_file_id_store.get_data()
     file_name = "start_instruction.png"
 

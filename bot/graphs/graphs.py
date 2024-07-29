@@ -16,7 +16,7 @@ from database.models.contest_model import ContestUserSchema
 from logs.config import logger, extra_params
 
 
-def _generate_simple_line_plot(numbers_x, numbers_y, int_y: bool = True):
+def _generate_simple_line_plot(numbers_x, numbers_y, int_y: bool = True):  # TODO docstring for every function
     fig, ax = plt.subplots()
     ax.plot(numbers_x, numbers_y)
     if int_y:
@@ -110,18 +110,6 @@ async def generate_contest_users_graph(contest_id: int) -> str:
                        y_label="Количество участников конкурса", path=path)
 
     return path
-
-
-# def bar_chart(_numbers, _labels, _pos):
-#     plt.bar(_pos, _numbers, color='blue')
-#     plt.xticks(ticks=_pos, labels=_labels)
-#     plt.show()
-#
-#
-# def pie_chart(_numbers, _labels):
-#     fig1, ax1 = plt.subplots()
-#     ax1.pie(_numbers, labels=_labels)
-#     plt.show()
 
 
 if __name__ == '__main__':

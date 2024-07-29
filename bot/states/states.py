@@ -2,6 +2,8 @@ from aiogram.fsm.state import State, StatesGroup
 
 
 class States(StatesGroup):
+    """Describes the possible states of the main bot users"""
+
     WAITING_PAYMENT_PAY = State()
     WAITING_PAYMENT_APPROVE = State()
     SUBSCRIBE_ENDED = State()

@@ -6,7 +6,12 @@ from common_utils.exceptions.local_api_exceptions import LocalAPIException
 from database.config import bot_db
 
 
-async def start_custom_bot(bot_id: int):
+async def start_custom_bot(bot_id: int) -> None:
+    """
+    Is used to send start bot request to local multibot server
+
+    :raises LocalAPIException:
+    """
     async with aiohttp.ClientSession() as session:
         async with session.get(
                 f"http://{LOCAL_API_SERVER_HOST}:{LOCAL_API_SERVER_PORT}/start_bot/{bot_id}") as response:
@@ -18,7 +23,12 @@ async def start_custom_bot(bot_id: int):
                                         f"with text {await response.text()}")
 
 
-async def stop_custom_bot(bot_id: int):
+async def stop_custom_bot(bot_id: int) -> None:
+    """
+    Is used to send stop bot request to local multibot server
+
+    :raises LocalAPIException:
+    """
     async with aiohttp.ClientSession() as session:
         async with session.get(
                 f"http://{LOCAL_API_SERVER_HOST}:{LOCAL_API_SERVER_PORT}/stop_bot/{bot_id}") as response:

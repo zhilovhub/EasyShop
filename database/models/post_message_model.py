@@ -28,6 +28,10 @@ class PostMessageNotFoundError(KwargsException):
     """Raised when provided PostMessage not found in database"""
 
 
+class UnknownPostMessageTypeError(KwargsException):
+    """Raised when provided PostMessageType doesn't exist"""
+
+
 class PostMessageTypeModel(TypeDecorator):  # noqa
     """Class to convert Enum values to db values (and reverse)"""
     impl = Unicode

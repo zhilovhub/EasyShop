@@ -8,6 +8,8 @@ from common_utils.keyboards.keyboard_utils import callback_json_validator
 
 
 class ExampleKeyboard:
+    """An Example of keyboard"""
+
     class Callback(BaseModel):
         class ActionEnum(Enum):
             EXAMPLE = "example_action"
