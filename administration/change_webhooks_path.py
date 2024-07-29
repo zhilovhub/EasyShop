@@ -11,17 +11,25 @@ from logs.config import db_logger
 
 
 database: Database = Database(
-    sqlalchemy_url="postgresql+asyncpg://database_module:UuHgSEzf_75QC!Nn@92.118.114.106/easybots_db",
+    sqlalchemy_url="",
     logger=db_logger
 )
 db_bot: BotDao = database.get_bot_dao()
+webhook_path = ""
 
 
 async def main() -> None:
     online_bot_tokens = list(map(lambda x: x.token, filter(lambda y: y.status == "online", await db_bot.get_bots())))
     for token in online_bot_tokens:
         bot = Bot(token=token, default=BOT_PROPERTIES)
+        await bot.delete_webhook(drop_pending_updates=True)
 
+        result = await bot.set_webhook(
+            webhook_path.format(bot_token=token),
+            allowed_updates=["message", "my_chat_member",
+                             "callback_query", "chat_member", "channel_post"]
+        )
+        print(result, token)
 
 if __name__ == '__main__':
     asyncio.run(main())
