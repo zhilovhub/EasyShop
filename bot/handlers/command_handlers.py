@@ -221,7 +221,7 @@ async def check_subscription_command_handler(message: Message, state: FSMContext
 
 
 async def _start_trial(message: Message, state: FSMContext):
-    admin_message = await send_event(message.from_user, EventTypes.STARTED_TRIAL_TRY)
+    await send_event(message.from_user, EventTypes.STARTED_TRIAL_TRY)
 
     user_id = message.from_user.id
 
@@ -253,4 +253,4 @@ async def _start_trial(message: Message, state: FSMContext):
         MessageTexts.FREE_TRIAL_MESSAGE.value,
         reply_markup=ReplyKeyboardRemove()
     )
-    admin_message = await send_event(message.from_user, EventTypes.STARTED_TRIAL_SUCCESS)
+    await send_event(message.from_user, EventTypes.STARTED_TRIAL_SUCCESS)
