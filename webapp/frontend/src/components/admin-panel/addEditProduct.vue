@@ -226,7 +226,7 @@ export default {
               _type = "image/png";
             } else if (["ffd8ffe8", "ffd8ffe3", "ffd8ffe2", "ffd8ffe1", "ffd8ffe0"].includes(first_part)) {
               _type = "image/jpeg";
-            } else if (["66747970686569", "63667479706d"].includes(second_part)) {
+            } else if (["66747970686569", "63667479706d", "667479706d6966"].includes(second_part)) {
               _type = "image/heic";
             } else {
               _type = "unknown";
