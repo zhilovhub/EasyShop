@@ -12,7 +12,7 @@ from bot.states import States
 from bot.handlers.routers import post_message_router
 from bot.keyboards.channel_keyboards import InlineChannelMenuKeyboard
 from bot.keyboards.main_menu_keyboards import ReplyBotMenuKeyboard
-from bot.post_message.post_message_utils import is_post_message_valid
+from bot.post_message.post_message_utils import is_post_message_valid, get_channel_id_from_query
 from bot.keyboards.post_message_keyboards import InlinePostMessageStartConfirmKeyboard, InlinePostMessageMenuKeyboard, \
     InlinePostMessageExtraSettingsKeyboard, InlinePostMessageAcceptDeletingKeyboard
 from bot.post_message.post_message_editors import edit_delay_date, edit_message, edit_button_text, edit_button_url, \
@@ -106,21 +106,21 @@ async def post_message_extra_settings_callback_handler(
                 query,
                 post_message,
                 post_message_type,
-                channel_id=get_channel_id(callback_data, post_message_type)
+                channel_id=get_channel_id_from_query(callback_data, post_message_type)
             )
         case callback_data.ActionEnum.NOTIFICATION_SOUND:
             await _notification_sound(
                 query,
                 post_message,
                 post_message_type,
-                channel_id=get_channel_id(callback_data, post_message_type)
+                channel_id=get_channel_id_from_query(callback_data, post_message_type)
             )
         case callback_data.ActionEnum.BACK_TO_POST_MESSAGE_MENU:
             await _inline_back_to_post_message_menu(
                 query,
                 bot_id,
                 post_message_type,
-                channel_id=get_channel_id(callback_data, post_message_type)
+                channel_id=get_channel_id_from_query(callback_data, post_message_type)
             )
 
 
@@ -144,14 +144,14 @@ async def post_message_confirm_start_callback_handler(
                 query,
                 post_message,
                 post_message_type,
-                channel_id=get_channel_id(callback_data, post_message_type)
+                channel_id=get_channel_id_from_query(callback_data, post_message_type)
             )
         case callback_data.ActionEnum.BACK_TO_POST_MESSAGE_MENU:
             await _inline_back_to_post_message_menu(
                 query,
                 bot_id,
                 post_message_type,
-                channel_id=get_channel_id(callback_data, post_message_type)
+                channel_id=get_channel_id_from_query(callback_data, post_message_type)
             )
 
 
@@ -175,14 +175,14 @@ async def post_message_accept_deleting_callback_handler(
                 query,
                 post_message,
                 post_message_type,
-                channel_id=get_channel_id(callback_data, post_message_type)
+                channel_id=get_channel_id_from_query(callback_data, post_message_type)
             )
         case callback_data.ActionEnum.BACK_TO_POST_MESSAGE_MENU:
             await _inline_back_to_post_message_menu(
                 query,
                 bot_id,
                 post_message_type,
-                channel_id=get_channel_id(callback_data, post_message_type)
+                channel_id=get_channel_id_from_query(callback_data, post_message_type)
             )
 
 
