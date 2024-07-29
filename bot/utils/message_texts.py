@@ -25,6 +25,7 @@ class MessageTexts(Enum):
 
 📌 Наш канал: @EzShopOfficial
 📌 По всем вопросам: @maxzim398
+📌 <b>Подробная инструкция:</b> https://ezshoptg.tilda.ws/
 """
 
     SUBSCRIPTION_EXPIRE_NOTIFY = """
