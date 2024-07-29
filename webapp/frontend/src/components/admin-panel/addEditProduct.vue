@@ -147,9 +147,19 @@ export default {
           count: this.productCount,
           extra_options: this.options,
           images: this.imageFiles
-        }).then(() => {
+        }).then((response) => {
+          if (response === 409) {
+            const articleInput = document.getElementById('articleInput');
+            articleInput.style.border = '1px solid #ff003c';
+            articleInput.value = ''
+            articleInput.placeholder = 'Артикул был занят';
+            articleInput.classList.add('red-placeholder');
+            return
+          }
           this.isMounted = false;
           setTimeout(() => {
+            tg.MainButton.hide();
+            tg.BackButton.hide();
             this.$emit("close");
           }, 100);
         });
@@ -157,7 +167,7 @@ export default {
       } else {
         const requiredItems = document.querySelectorAll('.required');
         requiredItems.forEach(item => {
-          if (item) {
+          if (item.value === '') {
             item.style.border = '1px solid #ff003c';
             item.placeholder = 'Поле не может быть пустым';
             item.classList.add('red-placeholder');
@@ -178,6 +188,8 @@ export default {
         extra_options: this.options,
         id: this.itemEditData.id
       }).then(() => {
+        tg.MainButton.hide();
+        tg.BackButton.hide();
         this.$emit("close");
       }, 100);
     },
@@ -429,7 +441,7 @@ export default {
 <template>
 <div class="wrapper" :style="{ opacity: isMounted ? 1 : 0 }">
   <div class="header">
-    <span v-if="this.itemEditData && this.itemEditData.id">Изменение товара</span>
+    <span v-if="this.itemEditData?.id">Изменение товара</span>
     <span v-else>Добавление товара</span>
   </div>
   <div class="main">
@@ -500,7 +512,7 @@ export default {
     </div>
     <div class="card">
       <h1>Артикул</h1>
-      <input class="required" v-model="productArticle" placeholder="Введите артикул">
+      <input class="required" id='articleInput' v-model="productArticle" placeholder="Введите артикул">
     </div>
     <div class="card" style="display: flex; justify-content: space-between">
       <div class="block-input">
