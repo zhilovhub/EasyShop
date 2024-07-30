@@ -56,7 +56,8 @@ def _remove_empty_variants(product: ProductWithoutId | ProductSchema) -> Product
             option.variants = list(filter(lambda x: x, option.variants))
             if option.variants_prices:
                 option.variants_prices = list(filter(lambda x: x, option.variants_prices))
-            formatted_options.append(option)
+            if option.name and option.variants:
+                formatted_options.append(option)
         product.extra_options = formatted_options
     return product
 
