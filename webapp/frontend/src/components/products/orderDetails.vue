@@ -1,88 +1,92 @@
 <script>
-  import { tg } from '@/main.js'
-  import router from "@/router/router.js";
+import { tg } from '@/main.js'
+import router from "@/router/router.js";
 
-  export default {
-    name: 'orderDetails',
-    data() {
-      return {
-        town: '',
-        address: '',
-        comment: '',
-        phoneNumber: '',
-        name: '',
-        time: '',
-        imageSrc: '',
-      }
-    },
-    computed: {
-      itemsAddToCartArray() {
-        return this.$store.state.itemsAddToCartArray;
-      },
-      totalPrice() {
-        let price = this.itemsAddToCartArray.reduce((total, item) => total + item.price*item.countInCart, 0);
-        if (price <= 0) {
-          return '0 ₽'
-        }
-        const parts = price.toString().split(/(?=(?:\d{3})+$)/);
-        return parts.join(' ') + ' ₽';
-      },
-    },
-    methods: {
-      orderBtnClicked() {
-        const townValue = document.getElementById('townValue');
-        const addressValue = document.getElementById('addressValue');
-        const nameValue = document.getElementById('nameValue');
-        const phoneValue = document.getElementById('phoneNumberValue');
-        const commentValue = document.getElementById('commentValue');
-        const timeValue = document.getElementById('timeValue');
-
-        const validateField = (field) => {
-          if (field.value === '') {
-            field.style.border = '1px solid #ff003c';
-            field.placeholder = 'Поле не может быть пустым';
-            field.classList.add('red-placeholder');
-            return false;
-          }
-          return true;
-        };
-
-        const isTownValid = validateField(townValue);
-        const isAddressValid = validateField(addressValue);
-        const isNameValid = validateField(nameValue);
-        const isPhoneValueValid = validateField(phoneValue);
-        if (!isTownValid || !isAddressValid || !isNameValid || !isPhoneValueValid) {
-          return;
-        }
-
-        this.$store.dispatch("postData", {
-          'name': this.name,
-          'phone_number': this.phoneNumber,
-          'town': this.town,
-          'address': this.address,
-          'time': this.time,
-          'comment': this.comment,
-        });
-      },
-      backButtonMethod() {
-        router.router.back();
-      }
-    },
-    mounted() {
-      tg.BackButton.show();
-
-      tg.MainButton.text = "Заказать";
-
-      tg.onEvent('backButtonClicked', this.backButtonMethod);
-      tg.onEvent('mainButtonClicked', this.orderBtnClicked);
-
-      tg.MainButton.show();
-    },
-    unmounted() {
-      tg.offEvent('backButtonClicked', this.backButtonMethod);
-      tg.offEvent('mainButtonClicked', this.orderBtnClicked);
+export default {
+  name: 'orderDetails',
+  data() {
+    return {
+      town: '',
+      address: '',
+      comment: '',
+      phoneNumber: '',
+      name: '',
+      time: '',
+      imageSrc: '',
+      deliveryMethod: '',
     }
+  },
+  computed: {
+    itemsAddToCartArray() {
+      return this.$store.state.itemsAddToCartArray;
+    },
+    totalPrice() {
+      let price = this.itemsAddToCartArray.reduce((total, item) => total + item.price * item.countInCart, 0);
+      if (price <= 0) {
+        return '0 ₽'
+      }
+      const parts = price.toString().split(/(?=(?:\d{3})+$)/);
+      return parts.join(' ') + ' ₽';
+    },
+  },
+  methods: {
+    orderBtnClicked() {
+      const townValue = document.getElementById('townValue');
+      const addressValue = document.getElementById('addressValue');
+      const nameValue = document.getElementById('nameValue');
+      const phoneValue = document.getElementById('phoneNumberValue');
+      const commentValue = document.getElementById('commentValue');
+      const timeValue = document.getElementById('timeValue');
+      const deliveryMethodValue = document.getElementById('deliveryMethodValue');
+
+      const validateField = (field) => {
+        if (field.value === '') {
+          field.style.border = '1px solid #ff003c';
+          field.placeholder = 'Поле не может быть пустым';
+          field.classList.add('red-placeholder');
+          return false;
+        }
+        return true;
+      };
+
+      const isTownValid = validateField(townValue);
+      const isAddressValid = validateField(addressValue);
+      const isNameValid = validateField(nameValue);
+      const isPhoneValueValid = validateField(phoneValue);
+      const isDeliveryMethodValid = validateField(deliveryMethodValue); // New validation
+      if (!isTownValid || !isAddressValid || !isNameValid || !isPhoneValueValid || !isDeliveryMethodValid) {
+        return;
+      }
+
+      this.$store.dispatch("postData", {
+        'name': this.name,
+        'phone_number': this.phoneNumber,
+        'town': this.town,
+        'address': this.address,
+        'time': this.time,
+        'comment': this.comment,
+        'delivery_method': this.deliveryMethod,
+      });
+    },
+    backButtonMethod() {
+      router.router.back();
+    }
+  },
+  mounted() {
+    tg.BackButton.show();
+
+    tg.MainButton.text = "Заказать";
+
+    tg.onEvent('backButtonClicked', this.backButtonMethod);
+    tg.onEvent('mainButtonClicked', this.orderBtnClicked);
+
+    tg.MainButton.show();
+  },
+  unmounted() {
+    tg.offEvent('backButtonClicked', this.backButtonMethod);
+    tg.offEvent('mainButtonClicked', this.orderBtnClicked);
   }
+}
 </script>
 
 <template>
@@ -90,16 +94,19 @@
     <br>
     <div style="font-size: 20px; font-weight: bold; margin: 0 5%;">Заказ</div>
     <div class="title-div">
-      <img v-if="itemsAddToCartArray[0].picture && itemsAddToCartArray[0].picture[0]" style="width: 150px; height: 150px; border-radius: 15px; object-fit: cover;" :src="`${this.$store.state.api_url}/files/` + itemsAddToCartArray[0].picture[0]" alt="image">
-      <img style="width: 150px; height: 150px; border-radius: 15px; object-fit: cover;" v-else src="@/assets/productArt.png" alt="img">
+      <img v-if="itemsAddToCartArray[0].picture && itemsAddToCartArray[0].picture[0]"
+           style="width: 150px; height: 150px; border-radius: 15px; object-fit: cover;"
+           :src="`${this.$store.state.api_url}/files/` + itemsAddToCartArray[0].picture[0]" alt="image">
+      <img style="width: 150px; height: 150px; border-radius: 15px; object-fit: cover;" v-else
+           src="@/assets/productArt.png" alt="img">
       <div class="title-text">
-      <div style="display: flex; flex-direction: column">
-        <span style="font-size: 20px; font-weight: bold; line-height: 1.5rem">{{ itemsAddToCartArray[0].name }}</span>
-<!--        <span style="font-size: 16px;">Краткое описание || {{itemsAddToCartArray[0].description}}</span>-->
+        <div style="display: flex; flex-direction: column">
+          <span @click="orderBtnClicked"
+                style="font-size: 20px; font-weight: bold; line-height: 1.5rem">{{ itemsAddToCartArray[0].name }}</span>
+        </div>
+        <div style="font-size: 20px; font-weight: bold; margin: 15px 15px 15px 0">{{ totalPrice }}</div>
       </div>
-      <div style="font-size: 20px; font-weight: bold; margin: 15px 15px 15px 0">{{totalPrice}}</div>
     </div>
-  </div>
 
     <hr style="border: 1px solid var(--app-hr-border-color); width: 90%; margin: 2.5% auto;">
 
@@ -132,11 +139,20 @@
       <span>Комментарий</span>
       <textarea placeholder="Добавьте комментарий" id="commentValue" v-model="comment"></textarea>
     </div>
+
+    <div style="margin-bottom: 150px" class="input-container">
+      <span>Способ доставки</span>
+      <select id="deliveryMethodValue" v-model="deliveryMethod" required>
+        <option value="">Выберите способ доставки</option>
+        <option value="Курьер">Курьер</option>
+        <option value="Самовывоз">Самовывоз</option>
+      </select>
+    </div>
   </div>
 </template>
 
 <style scoped lang="scss">
-*{
+* {
   box-sizing: border-box;
   font-family: 'Montserrat', sans-serif;
   font-size: 16px;
@@ -157,6 +173,7 @@
   padding: 2.5% 5%;
   display: flex;
   justify-content: start;
+
   .title-text {
     max-width: 200px;
     margin-left: 15px;
@@ -168,7 +185,7 @@
   }
 }
 
-textarea {
+textarea, select {
   background-color: var(--app-card-background-color);
   width: 100%;
   height: 43px;
@@ -183,12 +200,13 @@ textarea {
   font-family: 'Montserrat', sans-serif;
   font-weight: 600;
   font-size: 15px;
+
   &:focus {
     outline: none;
   }
 }
 
-.red-placeholder::placeholder{
+.red-placeholder::placeholder {
   color: #ff003c;
 }
 
@@ -197,34 +215,16 @@ textarea {
   display: flex;
   flex-direction: column;
   padding: 5% 5% 0;
+
   span {
     font-size: var(--app-text-color);
     font-weight: 750;
   }
 }
 
-//.footer {
-//  display: flex;
-//  width: 100%;
-//  flex-direction: column;
-//  position: relative;
-//  margin-top: 30vh;
-//  padding: 2.5% 5%;
-//  div {
-//    display: flex;
-//    justify-content: space-between;
-//    span {
-//      margin: 3px;
-//      color: #577B8F;
-//      font-size: 16px;
-//    }
-//  }
-//}
-
-
 @media screen and (max-height: 625px) {
   .input-container {
-   padding-top: 10px;
+    padding-top: 10px;
   }
 }
 </style>
