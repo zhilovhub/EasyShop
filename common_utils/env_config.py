@@ -19,6 +19,8 @@ load_dotenv()  # TODO back after docker compose
 # load_dotenv("/common_utils/.env")
 
 # COMMON
+MODE = _get_env("MODE")
+
 PROJECT_ROOT = _get_env("PROJECT_ROOT")
 FILES_PATH = _get_env("FILES_PATH")
 RESOURCES_PATH = _get_env("PROJECT_ROOT") + "resources/{}"
@@ -83,6 +85,3 @@ LOG_TO_GRAFANA = bool(int(_get_env("LOG_TO_GRAFANA")))
 GRAFANA_URL = _get_env("GRAFANA_URL")
 FROM = _get_env("FROM")
 
-# TESTS
-SCHEDULER_FOR_TESTS = _get_env("SCHEDULER_FOR_TESTS", raise_if_none=False)
-DB_FOR_TESTS = _get_env("DB_FOR_TESTS", raise_if_none=False)
