@@ -340,9 +340,11 @@ export const Store = new Vuex.Store({
           await tg.sendData(JSON.stringify(data));
           tg.close();
         }
-    },
-
-
+      },
+      async postColorData({commit}, sent_color){
+        const {color} = sent_color;
+        console.log(color)
+      }
   },
   getters: {
 

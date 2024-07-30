@@ -16,10 +16,23 @@ tg.expand();
 
 import './assets/main.css'
 import { createApp } from 'vue'
+
+// Vuetify
+import 'vuetify/styles'
+import { createVuetify } from 'vuetify'
+import * as components from 'vuetify/components'
+import * as directives from 'vuetify/directives'
+
 import App from './App.vue'
 import router from './router/router.js'
 import Vuex from "vuex";
 import {Store} from "./store/store.js"
+
+
+const vuetify = createVuetify({
+  components,
+  directives,
+})
 
 
 Store.state.bot_id = new URL(window.location.href).searchParams.get('bot_id');
@@ -32,6 +45,7 @@ app.component("swiper-slide", SwiperSlide)
 app.use(router.router)
 app.use(Vuex)
 app.use(Store)
+app.use(vuetify)
 app.mount('#app')
 
 
