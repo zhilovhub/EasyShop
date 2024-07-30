@@ -66,17 +66,17 @@ class HexColorData(BaseModel):
     query_id: str
 
 
-@router.post("/send_hex_color_to_bot/{bot_id}/")
-async def send_order_data_to_bot_api(bot_id: int, data: HexColorData) -> str:
+@router.post("/send_hex_color_to_bot")
+async def send_order_data_to_bot_api(data: HexColorData) -> str:
     """
     :raises HTTPInternalError:
     """
     try:
-        api_logger.debug(f"get new hex data from web_app bot_id={bot_id} : {data}")
+        api_logger.debug(f"get new hex data from web_app : {data}")
         async with aiohttp.ClientSession() as session:
             async with session.post(
                     url=f"http://{LOCAL_API_SERVER_HOST}:{LOCAL_API_SERVER_PORT}"
-                    f"/send_hex_color_to_bot/{bot_id}",
+                    f"/send_hex_color_to_bot/",
                     data=data.json()
             ) as response:
                 if response.status != 200:
@@ -87,8 +87,7 @@ async def send_order_data_to_bot_api(bot_id: int, data: HexColorData) -> str:
         raise HTTPInternalError(detail_message="Local Api error")
     except Exception as e:
         api_logger.error(
-            f"Error while execute send_hex_color_to_bot api with bot_id={bot_id} data={data}",
-            extra=extra_params(bot_id=bot_id),
+            f"Error while execute send_hex_color_to_bot api with data={data}",
             exc_info=e
         )
         raise HTTPInternalError

@@ -341,9 +341,32 @@ export const Store = new Vuex.Store({
           tg.close();
         }
       },
-      async postColorData({commit}, sent_color){
-        const {color} = sent_color;
+      async postColorData({commit}, sent_color_data){
+        const {color} = sent_color_data;
         console.log(color)
+        try {
+            data.query_id = tg.initDataUnsafe.query_id;
+            data.from_user = tg.initDataUnsafe.user.id;
+            const response = await fetch(`${Store.state.api_url}/api/settings/send_hex_color_to_bot`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Access-Control-Allow-Origin': '*',
+              },
+              body: JSON.stringify({
+                color: color,
+                query_id: tg.initDataUnsafe.query_id
+              })
+            });
+            if (!response.ok) {
+              throw new Error('Network response was not ok');
+            } else {
+              tg.close();
+            }
+          } catch (error) {
+            console.error('There was a problem with the fetch operation:', error);
+            alert("Произошла ошибка при отправке цвета :(")
+          }
       }
   },
   getters: {

@@ -23,7 +23,7 @@
       //   console.log("color", color, this.selected_color)
       // },
       sendSelectedColor() {
-        alert(this.selected_color)
+
       }
     }
   }
