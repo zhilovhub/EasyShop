@@ -23,7 +23,7 @@
       //   console.log("color", color, this.selected_color)
       // },
       sendSelectedColor() {
-
+        this.$store.dispatch("postColorData", {color: this.selected_color})
       }
     }
   }
