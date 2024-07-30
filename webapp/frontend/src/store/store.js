@@ -345,8 +345,6 @@ export const Store = new Vuex.Store({
         const {color} = sent_color_data;
         console.log(color)
         try {
-            data.query_id = tg.initDataUnsafe.query_id;
-            data.from_user = tg.initDataUnsafe.user.id;
             const response = await fetch(`${Store.state.api_url}/api/settings/send_hex_color_to_bot`, {
               method: 'POST',
               headers: {

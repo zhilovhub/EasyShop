@@ -24,7 +24,7 @@
       // },
       sendSelectedColor() {
         console.log(this.selected_color)
-        this.$store.dispatch("postColorData", {color: this.selected_color})
+        this.$store.dispatch("postColorData", {color: this.selected_color}).then((response) => {console.log(response)})
       }
     }
   }
