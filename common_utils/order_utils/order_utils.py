@@ -16,10 +16,11 @@ from database.models.order_model import OrderSchema, OrderItem, OrderItemExtraOp
 from logs.config import logger, custom_bot_logger, extra_params
 
 
-async def create_order(event: Message, order_type: OrderType) -> OrderSchema:
-    data = json.loads(event.web_app_data.data)
-
-    user_id = event.from_user.id
+async def create_order(user_id: int, web_app_data, order_type: OrderType, _json: bool = True) -> OrderSchema:
+    if _json:
+        data = json.loads(web_app_data)
+    else:
+        data = web_app_data
     bot_id = data["bot_id"]
 
     match order_type:

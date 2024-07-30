@@ -1,6 +1,6 @@
 from aiogram import Bot
 
-from custom_bots.multibot import bot_db
+from database.config import bot_db
 
 from database.models.bot_model import BotNotFoundError
 

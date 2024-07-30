@@ -17,6 +17,14 @@ def make_webapp_info(bot_id: int) -> WebAppInfo:
     return WebAppInfo(url=f"{WEB_APP_URL}:{WEB_APP_PORT}/products-page/?bot_id={bot_id}")
 
 
+def make_product_deep_link_url(product_id: int, bot_username: str) -> str:
+    return f"t.me/{bot_username}?start=product_{product_id}"
+
+
+def make_product_webapp_info(product_id: int, bot_id: int) -> WebAppInfo:
+    return WebAppInfo(url=f"{WEB_APP_URL}:{WEB_APP_PORT}/products-page/{product_id}/?bot_id={bot_id}")
+
+
 async def get_bot_username(bot_id: int) -> str:
     custom_bot_username = (await Bot((await bot_db.get_bot(bot_id=bot_id)).token).get_me()).username
     return custom_bot_username

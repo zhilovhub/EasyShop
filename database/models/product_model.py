@@ -13,6 +13,8 @@ from database.models.dao import Dao
 from database.models.bot_model import Bot
 from database.exceptions.exceptions import KwargsException
 
+from aiogram.utils.formatting import Text, Bold, Italic, Pre
+
 from logs.config import extra_params
 
 from enum import Enum
@@ -135,6 +137,17 @@ class ProductSchema(ProductWithoutId):
                 options_text += '\n'
             return f"<b>{self.name} {self.price}₽ x {count}шт</b> {options_text}"
         return f"<b>{self.name} {self.price}₽ x {count}шт</b>"
+
+    def convert_to_product_page_text(self) -> Text:
+        res = Text(
+            Italic(Bold("📦 Карточка товара.\n\n")),
+            "🔤 Название: ",
+            Bold(f"{self.name}"),
+            "\n\n📝 Описание:\n",
+            Pre(f"{self.description}"), "\n\n",
+            f"💰 Цена: ", Bold(f"{self.price}₽"),
+        )
+        return res
 
 
 class NotEnoughProductsInStockToReduce(Exception):  # TODO Arsen should delete

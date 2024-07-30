@@ -98,7 +98,7 @@ export default {
         :key="item.id"
         class="item-block"
       >
-        <img style="border-radius: 7px; width: 150px; height: 150px; object-fit: cover;" v-if="item.picture && item.picture[0]" :src="`${this.$store.state.api_url}/files/` + (item.picture ? item.picture[0] : null)" alt="img">
+        <img style="border-radius: 7px; width: 150px; height: 150px; object-fit: cover;" v-if="item.picture && item.picture[0]" :src="`${this.$store.state.api_url}/files/get_file/` + (item.picture ? item.picture[0] : null)" alt="img">
         <img style="border-radius: 7px; width: 150px; height: 150px; object-fit: cover;" v-else src="@/assets/productArt.png" alt="img">
         <div style="display: flex; flex-direction: column; justify-content: space-between; padding: 0 2.5%">
           <div class="text-block">

@@ -1,6 +1,6 @@
 <template>
   <div>
-    <swiper v-if="productObject.picture && productObject.picture[0]"
+    <swiper v-if="productObject?.picture && productObject.picture[0]"
       :slidesPerView="1"
       :modules="modules"
       :navigation="true"
@@ -8,12 +8,12 @@
     >
       <swiper-slide
         v-for="(picture, index) in productObject.picture">
-        <img :src="`${this.apiUrl()}/files/` + (productObject.picture ? productObject.picture[index] : null)" alt="main-picture">
+        <img :src="`${this.apiUrl()}/files/get_file/` + (productObject.picture ? productObject.picture[index] : null)" alt="main-picture">
       </swiper-slide>
     </swiper>
-    <div class="text">{{productObject.name}}</div>
+    <div class="text">{{productObject?.name}}</div>
     <div class="text">{{priceRub(productObject.price)}}</div>
-    <div v-for="(option, type) in productObject.extra_options">
+    <div v-for="(option, type) in productObject?.extra_options">
       <div @click="toggleOption(option)" v-if="option.type === 'block'" class="block extra-options" :style="{ height: option.isSelected ? '' : '68.27px' }">
         <div class="span-block">
           <h1>{{option.name}}</h1>
@@ -132,6 +132,7 @@ export default {
   components: { SwiperSlide, Swiper },
   data() {
     return {
+      productObject: {},
       productId: parseInt(this.$route.params.id),
       descriptionVisible: true,
       feedbackVisible: true,
@@ -139,20 +140,19 @@ export default {
     }
   },
   setup() {
+    console.log("tg", tg)
     return {
       modules: [Navigation],
     };
-  },
-  computed: {
-    productObject() {
-      return this.$store.state.items.find(item => item.id === this.productId);
-    }
   },
   methods: {
     apiUrl() {
       return this.$store.state.api_url;
     },
     priceRub(price) {
+      if (!price) {
+        return
+      }
       const parts = price.toString().split(/(?=(?:\d{3})+$)/);
       return parts.join(' ') + '₽';
     },
@@ -221,7 +221,7 @@ export default {
       router.router.replace({ name: router.PRODUCTS_PAGE, query: { bot_id: this.$store.state.bot_id }});
     },
     backButtonMethod() {
-      router.router.back();
+      router.router.replace({ name: router.PRODUCTS_PAGE, query: { bot_id: this.$store.state.bot_id }});
     },
     setFirstOptionChosen() {
       let firstOption = document.querySelector('.option-block');
@@ -238,8 +238,14 @@ export default {
     }
   },
   mounted() {
+    this.$store.dispatch('itemsInit');
+    this.$store.dispatch('getProduct',  {
+      productId: this.productId,
+      botId: this.$store.state.bot_id
+    }).then((item) => {
+      this.productObject = item;
+    });
     tg.BackButton.show();  // показываем всегда самой первой строчкой
-
     if (this.productObject.extra_options) {
       this.productObject.extra_options = this.productObject.extra_options.map(item => ({ ...item, isSelected: true }));
     }

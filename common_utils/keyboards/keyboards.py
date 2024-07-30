@@ -5,7 +5,7 @@ from pydantic import BaseModel, ConfigDict, Field, ValidationError
 from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 
 from common_utils.keyboards.keyboard_utils import callback_json_validator, get_bot_channels, get_bot_username, \
-    get_bot_mailing, get_bot_status
+    get_bot_mailing, get_bot_status, make_product_deep_link_url, make_product_webapp_info
 
 from database.config import user_role_db
 from database.models.user_role_model import UserRoleValues
@@ -313,6 +313,58 @@ class InlineAdministratorsManageKeyboard:
                         callback_data=InlineAdministratorsManageKeyboard.callback_json(
                             actions.BACK_TO_BOT_MENU, bot_id
                         )
+                    )
+                ],
+            ]
+        )
+
+
+class InlineModeProductKeyboardButton:
+    class Callback(BaseModel):
+        class ActionEnum(Enum):
+            SHOP = "🛍 Открыть страницу товара"
+
+        model_config = ConfigDict(from_attributes=True, populate_by_name=True)
+
+        n: str = Field(default="inline_product_deep_link", frozen=True)
+        a: ActionEnum
+
+    @staticmethod
+    def get_keyboard(product_id: int, bot_username) -> InlineKeyboardMarkup:
+        actions = InlineModeProductKeyboardButton.Callback.ActionEnum
+
+        return InlineKeyboardMarkup(
+            inline_keyboard=[
+                [
+                    InlineKeyboardButton(
+                        text=actions.SHOP.value,
+                        url=make_product_deep_link_url(product_id, bot_username)
+                    )
+                ],
+            ]
+        )
+
+
+class InlineCustomBotModeProductKeyboardButton:
+    class Callback(BaseModel):
+        class ActionEnum(Enum):
+            SHOP = "🛍 Открыть страницу товара"
+
+        model_config = ConfigDict(from_attributes=True, populate_by_name=True)
+
+        n: str = Field(default="inline_product_web_app", frozen=True)
+        a: ActionEnum
+
+    @staticmethod
+    def get_keyboard(product_id: int, bot_id: int) -> InlineKeyboardMarkup:
+        actions = InlineCustomBotModeProductKeyboardButton.Callback.ActionEnum
+
+        return InlineKeyboardMarkup(
+            inline_keyboard=[
+                [
+                    InlineKeyboardButton(
+                        text=actions.SHOP.value,
+                        web_app=make_product_webapp_info(product_id, bot_id)
                     )
                 ],
             ]

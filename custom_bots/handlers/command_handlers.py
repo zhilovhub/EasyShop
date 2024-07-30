@@ -1,14 +1,18 @@
 from aiogram import Bot
 from aiogram.types import Message
-from aiogram.filters import CommandStart
 from aiogram.fsm.context import FSMContext
+from aiogram.filters import CommandStart, CommandObject
 
-from custom_bots.multibot import CustomUserStates, format_locales
+from custom_bots.multibot import CustomUserStates
+from custom_bots.utils.utils import format_locales
 from custom_bots.handlers.routers import multi_bot_router
+from common_utils.keyboards.keyboards import InlineCustomBotModeProductKeyboardButton
 from custom_bots.utils.custom_bot_options import get_option
+from common_utils.exceptions.bot_exceptions import UnknownDeepLinkArgument
+from common_utils.broadcasting.broadcasting import send_event, EventTypes
 from custom_bots.keyboards.custom_bot_menu_keyboards import ReplyCustomBotMenuKeyboard, InlineShopCustomBotKeyboard
 
-from common_utils.broadcasting.broadcasting import send_event, EventTypes
+
 
 from database.config import custom_bot_user_db, bot_db
 from database.models.bot_model import BotNotFoundError
@@ -17,12 +21,7 @@ from database.models.custom_bot_user_model import CustomBotUserNotFoundError
 from logs.config import custom_bot_logger, extra_params
 
 
-@multi_bot_router.message(CommandStart())
-async def start_cmd(message: Message, state: FSMContext):
-    user_id = message.from_user.id
-
-    start_msg = await get_option("start_msg", message.bot.token)
-
+async def _check_new_user(message: Message, user_id: int):
     try:
         bot = await bot_db.get_bot_by_token(message.bot.token)
         custom_bot_logger.info(
@@ -47,21 +46,44 @@ async def start_cmd(message: Message, state: FSMContext):
         await Bot(message.bot.token).delete_webhook()
         return await message.answer("Бот не инициализирован")
 
-    params = message.text.strip().split()
-    if len(params) > 1:
-        match params[-1]:
-            case "web_app":
-                await state.set_state(CustomUserStates.MAIN_MENU)
-                return await message.answer(
-                    "<b>Наш магазин:</b>",
-                    reply_markup=InlineShopCustomBotKeyboard.get_keyboard(bot.bot_id)
-                )
-            case _:
-                custom_bot_logger.warning(
-                    f"user_id={user_id}: provided unknown start command param ({params[-1]}) "
-                    f"in bot (bot_id={bot.bot_id}) by user (user_id={user_id})",
-                    extra_params(bot_id=bot.bot_id, user_id=user_id)
-                )
+
+@multi_bot_router.message(CommandStart(deep_link=True))
+async def deep_link_start_handler(message: Message, state: FSMContext, command: CommandObject):
+    """
+    :raises UnknownDeepLinkArgument:
+    """
+    deep_link_params = command.args.split()
+
+    bot = await bot_db.get_bot_by_token(message.bot.token)
+    # Проверяем, новый ли пользователь
+    await _check_new_user(message, message.from_user.id)
+
+    if deep_link_params[0].startswith("product_"):
+        product_id = int(deep_link_params[0].strip().split('_')[-1])
+        await state.set_state(CustomUserStates.MAIN_MENU)
+        return await message.answer(
+            "<b>Страничка товара:</b>",
+            reply_markup=InlineCustomBotModeProductKeyboardButton.get_keyboard(product_id, bot.bot_id)
+        )
+    elif deep_link_params[0] == "web_app":
+        await state.set_state(CustomUserStates.MAIN_MENU)
+        return await message.answer(
+            "<b>Наш магазин:</b>",
+            reply_markup=InlineShopCustomBotKeyboard.get_keyboard(bot.bot_id)
+        )
+    else:
+        raise UnknownDeepLinkArgument(arg=deep_link_params)
+
+
+@multi_bot_router.message(CommandStart())
+async def start_cmd(message: Message, state: FSMContext):
+    user_id = message.from_user.id
+
+    bot = await bot_db.get_bot_by_token(message.bot.token)
+
+    start_msg = await get_option("start_msg", message.bot.token)
+
+    await _check_new_user(message, user_id)
 
     await message.answer(
         format_locales(start_msg, message.from_user, message.chat),

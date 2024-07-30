@@ -19,7 +19,7 @@ async def start_custom_bot(bot_id: int) -> None:
             user_bot.status = "online"
             await bot_db.update_bot(user_bot)
             if response.status != 200:
-                raise LocalAPIException(f"API returned {response.status} status code "
+                raise LocalAPIException(f"Local API returned {response.status} status code "
                                         f"with text {await response.text()}")
 
 
@@ -36,5 +36,5 @@ async def stop_custom_bot(bot_id: int) -> None:
             user_bot.status = "offline"
             await bot_db.update_bot(user_bot)
             if response.status != 200:
-                raise LocalAPIException(f"API returned {response.status} status code "
+                raise LocalAPIException(f"Local API returned {response.status} status code "
                                         f"with text {await response.text()}")
