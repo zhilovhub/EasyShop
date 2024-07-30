@@ -208,6 +208,17 @@ export const Store = new Vuex.Store({
           console.error('There was a problem with the fetch operation:', error);
         }
       },
+      async getProduct({commit}, productInformation) {
+        try{
+          const {productId, botId} = productInformation;
+          let response = await fetch(`${Store.state.api_url}/api/products/get_product/${botId}/${productId}`)
+          response = await response.json();
+          console.log(response)
+          return response;
+        } catch (error) {
+          console.error(error);
+        }
+      },
       async editProduct({commit}, productInformation) {
         try {
           const { name , category, description, article, price, count, extra_options, picture, id} = productInformation;
@@ -285,7 +296,7 @@ export const Store = new Vuex.Store({
         }
       },
       async postData({commit}, orderInformation) {
-        const {name, phone_number, town, address, time, comment, delivery_method} = orderInformation;
+        const {name, phone_number, town, address, time, comment, delivery_method, mainButtonFunction} = orderInformation;
         let data = {
           'bot_id': Store.state.bot_id,
           'raw_items': Store.state.itemsAddToCartArray.reduce((cartItemsById, item) => {
@@ -301,8 +312,34 @@ export const Store = new Vuex.Store({
           'comment': comment || '',
           'delivery_method': delivery_method || ''
         };
-        await tg.sendData(JSON.stringify(data));
-        tg.close();
+        if (tg.initDataUnsafe && tg.initDataUnsafe.query_id) {
+          try {
+            tg.offEvent('mainButtonClicked', mainButtonFunction);
+            data.query_id = tg.initDataUnsafe.query_id;
+            data.from_user = tg.initDataUnsafe.user.id;
+            const response = await fetch(`${Store.state.api_url}/api/orders/send_order_data_to_bot`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Access-Control-Allow-Origin': '*',
+                'authorization-data': tg.initData,
+              },
+              body: JSON.stringify(data)
+            });
+            if (!response.ok) {
+              throw new Error('Network response was not ok');
+            } else {
+              tg.close();
+            }
+          } catch (error) {
+            console.error('There was a problem with the fetch operation:', error);
+            alert("Произошла ошибка при создании заказа :(")
+            tg.onEvent('mainButtonClicked', mainButtonFunction);
+          }
+        } else {
+          await tg.sendData(JSON.stringify(data));
+          tg.close();
+        }
     },
 
 

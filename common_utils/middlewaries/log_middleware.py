@@ -4,7 +4,7 @@ from typing import Callable, Dict, Any, Awaitable
 from logging import Logger
 
 from aiogram import BaseMiddleware
-from aiogram.types import CallbackQuery, Message, TelegramObject, User
+from aiogram.types import CallbackQuery, Message, TelegramObject, User, InlineQuery
 from aiogram.fsm.context import FSMContext
 
 from logs.config import extra_params
@@ -59,6 +59,14 @@ class LogMiddleware(BaseMiddleware):
                 if self.redis.get(str(event.id)) is None:
                     self.logger.info(
                             f"{callback_info} has sent callback_data {event.data}",
+                            extra=extra_params(user_id=user.id)
+                        )
+                    # noinspection PyAsyncCall
+                    self.redis.set(name=str(event.id), value="", ex=2)
+            elif isinstance(event, InlineQuery):
+                if self.redis.get(str(event.id)) is None:
+                    self.logger.info(
+                            f"{callback_info} has sent inline_query {event.query}",
                             extra=extra_params(user_id=user.id)
                         )
                     # noinspection PyAsyncCall

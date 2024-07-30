@@ -21,3 +21,6 @@ multi_bot_channel_router.my_chat_member.middleware(ErrorMiddleware())
 multi_bot_channel_router.chat_member.middleware(ErrorMiddleware())
 multi_bot_channel_router.callback_query.middleware(ErrorMiddleware())
 multi_bot_channel_router.chat_member.outer_middleware(log_middleware)
+
+inline_mode_router = Router(name="inline")
+inline_mode_router.inline_query.outer_middleware(log_middleware)
