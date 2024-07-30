@@ -2,9 +2,9 @@ from enum import Enum
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from aiogram.types import ReplyKeyboardMarkup, KeyboardButton
+from aiogram.types import ReplyKeyboardMarkup, KeyboardButton, InlineKeyboardMarkup, InlineKeyboardButton
 
-from common_utils.keyboards.keyboard_utils import make_webapp_info
+from common_utils.keyboards.keyboard_utils import make_webapp_info, make_select_hex_web_app_info
 
 
 class ReplyBackBotMenuKeyboard:
@@ -64,4 +64,30 @@ class ReplyBotMenuKeyboard:
                 ]
             ],
             resize_keyboard=True, one_time_keyboard=False
+        )
+
+
+class SelectHexColorWebAppInlineKeyboard:
+    class Callback(BaseModel):
+        class ActionEnum(Enum):
+            HEX_SELECT = "🎨 Выбрать цвет"
+
+        model_config = ConfigDict(from_attributes=True, populate_by_name=True)
+
+        n: str = Field(default="select_hex_web_app", frozen=True)
+        a: ActionEnum
+
+    @staticmethod
+    def get_keyboard() -> InlineKeyboardMarkup:
+        actions = SelectHexColorWebAppInlineKeyboard.Callback.ActionEnum
+
+        return InlineKeyboardMarkup(
+            inline_keyboard=[
+                [
+                    InlineKeyboardButton(
+                        text=actions.HEX_SELECT.value,
+                        web_app=make_select_hex_web_app_info()
+                    )
+                ],
+            ]
         )
