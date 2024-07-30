@@ -1,4 +1,7 @@
+import asyncio
+
 import pytest
+import pytest_asyncio
 
 from database.models.models import Database, Base
 from common_utils.env_config import SQLALCHEMY_URL
@@ -19,3 +22,9 @@ async def init_and_drop_database():
 
     async with database.engine.begin() as connection:
         await connection.run_sync(Base.metadata.drop_all)
+
+
+@pytest.fixture
+def database():
+    return Database(sqlalchemy_url=SQLALCHEMY_URL, logger=test_logger)
+

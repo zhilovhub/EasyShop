@@ -1,3 +1,4 @@
+from sqlalchemy import NullPool
 from sqlalchemy.ext.asyncio import create_async_engine
 
 from database.models.bot_model import BotDao
@@ -25,7 +26,7 @@ from common_utils.singleton import singleton
 @singleton
 class Database:
     def __init__(self, sqlalchemy_url: str, logger) -> None:
-        self.engine = create_async_engine(sqlalchemy_url)
+        self.engine = create_async_engine(sqlalchemy_url, poolclass=NullPool)
         self.logger = logger
 
         self.bot_dao = BotDao(self.engine, self.logger)
