@@ -76,7 +76,7 @@ async def send_order_data_to_bot_api(data: HexColorData) -> str:
         async with aiohttp.ClientSession() as session:
             async with session.post(
                     url=f"http://{LOCAL_API_SERVER_HOST}:{LOCAL_API_SERVER_PORT}"
-                    f"/send_hex_color_to_bot/",
+                    f"/send_hex_color_to_bot",
                     data=data.json()
             ) as response:
                 if response.status != 200:
