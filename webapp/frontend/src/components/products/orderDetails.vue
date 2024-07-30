@@ -101,8 +101,7 @@ export default {
            src="@/assets/productArt.png" alt="img">
       <div class="title-text">
         <div style="display: flex; flex-direction: column">
-          <span @click="orderBtnClicked"
-                style="font-size: 20px; font-weight: bold; line-height: 1.5rem">{{ itemsAddToCartArray[0].name }}</span>
+          <span style="font-size: 20px; font-weight: bold; line-height: 1.5rem">{{ itemsAddToCartArray[0].name }}</span>
         </div>
         <div style="font-size: 20px; font-weight: bold; margin: 15px 15px 15px 0">{{ totalPrice }}</div>
       </div>
@@ -144,8 +143,10 @@ export default {
       <span>Способ доставки</span>
       <select id="deliveryMethodValue" v-model="deliveryMethod" required>
         <option value="">Выберите способ доставки</option>
-        <option value="Курьер">Курьер</option>
-        <option value="Самовывоз">Самовывоз</option>
+        <option value="На адрес">На адрес</option>
+        <option value="Почта России">Почта России</option>
+        <option value="СДЭК">СДЭК</option>
+        <option value="Boxberry">Boxberry</option>
       </select>
     </div>
   </div>
