@@ -61,6 +61,7 @@ class Order(Base):
     payment_method = Column(String, nullable=False)
     ordered_at = Column(DateTime, default=datetime.now())
     address = Column(String)
+    delivery_method = Column(String)
     status = Column(OrderStatus)
     comment = Column(String)
     town = Column(String)
@@ -98,6 +99,7 @@ class OrderSchema(BaseModel):
     payment_method: str | None = None
     ordered_at: datetime
     address: str
+    delivery_method: str
     status: OrderStatusValues
     comment: str
     town: str
@@ -155,6 +157,7 @@ class OrderSchema(BaseModel):
                f"📱 Номер телефона: <b>{self.phone_number if self.phone_number else 'Не указано'}</b>\n" \
                f"🌇 Город: <b>{self.town if self.town else 'Не указано'}</b>\n" \
                f"🛤 Адрес доставки: <b>{self.address if self.address else 'Не указано'}</b>\n" \
+               f"🚐 Способ доставки: <b>{self.delivery_method if self.delivery_method else 'Не указано'}</b>\n" \
                f"⏰ Время доставки: <b>{self.time if self.time else 'Не указано'}</b>\n" \
                f"💌 Комментарий: <b>{self.comment if self.comment else 'Не указано'}</b>\n\n" \
                f"Статус: <b>{self.translate_order_status()}</b>" if not is_admin \
@@ -168,6 +171,7 @@ class OrderSchema(BaseModel):
                f"📱 Номер телефона: <b>{self.phone_number if self.phone_number else 'Не указано'}</b>\n" \
                f"🌇 Город: <b>{self.town if self.town else 'Не указано'}</b>\n" \
                f"🛤 Адрес доставки: <b>{self.address if self.address else 'Не указано'}</b>\n" \
+               f"🚐 Способ доставки: <b>{self.delivery_method if self.delivery_method else 'Не указано'}</b>\n" \
                f"⏰ Время доставки: <b>{self.time if self.time else 'Не указано'}</b>\n" \
                f"💌 Комментарий: <b>{self.comment if self.comment else 'Не указано'}</b>\n\n" \
                  f"Статус: <b>{self.translate_order_status()}</b>"

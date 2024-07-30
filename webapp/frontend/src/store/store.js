@@ -285,7 +285,7 @@ export const Store = new Vuex.Store({
         }
       },
       async postData({commit}, orderInformation) {
-        const {name, phone_number, town, address, time, comment} = orderInformation;
+        const {name, phone_number, town, address, time, comment, delivery_method} = orderInformation;
         let data = {
           'bot_id': Store.state.bot_id,
           'raw_items': Store.state.itemsAddToCartArray.reduce((cartItemsById, item) => {
@@ -298,7 +298,8 @@ export const Store = new Vuex.Store({
           'town': town,
           'address': address,
           'time': time || '',
-          'comment': comment || ''
+          'comment': comment || '',
+          'delivery_method': delivery_method || ''
         };
         await tg.sendData(JSON.stringify(data));
         tg.close();

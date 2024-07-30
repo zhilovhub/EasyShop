@@ -285,6 +285,7 @@ img {
   line-height: 26px;
   font-weight: bold;
   color: var(--app-text-color);
+  word-wrap: break-word;
   padding: 10px 5% 5px;
 }
 
