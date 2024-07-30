@@ -41,7 +41,7 @@ async def check_admin_authorization(bot_id: int, data_string: str, custom_bot_va
         except BotNotFoundError:
             raise HTTPBotNotFoundError(bot_id=bot_id)
 
-        if bot.created_by != json.loads(parsed_data['user'])['id']:
+        if not custom_bot_validate and bot.created_by != json.loads(parsed_data['user'])['id']:
             raise HTTPUnauthorizedError(detail_message=f"Unauthorized. You dont have access to bot with provided id.")
 
         if int(parsed_data['auth_date']) + 60 * 60 < time.time():
