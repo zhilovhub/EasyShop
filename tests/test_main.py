@@ -1,7 +1,6 @@
-import asyncio
+from database.models.models import Database
+import os
 
 
-async def test_sum():
-    print("1")
-    await asyncio.sleep(2)
-    print("2")
+def test_sum():
+    print(os.getenv("MODE"))
