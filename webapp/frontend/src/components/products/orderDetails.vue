@@ -66,6 +66,7 @@ export default {
         'time': this.time,
         'comment': this.comment,
         'delivery_method': this.deliveryMethod,
+        'mainButtonFunction': this.orderBtnClicked,
       });
     },
     backButtonMethod() {
