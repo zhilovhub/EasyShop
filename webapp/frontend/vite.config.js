@@ -54,9 +54,9 @@ export default defineConfig({
     }
   },
   server: {
-    https: {
-      key: fs.readFileSync(env.VITE_SSL_KEY_PATH),
-      cert: fs.readFileSync(env.VITE_SSL_CERT_PATH)
-    }
+    // https: {
+    //   key: fs.readFileSync(env.VITE_SSL_KEY_PATH),
+    //   cert: fs.readFileSync(env.VITE_SSL_CERT_PATH)
+    // }
   },
 })

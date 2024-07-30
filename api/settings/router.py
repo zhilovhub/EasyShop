@@ -1,3 +1,5 @@
+import aiohttp
+
 from logs.config import api_logger, extra_params
 
 from fastapi import APIRouter
@@ -8,6 +10,9 @@ from database.config import bot_db
 from database.models.bot_model import BotNotFoundError
 
 from api.utils import HTTPBotNotFoundError, HTTPInternalError, RESPONSES_DICT
+
+from common_utils.exceptions.local_api_exceptions import LocalAPIException
+from common_utils.env_config import LOCAL_API_SERVER_HOST, LOCAL_API_SERVER_PORT
 
 
 PATH = "/api/settings"
@@ -54,3 +59,39 @@ async def get_web_app_options_api(bot_id: int) -> WebAppOptions:
             exc_info=e
         )
         raise HTTPInternalError
+
+
+class HexColorData(BaseModel):
+    color: str
+    query_id: str
+
+
+@router.post("/send_hex_color_to_bot/{bot_id}/")
+async def send_order_data_to_bot_api(bot_id: int, data: HexColorData) -> str:
+    """
+    :raises HTTPInternalError:
+    """
+    try:
+        api_logger.debug(f"get new hex data from web_app bot_id={bot_id} : {data}")
+        async with aiohttp.ClientSession() as session:
+            async with session.post(
+                    url=f"http://{LOCAL_API_SERVER_HOST}:{LOCAL_API_SERVER_PORT}"
+                    f"/send_hex_color_to_bot/{bot_id}",
+                    data=data.json()
+            ) as response:
+                if response.status != 200:
+                    api_logger.error(f"Local API returned {response.status} status code "
+                                     f"with text {await response.text()}")
+                    raise LocalAPIException
+    except LocalAPIException:
+        raise HTTPInternalError(detail_message="Local Api error")
+    except Exception as e:
+        api_logger.error(
+            f"Error while execute send_hex_color_to_bot api with bot_id={bot_id} data={data}",
+            extra=extra_params(bot_id=bot_id),
+            exc_info=e
+        )
+        raise HTTPInternalError
+
+    return "success"
+

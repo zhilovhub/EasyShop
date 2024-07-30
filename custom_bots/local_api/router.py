@@ -15,8 +15,9 @@ from custom_bots.utils.utils import is_bot_token
 
 from logs.config import custom_bot_logger, extra_params
 
-from aiogram.exceptions import TelegramUnauthorizedError
 from aiogram import Bot
+from aiogram.exceptions import TelegramUnauthorizedError
+from aiogram.types import InlineQueryResultArticle, InputTextMessageContent
 
 
 routes = web.RouteTableDef()
@@ -94,12 +95,9 @@ async def send_web_app_data_to_bot(request):
     custom_bot_logger.debug(f"new request to send_web_app_data_to_bot : {request}")
 
     bot_id = request.match_info['bot_id']
-    custom_bot_logger.debug(f"new request to with bot_id : {bot_id}")
     try:
         bot = await bot_db.get_bot(int(bot_id))
-        custom_bot_logger.debug(f"new request to with bot : {bot}")
         custom_bot_tg = Bot(bot.token)
-        custom_bot_logger.debug(f"new request to with tg_bot : {custom_bot_tg}")
     except BotNotFoundError:
         return web.Response(status=404, text=f"Bot with provided id not found (id: {bot_id}).")
     if not is_bot_token(bot.token):
@@ -142,5 +140,36 @@ async def send_web_app_data_to_bot(request):
             exc_info=e
         )
         raise e
+
+    return web.Response(status=200, text=f"Data was sent to bot successfully")
+
+
+@routes.post('/send_hex_color_to_bot/{bot_id}')
+async def send_hex_data_to_bot(request):
+    custom_bot_logger.debug(f"new request to send_hex_color_to_bot : {request}")
+
+    bot_id = request.match_info['bot_id']
+    try:
+        bot = await bot_db.get_bot(int(bot_id))
+        custom_bot_tg = Bot(bot.token)
+    except BotNotFoundError:
+        return web.Response(status=404, text=f"Bot with provided id not found (id: {bot_id}).")
+    if not is_bot_token(bot.token):
+        return web.Response(status=400, text="Incorrect bot token format.")
+    try:
+        data = await request.json()
+        await custom_bot_tg.answer_web_app_query(web_app_query_id=data['query_id'],
+                                                 result=InlineQueryResultArticle(
+                                                     id="hex_color",
+                                                     title="hex_color",
+                                                     input_message_content=InputTextMessageContent(
+                                                         message_text=data['color']
+                                                     )
+                                                 ))
+    except Exception as ex:
+        custom_bot_logger.error(
+            f"error on processing local api send hex request", exc_info=True
+        )
+        raise ex
 
     return web.Response(status=200, text=f"Data was sent to bot successfully")
