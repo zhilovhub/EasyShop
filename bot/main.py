@@ -99,11 +99,11 @@ if __name__ == "__main__":
     dp.include_router(admin_group_commands_router)  # не знаю почему не работает если ставить не первым
 
     dp.include_router(commands_router)  # should be first
+    dp.include_router(custom_bot_editing_router)  # should be before admin_bot_menu
     dp.include_router(admin_bot_menu_router)
     dp.include_router(stock_menu_router)
     dp.include_router(channel_menu_router)
     dp.include_router(subscribe_router)
-    dp.include_router(custom_bot_editing_router)
     dp.include_router(post_message_router)
 
     for log_file in ('all.log', 'err.log'):
