@@ -19,7 +19,7 @@ from bot.middlewaries.subscription_middleware import CheckSubscriptionMiddleware
 from common_utils.keyboards.keyboards import InlineBotMenuKeyboard
 from common_utils.subscription.subscription import UserHasAlreadyStartedTrial
 from common_utils.exceptions.bot_exceptions import UnknownDeepLinkArgument
-from common_utils.broadcasting.broadcasting import send_event, EventTypes, success_event
+from common_utils.broadcasting.broadcasting import send_event, EventTypes
 
 from database.config import user_db, bot_db, user_role_db
 from database.models.bot_model import BotNotFoundError
