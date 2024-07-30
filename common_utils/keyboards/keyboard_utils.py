@@ -13,6 +13,10 @@ from database.models.post_message_model import PostMessageSchema, PostMessageNot
 from logs.config import logger, extra_params
 
 
+def make_select_hex_web_app_info() -> WebAppInfo:
+    return WebAppInfo(url=f"{WEB_APP_URL}:{WEB_APP_PORT}/hex-selector")
+
+
 def make_webapp_info(bot_id: int) -> WebAppInfo:
     return WebAppInfo(url=f"{WEB_APP_URL}:{WEB_APP_PORT}/products-page/?bot_id={bot_id}")
 
