@@ -276,7 +276,7 @@ class InlineThemeSettingsMenuKeyboard:
 
         model_config = ConfigDict(from_attributes=True, populate_by_name=True)
 
-        n: str = Field(default="bot_theme_settings_menu", frozen=True)
+        n: str = Field(default="bot_customization_menu", frozen=True)
         a: ActionEnum
 
         bot_id: int
