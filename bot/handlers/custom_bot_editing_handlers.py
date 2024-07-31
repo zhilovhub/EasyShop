@@ -14,28 +14,13 @@ from bot.utils.send_instructions import send_instructions
 from bot.keyboards.main_menu_keyboards import ReplyBotMenuKeyboard, ReplyBackBotMenuKeyboard
 
 from common_utils.keyboards.keyboards import InlineBotEditOrderOptionKeyboard, InlineBotEditOrderOptionsKeyboard, InlineBotMenuKeyboard, InlineBotSettingsMenuKeyboard
+from common_utils.themes import is_valid_hex_code
 
 from database.config import bot_db, option_db, order_option_db
 from database.models.option_model import OptionNotFoundError
 from database.models.order_option_model import OrderOptionNotFoundError, OrderOptionSchemaWithoutId
 
 from logs.config import logger
-
-
-def _is_valid_hex_code(string: str) -> bool:
-    """Проверяет, валидный ли цвет передал пользователь"""
-
-    regex = "^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$"
-
-    p = re.compile(regex)
-
-    if string is None:
-        return False
-
-    if re.search(p, string):
-        return True
-    else:
-        return False
 
 
 @custom_bot_editing_router.callback_query(lambda query: InlineBotEditOrderOptionsKeyboard.callback_validator(query.data))
@@ -399,7 +384,7 @@ async def editing_bg_color_handler(message: Message, state: FSMContext):
                 await state.set_state(States.BOT_MENU)
                 await state.set_data(state_data)
             case _:
-                if not _is_valid_hex_code(message_text) and message_text != "telegram":
+                if not is_valid_hex_code(message_text) and message_text != "telegram":
                     return await message.answer("Не получилось распознать ввод. Введите еще раз цвет в формате "
                                                 "<i>#FFFFFF</i> или напишите <i>telegram</i> для дефолтных цветов.")
 

@@ -1,7 +1,9 @@
-from pydantic import BaseModel, ConfigDict, Field, validate_call
+from pydantic import BaseModel, ConfigDict, Field, validate_call, model_validator
 
-from sqlalchemy import Column, BigInteger, String, Boolean, Integer, select, ForeignKey, insert, update, delete
+from sqlalchemy import Column, BigInteger, String, Boolean, Integer, select, ForeignKey, insert, update, delete, JSON
 from sqlalchemy.ext.asyncio import AsyncEngine
+
+from common_utils.themes import ThemeParamsSchema
 
 from database.exceptions.exceptions import KwargsException
 
@@ -11,6 +13,7 @@ from database.models.dao import Dao
 # from bot.utils.message_texts import MessageTexts
 
 from logs.config import extra_params
+
 
 # TODO Create handle_exception_func
 class OptionNotFoundError(KwargsException):
@@ -25,7 +28,7 @@ class Option(Base):
     default_msg = Column(String, nullable=False)
     post_order_msg = Column(String, nullable=True)
     auto_reduce = Column(Boolean, nullable=False, default=False)
-    bg_color = Column(String, nullable=True)
+    theme_params = Column(JSON)
     web_app_button = Column(String, nullable=False)
 
 
@@ -36,7 +39,7 @@ class OptionSchemaWithoutId(BaseModel):
     default_msg: str
     post_order_msg: str | None = None
     auto_reduce: bool = False
-    bg_color: str | None = None
+    theme_params: ThemeParamsSchema
     web_app_button: str
 
 
