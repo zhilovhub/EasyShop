@@ -11,7 +11,8 @@ from bot.states.states import States
 from common_utils.bot_utils import create_bot_options
 from bot.handlers.routers import custom_bot_editing_router
 from bot.utils.send_instructions import send_instructions
-from bot.keyboards.main_menu_keyboards import ReplyBotMenuKeyboard, ReplyBackBotMenuKeyboard
+from bot.keyboards.main_menu_keyboards import ReplyBotMenuKeyboard, ReplyBackBotMenuKeyboard, \
+    SelectHexColorWebAppInlineKeyboard
 
 from common_utils.keyboards.keyboards import (InlineBotEditOrderOptionKeyboard, InlineBotEditOrderOptionsKeyboard,
                                               InlineThemeSettingsMenuKeyboard, InlineBotMenuKeyboard,
@@ -163,8 +164,11 @@ async def colors_edit_callback_handler(query: CallbackQuery, state: FSMContext):
             state_data['color_param'] = "button_text_color"
             await state.set_data(state_data)
         case callback_data.ActionEnum.BACK_TO_CUSTOMIZATION_SETTINGS:
-            await query.message.edit_text(f"🎨 Кастомизация для бота @{custom_bot_data.username}.",
+            return await query.message.edit_text(f"🎨 Кастомизация для бота @{custom_bot_data.username}.",
                                           reply_markup=InlineThemeSettingsMenuKeyboard.get_keyboard(bot_id))
+
+    await query.message.answer("Или воспользуйтесь выбором цвета на палитре.",
+                               reply_markup=SelectHexColorWebAppInlineKeyboard.get_keyboard())
 
 
 @custom_bot_editing_router.callback_query(lambda query: InlineBotEditOrderOptionKeyboard.callback_validator(query.data))
