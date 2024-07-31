@@ -404,6 +404,88 @@ class InlinePresetsForThemesMenuKeyboard:
         )
 
 
+class InlineEditThemeColorMenuKeyboard:
+    class Callback(BaseModel):
+        class ActionEnum(Enum):
+            BG_COLOR = "bg"
+            TEXT_COLOR = "text"
+            BUTTON_COLOR = "button"
+            BUTTON_TEXT_COLOR = "button_text"
+
+            BACK_TO_CUSTOMIZATION_SETTINGS = "back_custom"
+
+        model_config = ConfigDict(from_attributes=True, populate_by_name=True)
+
+        n: str = Field(default="bot_colors_menu", frozen=True)
+        a: ActionEnum
+
+        bot_id: int
+
+    @staticmethod
+    @callback_json_validator
+    def callback_json(action: Callback.ActionEnum, bot_id: int) -> str:
+        return InlineEditThemeColorMenuKeyboard.Callback(
+            a=action, bot_id=bot_id
+        ).model_dump_json(by_alias=True)
+
+    @staticmethod
+    def callback_validator(json_string: str) -> bool:
+        try:
+            InlineEditThemeColorMenuKeyboard.Callback.model_validate_json(json_string)
+            return True
+        except ValidationError:
+            return False
+
+    @staticmethod
+    def get_keyboard(bot_id: int) -> InlineKeyboardMarkup:
+        actions = InlineEditThemeColorMenuKeyboard.Callback.ActionEnum
+
+        return InlineKeyboardMarkup(
+            inline_keyboard=[
+                [
+                    InlineKeyboardButton(
+                        text="🔳 Изменить цвет фона",
+                        callback_data=InlineEditThemeColorMenuKeyboard.callback_json(
+                            actions.BG_COLOR, bot_id
+                        )
+                    )
+                ],
+                [
+                    InlineKeyboardButton(
+                        text="🔡 Изменить цвет текста",
+                        callback_data=InlineEditThemeColorMenuKeyboard.callback_json(
+                            actions.TEXT_COLOR, bot_id
+                        )
+                    )
+                ],
+                [
+                    InlineKeyboardButton(
+                        text="🔘 Изменить цвет кнопки",
+                        callback_data=InlineEditThemeColorMenuKeyboard.callback_json(
+                            actions.BUTTON_COLOR, bot_id
+                        )
+                    )
+                ],
+                [
+                    InlineKeyboardButton(
+                        text="🔤 Изменить цвет текста кнопки",
+                        callback_data=InlineEditThemeColorMenuKeyboard.callback_json(
+                            actions.BUTTON_TEXT_COLOR, bot_id
+                        )
+                    )
+                ],
+                [
+                    InlineKeyboardButton(
+                        text="🔙 Назад",
+                        callback_data=InlineEditThemeColorMenuKeyboard.callback_json(
+                            actions.BACK_TO_CUSTOMIZATION_SETTINGS, bot_id
+                        )
+                    )
+                ],
+            ]
+        )
+
+
 class InlineBotEditOrderOptionsKeyboard:
     class Callback(BaseModel):
         class ActionEnum(Enum):
