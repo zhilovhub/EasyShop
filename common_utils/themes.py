@@ -6,6 +6,8 @@ from pydantic import BaseModel, model_validator
 def is_valid_hex_code(string: str) -> bool:
     """Проверяет, валидный ли цвет передал пользователь"""
 
+    string = string.lower()
+
     regex = r"#[a-f\d]{3}(?:[a-f\d]?|(?:[a-f\d]{3}(?:[a-f\d]{2})?)?)\b"
 
     p = re.compile(regex)
