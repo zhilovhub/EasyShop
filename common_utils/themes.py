@@ -46,6 +46,25 @@ class ThemeParamsSchema(BaseModel):
         return data
 
 
+# Пример пресозданной нами темы, которую можно предлагать клиенту
+THEME_EXAMPLE_PRESET = ThemeParamsSchema(
+    bg_color="#000",
+    text_color="#fff",
+    hint_color="#e3e3e3",
+    link_color="#893fff",
+    button_color="#893fff",
+    button_text_color="#fff",
+    secondary_bg_color="#000",
+    header_bg_color="#000",
+    accent_text_color="#893fff",
+    section_bg_color="#000",
+    section_header_text_color="#e3e3e3",
+    section_separator_color="#e3e3e3",
+    subtitle_text_color="#e3e3e3",
+    destructive_text_color="#ff4949",
+)
+
+
 def is_valid_hex_code(string: str) -> bool:
     """Проверяет, валидный ли цвет передал пользователь"""
 
