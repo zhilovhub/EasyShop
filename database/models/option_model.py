@@ -39,7 +39,7 @@ class OptionSchemaWithoutId(BaseModel):
     default_msg: str
     post_order_msg: str | None = None
     auto_reduce: bool = False
-    theme_params: ThemeParamsSchema
+    theme_params: ThemeParamsSchema = ThemeParamsSchema()
     web_app_button: str
 
 
