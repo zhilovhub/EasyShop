@@ -3,6 +3,22 @@ import re
 from pydantic import BaseModel, model_validator
 
 
+def is_valid_hex_code(string: str) -> bool:
+    """Проверяет, валидный ли цвет передал пользователь"""
+
+    regex = r"#[a-f\d]{3}(?:[a-f\d]?|(?:[a-f\d]{3}(?:[a-f\d]{2})?)?)\b"
+
+    p = re.compile(regex)
+
+    if string is None:
+        return False
+
+    if re.search(p, string):
+        return True
+    else:
+        return False
+
+
 class ThemeParamsSchema(BaseModel):
     # Photo example
     # https://core.telegram.org/file/400780400851/2/6GwDkk6T-aY.416569/b591d589108b487d63
@@ -61,19 +77,3 @@ THEME_EXAMPLE_PRESET = ThemeParamsSchema(
     subtitle_text_color="#e3e3e3",
     destructive_text_color="#ff4949",
 )
-
-
-def is_valid_hex_code(string: str) -> bool:
-    """Проверяет, валидный ли цвет передал пользователь"""
-
-    regex = r"#[a-f\d]{3}(?:[a-f\d]?|(?:[a-f\d]{3}(?:[a-f\d]{2})?)?)\b"
-
-    p = re.compile(regex)
-
-    if string is None:
-        return False
-
-    if re.search(p, string):
-        return True
-    else:
-        return False
