@@ -617,22 +617,6 @@ async def bot_settings_callback_handler(query: CallbackQuery, state: FSMContext)
             )
 
 
-@admin_bot_menu_router.callback_query(lambda query: InlineThemeSettingsMenuKeyboard.callback_validator(query.data))
-async def customization_manage_callback_handler(query: CallbackQuery):
-    """Обрабатывает настройки кастомизации бота"""
-
-    callback_data = InlineThemeSettingsMenuKeyboard.Callback.model_validate_json(query.data)
-
-    bot_id = callback_data.bot_id
-    user_bot = await bot_db.get_bot(bot_id)
-    custom_bot_data = await Bot(token=user_bot.token).get_me()
-
-    match callback_data.a:
-        case callback_data.ActionEnum.BACK_TO_BOT_SETTINGS:
-            await query.message.edit_text(f"⚙️ Настройки бота @{custom_bot_data.username}",
-                                          reply_markup=await InlineBotSettingsMenuKeyboard.get_keyboard(bot_id))
-
-
 @admin_bot_menu_router.callback_query(lambda query: InlineAdministratorsManageKeyboard.callback_validator(query.data))
 async def admins_manage_callback_handler(query: CallbackQuery):
     """Обрабатывает настройки администраторов бота"""

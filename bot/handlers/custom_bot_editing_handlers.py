@@ -13,7 +13,9 @@ from bot.handlers.routers import custom_bot_editing_router
 from bot.utils.send_instructions import send_instructions
 from bot.keyboards.main_menu_keyboards import ReplyBotMenuKeyboard, ReplyBackBotMenuKeyboard
 
-from common_utils.keyboards.keyboards import InlineBotEditOrderOptionKeyboard, InlineBotEditOrderOptionsKeyboard, InlineBotMenuKeyboard, InlineBotSettingsMenuKeyboard
+from common_utils.keyboards.keyboards import (InlineBotEditOrderOptionKeyboard, InlineBotEditOrderOptionsKeyboard,
+                                              InlineThemeSettingsMenuKeyboard, InlineBotMenuKeyboard,
+                                              InlineBotSettingsMenuKeyboard)
 from common_utils.themes import is_valid_hex_code
 
 from database.config import bot_db, option_db, order_option_db
@@ -51,6 +53,22 @@ async def manage_order_options(query: CallbackQuery, state: FSMContext):
                 reply_markup=await InlineBotEditOrderOptionKeyboard.get_keyboard(custom_bot.bot_id, callback_data.order_option_id)
             )
             await query.answer()
+
+
+@custom_bot_editing_router.callback_query(lambda query: InlineThemeSettingsMenuKeyboard.callback_validator(query.data))
+async def customization_manage_callback_handler(query: CallbackQuery):
+    """Обрабатывает настройки кастомизации бота"""
+
+    callback_data = InlineThemeSettingsMenuKeyboard.Callback.model_validate_json(query.data)
+
+    bot_id = callback_data.bot_id
+    user_bot = await bot_db.get_bot(bot_id)
+    custom_bot_data = await Bot(token=user_bot.token).get_me()
+
+    match callback_data.a:
+        case callback_data.ActionEnum.BACK_TO_BOT_SETTINGS:
+            await query.message.edit_text(f"⚙️ Настройки бота @{custom_bot_data.username}",
+                                          reply_markup=await InlineBotSettingsMenuKeyboard.get_keyboard(bot_id))
 
 
 @custom_bot_editing_router.callback_query(lambda query: InlineBotEditOrderOptionKeyboard.callback_validator(query.data))
