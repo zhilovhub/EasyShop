@@ -2,8 +2,6 @@ import re
 
 from pydantic import BaseModel, model_validator
 
-from typing import Self
-
 
 class ThemeParamsSchema(BaseModel):
     # Photo example
@@ -38,7 +36,7 @@ class ThemeParamsSchema(BaseModel):
     destructive_text_color: str = "telegram"
 
     @model_validator(mode='after')
-    def check_valid_hex_colors(self) -> Self:
+    def check_valid_hex_colors(self):
         data = self.dict()
         for k, v in data.items():
             if v != "telegram" and not is_valid_hex_code(v):
