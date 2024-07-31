@@ -31,7 +31,6 @@ from common_utils import generate_admin_invite_link
 from common_utils.bot_utils import create_bot_options, create_custom_bot
 from common_utils.env_config import FILES_PATH
 from common_utils.message_texts import MessageTexts as CommonMessageTexts
-from common_utils.bot_settings_config import BOT_PROPERTIES
 from common_utils.order_utils.order_type import OrderType
 from common_utils.bot_settings_config import BOT_PROPERTIES
 from common_utils.order_utils.order_utils import create_order
@@ -39,8 +38,9 @@ from common_utils.storage.custom_bot_storage import custom_bot_storage
 from common_utils.broadcasting.broadcasting import send_event, EventTypes
 from common_utils.keyboards.order_manage_keyboards import InlineOrderCancelKeyboard, InlineOrderStatusesKeyboard, \
     InlineAcceptReviewKeyboard, InlineOrderCustomBotKeyboard, InlineCreateReviewKeyboard
-from common_utils.keyboards.keyboards import (InlineBotEditOrderOptionsKeyboard, InlineBotMenuKeyboard, InlineBotSettingsMenuKeyboard,
-                                              InlineAdministratorsManageKeyboard)
+from common_utils.keyboards.keyboards import (InlineBotEditOrderOptionsKeyboard, InlineBotMenuKeyboard,
+                                              InlineBotSettingsMenuKeyboard, InlineAdministratorsManageKeyboard,
+                                              InlineThemeSettingsMenuKeyboard)
 
 from database.config import (bot_db, product_db, order_db, product_review_db, user_db, custom_bot_user_db, mailing_db,
                              user_role_db, option_db, order_option_db)
@@ -599,21 +599,38 @@ async def bot_settings_callback_handler(query: CallbackQuery, state: FSMContext)
             await query.answer()
             await state.set_state(States.EDITING_DEFAULT_MESSAGE)
             await state.set_data(state_data)
-        case callback_data.ActionEnum.EDIT_BG_COLOR:
-            await query.message.answer(
-                "Введите цвет фона в формате (#FFFFFF или telegram - для использования дефолтных цветов телеграма), "
-                "который будет отображаться у пользователей Вашего бота на странице магазина: ",
-                reply_markup=ReplyBackBotMenuKeyboard.get_keyboard())
-            await query.message.answer("Или воспользуйтесь выбором цвета на палитре.",
-                                       reply_markup=SelectHexColorWebAppInlineKeyboard.get_keyboard())
-            await query.answer()
-            await state.set_state(States.EDITING_BG_COLOR)
-            await state.set_data(state_data)
+        case callback_data.ActionEnum.EDIT_THEME:
+            await query.message.edit_text(f"🎨 Кастомизация для бота @{custom_bot_data.username}.",
+                                          reply_markup=InlineThemeSettingsMenuKeyboard.get_keyboard(bot_id))
+        # case callback_data.ActionEnum.EDIT_BG_COLOR:
+        #     await query.message.answer(
+        #         "Введите цвет фона в формате (#FFFFFF или telegram - для использования дефолтных цветов телеграма), "
+        #         "который будет отображаться у пользователей Вашего бота на странице магазина: ",
+        #         reply_markup=ReplyBackBotMenuKeyboard.get_keyboard())
+        #     await query.answer()
+        #     await state.set_state(States.EDITING_BG_COLOR)
+        #     await state.set_data(state_data)
         case callback_data.ActionEnum.BACK_TO_BOT_MENU:
             await query.message.edit_text(
                 MessageTexts.BOT_MENU_MESSAGE.value.format(custom_bot_data.username),
                 reply_markup=await InlineBotMenuKeyboard.get_keyboard(user_bot.bot_id, query.from_user.id)
             )
+
+
+@admin_bot_menu_router.callback_query(lambda query: InlineThemeSettingsMenuKeyboard.callback_validator(query.data))
+async def customization_manage_callback_handler(query: CallbackQuery):
+    """Обрабатывает настройки кастомизации бота"""
+
+    callback_data = InlineThemeSettingsMenuKeyboard.Callback.model_validate_json(query.data)
+
+    bot_id = callback_data.bot_id
+    user_bot = await bot_db.get_bot(bot_id)
+    custom_bot_data = await Bot(token=user_bot.token).get_me()
+
+    match callback_data.a:
+        case callback_data.ActionEnum.BACK_TO_BOT_SETTINGS:
+            await query.message.edit_text(f"⚙️ Настройки бота @{custom_bot_data.username}",
+                                          reply_markup=await InlineBotSettingsMenuKeyboard.get_keyboard(bot_id))
 
 
 @admin_bot_menu_router.callback_query(lambda query: InlineAdministratorsManageKeyboard.callback_validator(query.data))

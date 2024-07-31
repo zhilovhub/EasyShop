@@ -189,7 +189,7 @@ class InlineBotSettingsMenuKeyboard:
         class ActionEnum(Enum):
             BOT_EDIT_HELLO_TEXT = "start_text"
             BOT_EDIT_EXPLANATION_TEXT = "explain_text"
-            EDIT_BG_COLOR = "edit_color"
+            EDIT_THEME = "edit_theme"
             EDIT_ORDER_OPTIONS = "edit_ord_op"
 
             BACK_TO_BOT_MENU = "back"
@@ -240,9 +240,9 @@ class InlineBotSettingsMenuKeyboard:
                 ],
                 [
                     InlineKeyboardButton(
-                        text="🎨 Изменить цвет фона",
+                        text="🎨 Изменить цвета магазина",
                         callback_data=InlineBotSettingsMenuKeyboard.callback_json(
-                            actions.EDIT_BG_COLOR, bot_id
+                            actions.EDIT_THEME, bot_id
                         )
                     )
                 ],
@@ -259,6 +259,70 @@ class InlineBotSettingsMenuKeyboard:
                         text="🔙 Назад",
                         callback_data=InlineBotSettingsMenuKeyboard.callback_json(
                             actions.BACK_TO_BOT_MENU, bot_id
+                        )
+                    )
+                ],
+            ]
+        )
+
+
+class InlineThemeSettingsMenuKeyboard:
+    class Callback(BaseModel):
+        class ActionEnum(Enum):
+            CHOOSE_PRESET = "presets"
+            CUSTOM_COLORS = "custom_colors"
+
+            BACK_TO_BOT_SETTINGS = "back"
+
+        model_config = ConfigDict(from_attributes=True, populate_by_name=True)
+
+        n: str = Field(default="bot_theme_settings_menu", frozen=True)
+        a: ActionEnum
+
+        bot_id: int
+
+    @staticmethod
+    @callback_json_validator
+    def callback_json(action: Callback.ActionEnum, bot_id: int) -> str:
+        return InlineThemeSettingsMenuKeyboard.Callback(
+            a=action, bot_id=bot_id
+        ).model_dump_json(by_alias=True)
+
+    @staticmethod
+    def callback_validator(json_string: str) -> bool:
+        try:
+            InlineThemeSettingsMenuKeyboard.Callback.model_validate_json(json_string)
+            return True
+        except ValidationError:
+            return False
+
+    @staticmethod
+    def get_keyboard(bot_id: int) -> InlineKeyboardMarkup:
+        actions = InlineThemeSettingsMenuKeyboard.Callback.ActionEnum
+
+        return InlineKeyboardMarkup(
+            inline_keyboard=[
+                [
+                    InlineKeyboardButton(
+                        text="📚 Выбрать тему",
+                        callback_data=InlineThemeSettingsMenuKeyboard.callback_json(
+                            actions.CHOOSE_PRESET, bot_id
+                        )
+                    )
+                ],
+                [
+                    InlineKeyboardButton(
+                        text="🖍 Изменить цвета вручную",
+                        callback_data=InlineThemeSettingsMenuKeyboard.callback_json(
+                            actions.CUSTOM_COLORS, bot_id
+                        )
+                    )
+                ],
+                [
+                    InlineKeyboardButton(
+                        text="🔙 Назад",
+                        callback_data=InlineThemeSettingsMenuKeyboard.callback_json(
+                            actions.BACK_TO_BOT_SETTINGS, bot_id
                         )
                     )
                 ],
