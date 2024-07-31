@@ -91,6 +91,8 @@ class OptionDao(Dao):  # TODO write tests
             raise OptionNotFoundError(option_id=option_id)
 
         res = OptionSchema.model_validate(res)
+        if isinstance(res.theme_params, dict):
+            res.theme_params = ThemeParamsSchema(**res.theme_params)
         self.logger.debug(
             f"option_id={option_id}: found option {res}",
             extra=extra_params(option_id=option_id)
