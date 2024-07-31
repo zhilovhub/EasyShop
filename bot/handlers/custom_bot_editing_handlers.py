@@ -67,7 +67,7 @@ async def customization_manage_callback_handler(query: CallbackQuery):
 
     match callback_data.a:
         case callback_data.ActionEnum.BACK_TO_BOT_SETTINGS:
-            await query.message.edit_text(
+            return await query.message.edit_text(
                 MessageTexts.BOT_MENU_MESSAGE.value.format(custom_bot_data.username),
                 reply_markup=await InlineBotSettingsMenuKeyboard.get_keyboard(callback_data.bot_id)
             )

@@ -272,7 +272,7 @@ class InlineThemeSettingsMenuKeyboard:
             CHOOSE_PRESET = "presets"
             CUSTOM_COLORS = "custom_colors"
 
-            BACK_TO_BOT_SETTINGS = "back"
+            BACK_TO_BOT_SETTINGS = "back_settings"
 
         model_config = ConfigDict(from_attributes=True, populate_by_name=True)
 
