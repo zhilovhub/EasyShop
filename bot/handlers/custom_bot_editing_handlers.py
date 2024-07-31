@@ -15,8 +15,8 @@ from bot.keyboards.main_menu_keyboards import ReplyBotMenuKeyboard, ReplyBackBot
 
 from common_utils.keyboards.keyboards import (InlineBotEditOrderOptionKeyboard, InlineBotEditOrderOptionsKeyboard,
                                               InlineThemeSettingsMenuKeyboard, InlineBotMenuKeyboard,
-                                              InlineBotSettingsMenuKeyboard)
-from common_utils.themes import is_valid_hex_code
+                                              InlineBotSettingsMenuKeyboard, InlinePresetsForThemesMenuKeyboard)
+from common_utils.themes import is_valid_hex_code, THEME_EXAMPLE_PRESET_DARK, THEME_EXAMPLE_PRESET_LIGHT, ThemeParamsSchema
 
 from database.config import bot_db, option_db, order_option_db
 from database.models.option_model import OptionNotFoundError
@@ -66,11 +66,43 @@ async def customization_manage_callback_handler(query: CallbackQuery):
     custom_bot_data = await Bot(token=user_bot.token).get_me()
 
     match callback_data.a:
+        case callback_data.ActionEnum.CHOOSE_PRESET:
+            await query.message.edit_text(f"🎨 Выберите тему для бота @{custom_bot_data.username}.",
+                                          reply_markup=InlinePresetsForThemesMenuKeyboard.get_keyboard(bot_id))
         case callback_data.ActionEnum.BACK_TO_BOT_SETTINGS:
             return await query.message.edit_text(
                 MessageTexts.BOT_MENU_MESSAGE.value.format(custom_bot_data.username),
                 reply_markup=await InlineBotSettingsMenuKeyboard.get_keyboard(callback_data.bot_id)
             )
+
+
+@custom_bot_editing_router.callback_query(lambda query: InlinePresetsForThemesMenuKeyboard.callback_validator(query.data))
+async def presets_select_callback_handler(query: CallbackQuery):
+    """Обрабатывает выбор пресета кастомизации бота"""
+
+    callback_data = InlinePresetsForThemesMenuKeyboard.Callback.model_validate_json(query.data)
+
+    bot_id = callback_data.bot_id
+    user_bot = await bot_db.get_bot(bot_id)
+    custom_bot_data = await Bot(token=user_bot.token).get_me()
+    bot_options = await option_db.get_option(user_bot.options_id)
+
+    match callback_data.a:
+        case callback_data.ActionEnum.TELEGRAM_THEME:
+            bot_options.theme_params = ThemeParamsSchema()
+            await option_db.update_option(bot_options)
+            await query.answer("Тема изменена на тему приложения клиента.", show_alert=True)
+        case callback_data.ActionEnum.LIGHT_THEME:
+            bot_options.theme_params = THEME_EXAMPLE_PRESET_LIGHT
+            await option_db.update_option(bot_options)
+            await query.answer("Тема изменена на светлую.", show_alert=True)
+        case callback_data.ActionEnum.DARK_THEME:
+            bot_options.theme_params = THEME_EXAMPLE_PRESET_DARK
+            await option_db.update_option(bot_options)
+            await query.answer("Тема изменена на темную.", show_alert=True)
+        case callback_data.ActionEnum.BACK_TO_CUSTOMIZATION_SETTINGS:
+            await query.message.edit_text(f"🎨 Кастомизация для бота @{custom_bot_data.username}.",
+                                          reply_markup=InlineThemeSettingsMenuKeyboard.get_keyboard(bot_id))
 
 
 @custom_bot_editing_router.callback_query(lambda query: InlineBotEditOrderOptionKeyboard.callback_validator(query.data))

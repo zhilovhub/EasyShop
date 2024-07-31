@@ -330,6 +330,80 @@ class InlineThemeSettingsMenuKeyboard:
         )
 
 
+class InlinePresetsForThemesMenuKeyboard:
+    class Callback(BaseModel):
+        class ActionEnum(Enum):
+            TELEGRAM_THEME = "telegram"
+            DARK_THEME = "dark"
+            LIGHT_THEME = "light"
+
+            BACK_TO_CUSTOMIZATION_SETTINGS = "back_custom"
+
+        model_config = ConfigDict(from_attributes=True, populate_by_name=True)
+
+        n: str = Field(default="bot_presets_menu", frozen=True)
+        a: ActionEnum
+
+        bot_id: int
+
+    @staticmethod
+    @callback_json_validator
+    def callback_json(action: Callback.ActionEnum, bot_id: int) -> str:
+        return InlinePresetsForThemesMenuKeyboard.Callback(
+            a=action, bot_id=bot_id
+        ).model_dump_json(by_alias=True)
+
+    @staticmethod
+    def callback_validator(json_string: str) -> bool:
+        try:
+            InlinePresetsForThemesMenuKeyboard.Callback.model_validate_json(json_string)
+            return True
+        except ValidationError:
+            return False
+
+    @staticmethod
+    def get_keyboard(bot_id: int) -> InlineKeyboardMarkup:
+        actions = InlinePresetsForThemesMenuKeyboard.Callback.ActionEnum
+
+        return InlineKeyboardMarkup(
+            inline_keyboard=[
+                [
+                    InlineKeyboardButton(
+                        text="📱 Использовать цвета приложения",
+                        callback_data=InlinePresetsForThemesMenuKeyboard.callback_json(
+                            actions.TELEGRAM_THEME, bot_id
+                        )
+                    )
+                ],
+                [
+                    InlineKeyboardButton(
+                        text="🌑 Темная тема",
+                        callback_data=InlinePresetsForThemesMenuKeyboard.callback_json(
+                            actions.DARK_THEME, bot_id
+                        )
+                    )
+                ],
+                [
+                    InlineKeyboardButton(
+                        text="☀️ Светлая тема",
+                        callback_data=InlinePresetsForThemesMenuKeyboard.callback_json(
+                            actions.LIGHT_THEME, bot_id
+                        )
+                    )
+                ],
+
+                [
+                    InlineKeyboardButton(
+                        text="🔙 Назад",
+                        callback_data=InlinePresetsForThemesMenuKeyboard.callback_json(
+                            actions.BACK_TO_CUSTOMIZATION_SETTINGS, bot_id
+                        )
+                    )
+                ],
+            ]
+        )
+
+
 class InlineBotEditOrderOptionsKeyboard:
     class Callback(BaseModel):
         class ActionEnum(Enum):
