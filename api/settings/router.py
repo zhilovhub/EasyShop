@@ -6,8 +6,11 @@ from fastapi import APIRouter
 
 from pydantic import BaseModel
 
-from database.config import bot_db
+from database.config import bot_db, option_db
 from database.models.bot_model import BotNotFoundError
+from database.models.option_model import OptionSchema, OptionNotFoundError
+
+from common_utils.themes import ThemeParamsSchema
 
 from api.utils import HTTPBotNotFoundError, HTTPInternalError, RESPONSES_DICT
 
@@ -23,12 +26,8 @@ router = APIRouter(
 )
 
 
-class WebAppOptions(BaseModel):  # TODO remove after Arsen has finished his task with Custom Bot Options
-    bg_color: str | None
-
-
 @router.get("/get_web_app_options/{bot_id}/")
-async def get_web_app_options_api(bot_id: int) -> WebAppOptions:
+async def get_web_app_options_api(bot_id: int) -> OptionSchema:
     """
     :returns: Pydantic WebAppOptions Model with options
 
@@ -37,13 +36,9 @@ async def get_web_app_options_api(bot_id: int) -> WebAppOptions:
     """
     try:
         bot = await bot_db.get_bot(bot_id)
-        # TODO change to options
-        if not bot.settings or "bg_color" not in bot.settings:
-            options = WebAppOptions(bg_color=None)
-            return options
+        options = await option_db.get_option(bot.options_id)
 
-        return WebAppOptions(bg_color=bot.settings['bg_color'])
-
+        return options
     except BotNotFoundError as e:
         api_logger.error(
             f"bot_id={bot_id}: bot_id={bot_id} is not found in database",
@@ -51,6 +46,21 @@ async def get_web_app_options_api(bot_id: int) -> WebAppOptions:
             exc_info=e
         )
         raise HTTPBotNotFoundError(bot_id=bot_id)
+    except OptionNotFoundError as e:
+        api_logger.error(
+            f"bot_id={bot_id}: options is not found in database returning default options",
+            extra=extra_params(bot_id=bot_id),
+            exc_info=e
+        )
+        return OptionSchema(
+            id=-1,
+            start_msg="None",
+            default_msg="None",
+            post_order_msg=None,
+            auto_reduce=False,
+            theme_params=ThemeParamsSchema(),
+            web_app_button="None"
+        )
 
     except Exception as e:
         api_logger.error(
