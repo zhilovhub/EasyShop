@@ -114,6 +114,7 @@ class OrderData(BaseModel):
     phone_number: str
     town: str
     address: str
+    delivery_method: str
     time: str | None
     comment: str | None
     query_id: str | None
