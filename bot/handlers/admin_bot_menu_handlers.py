@@ -14,18 +14,19 @@ from aiogram.utils.token import validate_token, TokenValidationError
 from aiogram.fsm.storage.base import StorageKey
 from aiogram.utils.formatting import Text, Bold, Italic
 
-from bot.main import bot, QUESTION_MESSAGES
 from bot.utils import MessageTexts
 from bot.states.states import States
 from bot.handlers.routers import admin_bot_menu_router
 from bot.utils.product_utils import generate_article
 from bot.utils.custom_bot_api import start_custom_bot, stop_custom_bot
 from bot.keyboards.channel_keyboards import InlineChannelsListKeyboard
+from bot.main import bot, QUESTION_MESSAGES, cache_resources_file_id_store
 from bot.keyboards.main_menu_keyboards import ReplyBotMenuKeyboard, ReplyBackBotMenuKeyboard
 from bot.keyboards.stock_menu_keyboards import InlineStockMenuKeyboard, InlineWebStockKeyboard
 from bot.keyboards.post_message_keyboards import InlinePostMessageMenuKeyboard
 from bot.post_message.post_message_create import post_message_create
 
+from bot.utils.send_instructions import send_instructions
 from bot.handlers.command_handlers import remove_bot_admin
 
 from common_utils import generate_admin_invite_link
@@ -647,6 +648,10 @@ async def bot_menu_handler(message: Message, state: FSMContext):
     """Срабатывает, если админ просто написал сообщение. Указывает администратору что делать."""
 
     state_data = await state.get_data()
+    if "bot_id" in state_data and state_data['bot_id'] == -1:
+        await state.set_state(States.WAITING_FOR_TOKEN)
+        await send_instructions(bot, None, message.from_user.id, cache_resources_file_id_store)
+        return await message.answer("Ваш список ботов пуст, используйте инструкцию выше 👆")
     custom_bot = await bot_db.get_bot(state_data['bot_id'])
 
     match message.text:

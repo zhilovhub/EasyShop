@@ -97,7 +97,7 @@ async def waiting_payment_pay_handler(message: Message, state: FSMContext):
                 MessageTexts.SUBSCRIBE_END_NOTIFY.value,
                 reply_markup=InlineSubscriptionContinueKeyboard.get_keyboard(bot_id=None)
             )
-        elif state_data and "bot_id" in state_data:
+        elif state_data and "bot_id" in state_data and state_data['bot_id'] != -1:
             await state.set_state(States.BOT_MENU)
             await state.set_data(state_data)
             custom_bot = await bot_db.get_bot(state_data['bot_id'])
