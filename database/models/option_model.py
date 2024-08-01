@@ -126,7 +126,7 @@ class OptionDao(Dao):  # TODO write tests
             extra=extra_params(option_id=option_id)
         )
 
-    @validate_call
+    @validate_call(validate_return=True)
     async def delete_option(self, option_id: int) -> None:
         """
         Deletes the option from database

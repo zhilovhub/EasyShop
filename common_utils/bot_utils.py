@@ -93,7 +93,7 @@ async def create_custom_bot(token: str, user_id: int, lang: str) -> int:
     """
     Creates bot with default options
     :returns: bot_id
-    :raises: BotIntegrityError: bot token already registered
+    :raises BotIntegrityError: bot token already registered
     """
     new_option_id = await create_bot_options()
     try:
