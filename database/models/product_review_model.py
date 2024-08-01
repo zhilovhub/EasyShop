@@ -83,10 +83,11 @@ class ProductReviewDao(Dao):  # TODO write tests
             )
         await self.engine.dispose()
 
-        if not raw_res:
+        res = raw_res.fetchone()
+        if not res:
             raise ProductReviewNotFoundError(user_id=user_id, product_id=product_id)
 
-        res = ProductReviewSchema.model_validate(raw_res.fetchone())
+        res = ProductReviewSchema.model_validate(res)
 
         if res is not None:
             self.logger.debug(
@@ -107,10 +108,11 @@ class ProductReviewDao(Dao):  # TODO write tests
             )
         await self.engine.dispose()
 
-        if not raw_res:
+        res = raw_res.fetchone()
+        if not res:
             raise ProductReviewNotFoundError(review_id=review_id)
 
-        res = ProductReviewSchema.model_validate(raw_res.fetchone())
+        res = ProductReviewSchema.model_validate(res)
 
         self.logger.debug(
             f"product_review_id={review_id}: found product_review {review_id}",
