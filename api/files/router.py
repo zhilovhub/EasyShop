@@ -1,10 +1,6 @@
-import io
-
 from fastapi import APIRouter
-from fastapi.responses import FileResponse, Response, StreamingResponse
+from fastapi.responses import FileResponse
 
-from database.config import product_db
-from database.models.product_model import ProductNotFoundError
 from api.utils import RESPONSES_DICT, HTTPFileNotFoundError, HTTPInternalError
 
 from common_utils.env_config import FILES_PATH
@@ -59,41 +55,41 @@ async def get_file(file_name: str) -> FileResponse:
     return FileResponse(path=FILES_PATH + file_name, status_code=200)
 
 
-@router.get("/get_product_thumbnail/{product_id}")
-async def get_product_thumbnail(product_id: int) -> FileResponse:
-    try:
-        product = await product_db.get_product(product_id)
-    except ProductNotFoundError:
-        raise HTTPProductNotFound(product_id=product_id)
-
-    if not product.picture:
-        raise HTTPBadRequest(detail_message="product dont have photos")
-
-    file_name = product.picture[0]
-
-    file_ext = product.picture[0].split('.')[-1]
-    thumbnail_path = _get_file_thumbnail_path(FILES_PATH + file_name)
-
-    headers = {
-        "accept-ranges": "bytes",
-        "strict-transport-security": "max-age=63072000"
-    }
-
-    try:
-        with open(thumbnail_path, "rb"):
-            pass
-        return FileResponse(path=thumbnail_path, status_code=200, headers=headers)
-    except FileNotFoundError:
-        pass
-
-    try:
-        with open(FILES_PATH + file_name, 'rb'):
-            pass
-        _compress_file_to_thumbnail(FILES_PATH + file_name)
-    except FileNotFoundError:
-        raise HTTPFileNotFound(file_name=file_name)
-    except Exception as ex:
-        api_logger.error("error while formatting photo", exc_info=True)
-        raise ex
-
-    return FileResponse(path=thumbnail_path, status_code=200, headers=headers)
+# @router.get("/get_product_thumbnail/{product_id}")  TODO pictures for inline photos
+# async def get_product_thumbnail(product_id: int) -> FileResponse:
+#     try:
+#         product = await product_db.get_product(product_id)
+#     except ProductNotFoundError:
+#         raise HTTPProductNotFound(product_id=product_id)
+#
+#     if not product.picture:
+#         raise HTTPBadRequest(detail_message="product dont have photos")
+#
+#     file_name = product.picture[0]
+#
+#     file_ext = product.picture[0].split('.')[-1]
+#     thumbnail_path = _get_file_thumbnail_path(FILES_PATH + file_name)
+#
+#     headers = {
+#         "accept-ranges": "bytes",
+#         "strict-transport-security": "max-age=63072000"
+#     }
+#
+#     try:
+#         with open(thumbnail_path, "rb"):
+#             pass
+#         return FileResponse(path=thumbnail_path, status_code=200, headers=headers)
+#     except FileNotFoundError:
+#         pass
+#
+#     try:
+#         with open(FILES_PATH + file_name, 'rb'):
+#             pass
+#         _compress_file_to_thumbnail(FILES_PATH + file_name)
+#     except FileNotFoundError:
+#         raise HTTPFileNotFound(file_name=file_name)
+#     except Exception as ex:
+#         api_logger.error("error while formatting photo", exc_info=True)
+#         raise ex
+#
+#     return FileResponse(path=thumbnail_path, status_code=200, headers=headers)

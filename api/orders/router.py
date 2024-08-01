@@ -8,10 +8,11 @@ from pydantic import ValidationError, BaseModel
 from fastapi import APIRouter, Depends, Header
 
 from api.utils import check_admin_authorization, HTTPBadRequestError, HTTPInternalError, RESPONSES_DICT
+
 from common_utils.env_config import LOCAL_API_SERVER_HOST, LOCAL_API_SERVER_PORT
 from common_utils.exceptions.local_api_exceptions import LocalAPIException
 
-from database.config import order_db, bot_db
+from database.config import order_db
 from database.models.order_model import OrderNotFoundError, OrderSchema
 
 from logs.config import api_logger, extra_params
@@ -131,7 +132,7 @@ async def send_order_data_to_bot_api(order_data: OrderData, authorization_data: 
             async with session.post(
                     url=f"http://{LOCAL_API_SERVER_HOST}:{LOCAL_API_SERVER_PORT}"
                     f"/send_web_app_data_to_bot/{order_data.bot_id}",
-                    data=order_data.json()
+                    data=order_data.model_dump_json()
             ) as response:
                 if response.status != 200:
                     api_logger.error(f"Local API returned {response.status} status code "

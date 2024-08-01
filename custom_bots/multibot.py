@@ -14,7 +14,7 @@ from aiogram.webhook.aiohttp_server import (
 
 from common_utils.bot_settings_config import BOT_PROPERTIES
 from common_utils.env_config import TIMEZONE, SCHEDULER_URL, WEBHOOK_URL, WEBHOOK_PORT, TELEGRAM_TOKEN, WEB_APP_URL, \
-    WEB_APP_PORT, RESOURCES_PATH, SSL_CERT_PATH, API_HOST, API_PORT, \
+    WEB_APP_PORT, RESOURCES_PATH, SSL_CERT_PATH, API_PORT, \
     SSL_KEY_PATH, TECH_ADMINS, LOCAL_API_SERVER_OUTSIDE, LOCAL_API_SERVER_PORT, WEBHOOK_HOST, \
     WEBHOOK_SERVER_PORT_TO_REDIRECT, WEBHOOK_LABEL, WEBHOOK_SERVER_HOST_TO_REDIRECT
 from common_utils.start_message import send_start_message_to_admins
@@ -22,7 +22,7 @@ from common_utils.scheduler.scheduler import Scheduler
 from common_utils.cache_json.cache_json import JsonStore
 from common_utils.storage.custom_bot_storage import custom_bot_storage
 
-from logs.config import custom_bot_logger, extra_params
+from logs.config import custom_bot_logger
 
 app = web.Application()
 

@@ -11,7 +11,8 @@ from api.products.router import router as product_router
 from api.settings.router import router as settings_router
 from api.categories.router import router as category_router
 
-from common_utils.env_config import LOGS_PATH, API_PROTOCOL, API_HOST, SSL_KEY_PATH, SSL_CERT_PATH, API_PORT, UDS_PATH, FILES_PATH
+from common_utils.env_config import LOGS_PATH, API_PROTOCOL, API_HOST, SSL_KEY_PATH, SSL_CERT_PATH, API_PORT, \
+    UDS_PATH, FILES_PATH
 
 from logs.config import logger_configuration
 
