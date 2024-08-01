@@ -27,7 +27,7 @@ async def main() -> None:
         result = await bot.set_webhook(
             webhook_path.format(bot_token=token),
             allowed_updates=["message", "my_chat_member",
-                             "callback_query", "chat_member", "channel_post"]
+                             "callback_query", "chat_member", "channel_post", "inline_query"]
         )
         print(result, token)
 
