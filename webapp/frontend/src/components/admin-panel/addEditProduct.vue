@@ -70,7 +70,7 @@ export default {
         if (this.itemEditData.picture) {
           this.itemEditData.picture.forEach(item => {
             if (item) {
-              let api_url = this.$store.state.api_url + "/files/" + item;
+              let api_url = this.$store.state.api_url + "/files/get_file/" + item;
               this.imagePreviews.push(item);
 
               console.log(api_url)
