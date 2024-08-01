@@ -1,7 +1,6 @@
 import string
 from random import sample
 from aiohttp import ClientConnectorError
-from datetime import datetime
 
 from sqlalchemy.exc import IntegrityError
 
@@ -34,19 +33,18 @@ from common_utils.bot_utils import create_bot_options, create_custom_bot
 from common_utils.env_config import FILES_PATH
 from common_utils.message_texts import MessageTexts as CommonMessageTexts
 from common_utils.bot_settings_config import BOT_PROPERTIES
+from common_utils.keyboards.keyboards import (InlineBotEditOrderOptionsKeyboard, InlineBotMenuKeyboard,
+                                              InlineBotSettingsMenuKeyboard, InlineAdministratorsManageKeyboard)
 from common_utils.order_utils.order_type import OrderType
-from common_utils.bot_settings_config import BOT_PROPERTIES
 from common_utils.order_utils.order_utils import create_order
-from common_utils.storage.custom_bot_storage import custom_bot_storage
 from common_utils.broadcasting.broadcasting import send_event, EventTypes
+from common_utils.storage.custom_bot_storage import custom_bot_storage
 from common_utils.keyboards.order_manage_keyboards import InlineOrderCancelKeyboard, InlineOrderStatusesKeyboard, \
     InlineAcceptReviewKeyboard, InlineOrderCustomBotKeyboard, InlineCreateReviewKeyboard
-from common_utils.keyboards.keyboards import (InlineBotEditOrderOptionsKeyboard, InlineBotMenuKeyboard, InlineBotSettingsMenuKeyboard,
-                                              InlineAdministratorsManageKeyboard)
 
 from database.config import (bot_db, product_db, order_db, product_review_db, user_db, custom_bot_user_db, mailing_db,
                              user_role_db, option_db, order_option_db)
-from database.models.bot_model import BotSchemaWithoutId, BotIntegrityError
+from database.models.bot_model import BotIntegrityError
 from database.models.user_role_model import UserRoleSchema, UserRoleValues
 from database.models.order_model import OrderSchema, OrderNotFoundError, OrderStatusValues
 from database.models.option_model import OptionNotFoundError
@@ -552,7 +550,6 @@ async def bot_menu_callback_handler(query: CallbackQuery, state: FSMContext):
                 )
             )
         case callback_data.ActionEnum.BOT_GOODS_OPEN:
-            bot_data = await bot_db.get_bot(bot_id)
             await query.message.edit_text(
                 "Меню склада:",
                 reply_markup=await InlineStockMenuKeyboard.get_keyboard(bot_id, options.auto_reduce)

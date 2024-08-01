@@ -1,16 +1,14 @@
 from pydantic import BaseModel, ConfigDict, Field, validate_call
 
-from sqlalchemy import Column, BigInteger, String, Boolean, Integer, select, ForeignKey, insert, update, delete
+from sqlalchemy import Column, BigInteger, String, Boolean, select, insert, update, delete
 from sqlalchemy.ext.asyncio import AsyncEngine
-
-from database.exceptions.exceptions import KwargsException
 
 from database.models import Base
 from database.models.dao import Dao
-
-# from bot.utils.message_texts import MessageTexts
+from database.exceptions.exceptions import KwargsException
 
 from logs.config import extra_params
+
 
 # TODO Create handle_exception_func
 class OptionNotFoundError(KwargsException):

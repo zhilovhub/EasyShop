@@ -101,7 +101,9 @@ class OrderOptionDao(Dao):  # TODO write tests
         Adds new order option
         """
         async with self.engine.begin() as conn:
-            order_option_id = (await conn.execute(insert(OrderOption).values(new_order_option.model_dump()))).inserted_primary_key[0]
+            order_option_id = (
+                await conn.execute(insert(OrderOption).values(new_order_option.model_dump()))
+            ).inserted_primary_key[0]
 
         self.logger.debug(
             f"order_option_id={order_option_id}: new added order option {new_order_option}",

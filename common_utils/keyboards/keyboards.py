@@ -7,10 +7,8 @@ from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 from common_utils.keyboards.keyboard_utils import callback_json_validator, get_bot_channels, get_bot_username, \
     get_bot_mailing, get_bot_status, make_product_deep_link_url, make_product_webapp_info, get_bot_order_options
 
-from database.config import bot_db, user_role_db, order_option_db
-from database.models.user_role_model import UserRoleValues, UserRoleSchema, UserRoleNotFoundError
-
-from logs.config import logger, extra_params
+from database.config import user_role_db, order_option_db
+from database.models.user_role_model import UserRoleValues
 
 
 class InlineBotMenuKeyboard:
@@ -368,6 +366,7 @@ class InlineBotEditOrderOptionKeyboard:
         except ValidationError:
             return False
 
+    @staticmethod
     async def get_keyboard(bot_id: int, order_option_id: int) -> InlineKeyboardMarkup:
         actions = InlineBotEditOrderOptionKeyboard.Callback.ActionEnum
         oo = await order_option_db.get_order_option(order_option_id)

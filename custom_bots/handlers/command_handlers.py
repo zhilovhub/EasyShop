@@ -7,8 +7,6 @@ from common_utils.bot_utils import create_bot_options
 from custom_bots.multibot import CustomUserStates
 from custom_bots.utils.utils import format_locales
 from custom_bots.handlers.routers import multi_bot_router
-from custom_bots.utils.custom_bot_options import get_option
-from custom_bots.keyboards.custom_bot_menu_keyboards import ReplyCustomBotMenuKeyboard, InlineShopCustomBotKeyboard
 
 from common_utils.keyboards.keyboards import InlineCustomBotModeProductKeyboardButton
 from common_utils.exceptions.bot_exceptions import UnknownDeepLinkArgument
@@ -16,9 +14,6 @@ from common_utils.broadcasting.broadcasting import send_event, EventTypes
 from custom_bots.keyboards.custom_bot_menu_keyboards import ReplyCustomBotMenuKeyboard, InlineShopCustomBotKeyboard
 
 from database.config import custom_bot_user_db, bot_db, option_db
-
-
-from database.config import custom_bot_user_db, bot_db
 from database.models.bot_model import BotNotFoundError
 from database.models.option_model import OptionNotFoundError
 from database.models.custom_bot_user_model import CustomBotUserNotFoundError
@@ -85,8 +80,6 @@ async def start_cmd(message: Message, state: FSMContext):
     user_id = message.from_user.id
 
     bot = await bot_db.get_bot_by_token(message.bot.token)
-
-    start_msg = await get_option("start_msg", message.bot.token)
 
     await _check_new_user(message, user_id)
 

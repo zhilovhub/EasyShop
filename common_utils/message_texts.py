@@ -1,4 +1,6 @@
 from enum import Enum
+from typing import Any
+
 from database.config import order_option_db
 from database.models.order_model import OrderSchema, OrderItemExtraOption
 from database.models.product_model import ProductSchema
@@ -7,7 +9,6 @@ from aiogram.utils.formatting import Text
 
 
 class MessageTexts(Enum):
-
     UNKNOWN_ERROR_MESSAGE = """
 ❗️Произошла ошибка при обработке запроса
 
@@ -18,12 +19,15 @@ class MessageTexts(Enum):
     """  # noqa
 
     @staticmethod
-    async def generate_order_notification_text(order: OrderSchema,
-                                               products: list[tuple[ProductSchema, int, list[OrderItemExtraOption] | None]],
-                                               username: str = '@username',
-                                               is_admin: bool = False):
+    async def generate_order_notification_text(
+            order: OrderSchema,
+            products: list[tuple[ProductSchema, int, list[OrderItemExtraOption] | None]],
+            username: str = '@username',
+            is_admin: bool = False
+    ) -> dict[str, Any]:
         """
         Translate OrderSchema into the text for notifications
+        :param order: the schema of the order
         :param username: the username of the person created an order
         :param is_admin: True if the order is from Admin test web app and False if from custom bot
         :param list products: [(ProductSchema, amount, [OrderItemExtraOption(), ...]), ...]
@@ -54,9 +58,22 @@ class MessageTexts(Enum):
 
         if not is_admin:
             result = Text(
-                f"Ваш заказ #{order.id}\n\nСписок товаров: \n\n{products_text}\n\nИтого: {total_price}₽\n\n{order_options_text}\n\n Статус: {order.translate_order_status()}")
+                f"Ваш заказ #{order.id}\n\n"
+                f"Список товаров: \n\n"
+                f"{products_text}\n\n"
+                f"Итого: {total_price}₽\n\n"
+                f"{order_options_text}\n\n "
+                f"Статус: {order.translate_order_status()}"
+            )
         else:
             result = Text(
-                f"Новый заказ #{order.id}\nот пользователя {username}\n\nСписок товаров:\n\n{products_text}\n\nИтого: {total_price}₽\n\n{order_options_text}\n\n Статус: {order.translate_order_status()}")
+                f"Новый заказ #{order.id}\n"
+                f"от пользователя {username}\n\n"
+                f"Список товаров:\n\n"
+                f"{products_text}\n\n"
+                f"Итого: {total_price}₽\n\n"
+                f"{order_options_text}\n\n"
+                f"Статус: {order.translate_order_status()}"
+            )
 
         return result.as_kwargs()

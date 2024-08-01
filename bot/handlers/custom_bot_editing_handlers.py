@@ -1,19 +1,19 @@
 import re
 
 from aiogram import Bot
-from aiogram.types import Message, ReplyKeyboardRemove
-from aiogram.types import Message, CallbackQuery
+from aiogram.types import Message, CallbackQuery, ReplyKeyboardRemove
 from aiogram.fsm.context import FSMContext
 
 from bot.main import bot, cache_resources_file_id_store
 from bot.utils import MessageTexts
 from bot.states.states import States
-from common_utils.bot_utils import create_bot_options
 from bot.handlers.routers import custom_bot_editing_router
 from bot.utils.send_instructions import send_instructions
 from bot.keyboards.main_menu_keyboards import ReplyBotMenuKeyboard, ReplyBackBotMenuKeyboard
 
-from common_utils.keyboards.keyboards import InlineBotEditOrderOptionKeyboard, InlineBotEditOrderOptionsKeyboard, InlineBotMenuKeyboard, InlineBotSettingsMenuKeyboard
+from common_utils.bot_utils import create_bot_options
+from common_utils.keyboards.keyboards import InlineBotEditOrderOptionKeyboard, InlineBotEditOrderOptionsKeyboard, \
+    InlineBotMenuKeyboard, InlineBotSettingsMenuKeyboard
 
 from database.config import bot_db, option_db, order_option_db
 from database.models.option_model import OptionNotFoundError
@@ -38,7 +38,9 @@ def _is_valid_hex_code(string: str) -> bool:
         return False
 
 
-@custom_bot_editing_router.callback_query(lambda query: InlineBotEditOrderOptionsKeyboard.callback_validator(query.data))
+@custom_bot_editing_router.callback_query(
+    lambda query: InlineBotEditOrderOptionsKeyboard.callback_validator(query.data)
+)
 async def manage_order_options(query: CallbackQuery, state: FSMContext):
     callback_data = InlineBotEditOrderOptionsKeyboard.Callback.model_validate_json(query.data)
 
@@ -50,7 +52,10 @@ async def manage_order_options(query: CallbackQuery, state: FSMContext):
                 reply_markup=await InlineBotSettingsMenuKeyboard.get_keyboard(callback_data.bot_id)
             )
         case callback_data.ActionEnum.ADD_ORDER_OPTION:
-            await query.message.answer("Введите название новой опции: ", reply_markup=ReplyBackBotMenuKeyboard.get_keyboard())
+            await query.message.answer(
+                "Введите название новой опции: ",
+                reply_markup=ReplyBackBotMenuKeyboard.get_keyboard()
+            )
             await query.answer()
             await state.set_state(States.WAITING_FOR_NEW_ORDER_OPTION_TEXT)
             await state.set_data({"bot_id": callback_data.bot_id})
@@ -63,7 +68,9 @@ async def manage_order_options(query: CallbackQuery, state: FSMContext):
                 return
             await query.message.edit_text(
                 **MessageTexts.generate_order_option_info(oo),
-                reply_markup=await InlineBotEditOrderOptionKeyboard.get_keyboard(custom_bot.bot_id, callback_data.order_option_id)
+                reply_markup=await InlineBotEditOrderOptionKeyboard.get_keyboard(
+                    custom_bot.bot_id, callback_data.order_option_id
+                )
             )
             await query.answer()
 
@@ -96,22 +103,33 @@ async def manage_order_option(query: CallbackQuery, state: FSMContext):
             order_option.required = not order_option.required
             await order_option_db.update_order_option(order_option)
             await query.message.edit_reply_markup(
-                reply_markup=await InlineBotEditOrderOptionKeyboard.get_keyboard(custom_bot.bot_id, callback_data.order_option_id)
+                reply_markup=await InlineBotEditOrderOptionKeyboard.get_keyboard(
+                    custom_bot.bot_id, callback_data.order_option_id
+                )
             )
 
         case callback_data.ActionEnum.EDIT_EMOJI:
-            await query.message.answer("Введите новый эмодзи к этой опции: ", reply_markup=ReplyBackBotMenuKeyboard.get_keyboard())
+            await query.message.answer(
+                "Введите новый эмодзи к этой опции: ",
+                reply_markup=ReplyBackBotMenuKeyboard.get_keyboard()
+            )
             await query.answer()
             await state.set_state(States.WAITING_FOR_ORDER_OPTION_EMOJI)
             await state.set_data({"bot_id": callback_data.bot_id, "order_option_id": callback_data.order_option_id})
 
         case callback_data.ActionEnum.EDIT_OPTION_NAME:
-            await query.message.answer("Введите новый текст к этой опции: ", reply_markup=ReplyBackBotMenuKeyboard.get_keyboard())
+            await query.message.answer(
+                "Введите новый текст к этой опции: ",
+                reply_markup=ReplyBackBotMenuKeyboard.get_keyboard()
+            )
             await query.answer()
             await state.set_state(States.WAITING_FOR_ORDER_OPTION_TEXT)
             await state.set_data({"bot_id": callback_data.bot_id, "order_option_id": callback_data.order_option_id})
         case callback_data.ActionEnum.EDIT_POSITION_INDEX:
-            await query.message.answer("Введите номер позиции к этой опции: ", reply_markup=ReplyBackBotMenuKeyboard.get_keyboard())
+            await query.message.answer(
+                "Введите номер позиции к этой опции: ",
+                reply_markup=ReplyBackBotMenuKeyboard.get_keyboard()
+            )
             await query.answer()
             await state.set_state(States.WAITING_FOR_ORDER_OPTION_POSITION)
             await state.set_data({"bot_id": callback_data.bot_id, "order_option_id": callback_data.order_option_id})
@@ -228,14 +246,20 @@ async def edit_order_option_emoji(message: Message, state: FSMContext):
                 await state.set_data(state_data)
             case _:
                 emoji_pattern = re.compile(
-                    r'^[\U0001F600-\U0001F64F\U0001F300-\U0001F5FF\U0001F680-\U0001F6FF\U0001F700-\U0001F77F\U0001F780-\U0001F7FF\U0001F800-\U0001F8FF\U0001F900-\U0001F9FF\U0001FA00-\U0001FA6F\U0001FA70-\U0001FAFF\U00002702-\U000027B0\U000024C2-\U0001F251]$')
+                    r'^[\U0001F600-\U0001F64F\U0001F300-\U0001F5FF\U0001F680-'
+                    r'\U0001F6FF\U0001F700-\U0001F77F\U0001F780-\U0001F7FF\U0001F800-'
+                    r'\U0001F8FF\U0001F900-\U0001F9FF\U0001FA00-\U0001FA6F\U0001FA70-'
+                    r'\U0001FAFF\U00002702-\U000027B0\U000024C2-\U0001F251]$'
+                )
                 if emoji_pattern.match(message.text):
                     order_option.emoji = message.text
                     await order_option_db.update_order_option(order_option)
                     await message.answer("Новый эмодзи добавлен")
                     await message.answer(
                         **MessageTexts.generate_order_option_info(order_option),
-                        reply_markup=await InlineBotEditOrderOptionKeyboard.get_keyboard(custom_bot.bot_id, order_option.id)
+                        reply_markup=await InlineBotEditOrderOptionKeyboard.get_keyboard(
+                            custom_bot.bot_id, order_option.id
+                        )
                     )
                     await state.set_state(States.BOT_MENU)
                     await state.set_data(state_data)

@@ -1,5 +1,5 @@
 from database.config import bot_db, option_db, order_option_db
-from database.models.bot_model import Bot, BotIntegrityError, BotSchemaWithoutId
+from database.models.bot_model import BotIntegrityError, BotSchemaWithoutId
 from database.models.option_model import OptionSchemaWithoutId
 from database.models.order_option_model import OrderOptionSchemaWithoutId
 

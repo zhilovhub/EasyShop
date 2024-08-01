@@ -77,12 +77,6 @@ async def handle_cancel_order_callback(query: CallbackQuery):
                 is_admin=True
             )
 
-            # await main_bot.edit_message_text(
-            #     text=order.convert_to_notification_text(
-            #         products=products,
-            #         username="@" + query.from_user.username if query.from_user.username else query.from_user.full_name,
-            #         is_admin=True
-            #     ), chat_id=msg_id_data[order_id][0], message_id=msg_id_data[order_id][1], reply_markup=None)
             await main_bot.edit_message_text(
                 msg_id_data[order_id][0], message_id=msg_id_data[order_id][1], reply_markup=None,
                 **text
