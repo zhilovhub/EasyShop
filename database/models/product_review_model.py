@@ -73,7 +73,7 @@ class ProductReviewDao(Dao):  # TODO write tests
             self,
             user_id: int,
             product_id: int
-    ) -> ProductReviewSchema | None:
+    ) -> ProductReviewSchema:
         """
         :raises ProductReviewNotFoundError:
         """

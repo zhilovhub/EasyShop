@@ -18,7 +18,7 @@ from database.config import product_review_db, order_db, product_db, bot_db
 from database.models.bot_model import BotNotFoundError
 from database.models.order_model import OrderStatusValues, OrderNotFoundError
 from database.models.product_model import ProductNotFoundError
-from database.models.product_review_model import ProductReviewSchemaWithoutID
+from database.models.product_review_model import ProductReviewSchemaWithoutID, ProductReviewNotFoundError
 
 from logs.config import custom_bot_logger, extra_params
 
@@ -156,9 +156,10 @@ async def get_product_id(query: CallbackQuery, state: FSMContext):
 
     match callback_data.a:
         case callback_data.ActionEnum.PICK_PRODUCT:
-            product = await product_review_db.get_product_review_by_user_id_and_product_id(
-                user_id=query.from_user.id, product_id=callback_data.product_id)
-            if product:
+            try:
+                await product_review_db.get_product_review_by_user_id_and_product_id(
+                    user_id=query.from_user.id, product_id=callback_data.product_id)
+
                 try:
                     await bot_db.get_bot_by_token(query.message.bot.token)
                 except BotNotFoundError:
@@ -174,17 +175,17 @@ async def get_product_id(query: CallbackQuery, state: FSMContext):
                 )
                 await state.set_state(CustomUserStates.MAIN_MENU)
                 return
+            except ProductReviewNotFoundError:
+                await query.message.answer(
+                    text="Оцените качество товаров ✔️",
+                    reply_markup=ReplyGetReviewMarkKeyboard.get_keyboard()
+                )
+                await query.answer()
 
-            await query.message.answer(
-                text="Оцените качество товаров ✔️",
-                reply_markup=ReplyGetReviewMarkKeyboard.get_keyboard()
-            )
-            await query.answer()
-
-            await state.set_state(CustomUserStates.WAITING_FOR_REVIEW_MARK)
-            await state.set_data({
-                "product_id": callback_data.product_id
-            })
+                await state.set_state(CustomUserStates.WAITING_FOR_REVIEW_MARK)
+                await state.set_data({
+                    "product_id": callback_data.product_id
+                })
 
 
 @multi_bot_router.message(StateFilter(CustomUserStates.WAITING_FOR_REVIEW_MARK))
