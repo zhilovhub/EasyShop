@@ -454,14 +454,6 @@ export default {
       console.log("new chosen cat", this.chosenCategory)
     },
   },
-  watch: {
-    text_input: function() {
-      this.$refs.textarea.style.height = "auto";
-      this.$nextTick(() => {
-        this.$refs.textarea.style.height = this.$refs.textarea.scrollHeight + 'px';
-      })
-    }
-  }
 };
 </script>
 
