@@ -14,7 +14,7 @@
     <div class="text">{{productObject?.name}}</div>
     <div class="text">{{priceRub(productObject.price)}}</div>
     <div v-for="(option, type) in productObject?.extra_options">
-      <div @click="toggleOption(option)" v-if="option.type === 'block'" class="block extra-options" :style="{ height: option.isSelected ? '' : '68.27px' }">
+      <div @click="toggleOption(option)" v-if="option.type === 'block'" class="block extra-options" :style="{ height: option.isSelected ? 'auto' : 'auto' }">
         <div class="span-block">
           <h1>{{option.name}}</h1>
           <svg style="cursor: pointer" width="19" height="9" viewBox="0 0 19 9" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
@@ -50,7 +50,7 @@
           <span>{{option.variants[0]}}</span>
         </div>
       </div>
-      <div @click="toggleOption(option)" v-else-if="option.type === 'priced_block'" class="block extra-options" :style="{ height: option.isSelected ? 'auto' : '68.27px' }">
+      <div @click="toggleOption(option)" v-else-if="option.type === 'priced_block'" class="block extra-options" :style="{ height: option.isSelected ? 'auto' : 'auto' }">
         <div class="span-block">
           <h1>{{option.name}}</h1>
           <svg style="cursor: pointer" width="19" height="9" viewBox="0 0 19 9" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
@@ -305,6 +305,9 @@ img {
   .span-block {
     display: flex;
     justify-content: space-between;
+    h1 {
+      white-space: preserve;
+    }
     .src {
       font-size: 14px;
       font-weight: normal;
@@ -319,9 +322,10 @@ img {
 
 .extra-options {
   margin: 10px 0;
-  padding: 0;
+  padding: 0 0 20px 0;
   .span-block {
     padding: 20px 5% 10px;
+    text-wrap: wrap;
   }
   .swiper-container {
     margin: 0 0 0 5%;
@@ -419,7 +423,7 @@ button {
 }
 
 span {
-  white-space: pre;
+  white-space: preserve;
 }
 
 </style>
