@@ -417,4 +417,9 @@ button {
   display: flex;
   flex-direction: column;
 }
+
+span {
+  white-space: pre;
+}
+
 </style>
