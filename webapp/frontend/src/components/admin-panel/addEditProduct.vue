@@ -453,6 +453,14 @@ export default {
       this.chosenCategory = item.id;
       console.log("new chosen cat", this.chosenCategory)
     },
+  },
+  watch: {
+    text_input: function() {
+      this.$refs.textarea.style.height = "auto";
+      this.$nextTick(() => {
+        this.$refs.textarea.style.height = this.$refs.textarea.scrollHeight + 'px';
+      })
+    }
   }
 };
 </script>
@@ -527,7 +535,7 @@ export default {
       </div>
       <div class="card">
         <h1>Описание</h1>
-        <input class="required" v-model="productDescription" placeholder="Напишите описание">
+        <textarea class="required" v-model="productDescription" placeholder="Напишите описание" ></textarea>
       </div>
       <div class="card">
         <h1>Артикул</h1>
@@ -602,8 +610,8 @@ export default {
     <div v-if="options" class="options">
       <div style="margin: 10px 0; width: 100%" v-for="(option, index) in options">
         <span style="padding-left: 15px; font-weight: 550">Дополнительная опция №{{index+1}}</span>
-        <input style="height: 35px" v-model="option.name" placeholder="Название опции">
-        <input v-if="option.type === 'text'" v-model="option.variants[0]" placeholder="Текст">
+        <textarea style="height: 35px" v-model="option.name" placeholder="Название опции" ></textarea>
+        <textarea v-if="option.type === 'text'" v-model="option.variants[0]" placeholder="Текст" ></textarea>
         <div v-else-if="option.type === 'block'">
           <swiper
             :slidesPerView="4.5"
@@ -713,13 +721,15 @@ export default {
       margin: 0 0 5px 15px;
       font-weight: 550;
     }
-    input {
+    input, textarea{
       width: 100%;
-      height: 48px;
+      min-height: 48px;
+      height: auto;
       border-radius: 15px;
       padding-left: 15px;
       background-color: var(--app-card-background-color);
       border: none;
+      overflow: hidden;
 
       ::placeholder {
         font-weight: 350;
@@ -744,7 +754,9 @@ export default {
         display: flex;
         justify-content: space-around;
         align-items: center;
-        input {
+        input, textarea{
+          min-height: 48px;
+          height: auto;
           &:focus {
             outline: none;
             border: none;
@@ -869,9 +881,10 @@ export default {
     align-items: center;
     justify-content: center;
   }
-  input {
+  input, textarea {
     width: 100%;
-    height: 48px;
+    min-height: 48px;
+    height: auto;
     border-radius: 15px;
     padding-left: 15px;
     background-color: var(--app-card-background-color);
