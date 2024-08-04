@@ -16,16 +16,16 @@ job_deploy:
     - AUTHOR=$GITLAB_USER_LOGIN
     - echo This commit is sent by $AUTHOR
     - |
-      if [ $AUTHOR == zhilovhub ]; 
+      if [ $CI_COMMIT_BRANCH == master_debug ]; 
+      then LABEL=debug;
+      elif [ $AUTHOR == zhilovhub ]; 
       then LABEL=ilya;
       elif [ $AUTHOR == m0nkai ]; 
       then LABEL=arsen;
       elif [ $AUTHOR == V533 ]; 
       then LABEL=vova;
       elif [ $AUTHOR == lvovkir ]; 
-      then LABEL=front;
-      elif [ $CI_COMMIT_BRANCH == master_debug ]; 
-      then LABEL=debug; 
+      then LABEL=front; 
       else LABEL=null; 
       fi
     - if [ $LABEL == null ]; then exit 10; else echo Current label is $LABEL; fi
