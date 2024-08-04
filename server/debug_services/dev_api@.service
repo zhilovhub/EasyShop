@@ -5,8 +5,8 @@ Wants=network.target
 After=syslog.target network-online.target
 
 [Service]
-Type=simple
 Environment="PYTHONPATH=/home/debug/%IEzShop"
+Type=simple
 WorkingDirectory=/home/debug/%IEzShop/api
 ExecStart=/home/debug/%IEzShop/venv/bin/python3 main.py
 KillMode=process

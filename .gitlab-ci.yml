@@ -1,0 +1,35 @@
+stages:
+  - deploy
+
+job_deploy:
+  stage: deploy
+  before_script:
+    - command -v ssh-agent >/dev/null || ( apt-get update -y && apt-get install openssh-client -y )
+    - mkdir -p ~/.ssh
+    - echo $SSH_PRIVATE_KEY | base64 -d > ~/.ssh/id_rsa
+    - echo >> ~/.ssh/id_rsa
+    - chmod -R 600 ~/.ssh
+    - eval $(ssh-agent -s)
+    - ssh-add ~/.ssh/id_rsa
+    - '[[ -f /.dockerenv ]] && echo -e "Host *\n\tStrictHostKeyChecking no\n\n" >> ~/.ssh/config'
+  script:
+    - AUTHOR=$GITLAB_USER_LOGIN
+    - echo This commit is sent by $AUTHOR
+    - |
+      if [ $AUTHOR == zhilovhub ]; 
+      then LABEL=ilya;
+      elif [ $AUTHOR == m0nkai ]; 
+      then LABEL=arsen;
+      elif [ $AUTHOR == V533 ]; 
+      then LABEL=vova;
+      elif [ $AUTHOR == lvovkir ]; 
+      then LABEL=front;
+      elif [ $CI_COMMIT_BRANCH == master_debug ]; 
+      then LABEL=debug; 
+      else LABEL=null; 
+      fi
+    - if [ $LABEL == null ]; then exit 10; else echo Current label is $LABEL; fi
+    - ssh $USER@$IP "bash autopull.sh $LABEL $CI_COMMIT_BRANCH"
+  rules:
+    - if: '$CI_COMMIT_BRANCH != "master_release"'
+      when: on_success
