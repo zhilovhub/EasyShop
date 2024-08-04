@@ -6,8 +6,9 @@ from sqlalchemy import BigInteger, Column, String, TypeDecorator, Unicode, Diale
 from sqlalchemy import select, update, delete, insert
 from sqlalchemy.ext.asyncio import AsyncEngine
 
-from pydantic import BaseModel, Field, validate_call, ConfigDict
+from pydantic import BaseModel, Field, validate_call, ConfigDict, ValidationError
 
+from common_utils.non_actual_data_fix import non_actual_data_fix
 from database.exceptions.exceptions import KwargsException
 from database.models import Base
 from database.models.dao import Dao
@@ -212,7 +213,10 @@ class OrderDao(Dao):
         if not raw_res:
             raise OrderNotFoundError(order_id=order_id)
 
-        res = OrderSchema.model_validate(raw_res)
+        try:
+            res = OrderSchema.model_validate(raw_res)
+        except ValidationError as e:
+            res = OrderSchema.model_validate(non_actual_data_fix(raw_res, e))
 
         self.logger.debug(
             f"bot_id={res.bot_id}: found order {res}",
