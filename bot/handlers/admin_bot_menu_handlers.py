@@ -716,20 +716,13 @@ async def send_new_order_notify(order: OrderSchema, user_id: int):
         product = await product_db.get_product(product_id)
         products.append((product, order_item.amount, order_item.used_extra_options))
 
-    await bot.send_message(user_id, f"Так будет выглядеть у тебя уведомление о новом заказе 👇")
-    # await bot.send_message(
-    #     user_id, order.convert_to_notification_text(
-    #         products,
-    #         "@" + order_user_data.username if order_user_data.username else order_user_data.full_name,
-    #         True
-    #     )
-    # )
     text = await CommonMessageTexts.generate_order_notification_text(
         order,
         products,
         "@" + order_user_data.username if order_user_data.username else order_user_data.full_name,
         True
     )
+    await bot.send_message(user_id, f"Так будет выглядеть у тебя уведомление о новом заказе 👇")
     await bot.send_message(chat_id=user_id, **text)
 
 
