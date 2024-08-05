@@ -26,7 +26,6 @@ from bot.keyboards.post_message_keyboards import InlinePostMessageMenuKeyboard
 from bot.post_message.post_message_create import post_message_create
 
 from bot.utils.send_instructions import send_instructions
-from bot.handlers.command_handlers import remove_bot_admin
 
 from common_utils import generate_admin_invite_link
 from common_utils.bot_utils import create_bot_options, create_custom_bot

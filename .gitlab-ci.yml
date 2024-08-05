@@ -33,3 +33,4 @@ job_deploy:
   rules:
     - if: '$CI_COMMIT_BRANCH != "master_release"'
       when: on_success
+    - if: $CI_PIPELINE_SOURCE == "push"
