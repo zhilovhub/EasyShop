@@ -9,7 +9,6 @@ try:
 
     from logs.config import logger, extra_params
 
-
     from bot.handlers.subscription_handlers import send_subscription_expire_notify, send_subscription_end_notify
 except ImportError as ex:
     print(f"IMPORT ERROR: if running module from terminal please set PYTHONPATH env variable to project root")

@@ -13,6 +13,7 @@ from custom_bots.keyboards.custom_bot_menu_keyboards import ReplyCustomBotMenuKe
 from custom_bots.utils.question_utils import is_able_to_ask
 from common_utils.keyboards.order_manage_keyboards import InlineOrderCancelKeyboard, InlineOrderCustomBotKeyboard, \
     InlineCreateReviewKeyboard, InlineAcceptReviewKeyboard
+from common_utils.message_texts import MessageTexts as CommonMessageTexts
 
 from database.config import product_review_db, order_db, product_db, bot_db
 from database.models.bot_model import BotNotFoundError
@@ -56,7 +57,12 @@ async def handle_cancel_order_callback(query: CallbackQuery):
                     int(product_id)), product_item.amount, product_item.used_extra_options
                  ) for product_id, product_item in order.items.items()
             ]
-            await query.message.edit_text(order.convert_to_notification_text(products=products), reply_markup=None)
+            # await query.message.edit_text(order.convert_to_notification_text(products=products), reply_markup=None)
+            text = await CommonMessageTexts.generate_order_notification_text(
+                order,
+                products,
+            )
+            await query.message.edit_text(**text, reply_markup=None)
             msg_id_data = PREV_ORDER_MSGS.get_data()
 
             for item_id, item in order.items.items():
@@ -64,12 +70,16 @@ async def handle_cancel_order_callback(query: CallbackQuery):
                 product.count += item.amount
                 await product_db.update_product(product)
 
+            text = await CommonMessageTexts.generate_order_notification_text(
+                order=order,
+                products=products,
+                username="@" + query.from_user.username if query.from_user.username else query.from_user.full_name,
+                is_admin=True
+            )
+
             await main_bot.edit_message_text(
-                text=order.convert_to_notification_text(
-                    products=products,
-                    username="@" + query.from_user.username if query.from_user.username else query.from_user.full_name,
-                    is_admin=True
-                ), chat_id=msg_id_data[order_id][0], message_id=msg_id_data[order_id][1], reply_markup=None)
+                **text, chat_id=msg_id_data[order_id][0], message_id=msg_id_data[order_id][1], reply_markup=None,
+            )
             await main_bot.send_message(
                 chat_id=msg_id_data[order_id][0],
                 text=f"Новый статус заказа <b>#{order_id}</b>\n<b>{order.translate_order_status()}</b>")

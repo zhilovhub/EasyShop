@@ -21,6 +21,16 @@ async def create_order(user_id: int, web_app_data, order_type: OrderType, _json:
         data = json.loads(web_app_data)
     else:
         data = web_app_data
+    # data = {
+    #     "bot_id": "1",
+    #     "raw_items": {
+    #         "2": {
+    #             "amount": 1
+    #         }
+    #     },
+    #     "ordered_at": "2024-07-26T14:10:07.336Z",
+    #     "order_options": {4: "test"}
+    # }
     bot_id = data["bot_id"]
 
     match order_type:
@@ -94,7 +104,18 @@ async def _handle_zero_products(event: Message, bot_owner: int, zero_products: l
 
 
 def _form_order(data: dict, order_type: OrderType) -> OrderSchema:
-    order = OrderSchema(**data)
+    order_options = {
+        0: data["name"],
+        1: data["phone_number"],
+        2: data["town"],
+        3: data["address"],
+        4: data["time"],
+        5: data["comment"],
+        6: data["delivery_method"]
+    }
+
+    # TODO Когда фронт будет готов передавать кастомные опции, а не захардкоженные, удалить этот словарь
+    order = OrderSchema(**data, order_options=order_options)  # TODO order_options должны быть с фронта
     match order_type:
         case OrderType.MAIN_BOT_TEST_ORDER:
             pass

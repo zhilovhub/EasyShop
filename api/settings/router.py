@@ -4,7 +4,7 @@ from fastapi import APIRouter
 
 from pydantic import BaseModel
 
-from database.config import bot_db
+from database.config import bot_db, option_db
 from database.models.bot_model import BotNotFoundError
 
 from api.utils import HTTPBotNotFoundError, HTTPInternalError, RESPONSES_DICT
@@ -32,12 +32,9 @@ async def get_web_app_options_api(bot_id: int) -> WebAppOptions:
     """
     try:
         bot = await bot_db.get_bot(bot_id)
+        options = await option_db.get_option(bot.options_id)
 
-        if not bot.settings or "bg_color" not in bot.settings:
-            options = WebAppOptions(bg_color=None)
-            return options
-
-        return WebAppOptions(bg_color=bot.settings['bg_color'])
+        return WebAppOptions(bg_color=options.bg_color)
 
     except BotNotFoundError as e:
         api_logger.error(
