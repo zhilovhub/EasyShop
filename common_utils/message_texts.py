@@ -125,13 +125,13 @@ class MessageTexts(Enum):
             )
         else:
             result = Text(
-                f"Новый заказ #{order.id}\n"
-                f"от пользователя {username}\n\n"
-                f"Список товаров:\n\n"
-                f"{products_text}\n\n"
-                f"Итого: {total_price}₽\n\n"
+                f"Новый заказ ", Bold(f"#{order.id}\n"),
+                f"от пользователя ", Bold(username), "\n\n",
+                f"Список товаров:\n\n",
+                *products_text, "\n\n",
+                f"Итого: ", Bold(f"{total_price}₽\n\n"),
                 f"{order_options_text}\n\n"
-                f"Статус: {order.translate_order_status()}"
+                f"Статус: ", Bold(order.translate_order_status())
             )
 
         return result.as_kwargs()
