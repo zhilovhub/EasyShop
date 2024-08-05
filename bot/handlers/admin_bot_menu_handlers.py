@@ -1,7 +1,6 @@
 import string
 from random import sample
 from aiohttp import ClientConnectorError
-from datetime import datetime
 
 from sqlalchemy.exc import IntegrityError
 
@@ -27,25 +26,27 @@ from bot.keyboards.post_message_keyboards import InlinePostMessageMenuKeyboard
 from bot.post_message.post_message_create import post_message_create
 
 from bot.utils.send_instructions import send_instructions
-from bot.handlers.command_handlers import remove_bot_admin
 
 from common_utils import generate_admin_invite_link
+from common_utils.bot_utils import create_bot_options, create_custom_bot
 from common_utils.env_config import FILES_PATH
-from common_utils.order_utils.order_type import OrderType
+from common_utils.message_texts import MessageTexts as CommonMessageTexts
 from common_utils.bot_settings_config import BOT_PROPERTIES
+from common_utils.keyboards.keyboards import (InlineBotEditOrderOptionsKeyboard, InlineBotMenuKeyboard,
+                                              InlineBotSettingsMenuKeyboard, InlineAdministratorsManageKeyboard)
+from common_utils.order_utils.order_type import OrderType
 from common_utils.order_utils.order_utils import create_order
-from common_utils.storage.custom_bot_storage import custom_bot_storage
 from common_utils.broadcasting.broadcasting import send_event, EventTypes
+from common_utils.storage.custom_bot_storage import custom_bot_storage
 from common_utils.keyboards.order_manage_keyboards import InlineOrderCancelKeyboard, InlineOrderStatusesKeyboard, \
     InlineAcceptReviewKeyboard, InlineOrderCustomBotKeyboard, InlineCreateReviewKeyboard
-from common_utils.keyboards.keyboards import (InlineBotMenuKeyboard, InlineBotSettingsMenuKeyboard,
-                                              InlineAdministratorsManageKeyboard)
 
 from database.config import (bot_db, product_db, order_db, product_review_db, user_db, custom_bot_user_db, mailing_db,
-                             user_role_db)
-from database.models.bot_model import BotSchemaWithoutId, BotIntegrityError
+                             user_role_db, option_db, order_option_db)
+from database.models.bot_model import BotIntegrityError
 from database.models.user_role_model import UserRoleSchema, UserRoleValues
 from database.models.order_model import OrderSchema, OrderNotFoundError, OrderStatusValues
+from database.models.option_model import OptionNotFoundError
 from database.models.mailing_model import MailingNotFoundError
 from database.models.product_model import ProductWithoutId, NotEnoughProductsInStockToReduce
 from database.models.post_message_model import PostMessageType
@@ -154,8 +155,20 @@ async def handler_order_cancel_callback(query: CallbackQuery, state: FSMContext)
             products = [(await product_db.get_product(int(product_id)), product_item.amount,
                          product_item.used_extra_options)
                         for product_id, product_item in order.items.items()]
+
+            text = await CommonMessageTexts.generate_order_notification_text(
+                order,
+                products
+            )
+
+            # await Bot(bot_token, default=BOT_PROPERTIES).edit_message_text(
+            #     order.convert_to_notification_text(products=products),
+            #     reply_markup=None,
+            #     chat_id=callback_data.chat_id,
+            #     message_id=callback_data.msg_id
+            # )
             await Bot(bot_token, default=BOT_PROPERTIES).edit_message_text(
-                order.convert_to_notification_text(products=products),
+                **text,
                 reply_markup=None,
                 chat_id=callback_data.chat_id,
                 message_id=callback_data.msg_id
@@ -163,12 +176,15 @@ async def handler_order_cancel_callback(query: CallbackQuery, state: FSMContext)
 
             username = query.message.text[query.message.text.find("пользователя"):].split()[1].strip("\n")
 
+            text = await CommonMessageTexts.generate_order_notification_text(
+                order,
+                products,
+                username,
+                True
+            )
+
             await query.message.edit_text(
-                text=order.convert_to_notification_text(
-                    products=products,
-                    username=username,
-                    is_admin=True
-                ), reply_markup=None
+                **text, reply_markup=None
             )
 
             for item_id, item in order.items.items():
@@ -254,22 +270,33 @@ async def handle_callback(query: CallbackQuery, state: FSMContext):
                     int(product_id)), product_item.amount, product_item.used_extra_options
                  ) for product_id, product_item in order.items.items()
             ]
+            # await Bot(bot_token, default=BOT_PROPERTIES).edit_message_text(
+            #     order.convert_to_notification_text(products=products),
+            #     reply_markup=None if callback_data.a == callback_data.ActionEnum.FINISH else
+            #     InlineOrderCustomBotKeyboard.get_keyboard(order.id, callback_data.msg_id, callback_data.chat_id),
+            #     chat_id=callback_data.chat_id,
+            #     message_id=callback_data.msg_id
+            # )
+            text = await CommonMessageTexts.generate_order_notification_text(
+                order,
+                products
+            )
             await Bot(bot_token, default=BOT_PROPERTIES).edit_message_text(
-                order.convert_to_notification_text(products=products),
+                **text,
                 reply_markup=None if callback_data.a == callback_data.ActionEnum.FINISH else
                 InlineOrderCustomBotKeyboard.get_keyboard(order.id, callback_data.msg_id, callback_data.chat_id),
                 chat_id=callback_data.chat_id,
                 message_id=callback_data.msg_id
             )
-
             username = query.message.text[query.message.text.find("пользователя"):].split()[1].strip("\n")
-
+            text = await CommonMessageTexts.generate_order_notification_text(
+                order,
+                products,
+                username,
+                True
+            )
             await query.message.edit_text(
-                text=order.convert_to_notification_text(
-                    products=products,
-                    username=username,
-                    is_admin=True
-                ), reply_markup=None if callback_data.a == callback_data.ActionEnum.FINISH else
+                **text, reply_markup=None if callback_data.a == callback_data.ActionEnum.FINISH else
                 InlineOrderStatusesKeyboard.get_keyboard(
                     order.id, callback_data.msg_id, callback_data.chat_id, order.status)
             )
@@ -278,10 +305,15 @@ async def handle_callback(query: CallbackQuery, state: FSMContext):
                 chat_id=callback_data.chat_id,
                 text=f"Новый статус заказа <b>#{order.id}</b>\n<b>{order.translate_order_status()}</b>"
             )
-
+            try:
+                options = await option_db.get_option(bot_data.options_id)
+            except OptionNotFoundError:
+                new_options_id = await create_bot_options()
+                bot_data.options_id = new_options_id
+                await bot_db.update_bot(bot_data)
+                options = await option_db.get_option(new_options_id)
             if callback_data.a == callback_data.ActionEnum.FINISH:
-                if bot_data.settings and "auto_reduce" in bot_data.settings and \
-                        bot_data.settings["auto_reduce"]:
+                if options.auto_reduce is True:
                     zero_products = []
                     for item_id, item in order.items.items():
                         product = await product_db.get_product(item_id)
@@ -319,19 +351,8 @@ async def waiting_for_the_token_handler(message: Message, state: FSMContext):
         found_bot_data = await found_bot.get_me()
         bot_fullname, bot_username = found_bot_data.full_name, found_bot_data.username
 
-        new_bot = BotSchemaWithoutId(
-            bot_token=token,  # noqa
-            status="new",
-            created_at=datetime.utcnow(),
-            created_by=user_id,
-            settings={"start_msg": MessageTexts.DEFAULT_START_MESSAGE.value,
-                      "default_msg":
-                          f"Приветствую, этот бот создан с помощью @{(await bot.get_me()).username}",
-                      "web_app_button": MessageTexts.OPEN_WEB_APP_BUTTON_TEXT.value},
-            locale=lang
-        )
+        bot_id = await create_custom_bot(token, user_id, lang)
 
-        bot_id = await bot_db.add_bot(new_bot)
         await start_custom_bot(bot_id)
     except TokenValidationError:
         return await message.answer(MessageTexts.INCORRECT_BOT_TOKEN_MESSAGE.value)
@@ -435,6 +456,14 @@ async def bot_menu_callback_handler(query: CallbackQuery, state: FSMContext):
     db_bot_data = await bot_db.get_bot(bot_id)
     custom_bot_data = await Bot(token=db_bot_data.token).get_me()
 
+    try:
+        options = await option_db.get_option(db_bot_data.options_id)
+    except OptionNotFoundError:
+        new_options_id = await create_bot_options()
+        db_bot_data.options_id = new_options_id
+        await bot_db.update_bot(db_bot_data)
+        options = await option_db.get_option(new_options_id)
+
     match callback_data.a:
         case callback_data.ActionEnum.BOT_SETTINGS:
             await query.message.edit_reply_markup(reply_markup=await InlineBotSettingsMenuKeyboard.get_keyboard(bot_id))
@@ -443,11 +472,10 @@ async def bot_menu_callback_handler(query: CallbackQuery, state: FSMContext):
                 reply_markup=await InlineAdministratorsManageKeyboard.get_keyboard(bot_id))
         case callback_data.ActionEnum.LEAVE_ADMINISTRATING:
             await user_role_db.del_user_role(query.from_user.id, bot_id)
-            await query.message.edit_text("Вы больше не администратор этого бота.",
+            await query.message.edit_text("Вы больше не администратор этого бота. "
+                                          "Пропишите /start для рестарта бота",
                                           reply_markup=None)
-
-            await remove_bot_admin(query.from_user.id, state)
-
+            await state.clear()
             await bot.send_message(
                 db_bot_data.created_by,
                 f"🔔 Пользователь больше не администратор ("
@@ -521,14 +549,9 @@ async def bot_menu_callback_handler(query: CallbackQuery, state: FSMContext):
                 )
             )
         case callback_data.ActionEnum.BOT_GOODS_OPEN:
-            bot_data = await bot_db.get_bot(bot_id)
-            if not bot_data.settings or "auto_reduce" not in bot_data.settings:
-                auto_reduce = False
-            else:
-                auto_reduce = True
             await query.message.edit_text(
                 "Меню склада:",
-                reply_markup=await InlineStockMenuKeyboard.get_keyboard(bot_id, auto_reduce)
+                reply_markup=await InlineStockMenuKeyboard.get_keyboard(bot_id, options.auto_reduce)
             )
         case callback_data.ActionEnum.CHANNEL_LIST:
             custom_bot = await bot_db.get_bot(bot_id)
@@ -551,6 +574,13 @@ async def bot_settings_callback_handler(query: CallbackQuery, state: FSMContext)
     custom_bot_data = await Bot(token=user_bot.token).get_me()
 
     match callback_data.a:
+        case callback_data.ActionEnum.EDIT_ORDER_OPTIONS:
+            order_options = await order_option_db.get_all_order_options(bot_id)
+            await query.message.edit_text(
+                **MessageTexts.generate_order_options_info(order_options),
+                reply_markup=await InlineBotEditOrderOptionsKeyboard.get_keyboard(bot_id)
+            )
+            await query.answer()
         case callback_data.ActionEnum.BOT_EDIT_HELLO_TEXT:
             await query.message.answer(
                 "Введите текст, который будет отображаться у пользователей Вашего бота "
@@ -686,14 +716,14 @@ async def send_new_order_notify(order: OrderSchema, user_id: int):
         product = await product_db.get_product(product_id)
         products.append((product, order_item.amount, order_item.used_extra_options))
 
-    await bot.send_message(user_id, f"Так будет выглядеть у тебя уведомление о новом заказе 👇")
-    await bot.send_message(
-        user_id, order.convert_to_notification_text(
-            products,
-            "@" + order_user_data.username if order_user_data.username else order_user_data.full_name,
-            True
-        )
+    text = await CommonMessageTexts.generate_order_notification_text(
+        order,
+        products,
+        "@" + order_user_data.username if order_user_data.username else order_user_data.full_name,
+        True
     )
+    await bot.send_message(user_id, f"Так будет выглядеть у тебя уведомление о новом заказе 👇")
+    await bot.send_message(chat_id=user_id, **text)
 
 
 async def send_order_change_status_notify(order: OrderSchema):

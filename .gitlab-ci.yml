@@ -14,6 +14,7 @@ job_deploy:
     - '[[ -f /.dockerenv ]] && echo -e "Host *\n\tStrictHostKeyChecking no\n\n" >> ~/.ssh/config'
   script:
     - AUTHOR=$GITLAB_USER_LOGIN
+    - echo $CI_PIPELINE_SOURCE
     - echo This commit is sent by $AUTHOR
     - |
       if [ $CI_COMMIT_BRANCH == master_debug ]; 
@@ -31,5 +32,5 @@ job_deploy:
     - if [ $LABEL == null ]; then exit 10; else echo Current label is $LABEL; fi
     - ssh $USER@$IP "bash autopull.sh $LABEL $CI_COMMIT_BRANCH"
   rules:
-    - if: '$CI_COMMIT_BRANCH != "master_release"'
+    - if: '$CI_COMMIT_BRANCH != "master_release" && $CI_PIPELINE_SOURCE == "push"'
       when: on_success

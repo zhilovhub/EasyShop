@@ -12,6 +12,7 @@ from pydantic import BaseModel, Field, ConfigDict, validate_call
 from database.models import Base
 from database.models.dao import Dao
 from database.models.user_model import User
+from database.models.option_model import Option
 from database.exceptions.exceptions import KwargsException
 
 from logs.config import extra_params
@@ -34,7 +35,8 @@ class Bot(Base):
     status = Column(String(55), nullable=False)
     created_at = Column(DateTime, nullable=False)
     created_by = Column(ForeignKey(User.user_id, ondelete="CASCADE"), nullable=False)
-    settings = Column(JSON)
+    settings = Column(JSON, nullable=True)
+    options_id = Column(ForeignKey(Option.id, ondelete="CASCADE"), nullable=True)
     locale = Column(String(10), nullable=False)
     admin_invite_link_hash = Column(String(15), unique=True)
 
@@ -47,6 +49,7 @@ class BotSchemaWithoutId(BaseModel):
     created_at: datetime = Field(frozen=True)
     created_by: int = Field(frozen=True)
     settings: dict | None = None
+    options_id: int
     locale: str = Field()
     admin_invite_link_hash: str | None = Field(max_length=15, default=None)
 

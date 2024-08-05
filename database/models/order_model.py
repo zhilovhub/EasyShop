@@ -13,7 +13,6 @@ from database.exceptions.exceptions import KwargsException
 from database.models import Base
 from database.models.dao import Dao
 from database.models.bot_model import Bot
-from database.models.product_model import ProductSchema
 
 from logs.config import extra_params
 
@@ -59,15 +58,10 @@ class Order(Base):
     bot_id = Column(ForeignKey(Bot.bot_id, ondelete="CASCADE"))
     items = Column(JSON, default="{}")
     from_user = Column(BigInteger, nullable=False)  # TODO make it Foreign
+    order_options = Column(JSON)
+    status = Column(OrderStatus)
     payment_method = Column(String, nullable=False)
     ordered_at = Column(DateTime, default=datetime.now())
-    address = Column(String)
-    delivery_method = Column(String)
-    status = Column(OrderStatus)
-    comment = Column(String)
-    town = Column(String)
-    name = Column(String)
-    phone_number = Column(String)
     time = Column(String)
 
 
@@ -98,14 +92,9 @@ class OrderSchema(BaseModel):
     )
     from_user: int
     payment_method: str | None = None
-    ordered_at: datetime
-    address: str
-    delivery_method: str
     status: OrderStatusValues
-    comment: str
-    town: str
-    name: str | None = None
-    phone_number: str | None = None
+    ordered_at: datetime
+    order_options: dict
     time: str | None = None
 
     def translate_order_status(self) -> str:
@@ -122,60 +111,6 @@ class OrderSchema(BaseModel):
                 return "✅ Завершен"
             case _:
                 return "❓ Неизвестен"
-
-    def convert_to_notification_text(self, products: list[tuple[ProductSchema, int, list[OrderItemExtraOption] | None]],
-                                     username: str = '@username',
-                                     is_admin: bool = False) -> str:
-        """
-        Translate OrderSchema into the text for notifications
-        :param username: the username of the person created an order
-        :param is_admin: True if the order is from Admin test web app and False if from custom bot
-        :param list products: [(ProductSchema, amount, [OrderItemExtraOption(), ...]), ...]
-        """
-
-        products_converted = []
-        total_price = 0
-        for ind, product_item in enumerate(products, start=1):
-            product_schema, amount, extra_options = product_item
-            products_converted.append(
-                f"{ind}. "
-                f"{product_schema.convert_to_notification_text(count=amount, used_extra_options=extra_options)}"
-            )
-            product_price = product_schema.price
-            if extra_options:
-                for option in extra_options:
-                    if option.price:
-                        product_price = option.price
-            total_price += product_price * product_item[1]
-
-        products_text = "\n".join(products_converted)
-
-        return f"Ваш заказ <b>#{self.id}</b>\n\n" \
-               f"Список товаров:\n\n" \
-               f"{products_text}\n\n" \
-               f"Итого: <b>{total_price}₽</b>\n\n" \
-               f"👤 Имя клиента: <b>{self.name if self.name else 'Не указано'}</b>\n" \
-               f"📱 Номер телефона: <b>{self.phone_number if self.phone_number else 'Не указано'}</b>\n" \
-               f"🌇 Город: <b>{self.town if self.town else 'Не указано'}</b>\n" \
-               f"🛤 Адрес доставки: <b>{self.address if self.address else 'Не указано'}</b>\n" \
-               f"🚐 Способ доставки: <b>{self.delivery_method if self.delivery_method else 'Не указано'}</b>\n" \
-               f"⏰ Время доставки: <b>{self.time if self.time else 'Не указано'}</b>\n" \
-               f"💌 Комментарий: <b>{self.comment if self.comment else 'Не указано'}</b>\n\n" \
-               f"Статус: <b>{self.translate_order_status()}</b>" if not is_admin \
-            else f"Новый заказ <b>#{self.id}</b>\n" \
-                 f"от пользователя " \
-                 f"<b>{username}</b>\n\n" \
-                 f"Список товаров:\n\n" \
-                 f"{products_text}\n\n" \
-                 f"Итого: <b>{total_price}₽</b>\n\n" \
-                 f"👤 Имя клиента: <b>{self.name if self.name else 'Не указано'}</b>\n" \
-               f"📱 Номер телефона: <b>{self.phone_number if self.phone_number else 'Не указано'}</b>\n" \
-               f"🌇 Город: <b>{self.town if self.town else 'Не указано'}</b>\n" \
-               f"🛤 Адрес доставки: <b>{self.address if self.address else 'Не указано'}</b>\n" \
-               f"🚐 Способ доставки: <b>{self.delivery_method if self.delivery_method else 'Не указано'}</b>\n" \
-               f"⏰ Время доставки: <b>{self.time if self.time else 'Не указано'}</b>\n" \
-               f"💌 Комментарий: <b>{self.comment if self.comment else 'Не указано'}</b>\n\n" \
-                 f"Статус: <b>{self.translate_order_status()}</b>"
 
 
 class OrderDao(Dao):
