@@ -6,8 +6,7 @@ from database.models.order_model import OrderSchema, OrderItemExtraOption
 from database.models.order_option_model import OrderOptionSchemaWithoutId
 from database.models.product_model import ProductSchema
 
-from aiogram.utils.formatting import Text
-
+from aiogram.utils.formatting import Text, Bold
 
 TEMP_order_options = {  # TODO удалить, когда фронт будет возвращать кастомные опции
         0: OrderOptionSchemaWithoutId(
@@ -91,10 +90,10 @@ class MessageTexts(Enum):
         total_price = 0
         for ind, product_item in enumerate(products, start=1):
             product_schema, amount, extra_options = product_item
-            products_converted.append(
-                f"{ind}. "
-                f"{product_schema.convert_to_notification_text(count=amount, used_extra_options=extra_options)}"
-            )
+            products_converted.append(Text(
+                f"{ind}. ",
+                product_schema.convert_to_notification_text(count=amount, used_extra_options=extra_options)
+            ))
             product_price = product_schema.price
             if extra_options:
                 for option in extra_options:
@@ -102,23 +101,27 @@ class MessageTexts(Enum):
                         product_price = option.price
             total_price += product_price * product_item[1]
 
-        products_text = "\n".join(products_converted)
+        products_text = []
+        for ind, product_converted in enumerate(products_converted, start=1):  # We can't use "\n".join() here
+            products_text.append(product_converted)
+            if ind != len(product_converted):
+                products_text.append("\n")
 
         order_options = order.order_options
         order_options_text = ""
         for order_option_id, value in order_options.items():
             # order_option = await order_option_db.get_order_option(order_option_id)
-            order_option = TEMP_order_options[order_option_id]  # TODO вернуть прошлую строку
+            order_option = TEMP_order_options[int(order_option_id)]  # TODO вернуть прошлую строку
             order_options_text += f"{order_option.emoji} {order_option.option_name}: {value}\n"
 
         if not is_admin:
             result = Text(
-                f"Ваш заказ #{order.id}\n\n"
-                f"Список товаров: \n\n"
-                f"{products_text}\n\n"
-                f"Итого: {total_price}₽\n\n"
+                f"Ваш заказ ", Bold(f"#{order.id}\n\n"),
+                f"Список товаров: \n\n",
+                *products_text, "\n\n",
+                f"Итого: ", Bold(f"{total_price}₽\n\n"),
                 f"{order_options_text}\n\n "
-                f"Статус: {order.translate_order_status()}"
+                f"Статус: ", Bold(order.translate_order_status())
             )
         else:
             result = Text(

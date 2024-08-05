@@ -1,4 +1,4 @@
-from typing import Optional, Annotated
+from typing import Optional, Annotated, Any
 
 from pydantic import BaseModel, Field, validate_call, ConfigDict, model_validator
 
@@ -13,7 +13,7 @@ from database.models.dao import Dao
 from database.models.bot_model import Bot
 from database.exceptions.exceptions import KwargsException
 
-from aiogram.utils.formatting import Text, Bold, Italic, Pre
+from aiogram.utils.formatting import Text, Bold, Italic, Pre, Underline
 
 from logs.config import extra_params
 
@@ -119,14 +119,14 @@ class ProductWithoutId(BaseModel):
 class ProductSchema(ProductWithoutId):
     id: int
 
-    def convert_to_notification_text(self, count: int, used_extra_options: list = None) -> str:
+    def convert_to_notification_text(self, count: int, used_extra_options: list = None) -> Text:
         """
         Converts ProductSchema to text for notification
         """
         if used_extra_options:
-            options_text = ""
+            options_text = Text()
             for option in used_extra_options:
-                options_text += f"\n • {option.name} : {option.selected_variant}"
+                options_text += Text(f"\n • ", Italic(option.name), " : ", Underline(option.selected_variant))
                 if option.price:
                     option_price = option.price - self.price
                     if option_price <= 0:
@@ -135,8 +135,8 @@ class ProductSchema(ProductWithoutId):
                         option_price_text = f"+{option_price}"
                     options_text += f" ({option_price_text}₽)"
                 options_text += '\n'
-            return f"{self.name} {self.price}₽ x {count}шт {options_text}"
-        return f"{self.name} {self.price}₽ x {count}шт"
+            return Text(Bold(f"{self.name} {self.price}₽ x {count}шт"), f" {options_text}")
+        return Bold(f"{self.name} {self.price}₽ x {count}шт")
 
     def convert_to_product_page_text(self) -> Text:
         res = Text(
