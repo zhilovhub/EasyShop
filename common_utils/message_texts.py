@@ -39,25 +39,25 @@ TEMP_order_options = {  # TODO удалить, когда фронт будет 
         ),
         4: OrderOptionSchemaWithoutId(
             bot_id=0,
-            option_name="Способ доставки",
+            option_name="Время доставки",
             required=True,
-            emoji="🚐",
+            emoji="⏰",
             position_index=5,
         ),
         5: OrderOptionSchemaWithoutId(
             bot_id=0,
-            option_name="Время доставки",
+            option_name="Комментарий",
             required=True,
-            emoji="⏰",
+            emoji="💌",
             position_index=6,
         ),
         6: OrderOptionSchemaWithoutId(
             bot_id=0,
-            option_name="Комментарий",
+            option_name="Способ доставки",
             required=True,
-            emoji="💌",
+            emoji="🚐",
             position_index=7,
-        )
+        ),
     }
 
 
@@ -108,11 +108,13 @@ class MessageTexts(Enum):
                 products_text.append("\n")
 
         order_options = order.order_options
-        order_options_text = ""
+        order_options_text = Text()
         for order_option_id, value in order_options.items():
             # order_option = await order_option_db.get_order_option(order_option_id)
             order_option = TEMP_order_options[int(order_option_id)]  # TODO вернуть прошлую строку
-            order_options_text += f"{order_option.emoji} {order_option.option_name}: {value}\n"
+            order_options_text += Text(
+                f"{order_option.emoji} {order_option.option_name}: ", Bold(value if value else "Не указано"), "\n"
+            )
 
         if not is_admin:
             result = Text(
