@@ -1,7 +1,7 @@
 from database.config import bot_db, option_db, order_option_db
 from database.models.bot_model import BotIntegrityError, BotSchemaWithoutId
 from database.models.option_model import OptionSchemaWithoutId
-from database.models.order_option_model import OrderOptionSchemaWithoutId
+from database.models.order_option_model import OrderOptionSchemaWithoutId, OrderOptionDao
 
 from bot.main import bot
 from bot.utils.message_texts import MessageTexts
@@ -9,7 +9,7 @@ from bot.utils.message_texts import MessageTexts
 from datetime import datetime
 
 
-async def create_order_options(bot_id: int):
+async def create_order_options(order_option_db: OrderOptionDao, bot_id: int):
     """
     Creates default order options
     """
@@ -56,10 +56,20 @@ async def create_order_options(bot_id: int):
     await order_option_db.add_order_option(
         OrderOptionSchemaWithoutId(
             bot_id=bot_id,
+            option_name="Способ доставки",
+            required=True,
+            emoji="🚐",
+            position_index=5,
+        )
+    )
+
+    await order_option_db.add_order_option(
+        OrderOptionSchemaWithoutId(
+            bot_id=bot_id,
             option_name="Время доставки",
             required=True,
             emoji="⏰",
-            position_index=5,
+            position_index=6,
         )
     )
 
@@ -69,7 +79,7 @@ async def create_order_options(bot_id: int):
             option_name="Комментарий",
             required=True,
             emoji="💌",
-            position_index=6,
+            position_index=7,
         )
     )
 
@@ -109,5 +119,5 @@ async def create_custom_bot(token: str, user_id: int, lang: str) -> int:
     except BotIntegrityError as e:
         await option_db.delete_option(new_option_id)
         raise e
-    await create_order_options(bot_id)
+    await create_order_options(order_option_db, bot_id)
     return bot_id

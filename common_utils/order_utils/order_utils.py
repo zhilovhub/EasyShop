@@ -104,7 +104,17 @@ async def _handle_zero_products(event: Message, bot_owner: int, zero_products: l
 
 
 def _form_order(data: dict, order_type: OrderType) -> OrderSchema:
-    order = OrderSchema(**data)
+    order_options = {
+        'name': data["name"],
+        'phone_number': data["phone_number"],
+        'town': data["town"],
+        'address': data["address"],
+        'time': data["time"],
+        'comment': data["comment"],
+        'delivery_method': data["delivery_method"]
+    }
+    # TODO Когда фронт будет готов передавать кастомные опции, а не захардкоженные, удалить этот словарь
+    order = OrderSchema(**data, order_options=order_options)  # TODO order_options должны быть с фронта
     match order_type:
         case OrderType.MAIN_BOT_TEST_ORDER:
             pass
