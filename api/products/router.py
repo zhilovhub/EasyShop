@@ -40,6 +40,7 @@ class GetProductsRequest(BaseModel):
     price_min: int = 0
     price_max: int = 2147483647
     search_word: str | None = None
+    is_admin_request: bool = False
     filters: list[ProductFilterWithoutBot] | None
 
 
@@ -72,7 +73,8 @@ async def get_filters_api():
 
 
 @router.post("/get_all_products/")
-async def get_all_products_api(payload: GetProductsRequest = Depends(GetProductsRequest)) -> list[ProductSchema]:
+async def get_all_products_api(payload: GetProductsRequest = Depends(GetProductsRequest),
+                               authorization_data: str = Header()) -> list[ProductSchema]:
     """
     :raises HTTPBadRequestError:
     :raises HTTPBotNotFoundError:
@@ -86,7 +88,10 @@ async def get_all_products_api(payload: GetProductsRequest = Depends(GetProducts
         raise HTTPBotNotFoundError(bot_id=payload.bot_id)
 
     if bot.status != "online":
-        raise HTTPCustomBotIsOfflineError(bot_id=bot.bot_id)
+        if payload.is_admin_request:
+            await check_admin_authorization(payload.bot_id, authorization_data)
+        else:
+            raise HTTPCustomBotIsOfflineError(bot_id=bot.bot_id)
 
     try:
         if not payload.filters:

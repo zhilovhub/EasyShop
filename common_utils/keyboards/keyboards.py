@@ -102,7 +102,7 @@ class InlineBotMenuKeyboard:
 
         bot_setup_buttons = [
             InlineKeyboardButton(
-                text="⚙️ Настройки бота",
+                text="⚙️ Меню бота",
                 callback_data=InlineBotMenuKeyboard.callback_json(
                     actions.BOT_SETTINGS, bot_id
                 )

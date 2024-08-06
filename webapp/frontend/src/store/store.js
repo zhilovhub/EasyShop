@@ -35,18 +35,19 @@ export const Store = new Vuex.Store({
     }
   },
   actions: {
-    async itemsInit({ commit }) {
+    async itemsInit({ commit }, is_admin_request) {
       try {
         let filters = {
           "filter_name": "price",
           "is_category_filter": false,
           "reverse_order": Store.state.reverse_order
         }
-        const response = await fetch(`${Store.state.api_url}/api/products/get_all_products/?bot_id=${Store.state.bot_id}&price_min=${Store.state.price_min}&price_max=${Store.state.price_max}`, {
+        const response = await fetch(`${Store.state.api_url}/api/products/get_all_products/?bot_id=${Store.state.bot_id}&price_min=${Store.state.price_min}&price_max=${Store.state.price_max}&is_admin_request=${is_admin_request}`, {
           method: 'Post',
           headers: {
             'Content-Type': 'application/json',
-            'Access-Control-Allow-Origin': '*'
+            'Access-Control-Allow-Origin': '*',
+            'authorization-data': tg.initData,
           },
           body: JSON.stringify(Store.state.reverse_order === true || Store.state.reverse_order === false ? [filters] : [])
         });

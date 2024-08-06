@@ -2,12 +2,12 @@ from fastapi import HTTPException
 
 
 RESPONSES_DICT = {  # keep it sorted by keys
-    400: {"description": "Bad request (incorrect input data)"},
-    404: {"description": "Item not found"},
-    406: {"description": "Custom bot is offline"},
-    409: {"description": "Conflict"},
-    401: {"description": "Unauthorized"},
-    500: {"description": "Internal server error"},
+    400: {"description": "Bad request (incorrect input data)."},
+    404: {"description": "Item not found."},
+    406: {"description": "Custom bot is offline."},
+    409: {"description": "Conflict."},
+    401: {"description": "Unauthorized."},
+    500: {"description": "Internal server error."},
 }
 
 

@@ -183,7 +183,7 @@ export default {
       this.filterComponentIs = false;
       this.isLoading = true;
 
-      this.$store.dispatch('itemsInit').then(() => {
+      this.$store.dispatch('itemsInit', false).then(() => {
         this.isLoading = false;
         this.unionItemsWithCartItems();
         this.itemsAddToCart();
@@ -308,7 +308,7 @@ export default {
     tg.onEvent('mainButtonClicked', this.onProductsPageButtonClick);
     tg.onEvent('backButtonClicked', this.toggleInput);
 
-    this.$store.dispatch('itemsInit').then((result) => {
+    this.$store.dispatch('itemsInit', false).then((result) => {
       this.responseStatus = result;
       this.unionItemsWithCartItems();
       this.itemsAddToCart();

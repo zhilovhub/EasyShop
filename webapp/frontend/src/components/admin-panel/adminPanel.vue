@@ -180,7 +180,7 @@ export default {
   },
   components: { AddProduct, FilterComponent },
   mounted() {
-    this.$store.dispatch('itemsInit').then(() =>{
+    this.$store.dispatch('itemsInit', true).then(() =>{
       this.isLoading = false;
     });
     tg.onEvent('backButtonClicked', this.toggleInput);
@@ -270,7 +270,7 @@ export default {
       }
     },
     updateItems() {
-      this.$store.dispatch('itemsInit').then(() => {
+      this.$store.dispatch('itemsInit', true).then(() => {
         this.isLoading = false;
         this.unionItemsWithCartItems();
 

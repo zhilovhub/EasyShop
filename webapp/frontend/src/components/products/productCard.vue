@@ -238,7 +238,7 @@ export default {
     }
   },
   mounted() {
-    this.$store.dispatch('itemsInit');
+    this.$store.dispatch('itemsInit', false);
     this.$store.dispatch('getProduct',  {
       productId: this.productId,
       botId: this.$store.state.bot_id
