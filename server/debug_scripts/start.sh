@@ -29,4 +29,5 @@ systemctl --user status --no-pager dev_multibot@${label}.service | grep Active
 echo "[DEBUG] Building webapp frontend... [Step 4/4]"
 
 cd webapp/frontend
+npm install
 npm run build

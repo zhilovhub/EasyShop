@@ -1,3 +1,5 @@
+from PIL import Image
+
 from fastapi import APIRouter
 from fastapi.responses import FileResponse
 
@@ -7,7 +9,6 @@ from common_utils.env_config import FILES_PATH
 
 from logs.config import api_logger
 
-from PIL import Image
 
 PATH = "/files"
 router = APIRouter(

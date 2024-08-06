@@ -6,6 +6,7 @@ const SHOPPING_CART = 'shopping-cart'
 const ORDER_DETAILS = 'order-details'
 const ADMIN_PANEL = 'admin-panel'
 const ADDING_PRODUCT = 'adding-product'
+const HEX_SELECTOR = 'hex-selector'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -60,6 +61,11 @@ const router = createRouter({
       name: ADMIN_PANEL,
       component: () => import('@/components/admin-panel/adminPanel.vue')
     },
+    {
+      path: '/hex-selector',
+      name: HEX_SELECTOR,
+      component: () => import('@/components/hex-selector/hexSelector.vue')
+    },
   ]
 });
-export default { router, PRODUCTS_PAGE, PRODUCT_CARD, SHOPPING_CART, ORDER_DETAILS, ADMIN_PANEL}
+export default { router, PRODUCTS_PAGE, PRODUCT_CARD, SHOPPING_CART, ORDER_DETAILS, ADMIN_PANEL, HEX_SELECTOR}

@@ -21,16 +21,6 @@ async def create_order(user_id: int, web_app_data, order_type: OrderType, _json:
         data = json.loads(web_app_data)
     else:
         data = web_app_data
-    # data = {
-    #     "bot_id": "1",
-    #     "raw_items": {
-    #         "2": {
-    #             "amount": 1
-    #         }
-    #     },
-    #     "ordered_at": "2024-07-26T14:10:07.336Z",
-    #     "order_options": {4: "test"}
-    # }
     bot_id = data["bot_id"]
 
     match order_type:

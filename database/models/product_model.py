@@ -1,6 +1,7 @@
-from typing import Optional, Annotated, Any
-
+from enum import Enum
+from typing import Optional, Annotated
 from pydantic import BaseModel, Field, validate_call, ConfigDict, model_validator
+from aiogram.utils.formatting import Text, Bold, Italic, Pre, Underline
 
 from sqlalchemy import BigInteger, Column, String, ForeignKey, Integer, JSON
 from sqlalchemy import select, insert, delete, update, and_, desc, asc
@@ -13,11 +14,7 @@ from database.models.dao import Dao
 from database.models.bot_model import Bot
 from database.exceptions.exceptions import KwargsException
 
-from aiogram.utils.formatting import Text, Bold, Italic, Pre, Underline
-
 from logs.config import extra_params
-
-from enum import Enum
 
 
 class SameArticleProductError(KwargsException):

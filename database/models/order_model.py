@@ -1,18 +1,18 @@
 from enum import Enum
 from typing import Optional
 from datetime import datetime
+from pydantic import BaseModel, Field, validate_call, ConfigDict, ValidationError
 
 from sqlalchemy import BigInteger, Column, String, TypeDecorator, Unicode, Dialect, DateTime, JSON, ForeignKey
 from sqlalchemy import select, update, delete, insert
 from sqlalchemy.ext.asyncio import AsyncEngine
 
-from pydantic import BaseModel, Field, validate_call, ConfigDict, ValidationError
-
 from common_utils.non_actual_data_fix import non_actual_data_fix
-from database.exceptions.exceptions import KwargsException
+
 from database.models import Base
 from database.models.dao import Dao
 from database.models.bot_model import Bot
+from database.exceptions.exceptions import KwargsException
 
 from logs.config import extra_params
 

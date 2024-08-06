@@ -1,4 +1,4 @@
-from database.config import bot_db, option_db, order_option_db
+from database.config import bot_db, option_db
 from database.models.bot_model import BotIntegrityError, BotSchemaWithoutId
 from database.models.option_model import OptionSchemaWithoutId
 from database.models.order_option_model import OrderOptionSchemaWithoutId, OrderOptionDao
@@ -99,7 +99,7 @@ async def create_bot_options() -> int:
     return new_option_id
 
 
-async def create_custom_bot(token: str, user_id: int, lang: str) -> int:
+async def create_custom_bot(order_option_db: OrderOptionDao, token: str, user_id: int, lang: str) -> int:
     """
     Creates bot with default options
     :returns: bot_id

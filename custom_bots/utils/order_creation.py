@@ -1,16 +1,15 @@
-from common_utils.bot_utils import create_bot_options
-from database.models.option_model import OptionNotFoundError
-from database.models.order_model import OrderSchema
-from database.config import order_db, product_db, bot_db, option_db
-
 from aiogram import Bot
-from aiogram.enums import ParseMode
 from aiogram.types import Chat
+from aiogram.enums import ParseMode
 
 from custom_bots.multibot import main_bot, PREV_ORDER_MSGS
-
 from custom_bots.utils.custom_message_texts import CustomMessageTexts
 
+from database.config import order_db, product_db, bot_db, option_db
+from database.models.order_model import OrderSchema
+from database.models.option_model import OptionNotFoundError
+
+from common_utils.bot_utils import create_bot_options
 from common_utils.message_texts import MessageTexts as CommonMessageTexts
 from common_utils.keyboards.order_manage_keyboards import InlineOrderStatusesKeyboard, InlineOrderCustomBotKeyboard
 

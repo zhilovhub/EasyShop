@@ -33,7 +33,8 @@ async def main() -> None:
             bg_color = bot.settings.get("bg_color", None)
             start_msg = bot.settings.get("start_msg", MessageTexts.DEFAULT_START_MESSAGE.value)
             default_msg = bot.settings.get(
-                "default_msg", f"Приветствую, этот бот создан с помощью @{(await Bot(token=bot.token).get_me()).username}"
+                "default_msg",
+                f"Приветствую, этот бот создан с помощью @{(await Bot(token=bot.token).get_me()).username}"
             )
             auto_reduce = bot.settings.get("auto_reduce", True)
             web_app_button = bot.settings.get("web_app_button", MessageTexts.OPEN_WEB_APP_BUTTON_TEXT.value)

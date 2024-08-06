@@ -20,7 +20,8 @@ from bot.utils.product_utils import generate_article
 from bot.utils.custom_bot_api import start_custom_bot, stop_custom_bot
 from bot.keyboards.channel_keyboards import InlineChannelsListKeyboard
 from bot.main import bot, QUESTION_MESSAGES, cache_resources_file_id_store
-from bot.keyboards.main_menu_keyboards import ReplyBotMenuKeyboard, ReplyBackBotMenuKeyboard
+from bot.keyboards.main_menu_keyboards import (ReplyBotMenuKeyboard, ReplyBackBotMenuKeyboard,
+                                               SelectHexColorWebAppInlineKeyboard)
 from bot.keyboards.stock_menu_keyboards import InlineStockMenuKeyboard, InlineWebStockKeyboard
 from bot.keyboards.post_message_keyboards import InlinePostMessageMenuKeyboard
 from bot.post_message.post_message_create import post_message_create
@@ -351,7 +352,7 @@ async def waiting_for_the_token_handler(message: Message, state: FSMContext):
         found_bot_data = await found_bot.get_me()
         bot_fullname, bot_username = found_bot_data.full_name, found_bot_data.username
 
-        bot_id = await create_custom_bot(token, user_id, lang)
+        bot_id = await create_custom_bot(order_option_db, token, user_id, lang)
 
         await start_custom_bot(bot_id)
     except TokenValidationError:
@@ -602,6 +603,8 @@ async def bot_settings_callback_handler(query: CallbackQuery, state: FSMContext)
                 "Введите цвет фона в формате (#FFFFFF или telegram - для использования дефолтных цветов телеграма), "
                 "который будет отображаться у пользователей Вашего бота на странице магазина: ",
                 reply_markup=ReplyBackBotMenuKeyboard.get_keyboard())
+            await query.message.answer("Или воспользуйтесь выбором цвета на палитре.",
+                                       reply_markup=SelectHexColorWebAppInlineKeyboard.get_keyboard())
             await query.answer()
             await state.set_state(States.EDITING_BG_COLOR)
             await state.set_data(state_data)
