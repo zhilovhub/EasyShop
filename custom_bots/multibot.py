@@ -75,7 +75,7 @@ async def main():
 
     TokenBasedRequestHandler(
         dispatcher=multibot_dispatcher,
-        bot_settings=BOT_PROPERTIES,
+        bot_settings={"default": BOT_PROPERTIES},
         session=session,
     ).register(app, path=OTHER_BOTS_PATH)
 
