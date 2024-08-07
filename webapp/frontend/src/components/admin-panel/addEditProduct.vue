@@ -137,14 +137,14 @@ export default {
   },
   methods: {
     addProduct() {
-      if (this.productName && this.productArticle && this.productPrice && this.productCount && this.chosenCategory) {
+      if (this.productName && this.productArticle && this.productPrice && this.productCount >= 0 && this.chosenCategory) {
         this.$store.dispatch("addProduct", {
           name: this.productName,
           category: [this.chosenCategory],
           description: this.productDescription,
           article: this.productArticle,
           price: this.productPrice,
-          count: this.productCount,
+          count: this.productCount || 0,
           extra_options: this.options,
           images: this.imageFiles
         }).then((response) => {
@@ -177,9 +177,9 @@ export default {
           requiredItems[4].placeholder = 'Поле не может быть пустым';
           requiredItems[4].classList.add('red-placeholder');
         }
-        if (!this.productCount) {
+        if (this.productCount < 0) {
           requiredItems[5].style.border = '1px solid #ff003c';
-          requiredItems[5].placeholder = 'Поле не может быть пустым';
+          requiredItems[5].placeholder = 'Поле не может быть отрицательным числом';
           requiredItems[5].classList.add('red-placeholder');
         }
         requiredItems.forEach(item => {
