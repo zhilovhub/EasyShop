@@ -1,4 +1,4 @@
-from common_utils.env_config import SQLALCHEMY_URL
+from common_utils.config import database_settings
 
 from database.models.models import Database
 from database.models.bot_model import BotDao
@@ -23,7 +23,7 @@ from database.models.post_message_media_files import PostMessageMediaFileDao
 
 from logs.config import db_logger
 
-db_engine: Database = Database(SQLALCHEMY_URL, db_logger)
+db_engine: Database = Database(database_settings.SQLALCHEMY_URL, db_logger)
 
 bot_db: BotDao = db_engine.get_bot_dao()
 user_db: UserDao = db_engine.get_user_dao()

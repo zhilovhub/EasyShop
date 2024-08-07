@@ -1,9 +1,10 @@
+
 try:
     from database.models.models import Database
     from database.models.user_model import UserStatusValues
 
+    from common_utils.config import database_settings
     from common_utils.singleton import singleton
-    from common_utils.env_config import TIMEZONE, SQLALCHEMY_URL, SCHEDULER_URL
     from common_utils.scheduler.scheduler import Scheduler
     from common_utils.subscription.subscription import Subscription
 
@@ -83,8 +84,12 @@ if __name__ == "__main__":
 
     logger.info(f"Administration module started from terminal with params {sys.argv}.")
 
-    scheduler = Scheduler(scheduler_url=SCHEDULER_URL, jobstore_alias='postgres', timezone=TIMEZONE)
-    database = Database(sqlalchemy_url=SQLALCHEMY_URL, logger=logger)
+    scheduler = Scheduler(
+        scheduler_url=database_settings.SCHEDULER_URL,
+        jobstore_alias='postgres',
+        timezone=database_settings.TIMEZONE
+    )
+    database = Database(sqlalchemy_url=database_settings.SQLALCHEMY_URL, logger=logger)
     administration = Administration(
         database=database,
         custom_scheduler=scheduler,

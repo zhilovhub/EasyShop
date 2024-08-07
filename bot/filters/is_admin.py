@@ -1,7 +1,7 @@
 from aiogram.types import Message, CallbackQuery
 from aiogram.filters import BaseFilter
 
-from common_utils.env_config import TECH_ADMINS
+from common_utils.config import common_settings
 
 from logs.config import logger, extra_params
 
@@ -10,7 +10,7 @@ class IsTechAdmin(BaseFilter):
     """The filter that checks if written user is TECH ADMIN or not"""
 
     async def __call__(self, event: Message | CallbackQuery) -> bool:
-        if event.from_user.id in TECH_ADMINS:
+        if event.from_user.id in common_settings.TECH_ADMINS:
             return True
         else:
             chat_id = event.chat.id if isinstance(event, Message) else event.message.chat.id

@@ -1,7 +1,7 @@
 from aiogram import Bot
 from aiogram.types import WebAppInfo
 
-from common_utils.env_config import WEB_APP_URL, WEB_APP_PORT
+from common_utils.config import custom_telegram_bot_settings
 
 from database.config import bot_db, channel_db, channel_post_db, contest_db, post_message_db, mailing_db, \
     order_option_db
@@ -16,11 +16,16 @@ from logs.config import logger, extra_params
 
 
 def make_select_hex_web_app_info() -> WebAppInfo:
-    return WebAppInfo(url=f"{WEB_APP_URL}:{WEB_APP_PORT}/hex-selector")
+    return WebAppInfo(
+        url=f"{custom_telegram_bot_settings.WEB_APP_URL}:{custom_telegram_bot_settings.WEB_APP_PORT}/hex-selector"
+    )
 
 
 def make_webapp_info(bot_id: int) -> WebAppInfo:
-    return WebAppInfo(url=f"{WEB_APP_URL}:{WEB_APP_PORT}/products-page/?bot_id={bot_id}")
+    return WebAppInfo(
+        url=f"{custom_telegram_bot_settings.WEB_APP_URL}:{custom_telegram_bot_settings.WEB_APP_PORT}"
+            f"/products-page/?bot_id={bot_id}"
+    )
 
 
 def make_product_deep_link_url(product_id: int, bot_username: str) -> str:
@@ -28,7 +33,10 @@ def make_product_deep_link_url(product_id: int, bot_username: str) -> str:
 
 
 def make_product_webapp_info(product_id: int, bot_id: int) -> WebAppInfo:
-    return WebAppInfo(url=f"{WEB_APP_URL}:{WEB_APP_PORT}/products-page/{product_id}/?bot_id={bot_id}")
+    return WebAppInfo(
+        url=f"{custom_telegram_bot_settings.WEB_APP_URL}:{custom_telegram_bot_settings.WEB_APP_PORT}"
+            f"/products-page/{product_id}/?bot_id={bot_id}"
+    )
 
 
 async def get_bot_username(bot_id: int) -> str:

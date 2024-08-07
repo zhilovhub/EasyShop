@@ -15,7 +15,7 @@ from bot.keyboards.post_message_keyboards import InlinePostMessageMenuKeyboard, 
     InlinePostMessageStartConfirmKeyboard
 from bot.post_message.post_message_editors import send_post_message, pre_finish_contest, PostActionType
 
-from common_utils.env_config import WEB_APP_URL, WEB_APP_PORT
+from common_utils.config import custom_telegram_bot_settings
 from common_utils.keyboards.keyboards import InlineBotMenuKeyboard
 
 from database.config import custom_bot_user_db, bot_db, post_message_db, contest_db, post_message_media_file_db
@@ -171,7 +171,9 @@ async def _button_add(
         post_message.button_text = "Shop"
         match post_message_type:
             case PostMessageType.MAILING:
-                post_message.button_url = f"{WEB_APP_URL}:{WEB_APP_PORT}/products-page/?bot_id={post_message.bot_id}"
+                post_message.button_url = f"{custom_telegram_bot_settings.WEB_APP_URL}:" \
+                                          f"{custom_telegram_bot_settings.WEB_APP_PORT}" \
+                                          f"/products-page/?bot_id={post_message.bot_id}"
             case PostMessageType.CHANNEL_POST:
                 post_message.button_url = f"t.me/{(await custom_bot.get_me()).username}/?start=web_app"
             case PostMessageType.CONTEST:

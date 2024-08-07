@@ -16,7 +16,7 @@ from bot.post_message.post_message_utils import get_channel_id_from_state_data
 from bot.keyboards.post_message_keyboards import InlinePostMessageMenuKeyboard, ReplyBackPostMessageMenuKeyboard, \
     ReplyConfirmMediaFilesKeyboard
 
-from common_utils.env_config import WEB_APP_URL, WEB_APP_PORT
+from common_utils.config import custom_telegram_bot_settings
 from common_utils.keyboards.keyboard_utils import make_webapp_info
 from common_utils.keyboards.channel_keyboards import InlineJoinContestKeyboard
 
@@ -763,7 +763,8 @@ async def send_post_message(
         bot_from_send = Bot(bot_from_send.token)
 
     if post_message_schema.has_button:
-        if post_message_schema.button_url == f"{WEB_APP_URL}:{WEB_APP_PORT}" \
+        if post_message_schema.button_url == f"{custom_telegram_bot_settings.WEB_APP_URL}:" \
+                                             f"{custom_telegram_bot_settings.WEB_APP_PORT}" \
                                              f"/products-page/?bot_id={post_message_schema.bot_id}":
             button = InlineKeyboardButton(
                 text=post_message_schema.button_text,

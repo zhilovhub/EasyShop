@@ -5,7 +5,7 @@ from aiogram.exceptions import TelegramBadRequest
 from bot.utils import MessageTexts
 from bot.keyboards.main_menu_keyboards import ReplyBotMenuKeyboard
 
-from common_utils.env_config import RESOURCES_PATH
+from common_utils.config import common_settings
 from common_utils.cache_json.cache_json import JsonStore
 
 from logs.config import logger
@@ -55,7 +55,7 @@ async def send_instructions(
         logger.info(f"error while sending instructions.... cache is empty, sending raw files {e}")
         instruction_message = await bot.send_photo(
             chat_id=chat_id,
-            photo=FSInputFile(RESOURCES_PATH.format(file_name)),
+            photo=FSInputFile(common_settings.RESOURCES_PATH.format(file_name)),
             caption=MessageTexts.INSTRUCTION_MESSAGE.value,
             reply_markup=bot_father_keyboard
         )

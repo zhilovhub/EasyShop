@@ -13,10 +13,8 @@ from aiogram.webhook.aiohttp_server import (
 )
 
 from common_utils.bot_settings_config import BOT_PROPERTIES
-from common_utils.env_config import TIMEZONE, SCHEDULER_URL, WEBHOOK_URL, WEBHOOK_PORT, TELEGRAM_TOKEN, WEB_APP_URL, \
-    WEB_APP_PORT, RESOURCES_PATH, SSL_CERT_PATH, API_PORT, \
-    SSL_KEY_PATH, TECH_ADMINS, LOCAL_API_SERVER_OUTSIDE, LOCAL_API_SERVER_PORT, WEBHOOK_HOST, \
-    WEBHOOK_SERVER_PORT_TO_REDIRECT, WEBHOOK_LABEL, WEBHOOK_SERVER_HOST_TO_REDIRECT
+from common_utils.config import custom_telegram_bot_settings, main_telegram_bot_settings, api_settings, \
+    common_settings, database_settings
 from common_utils.start_message import send_start_message_to_admins
 from common_utils.scheduler.scheduler import Scheduler
 from common_utils.cache_json.cache_json import JsonStore
@@ -30,30 +28,31 @@ local_app = web.Application(logger=custom_bot_logger)
 
 main_router = Router()
 
-BASE_URL = f"{WEBHOOK_URL}:{WEBHOOK_PORT}"
-OTHER_BOTS_PATH = f"/{WEBHOOK_LABEL}/" + "webhook/bot/{bot_token}"
+BASE_URL = f"{custom_telegram_bot_settings.WEBHOOK_URL}:{custom_telegram_bot_settings.WEBHOOK_PORT}"
+OTHER_BOTS_PATH = f"/{custom_telegram_bot_settings.WEBHOOK_LABEL}/" + "webhook/bot/{bot_token}"
 
 session = AiohttpSession()
 
-main_bot = Bot(TELEGRAM_TOKEN, default=BOT_PROPERTIES, session=session)
+main_bot = Bot(main_telegram_bot_settings.TELEGRAM_TOKEN, default=BOT_PROPERTIES, session=session)
 
 OTHER_BOTS_URL = f"{BASE_URL}{OTHER_BOTS_PATH}"
 
-FULL_WEB_APP_URL = f"{WEB_APP_URL}:{WEB_APP_PORT}/products-page/?bot_id=[bot_id]"
+FULL_WEB_APP_URL = f"{custom_telegram_bot_settings.WEB_APP_URL}:" \
+                   f"{custom_telegram_bot_settings.WEB_APP_PORT}/products-page/?bot_id=[bot_id]"
 
-API_URL = f"https://ezbots.ru:{API_PORT}"
+API_URL = f"https://ezbots.ru:{api_settings.API_PORT}"
 
 PREV_ORDER_MSGS = JsonStore(
     file_path="prev_orders_msg_id.json", json_store_name="PREV_ORDER_MSGS")
 QUESTION_MESSAGES = JsonStore(
-    file_path=RESOURCES_PATH.format("question_messages.json"),
+    file_path=common_settings.RESOURCES_PATH.format("question_messages.json"),
     json_store_name="QUESTION_MESSAGES"
 )
 
 scheduler = Scheduler(
-    SCHEDULER_URL,
+    database_settings.SCHEDULER_URL,
     "postgres",
-    TIMEZONE,
+    database_settings.TIMEZONE,
     tablename="custom_bot_apscheduler_jobs",
     unique_id="multi_bot"
 )
@@ -93,37 +92,47 @@ async def main():
     asyncio.set_event_loop(loop)
 
     ssl_context = ssl.create_default_context(ssl.Purpose.CLIENT_AUTH)  # noqa
-    ssl_context.load_cert_chain(SSL_CERT_PATH, SSL_KEY_PATH)
+    ssl_context.load_cert_chain(api_settings.SSL_CERT_PATH, api_settings.SSL_KEY_PATH)
 
     custom_bot_logger.debug("[2/3] SSL certificates are downloaded")
 
     await custom_bot_storage.connect()
 
     custom_bot_logger.debug(
-        f"[3/3] Setting up local api server on {LOCAL_API_SERVER_OUTSIDE}:{LOCAL_API_SERVER_PORT}")
+        f"[3/3] Setting up local api server on "
+        f"{custom_telegram_bot_settings.WEBHOOK_LOCAL_API_URL_OUTSIDE}:"
+        f"{custom_telegram_bot_settings.WEBHOOK_LOCAL_API_PORT}"
+    )
     custom_bot_logger.info(
-        f"[3/3] Setting up webhook server on {WEBHOOK_HOST}:{WEBHOOK_SERVER_PORT_TO_REDIRECT} "
-        f"<- {WEBHOOK_PORT}")
+        f"[3/3] Setting up webhook server on "
+        f"{custom_telegram_bot_settings.WEBHOOK_HOST}:"
+        f"{custom_telegram_bot_settings.WEBHOOK_SERVER_PORT_TO_REDIRECT} "
+        f"<- {custom_telegram_bot_settings.WEBHOOK_PORT}"
+    )
 
     await scheduler.start()
 
     await asyncio.gather(
         web._run_app(  # noqa
             local_app,
-            host=LOCAL_API_SERVER_OUTSIDE,
-            port=LOCAL_API_SERVER_PORT,
+            host=custom_telegram_bot_settings.WEBHOOK_LOCAL_API_URL_OUTSIDE,
+            port=custom_telegram_bot_settings.WEBHOOK_LOCAL_API_PORT,
             access_log=custom_bot_logger,
             print=custom_bot_logger.debug
         ),
         web._run_app(  # noqa
             app,
-            host=WEBHOOK_SERVER_HOST_TO_REDIRECT,
-            port=WEBHOOK_SERVER_PORT_TO_REDIRECT,
+            host=custom_telegram_bot_settings.WEBHOOK_SERVER_HOST_TO_REDIRECT,
+            port=custom_telegram_bot_settings.WEBHOOK_SERVER_PORT_TO_REDIRECT,
             ssl_context=ssl_context,
             access_log=custom_bot_logger,
             print=custom_bot_logger.debug
         ),
-        send_start_message_to_admins(Bot(TELEGRAM_TOKEN), TECH_ADMINS, "Custom bots started!")
+        send_start_message_to_admins(
+            Bot(main_telegram_bot_settings.TELEGRAM_TOKEN),
+            common_settings.TECH_ADMINS,
+            "Custom bots started!"
+        )
     )
 
 

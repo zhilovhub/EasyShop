@@ -5,7 +5,7 @@ from bot.middlewaries.check_role_middleware import CheckRoleMiddleware
 from bot.middlewaries.maintenance_middleware import MaintenanceMiddleware
 from bot.middlewaries.subscription_middleware import CheckSubscriptionMiddleware
 
-from common_utils.env_config import ADMIN_GROUP_ID
+from common_utils.config import common_settings
 from common_utils.middlewaries.log_middleware import LogMiddleware
 from common_utils.middlewaries.errors_middleware import ErrorMiddleware
 
@@ -89,7 +89,7 @@ subscribe_router.callback_query.outer_middleware(MaintenanceMiddleware())
 
 admin_group_commands_router = Router(name="admin_group_commands_router")  # only for ADMINS' GROUP
 admin_group_commands_router.message.filter(ChatTypeFilter(chat_type=["group", "supergroup"]))
-admin_group_commands_router.message.filter(ChatId(chat_id=int(ADMIN_GROUP_ID)))
+admin_group_commands_router.message.filter(ChatId(chat_id=int(common_settings.ADMIN_GROUP_ID)))
 admin_group_commands_router.message.filter(IsTechAdmin())
 admin_group_commands_router.callback_query.filter(IsTechAdmin())
 admin_group_commands_router.message.outer_middleware(log_middleware)

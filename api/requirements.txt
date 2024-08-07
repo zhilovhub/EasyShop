@@ -9,4 +9,5 @@ pillow
 python-logging-loki
 python-dotenv
 asyncpg
-aiogram==3.4.1
+aiogram
+pydantic-settings

@@ -8,7 +8,8 @@ from sqlalchemy.exc import IntegrityError
 from api.utils import (check_admin_authorization, SearchWordMustNotBeEmptyError, HTTPProductNotFoundError,
                        HTTPInternalError, HTTPBadRequestError, HTTPConflictError, RESPONSES_DICT,
                        HTTPCustomBotIsOfflineError, HTTPBotNotFoundError)
-from common_utils.env_config import FILES_PATH
+
+from common_utils.config import common_settings
 
 from database.models.bot_model import BotNotFoundError
 from database.config import product_db, category_db, bot_db
@@ -276,7 +277,7 @@ async def create_file(bot_id: int,
                 extra=extra_params(bot_id=bot_id, product_id=product_id)
             )
 
-            with open(FILES_PATH + photo_path, "wb") as photo:
+            with open(common_settings.FILES_PATH + photo_path, "wb") as photo:
                 photo.write(await file.read())
 
             product.picture.append(photo_path)

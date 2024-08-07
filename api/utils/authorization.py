@@ -7,7 +7,7 @@ from urllib.parse import unquote, parse_qsl
 
 from api.utils.exceptions import HTTPUnauthorizedError, HTTPBotNotFoundError
 
-from common_utils.env_config import API_DEBUG_MODE, TELEGRAM_TOKEN
+from common_utils.config import api_settings, main_telegram_bot_settings
 
 from database.config import bot_db
 from database.models.bot_model import BotNotFoundError
@@ -25,7 +25,7 @@ async def check_admin_authorization(bot_id: int, data_string: str, custom_bot_va
 
     :raises HTTPException:
     """
-    if API_DEBUG_MODE and data_string == "DEBUG":
+    if api_settings.API_DEBUG_MODE and data_string == "DEBUG":
         return True
     if data_string:
         try:
@@ -55,7 +55,7 @@ async def check_admin_authorization(bot_id: int, data_string: str, custom_bot_va
 
         if not custom_bot_validate:
             secret_key = hmac.new(
-                key=b"WebAppData", msg=TELEGRAM_TOKEN.encode(), digestmod=hashlib.sha256
+                key=b"WebAppData", msg=main_telegram_bot_settings.TELEGRAM_TOKEN.encode(), digestmod=hashlib.sha256
             )
         else:
             secret_key = hmac.new(

@@ -1,6 +1,6 @@
 import aiohttp
 
-from common_utils.env_config import LOCAL_API_SERVER_PORT, LOCAL_API_SERVER_HOST
+from common_utils.config import custom_telegram_bot_settings
 from common_utils.exceptions.local_api_exceptions import LocalAPIException
 
 from database.config import bot_db
@@ -14,7 +14,10 @@ async def start_custom_bot(bot_id: int) -> None:
     """
     async with aiohttp.ClientSession() as session:
         async with session.get(
-                f"http://{LOCAL_API_SERVER_HOST}:{LOCAL_API_SERVER_PORT}/start_bot/{bot_id}") as response:
+                f"http://"
+                f"{custom_telegram_bot_settings.WEBHOOK_LOCAL_API_URL_HOST}"
+                f":{custom_telegram_bot_settings.WEBHOOK_LOCAL_API_PORT}/start_bot/{bot_id}"
+        ) as response:
             user_bot = await bot_db.get_bot(bot_id)
             user_bot.status = "online"
             await bot_db.update_bot(user_bot)
@@ -31,7 +34,10 @@ async def stop_custom_bot(bot_id: int) -> None:
     """
     async with aiohttp.ClientSession() as session:
         async with session.get(
-                f"http://{LOCAL_API_SERVER_HOST}:{LOCAL_API_SERVER_PORT}/stop_bot/{bot_id}") as response:
+                f"http://"
+                f"{custom_telegram_bot_settings.WEBHOOK_LOCAL_API_URL_HOST}:"
+                f"{custom_telegram_bot_settings.WEBHOOK_LOCAL_API_PORT}/stop_bot/{bot_id}"
+        ) as response:
             user_bot = await bot_db.get_bot(bot_id)
             user_bot.status = "offline"
             await bot_db.update_bot(user_bot)

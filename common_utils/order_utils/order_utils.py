@@ -6,8 +6,8 @@ from datetime import datetime
 from aiogram import Bot
 from aiogram.types import Message
 
+from common_utils.config import main_telegram_bot_settings
 from common_utils.bot_settings_config import BOT_PROPERTIES
-from common_utils.env_config import TELEGRAM_TOKEN
 from common_utils.order_utils.order_type import OrderType, UnknownOrderType
 
 from database.config import product_db
@@ -86,7 +86,9 @@ async def _handle_zero_products(event: Message, bot_owner: int, zero_products: l
             case OrderType.MAIN_BOT_TEST_ORDER:
                 msg = await event.answer(text)
             case OrderType.CUSTOM_BOT_ORDER:
-                msg = await Bot(TELEGRAM_TOKEN, default=BOT_PROPERTIES).send_message(bot_owner, text)
+                msg = await Bot(
+                    main_telegram_bot_settings.TELEGRAM_TOKEN, default=BOT_PROPERTIES
+                ).send_message(bot_owner, text)
             case _:
                 raise UnknownOrderType(order_type)
 

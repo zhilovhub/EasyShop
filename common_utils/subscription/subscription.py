@@ -1,11 +1,10 @@
 from datetime import datetime, timedelta
 
-
 from database.models.models import Database
 from database.models.user_model import UserStatusValues, UserSchema
 from database.models.payment_model import PaymentSchemaWithoutId
 
-from common_utils.env_config import DESTINATION_PHONE_NUMBER, TIMEZONE, DB_FOR_TESTS, SCHEDULER_URL
+from common_utils.config import main_telegram_bot_settings, database_settings
 from common_utils.subscription import config
 from common_utils.scheduler.scheduler import Scheduler
 
@@ -156,9 +155,9 @@ class Subscription:
     def get_destination_phone_number() -> str:
         """Returns the phone number to pay to"""
         logger.debug(
-            f"returned phone_number={DESTINATION_PHONE_NUMBER}"
+            f"returned phone_number={main_telegram_bot_settings.DESTINATION_PHONE_NUMBER}"
         )
-        return DESTINATION_PHONE_NUMBER
+        return main_telegram_bot_settings.DESTINATION_PHONE_NUMBER
 
     async def start_scheduler(self) -> None:
         """Starts the scheduler"""
@@ -179,7 +178,7 @@ class Subscription:
                f"• Стоимость подписки: <b>{config.SUBSCRIPTION_PRICE}₽</b>\n\n" \
                f"• Оплачивайте подписку удобным способом, " \
                f"через qr код. Либо на карту сбербанка по номеру телефона: " \
-               f"<code>{DESTINATION_PHONE_NUMBER}</code>\n\n" \
+               f"<code>{main_telegram_bot_settings.DESTINATION_PHONE_NUMBER}</code>\n\n" \
                f"• После оплаты пришлите боту чек (скрин или пдфку) с подтверждением оплаты.\n\n" \
                f"• В подписи к фото <b>напишите Ваши контакты для связи</b> с " \
                f"Вами в случае возникновения вопросов по оплате.",
@@ -188,9 +187,4 @@ class Subscription:
 if __name__ == '__main__':
     from database.models.models import Database
 
-    scheduler = Scheduler(SCHEDULER_URL, 'postgres', TIMEZONE)
-
-    subscription = Subscription(
-        database=Database(sqlalchemy_url=DB_FOR_TESTS, logger=logger),
-        custom_scheduler=scheduler,
-    )
+    scheduler = Scheduler(database_settings.SCHEDULER_URL, 'postgres', database_settings.TIMEZONE)

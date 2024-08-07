@@ -1,8 +1,8 @@
 from database.models.models import Database
 from database.models.partnership_model import PartnershipSchemaWithoutId, CriteriaSchemaWithoutId
 
+from common_utils.config import database_settings
 from common_utils.singleton import singleton
-from common_utils.env_config import TIMEZONE, DB_FOR_TESTS, SCHEDULER_URL
 from common_utils.scheduler.scheduler import Scheduler
 
 from logs.config import logger, extra_params
@@ -41,9 +41,4 @@ class Partnership:
 if __name__ == '__main__':
     from database.models.models import Database
 
-    scheduler = Scheduler(SCHEDULER_URL, 'postgres', TIMEZONE)
-
-    subscription = Partnership(
-        database=Database(sqlalchemy_url=DB_FOR_TESTS, logger=logger),
-        custom_scheduler=scheduler,
-    )
+    scheduler = Scheduler(database_settings.SCHEDULER_URL, 'postgres', database_settings.TIMEZONE)

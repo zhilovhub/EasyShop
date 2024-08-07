@@ -7,45 +7,44 @@ from aiogram.types import BotCommand, BotCommandScopeChatAdministrators, BotComm
 from aiogram.exceptions import TelegramBadRequest
 
 from bot.stoke.stoke import Stoke
-from common_utils.subscription.subscription import Subscription
-from common_utils.bot_settings_config import BOT_PROPERTIES
 
-from common_utils.env_config import SQLALCHEMY_URL, TIMEZONE, SCHEDULER_URL, TELEGRAM_TOKEN, STORAGE_TABLE_NAME, \
-    RESOURCES_PATH, BOT_DEBUG_MODE, TECH_ADMINS, LOGS_PATH, ADMIN_GROUP_ID
+from common_utils.config import main_telegram_bot_settings, database_settings, common_settings
 from common_utils.start_message import send_start_message_to_admins
 from common_utils.storage.storage import AlchemyStorageAsync
 from common_utils.scheduler.scheduler import Scheduler
+from common_utils.bot_settings_config import BOT_PROPERTIES
 from common_utils.cache_json.cache_json import JsonStore
+from common_utils.subscription.subscription import Subscription
 
 from database.config import db_engine
 
 from logs.config import logger
 
-bot = Bot(TELEGRAM_TOKEN, default=BOT_PROPERTIES)
-storage = AlchemyStorageAsync(SQLALCHEMY_URL, STORAGE_TABLE_NAME)
+bot = Bot(main_telegram_bot_settings.TELEGRAM_TOKEN, default=BOT_PROPERTIES)
+storage = AlchemyStorageAsync(database_settings.SQLALCHEMY_URL, database_settings.STORAGE_TABLE_NAME)
 dp = Dispatcher(storage=storage)
 
 stock_manager = Stoke(db_engine)
 
-_scheduler = Scheduler(SCHEDULER_URL, 'postgres', TIMEZONE)
+_scheduler = Scheduler(database_settings.SCHEDULER_URL, 'postgres', database_settings.TIMEZONE)
 subscription: Subscription = Subscription(database=db_engine, custom_scheduler=_scheduler)
 
 cache_resources_file_id_store = JsonStore(
-    file_path=RESOURCES_PATH.format("cache.json"),
+    file_path=common_settings.RESOURCES_PATH.format("cache.json"),
     json_store_name="RESOURCES_FILE_ID_STORE"
 )
 QUESTION_MESSAGES = JsonStore(
-    file_path=RESOURCES_PATH.format("question_messages.json"),
+    file_path=common_settings.RESOURCES_PATH.format("question_messages.json"),
     json_store_name="QUESTION_MESSAGES"
 )
 
 MAINTENANCE = JsonStore(
-    file_path=RESOURCES_PATH.format("maintenance.json"),
+    file_path=common_settings.RESOURCES_PATH.format("maintenance.json"),
     json_store_name="MAINTENANCE"
 )
 
 SENT_SUBSCRIPTION_NOTIFICATIONS = JsonStore(
-    file_path=RESOURCES_PATH.format("sent_sub_notifications.json"),
+    file_path=common_settings.RESOURCES_PATH.format("sent_sub_notifications.json"),
     json_store_name="SENT_SUB_NOTIFICATIONS"
 )
 
@@ -64,7 +63,7 @@ async def on_start():
         BotCommand(command="off_maintenance", description="Выключить тех обсл"),
     ]
 
-    if BOT_DEBUG_MODE:
+    if main_telegram_bot_settings.BOT_DEBUG_MODE:
         commands.append(BotCommand(command="clear", description="Снести себя"))
 
     await bot.set_my_commands(commands, scope=BotCommandScopeAllPrivateChats())
@@ -72,11 +71,11 @@ async def on_start():
     try:
         await bot.set_my_commands(
             admin_commands,
-            scope=BotCommandScopeChatAdministrators(chat_id=ADMIN_GROUP_ID)
+            scope=BotCommandScopeChatAdministrators(chat_id=common_settings.ADMIN_GROUP_ID)
         )
     except TelegramBadRequest as e:
         logger.warning(
-            f"Error while setting command to chat_id = {ADMIN_GROUP_ID}",
+            f"Error while setting command to chat_id = {common_settings.ADMIN_GROUP_ID}",
             exc_info=e
         )
 
@@ -87,7 +86,7 @@ async def on_start():
 
     logger.info("onStart finished. Bot online")
 
-    await send_start_message_to_admins(bot=bot, admins=TECH_ADMINS, msg_text="Main Bot started!")
+    await send_start_message_to_admins(bot=bot, admins=common_settings.TECH_ADMINS, msg_text="Main Bot started!")
 
     await dp.start_polling(bot)
 
@@ -107,7 +106,7 @@ if __name__ == "__main__":
     dp.include_router(post_message_router)
 
     for log_file in ('all.log', 'err.log'):
-        with open(LOGS_PATH + log_file, 'a') as log:
+        with open(common_settings.LOGS_PATH + log_file, 'a') as log:
             log.write(f'=============================\n'
                       f'New bot-app session\n'
                       f'[{datetime.now()}]\n'

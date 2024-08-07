@@ -5,12 +5,12 @@ from aiogram.types import Message, User
 from aiogram.utils.formatting import Text, Bold, Pre, Italic
 
 from common_utils.bot_settings_config import BOT_PROPERTIES
-from common_utils.env_config import ADMIN_GROUP_ID, TELEGRAM_TOKEN, ADMIN_BUGS_GROUP_ID
+from common_utils.config import common_settings, main_telegram_bot_settings
 
 from logs.config import logger
 
 
-main_bot = Bot(TELEGRAM_TOKEN, default=BOT_PROPERTIES)
+main_bot = Bot(main_telegram_bot_settings.TELEGRAM_TOKEN, default=BOT_PROPERTIES)
 
 
 class UnknownEventTypeError(Exception):
@@ -141,21 +141,21 @@ async def send_event(
                   EventTypes.USER_CREATED_FIRST_BOT
                   ):
                 return await main_bot.send_message(
-                    chat_id=ADMIN_GROUP_ID,
+                    chat_id=common_settings.ADMIN_GROUP_ID,
                     text=message_text,
                     entities=message_entities,
                     parse_mode=None
                 )
             case EventTypes.FIRST_ADMIN_MESSAGE | EventTypes.FIRST_USER_MESSAGE:
                 return await main_bot.send_message(
-                    chat_id=ADMIN_GROUP_ID,
+                    chat_id=common_settings.ADMIN_GROUP_ID,
                     text=message_text,
                     entities=message_entities,
                     parse_mode=None
                 )
             case EventTypes.UNKNOWN_ERROR:
                 return await main_bot.send_message(
-                    chat_id=ADMIN_BUGS_GROUP_ID,
+                    chat_id=common_settings.ADMIN_BUGS_GROUP_ID,
                     text=message_text,
                     entities=message_entities,
                     parse_mode=None

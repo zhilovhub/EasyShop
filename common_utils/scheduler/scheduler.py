@@ -6,7 +6,7 @@ from datetime import datetime
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.jobstores.sqlalchemy import SQLAlchemyJobStore
 
-from common_utils.env_config import TIMEZONE
+from common_utils.config import database_settings
 from common_utils.singleton import singleton
 
 from logs.config import logger, extra_params
@@ -17,7 +17,7 @@ class Scheduler:
 
     def __init__(self, scheduler_url: str, jobstore_alias: str, timezone: str, tablename: str = "apscheduler_jobs"):
         self.scheduler = AsyncIOScheduler(
-            {'apscheduler.timezone': TIMEZONE},
+            {'apscheduler.timezone': database_settings.TIMEZONE},
             jobstores={jobstore_alias: SQLAlchemyJobStore(url=scheduler_url, tablename=tablename)}
         )
         self.jobstore_alias = jobstore_alias

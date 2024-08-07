@@ -5,7 +5,7 @@ from fastapi.responses import FileResponse
 
 from api.utils import RESPONSES_DICT, HTTPFileNotFoundError, HTTPInternalError
 
-from common_utils.env_config import FILES_PATH
+from common_utils.config import common_settings
 
 from logs.config import api_logger
 
@@ -43,7 +43,7 @@ async def get_file(file_name: str) -> FileResponse:
     :raises HTTPInternalError:
     """
     try:
-        with open(FILES_PATH + file_name, 'rb'):
+        with open(common_settings.FILES_PATH + file_name, 'rb'):
             pass
     except FileNotFoundError:
         raise HTTPFileNotFoundError(file_name=file_name)
@@ -53,7 +53,7 @@ async def get_file(file_name: str) -> FileResponse:
             exc_info=e
         )
         raise HTTPInternalError
-    return FileResponse(path=FILES_PATH + file_name, status_code=200)
+    return FileResponse(path=common_settings.FILES_PATH + file_name, status_code=200)
 
 
 # @router.get("/get_product_thumbnail/{product_id}")  TODO pictures for inline photos
@@ -69,7 +69,7 @@ async def get_file(file_name: str) -> FileResponse:
 #     file_name = product.picture[0]
 #
 #     file_ext = product.picture[0].split('.')[-1]
-#     thumbnail_path = _get_file_thumbnail_path(FILES_PATH + file_name)
+#     thumbnail_path = _get_file_thumbnail_path(common_settings.FILES_PATH + file_name)
 #
 #     headers = {
 #         "accept-ranges": "bytes",
@@ -84,9 +84,9 @@ async def get_file(file_name: str) -> FileResponse:
 #         pass
 #
 #     try:
-#         with open(FILES_PATH + file_name, 'rb'):
+#         with open(common_settings.FILES_PATH + file_name, 'rb'):
 #             pass
-#         _compress_file_to_thumbnail(FILES_PATH + file_name)
+#         _compress_file_to_thumbnail(common_settings.FILES_PATH + file_name)
 #     except FileNotFoundError:
 #         raise HTTPFileNotFound(file_name=file_name)
 #     except Exception as ex:

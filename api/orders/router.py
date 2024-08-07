@@ -8,8 +8,8 @@ from pydantic import ValidationError, BaseModel
 from fastapi import APIRouter, Depends, Header
 
 from api.utils import check_admin_authorization, HTTPBadRequestError, HTTPInternalError, RESPONSES_DICT
+from common_utils.config import custom_telegram_bot_settings
 
-from common_utils.env_config import LOCAL_API_SERVER_HOST, LOCAL_API_SERVER_PORT
 from common_utils.exceptions.local_api_exceptions import LocalAPIException
 
 from database.config import order_db
@@ -131,8 +131,9 @@ async def send_order_data_to_bot_api(order_data: OrderData, authorization_data: 
         api_logger.debug(f"get new order data from web_app: {order_data}")
         async with aiohttp.ClientSession() as session:
             async with session.post(
-                    url=f"http://{LOCAL_API_SERVER_HOST}:{LOCAL_API_SERVER_PORT}"
-                    f"/send_web_app_data_to_bot/{order_data.bot_id}",
+                    url=f"http://{custom_telegram_bot_settings.WEBHOOK_LOCAL_API_URL_HOST}:"
+                        f"{custom_telegram_bot_settings.WEBHOOK_LOCAL_API_PORT}"
+                        f"/send_web_app_data_to_bot/{order_data.bot_id}",
                     data=order_data.model_dump_json()
             ) as response:
                 if response.status != 200:

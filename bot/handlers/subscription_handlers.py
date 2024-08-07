@@ -17,7 +17,7 @@ from bot.utils.send_instructions import send_instructions
 from bot.keyboards.main_menu_keyboards import ReplyBotMenuKeyboard, ReplyBackBotMenuKeyboard
 from bot.keyboards.subscription_keyboards import InlineSubscriptionContinueKeyboard, InlineAdminRefundKeyboard
 
-from common_utils.env_config import RESOURCES_PATH, SBP_URL, ADMINS
+from common_utils.config import common_settings, main_telegram_bot_settings
 from common_utils.keyboards.keyboards import InlineBotMenuKeyboard
 from common_utils.broadcasting.broadcasting import send_event, EventTypes
 
@@ -40,11 +40,11 @@ async def continue_subscription_callback(query: CallbackQuery, state: FSMContext
 
     photo_name, instruction = subscription.get_subscribe_instructions()
     await query.message.answer_photo(
-        photo=FSInputFile(RESOURCES_PATH.format(photo_name)),
+        photo=FSInputFile(common_settings.RESOURCES_PATH.format(photo_name)),
         caption=instruction,
         reply_markup=InlineKeyboardMarkup(inline_keyboard=[
             [
-                InlineKeyboardButton(text="Перейти на страницу оплаты", url=SBP_URL)
+                InlineKeyboardButton(text="Перейти на страницу оплаты", url=main_telegram_bot_settings.SBP_PAYMENT_URL)
             ]
         ]))
     await query.message.answer(
@@ -126,7 +126,7 @@ async def waiting_payment_pay_handler(message: Message, state: FSMContext):
             reply_markup=ReplyBackBotMenuKeyboard.get_keyboard()
         )
     sent_message_ids = []
-    for admin in ADMINS:
+    for admin in common_settings.ADMINS:
         try:
             msg: Message = await message.send_copy(admin)
             sent_msg = await bot.send_message(

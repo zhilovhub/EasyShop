@@ -11,7 +11,7 @@ from io import BytesIO
 from aiogram import Bot
 from aiogram.types import BufferedInputFile
 
-from common_utils.env_config import FILES_PATH
+from common_utils.config import common_settings
 
 from database.config import bot_db, contest_db, category_db, product_db
 from database.models.bot_model import BotNotFoundError
@@ -223,7 +223,7 @@ async def send_products_info_xlsx(bot_id: int, products: list[ProductSchema], wi
 
         if product.picture:
             images_text = "/".join(product.picture)
-            images.extend([FILES_PATH + prod for prod in product.picture])
+            images.extend([common_settings.FILES_PATH + prod for prod in product.picture])
         else:
             images_text = "Картинки не найдены"
         current_line = {"Имя": product.name, "Описание": product.description,

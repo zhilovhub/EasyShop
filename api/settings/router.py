@@ -11,8 +11,8 @@ from database.models.bot_model import BotNotFoundError
 
 from api.utils import HTTPBotNotFoundError, HTTPInternalError, RESPONSES_DICT
 
+from common_utils.config import custom_telegram_bot_settings
 from common_utils.exceptions.local_api_exceptions import LocalAPIException
-from common_utils.env_config import LOCAL_API_SERVER_HOST, LOCAL_API_SERVER_PORT
 
 
 PATH = "/api/settings"
@@ -72,7 +72,9 @@ async def send_order_data_to_bot_api(data: HexColorData) -> str:
         api_logger.debug(f"get new hex data from web_app : {data}")
         async with aiohttp.ClientSession() as session:
             async with session.post(
-                    url=f"http://{LOCAL_API_SERVER_HOST}:{LOCAL_API_SERVER_PORT}"
+                    url=f"http://"
+                        f"{custom_telegram_bot_settings.WEBHOOK_LOCAL_API_URL_HOST}:"
+                        f"{custom_telegram_bot_settings.WEBHOOK_LOCAL_API_PORT}"
                     f"/send_hex_color_to_bot",
                     data=data.model_dump_json()
             ) as response:

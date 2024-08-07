@@ -6,7 +6,7 @@ from aiogram.types import CallbackQuery, Message
 from bot.main import subscription
 from bot.utils.check_subscription import check_subscription
 
-from common_utils.env_config import ADMINS
+from common_utils.config import common_settings
 
 
 class CheckSubscriptionMiddleware(BaseMiddleware):
@@ -27,7 +27,7 @@ class CheckSubscriptionMiddleware(BaseMiddleware):
         user_id = event.from_user.id
         message, is_message = (event, True) if isinstance(event, Message) else (event.message, False)
 
-        if user_id not in ADMINS and not (await subscription.is_user_subscribed(user_id)):
+        if user_id not in common_settings.ADMINS and not (await subscription.is_user_subscribed(user_id)):
             # Пользователь не прошел ни по одному из заявленных критериев, уведомляем его об этом
             return await check_subscription(message)
 

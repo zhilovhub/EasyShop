@@ -8,7 +8,7 @@ import numpy as np
 
 from datetime import datetime, timedelta
 
-from common_utils.env_config import FILES_PATH
+from common_utils.config import common_settings
 
 from database.config import contest_db
 from database.models.contest_model import ContestUserSchema
@@ -103,7 +103,7 @@ async def generate_contest_users_graph(contest_id: int) -> str:
         # нужно еще на больших данных посмотреть есть ли необходимость менять на дни (D)
         # потому что шаг подбирается автоматически
 
-    path = FILES_PATH + f"contest_{contest_id}_graph.png"
+    path = common_settings.FILES_PATH + f"contest_{contest_id}_graph.png"
 
     logger.debug(f"generating new dated graph for contest {contest_id}...", extra_params(contest_id=contest_id))
     _create_date_graph(start_date, fin_date, dated_data, 1, step_format,

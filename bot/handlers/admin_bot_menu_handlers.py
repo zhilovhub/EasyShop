@@ -29,8 +29,8 @@ from bot.post_message.post_message_create import post_message_create
 from bot.utils.send_instructions import send_instructions
 
 from common_utils import generate_admin_invite_link
+from common_utils.config import common_settings
 from common_utils.bot_utils import create_bot_options, create_custom_bot
-from common_utils.env_config import FILES_PATH
 from common_utils.message_texts import MessageTexts as CommonMessageTexts
 from common_utils.bot_settings_config import BOT_PROPERTIES
 from common_utils.keyboards.keyboards import (InlineBotEditOrderOptionsKeyboard, InlineBotMenuKeyboard,
@@ -426,7 +426,7 @@ async def bot_menu_photo_handler(message: Message, state: FSMContext):
     else:
         return await message.answer("Цена должна быть <b>целым числом</b>")
 
-    await bot.download(photo_file_id, destination=f"{FILES_PATH}{filename}")
+    await bot.download(photo_file_id, destination=f"{common_settings.common_settings.FILES_PATH}{filename}")
 
     new_product = ProductWithoutId(bot_id=state_data['bot_id'],
                                    name=params[0],

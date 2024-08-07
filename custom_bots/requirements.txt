@@ -17,3 +17,5 @@ redis
 
 matplotlib
 numpy
+
+pydantic-settings

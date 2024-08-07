@@ -15,8 +15,8 @@ from bot.keyboards.main_menu_keyboards import ReplyBotMenuKeyboard
 from bot.keyboards.stock_menu_keyboards import InlineStockImportConfirmKeyboard, InlineStockImportFileTypeKeyboard, \
     InlineStockMenuKeyboard, ReplyBackStockMenuKeyboard, InlineStockImportMenuKeyboard
 
+from common_utils.config import common_settings
 from common_utils.bot_utils import create_bot_options
-from common_utils.env_config import FILES_PATH
 from common_utils.keyboards.keyboards import InlineBotMenuKeyboard
 
 from database.config import product_db, bot_db, option_db
@@ -186,7 +186,7 @@ async def handle_stock_manage_input(message: Message, state: FSMContext):
             reply_markup=ReplyBackStockMenuKeyboard.get_keyboard()
         )
     try:
-        file_path = f"{FILES_PATH}docs/{datetime.now().strftime('%d$m%Y_%H%M%S')}.{file_extension}"
+        file_path = f"{common_settings.FILES_PATH}docs/{datetime.now().strftime('%d$m%Y_%H%M%S')}.{file_extension}"
         await bot.download(message.document.file_id, destination=file_path)
 
         status, err_message = await stock_manager.update_count_xlsx(file_path, state_data["bot_id"])
@@ -247,7 +247,7 @@ async def handle_stock_import_input(message: Message, state: FSMContext):
             raise UnknownFileExtensionError(file_type)
 
     try:
-        file_path = f"{FILES_PATH}docs/{datetime.now().strftime('%d$m%Y_%H%M%S')}.{file_extension}"
+        file_path = f"{common_settings.FILES_PATH}docs/{datetime.now().strftime('%d$m%Y_%H%M%S')}.{file_extension}"
         await bot.download(message.document.file_id, destination=file_path)
 
         match file_extension:

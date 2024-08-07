@@ -11,8 +11,8 @@ from typing import Iterable
 from openpyxl import load_workbook, Workbook
 from openpyxl.styles import Font
 
+from common_utils.config import common_settings
 from common_utils.singleton import singleton
-from common_utils.env_config import FILES_PATH
 
 from database.config import category_db, product_db
 from database.models.models import Database
@@ -30,7 +30,7 @@ class Stoke:
 
     def __init__(self, database: Database) -> None:
         self.product_db = database.get_product_db()
-        self.files_path = FILES_PATH
+        self.files_path = common_settings.FILES_PATH
 
     async def import_json(
             self,

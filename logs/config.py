@@ -7,14 +7,14 @@ import os
 
 from logging import LogRecord
 
-from common_utils.env_config import LOGS_PATH, FROM, LOG_TO_GRAFANA, GRAFANA_URL
+from common_utils.config import logs_settings, common_settings
 
 try:
-    os.mkdir(LOGS_PATH)
+    os.mkdir(common_settings.LOGS_PATH)
 except Exception:  # noqa
     pass
 
-if not FROM:
+if not logs_settings.FROM:
     raise Exception("В .env присвойте переменной FROM Ваше имя, чтобы в логах можно было фильтроваться")
 
 GRAFANA_FORMATTER_NAME = "formatter_grafana"
@@ -100,7 +100,7 @@ class LokiFilter(logging.Filter):
                     "*" * len(record.tags["bot_token"][5:-1])
                 )
 
-        return LOG_TO_GRAFANA
+        return logs_settings.LOG_TO_GRAFANA
 
 
 class ErrorWarningFilter(logging.Filter):
@@ -146,22 +146,22 @@ logger_configuration = {
             "class": "logging.FileHandler",
             "level": "DEBUG",
             "formatter": LOCAL_FORMATTER_NAME,
-            "filename": LOGS_PATH + "all.log",
+            "filename": common_settings.LOGS_PATH + "all.log",
             "filters": ["emotions_filter"]
         },
         "file_error_warning_handler": {
             "class": "logging.FileHandler",
             "level": "WARNING",
             "formatter": LOCAL_FORMATTER_NAME,
-            "filename": LOGS_PATH + "err.log",
+            "filename": common_settings.LOGS_PATH + "err.log",
             "filters": ["error_warning_filter", "emotions_filter"]
         },
         "loki_handler": {
             "class": "logging_loki.LokiHandler",
             "level": "DEBUG",
             "formatter": GRAFANA_FORMATTER_NAME,
-            "url": GRAFANA_URL + "loki/api/v1/push",
-            "tags": {"from": FROM},
+            "url": logs_settings.GRAFANA_URL + "loki/api/v1/push",
+            "tags": {"from": logs_settings.FROM},
             "filters": ["loki_filter"],
             "version": "1"
         },
