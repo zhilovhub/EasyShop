@@ -1,6 +1,8 @@
+from typing import Optional
 from pydantic import BaseModel, ConfigDict, Field, validate_call
 
-from sqlalchemy import Column, BigInteger, String, Boolean, Integer, select, ForeignKey, insert, update, delete
+from sqlalchemy import Column, BigInteger, Dialect, String, Boolean, Integer, TypeDecorator, Unicode, \
+    select, ForeignKey, insert, update, delete
 from sqlalchemy.ext.asyncio import AsyncEngine
 
 from database.exceptions.exceptions import KwargsException
@@ -11,9 +13,36 @@ from database.models.bot_model import Bot
 
 from logs.config import extra_params
 
+from enum import Enum
+
 
 class OrderOptionNotFoundError(KwargsException):
     """Raised when provided order option not found in database"""
+
+
+class UnknownOrderOptionType(KwargsException):
+    """Raised when provided order option type is not expected"""
+
+
+class OrderOptionTypeValues(Enum):
+    TEXT = "text"
+    CHOOSE = "choose"
+
+
+class OrderOptionType(TypeDecorator):  # noqa
+    """Class to convert Enum values to db values (and reverse)"""
+    impl = Unicode
+    cache_ok = True
+
+    def process_bind_param(self, value: Optional[OrderOptionTypeValues], dialect: Dialect) -> String:
+        return value.value
+
+    def process_result_value(self, value: Optional[String], dialect: Dialect) -> Optional[OrderOptionTypeValues]:
+        match value:
+            case OrderOptionTypeValues.TEXT.value:
+                return OrderOptionTypeValues.TEXT
+            case OrderOptionTypeValues.CHOOSE.value:
+                return OrderOptionTypeValues.CHOOSE
 
 
 class OrderOption(Base):
@@ -25,6 +54,7 @@ class OrderOption(Base):
     required = Column(Boolean, nullable=False, default=False)
     emoji = Column(String, nullable=False)
     position_index = Column(Integer, nullable=False)
+    option_type = Column(OrderOptionType, nullable=False)
 
 
 class OrderOptionSchemaWithoutId(BaseModel):
@@ -35,6 +65,7 @@ class OrderOptionSchemaWithoutId(BaseModel):
     required: bool = False
     emoji: str = "🔷"
     position_index: int
+    option_type: OrderOptionTypeValues = OrderOptionTypeValues.TEXT
 
 
 class OrderOptionSchema(OrderOptionSchemaWithoutId):

@@ -13,11 +13,14 @@ from bot.keyboards.main_menu_keyboards import ReplyBotMenuKeyboard, ReplyBackBot
 
 from common_utils.bot_utils import create_bot_options
 from common_utils.keyboards.keyboards import InlineBotEditOrderOptionKeyboard, InlineBotEditOrderOptionsKeyboard, \
-    InlineBotMenuKeyboard, InlineBotSettingsMenuKeyboard
+    InlineBotMenuKeyboard, InlineBotSettingsMenuKeyboard, InlineEditOrderChooseOptionKeyboard, \
+    InlineEditOrderOptionTypeKeyboard
 
-from database.config import bot_db, option_db, order_option_db
+from database.config import bot_db, option_db, order_option_db, order_choose_option_db
 from database.models.option_model import OptionNotFoundError
-from database.models.order_option_model import OrderOptionNotFoundError, OrderOptionSchemaWithoutId
+from database.models.order_option_model import OrderOptionNotFoundError, OrderOptionSchemaWithoutId, \
+    OrderOptionTypeValues
+from database.models.order_choose_option_model import OrderChooseOptionSchemaWithoutId
 
 from logs.config import logger
 
@@ -133,6 +136,13 @@ async def manage_order_option(query: CallbackQuery, state: FSMContext):
             await query.answer()
             await state.set_state(States.WAITING_FOR_ORDER_OPTION_POSITION)
             await state.set_data({"bot_id": callback_data.bot_id, "order_option_id": callback_data.order_option_id})
+
+        case callback_data.ActionEnum.EDIT_ORDER_OPTION_TYPE:
+            await query.message.edit_text(
+                f"Текущий тип опции - {order_option.option_type.value}",
+                reply_markup=await InlineEditOrderOptionTypeKeyboard.get_keyboard(
+                    callback_data.bot_id, callback_data.order_option_id))
+
         case callback_data.ActionEnum.DELETE_ORDER_OPTION:
 
             await order_option_db.delete_order_option(order_option.id)
@@ -145,6 +155,205 @@ async def manage_order_option(query: CallbackQuery, state: FSMContext):
                 **MessageTexts.generate_order_options_info(sorted_oo),
                 reply_markup=await InlineBotEditOrderOptionsKeyboard.get_keyboard(custom_bot.bot_id)
             )
+
+
+@custom_bot_editing_router.callback_query(
+    lambda query: InlineEditOrderOptionTypeKeyboard.callback_validator(query.data)
+)
+async def edit_order_option_type_menu(query: CallbackQuery, state: FSMContext):
+    callback_data = InlineEditOrderOptionTypeKeyboard.Callback.model_validate_json(query.data)
+
+    try:
+        order_option = await order_option_db.get_order_option(callback_data.opt_id)
+    except OrderOptionNotFoundError:
+        await query.answer("Эта опция уже удалена", show_alert=True)
+        await query.message.delete()
+        return
+
+    match callback_data.a:
+        case callback_data.ActionEnum.EDIT_OPTION_TYPE:
+            if order_option.option_type.value == OrderOptionTypeValues.TEXT.value:
+                order_option.option_type = OrderOptionTypeValues.CHOOSE
+            else:
+                order_option.option_type = OrderOptionTypeValues.TEXT
+            await order_option_db.update_order_option(order_option)
+            await query.message.edit_text(
+                f"Текущий тип опции - {order_option.option_type.value}",
+                reply_markup=await InlineEditOrderOptionTypeKeyboard.get_keyboard(
+                    callback_data.bot_id, callback_data.opt_id)
+            )
+
+        case callback_data.ActionEnum.ADD_CHOOSE_OPTION:
+            if order_option.option_type.value == OrderOptionTypeValues.TEXT.value:
+                return await query.answer("Текущий тип опции простой текст!", show_alert=True)
+            await query.message.answer(
+                "Введите название варианта ответа",
+                reply_markup=ReplyBackBotMenuKeyboard.get_keyboard()
+            )
+            await query.answer()
+            await state.set_state(States.WAITING_FOR_NEW_ORDER_CHOOSE_OPTION_TEXT)
+            await state.set_data({"bot_id": callback_data.bot_id, "order_option_id": callback_data.opt_id})
+
+        case callback_data.ActionEnum.EDIT_CHOOSE_OPTION:
+            if order_option.option_type.value == OrderOptionTypeValues.TEXT.value:
+                return await query.answer("Текущий тип опции простой текст!", show_alert=True)
+            choose_option = await order_choose_option_db.get_choose_option(callback_data.choose_id)
+            await query.message.edit_text(
+                f"Меню редактирования варианта ответа {choose_option.choose_option_name}",
+                reply_markup=InlineEditOrderChooseOptionKeyboard.get_keyboard(
+                    callback_data.bot_id, callback_data.opt_id, callback_data.choose_id))
+
+        case callback_data.ActionEnum.BACK_TO_ORDER_OPTION:
+            await query.message.edit_text(
+                **MessageTexts.generate_order_option_info(order_option),
+                reply_markup=await InlineBotEditOrderOptionKeyboard.get_keyboard(
+                    callback_data.bot_id, callback_data.opt_id
+                )
+            )
+
+
+@custom_bot_editing_router.callback_query(
+    lambda query: InlineEditOrderChooseOptionKeyboard.callback_validator(query.data)
+)
+async def manage_order_choose_option(query: CallbackQuery, state: FSMContext):
+    callback_data = InlineEditOrderChooseOptionKeyboard.Callback.model_validate_json(query.data)
+
+    try:
+        order_option = await order_option_db.get_order_option(callback_data.opt_id)
+    except OrderOptionNotFoundError:
+        await query.answer("Эта опция уже удалена", show_alert=True)
+        await query.message.delete()
+        return
+
+    if order_option.option_type.value == OrderOptionTypeValues.TEXT.value:
+        return await query.answer("Текущий тип опции простой текст!", show_alert=True)
+
+    try:
+        await order_choose_option_db.get_choose_option(callback_data.choose_id)
+    except OrderOptionNotFoundError:
+        await query.answer("Этот вариант ответа уже удален", show_alert=True)
+        await query.message.delete()
+        return
+
+    match callback_data.a:
+        case callback_data.ActionEnum.BACK_TO_ORDER_TYPE_MENU:
+            await query.message.edit_text(
+                f"Текущий тип опции - {order_option.option_type.value}",
+                reply_markup=await InlineEditOrderOptionTypeKeyboard.get_keyboard(
+                    callback_data.bot_id, callback_data.opt_id)
+            )
+
+        case callback_data.ActionEnum.EDIT_CHOOSE_OPTION_NAME:
+            await query.message.answer(
+                "Введите новое название варианта ответа",
+                reply_markup=ReplyBackBotMenuKeyboard.get_keyboard()
+            )
+            await state.set_state(States.WAITING_FOR_ORDER_CHOOSE_OPTION_TEXT)
+            await state.set_data(
+                {
+                    "bot_id": callback_data.bot_id,
+                    "order_option_id": callback_data.opt_id,
+                    "order_choose_option_id": callback_data.choose_id
+                }
+            )
+
+        case callback_data.ActionEnum.DELETE_CHOOSE_OPTION:
+            await order_choose_option_db.delete_choose_option(callback_data.choose_id)
+
+            await query.answer("Вариант ответа удален!", show_alert=True)
+
+            await query.message.edit_text(
+                f"Текущий тип опции - {order_option.option_type.value}",
+                reply_markup=await InlineEditOrderOptionTypeKeyboard.get_keyboard(
+                    callback_data.bot_id, callback_data.opt_id)
+            )
+
+
+@custom_bot_editing_router.message(States.WAITING_FOR_ORDER_CHOOSE_OPTION_TEXT)
+async def edit_choose_option_name(message: Message, state: FSMContext):
+    if message.text:
+        state_data = await state.get_data()
+
+        bot_id = state_data['bot_id']
+        custom_bot = await bot_db.get_bot(bot_id)
+        order_option = await order_option_db.get_order_option(state_data["order_option_id"])
+        choose_option = await order_choose_option_db.get_choose_option(state_data["order_choose_option_id"])
+
+        match message.text:
+            case ReplyBackBotMenuKeyboard.Callback.ActionEnum.BACK_TO_BOT_MENU.value:
+                await message.answer(
+                    "Возвращаемся в меню настроек...",
+                    reply_markup=ReplyBotMenuKeyboard.get_keyboard(bot_id=bot_id)
+                )
+                await message.answer(
+                    f"Меню редактирования варианта ответа {choose_option.choose_option_name}",
+                    reply_markup=InlineEditOrderChooseOptionKeyboard.get_keyboard(
+                        custom_bot.bot_id, order_option.id, choose_option.id))
+                await state.set_state(States.BOT_MENU)
+                await state.set_data(state_data)
+
+            case _:
+                choose_option.choose_option_name = message.text
+
+                await order_choose_option_db.update_choose_option(choose_option)
+
+                await message.answer(
+                    "Текст варианта ответа изменен!",
+                    reply_markup=ReplyBotMenuKeyboard.get_keyboard(bot_id)
+                )
+                await message.answer(
+                    f"Меню редактирования варианта ответа {choose_option.choose_option_name}",
+                    reply_markup=InlineEditOrderChooseOptionKeyboard.get_keyboard(
+                        custom_bot.bot_id, order_option.id, choose_option.id))
+                await state.set_state(States.BOT_MENU)
+                await state.set_data(state_data)
+    else:
+        await message.answer("Сообщение должно содержать текст")
+
+
+@custom_bot_editing_router.message(States.WAITING_FOR_NEW_ORDER_CHOOSE_OPTION_TEXT)
+async def make_new_choose_option(message: Message, state: FSMContext):
+    if message.text:
+        state_data = await state.get_data()
+
+        bot_id = state_data['bot_id']
+        custom_bot = await bot_db.get_bot(bot_id)
+        order_option = await order_option_db.get_order_option(state_data["order_option_id"])
+
+        match message.text:
+            case ReplyBackBotMenuKeyboard.Callback.ActionEnum.BACK_TO_BOT_MENU.value:
+                await message.answer(
+                    "Возвращаемся в меню настроек...",
+                    reply_markup=ReplyBotMenuKeyboard.get_keyboard(bot_id=bot_id)
+                )
+                await message.answer(
+                    f"Текущий тип опции - {order_option.option_type.value}",
+                    reply_markup=await InlineEditOrderOptionTypeKeyboard.get_keyboard(
+                        custom_bot.bot_id, order_option.id)
+                )
+                await state.set_state(States.BOT_MENU)
+                await state.set_data(state_data)
+            case _:
+                await order_choose_option_db.add_choose_option(
+                    OrderChooseOptionSchemaWithoutId(
+                        order_option_id=order_option.id,
+                        choose_option_name=message.text
+                    )
+                )
+                await message.answer(
+                    "Новая вариант ответа опции на выбор был добавлен",
+                    reply_markup=ReplyBotMenuKeyboard.get_keyboard(bot_id)
+                )
+                await message.answer(
+                    f"Текущий тип опции - {order_option.option_type.value}",
+                    reply_markup=await InlineEditOrderOptionTypeKeyboard.get_keyboard(
+                        custom_bot.bot_id, order_option.id)
+                )
+                await state.set_state(States.BOT_MENU)
+                await state.set_data(state_data)
+
+    else:
+        await message.answer("Стартовое сообщение должно содержать текст")
 
 
 @custom_bot_editing_router.message(States.WAITING_FOR_ORDER_OPTION_POSITION)
@@ -283,13 +492,15 @@ async def edit_order_option_emoji(message: Message, state: FSMContext):
 async def create_new_order_option(message: Message, state: FSMContext):
     if message.text:
         state_data = await state.get_data()
-        custom_bot = await bot_db.get_bot(state_data['bot_id'])
+
+        bot_id = state_data["bot_id"]
+        custom_bot = await bot_db.get_bot(bot_id)
         order_options = await order_option_db.get_all_order_options(custom_bot.bot_id)
         match message.text:
             case ReplyBackBotMenuKeyboard.Callback.ActionEnum.BACK_TO_BOT_MENU.value:
                 await message.answer(
                     "Возвращаемся в меню настроек...",
-                    reply_markup=ReplyBotMenuKeyboard.get_keyboard(bot_id=state_data["bot_id"])
+                    reply_markup=ReplyBotMenuKeyboard.get_keyboard(bot_id=bot_id)
                 )
                 await message.answer(
                     **MessageTexts.generate_order_options_info(order_options),
@@ -300,18 +511,29 @@ async def create_new_order_option(message: Message, state: FSMContext):
                 await state.set_data(state_data)
             case _:
                 sorted_oo = sorted(order_options, key=lambda x: x.position_index)
+
+                if len(sorted_oo) == 0:
+                    pos_ind = 1
+                else:
+                    pos_ind = (sorted_oo[-1].position_index + 1)
                 await order_option_db.add_order_option(
                     OrderOptionSchemaWithoutId(
                         bot_id=custom_bot.bot_id,
                         option_name=message.text,
-                        position_index=(sorted_oo[-1].position_index + 1))
+                        position_index=pos_ind
+                    )
                 )
-                await message.answer("Новая опция успешно добавлена!")
+                await message.answer(
+                    "Новая опция успешно добавлена!",
+                    reply_markup=ReplyBotMenuKeyboard.get_keyboard(bot_id=bot_id)
+                )
                 order_options = await order_option_db.get_all_order_options(custom_bot.bot_id)
                 await message.answer(
                     **MessageTexts.generate_order_options_info(order_options),
                     reply_markup=await InlineBotEditOrderOptionsKeyboard.get_keyboard(custom_bot.bot_id)
                 )
+                await state.set_state(States.BOT_MENU)
+                await state.set_data(state_data)
 
     else:
         await message.answer("Стартовое сообщение должно содержать текст")

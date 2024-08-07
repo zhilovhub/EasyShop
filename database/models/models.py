@@ -19,6 +19,7 @@ from database.models.order_option_model import OrderOptionDao
 from database.models.product_review_model import ProductReviewDao
 from database.models.custom_bot_user_model import CustomBotUserDao
 from database.models.post_message_media_files import PostMessageMediaFileDao
+from database.models.order_choose_option_model import OrderChooseOptionDao
 from database.models import Base  # should be the last import from database.models
 
 from common_utils.singleton import singleton
@@ -48,6 +49,7 @@ class Database:
         self.order_option_dao = OrderOptionDao(self.engine, self.logger)
         self.product_review_dao = ProductReviewDao(self.engine, self.logger)
         self.custom_bot_user_dao = CustomBotUserDao(self.engine, self.logger)
+        self.order_choose_option_dao = OrderChooseOptionDao(self.engine, self.logger)
         self.post_message_media_file_dao = PostMessageMediaFileDao(self.engine, self.logger)
 
         self.logger.debug("Database class is initialized")
@@ -115,3 +117,6 @@ class Database:
 
     def get_order_option_dao(self) -> OrderOptionDao:
         return self.order_option_dao
+
+    def get_order_choose_option_dao(self) -> OrderChooseOptionDao:
+        return self.order_choose_option_dao

@@ -7,8 +7,9 @@ from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 from common_utils.keyboards.keyboard_utils import callback_json_validator, get_bot_channels, get_bot_username, \
     get_bot_mailing, get_bot_status, make_product_deep_link_url, make_product_webapp_info, get_bot_order_options
 
-from database.config import user_role_db, order_option_db
+from database.config import user_role_db, order_option_db, order_choose_option_db
 from database.models.user_role_model import UserRoleValues
+from database.models.order_option_model import OrderOptionTypeValues, UnknownOrderOptionType
 
 
 class InlineBotMenuKeyboard:
@@ -332,6 +333,152 @@ class InlineBotEditOrderOptionsKeyboard:
         )
 
 
+class InlineEditOrderChooseOptionKeyboard:
+    class Callback(BaseModel):
+
+        class ActionEnum(Enum):
+            EDIT_CHOOSE_OPTION_NAME = "econn"
+            DELETE_CHOOSE_OPTION = "dcon"
+
+            BACK_TO_ORDER_TYPE_MENU = "btoon"
+
+        model_config = ConfigDict(from_attributes=True, populate_by_name=True)
+
+        n: str = Field(default="bmn", frozen=True)
+        a: ActionEnum
+
+        bot_id: int
+        opt_id: int
+        choose_id: int
+
+    @staticmethod
+    @callback_json_validator
+    def callback_json(action: Callback.ActionEnum, bot_id: int, opt_id: int, choose_id: int) -> str:
+        return InlineEditOrderChooseOptionKeyboard.Callback(
+            a=action, bot_id=bot_id, opt_id=opt_id, choose_id=choose_id
+        ).model_dump_json(by_alias=True)
+
+    @staticmethod
+    def callback_validator(json_string: str) -> bool:
+        try:
+            InlineEditOrderChooseOptionKeyboard.Callback.model_validate_json(json_string)
+            return True
+        except ValidationError:
+            return False
+
+    @staticmethod
+    def get_keyboard(bot_id: int, order_option_id: int, order_choose_option_id: int) -> InlineKeyboardMarkup:
+        actions = InlineEditOrderChooseOptionKeyboard.Callback.ActionEnum
+
+        return InlineKeyboardMarkup(
+            inline_keyboard=[
+                [InlineKeyboardButton(
+                    text="Редактировать текст варианта",
+                    callback_data=InlineEditOrderChooseOptionKeyboard.callback_json(
+                        actions.EDIT_CHOOSE_OPTION_NAME, bot_id, order_option_id, order_choose_option_id)
+                )],
+                [InlineKeyboardButton(
+                    text="Удалить вариант",
+                    callback_data=InlineEditOrderChooseOptionKeyboard.callback_json(
+                        actions.DELETE_CHOOSE_OPTION, bot_id, order_option_id, order_choose_option_id)
+                )],
+                [InlineKeyboardButton(
+                    text="🔙 Назад",
+                    callback_data=InlineEditOrderChooseOptionKeyboard.callback_json(
+                        actions.BACK_TO_ORDER_TYPE_MENU, bot_id, order_option_id, order_choose_option_id)
+                )]
+            ]
+        )
+
+
+class InlineEditOrderOptionTypeKeyboard:
+    class Callback(BaseModel):
+        class ActionEnum(Enum):
+            EDIT_OPTION_TYPE = "eot"
+            EDIT_CHOOSE_OPTION = "econ"
+            ADD_CHOOSE_OPTION = "adco"
+
+            BACK_TO_ORDER_OPTION = "b"
+
+        model_config = ConfigDict(from_attributes=True, populate_by_name=True)
+
+        n: str = Field(default="bm", frozen=True)
+        a: ActionEnum
+
+        bot_id: int
+        opt_id: int
+        choose_id: int | None
+
+    @staticmethod
+    @callback_json_validator
+    def callback_json(action: Callback.ActionEnum, bot_id: int, opt_id: int, choose_id: int | None = None) -> str:
+        return InlineEditOrderOptionTypeKeyboard.Callback(
+            a=action, bot_id=bot_id, opt_id=opt_id, choose_id=choose_id
+        ).model_dump_json(by_alias=True)
+
+    @staticmethod
+    def callback_validator(json_string: str) -> bool:
+        try:
+            InlineEditOrderOptionTypeKeyboard.Callback.model_validate_json(json_string)
+            return True
+        except ValidationError:
+            return False
+
+    @staticmethod
+    async def get_keyboard(bot_id: int, order_option_id: int) -> InlineKeyboardMarkup:
+        actions = InlineEditOrderOptionTypeKeyboard.Callback.ActionEnum
+        oo = await order_option_db.get_order_option(order_option_id)
+
+        choose_option_buttons = []
+
+        match oo.option_type:
+            case OrderOptionTypeValues.TEXT:
+                status_btn = InlineKeyboardButton(
+                    text="Изменить тип на choose",
+                    callback_data=InlineEditOrderOptionTypeKeyboard.callback_json(
+                        actions.EDIT_OPTION_TYPE, bot_id, order_option_id)
+                )
+            case OrderOptionTypeValues.CHOOSE:
+                status_btn = InlineKeyboardButton(
+                    text="Изменить тип на text",
+                    callback_data=InlineEditOrderOptionTypeKeyboard.callback_json(
+                        actions.EDIT_OPTION_TYPE, bot_id, order_option_id)
+                )
+                order_choose_options = await order_choose_option_db.get_all_choose_options(oo.id)
+                for choose_option in order_choose_options:
+                    choose_option_buttons.append(
+                        [InlineKeyboardButton(
+                            text=choose_option.choose_option_name,
+                            callback_data=InlineEditOrderOptionTypeKeyboard.callback_json(
+                                actions.EDIT_CHOOSE_OPTION, bot_id, order_option_id, choose_option.id
+                            )
+                        )]
+                    )
+                choose_option_buttons.append(
+                    [InlineKeyboardButton(
+                        text="Добавить опцию выбора",
+                        callback_data=InlineEditOrderOptionTypeKeyboard.callback_json(
+                            actions.ADD_CHOOSE_OPTION, bot_id, order_option_id
+                        )
+                    )]
+                )
+            case _:
+                raise UnknownOrderOptionType(option_type=oo.option_type, bot_id=bot_id, order_option_id=order_option_id)
+
+        return InlineKeyboardMarkup(
+            inline_keyboard=[
+                [status_btn],
+                *choose_option_buttons,
+                [InlineKeyboardButton(
+                    text="🔙 Назад",
+                    callback_data=InlineEditOrderOptionTypeKeyboard.callback_json(
+                        actions.BACK_TO_ORDER_OPTION, bot_id, order_option_id
+                    )
+                )]
+            ]
+        )
+
+
 class InlineBotEditOrderOptionKeyboard:
     class Callback(BaseModel):
         class ActionEnum(Enum):
@@ -339,6 +486,7 @@ class InlineBotEditOrderOptionKeyboard:
             EDIT_EMOJI = "ee"
             EDIT_POSITION_INDEX = "epi"
             EDIT_REQUIRED_STATUS = "ers"
+            EDIT_ORDER_OPTION_TYPE = "eopt"
             DELETE_ORDER_OPTION = "doo"
 
             BACK_TO_ORDER_OPTIONS = "boo"
@@ -398,6 +546,13 @@ class InlineBotEditOrderOptionKeyboard:
                         text="Редактировать позицию",
                         callback_data=InlineBotEditOrderOptionKeyboard.callback_json(
                             actions.EDIT_POSITION_INDEX, bot_id, order_option_id)
+                    )
+                ],
+                [
+                    InlineKeyboardButton(
+                        text="Редактировать тип опции",
+                        callback_data=InlineBotEditOrderOptionKeyboard.callback_json(
+                            actions.EDIT_ORDER_OPTION_TYPE, bot_id, order_option_id)
                     )
                 ],
                 [
