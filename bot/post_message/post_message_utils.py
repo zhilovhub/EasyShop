@@ -1,5 +1,6 @@
-from aiogram.types import CallbackQuery
+from aiogram.types import CallbackQuery, Message
 
+from bot.keyboards.main_menu_keyboards import ReplyBotMenuKeyboard
 from database.config import post_message_db, contest_db
 from database.models.post_message_model import PostMessageSchema, PostMessageNotFoundError, PostMessageType, \
     UnknownPostMessageTypeError
@@ -54,15 +55,16 @@ async def is_post_message_valid(
 
 
 async def get_post_message(
-        query: CallbackQuery,
+        event: Message | CallbackQuery,
         user_id: int,
         bot_id: int,
         post_message_id: int,
-        post_message_type: PostMessageType
+        post_message_type: PostMessageType | int
 ) -> PostMessageSchema:
     """
     Returns post message or answers that it doesn't exists anymore
 
+    :raises PostMessageNotFoundError:
     :raises UnknownPostMessageTypeError:
     """
 
@@ -70,24 +72,33 @@ async def get_post_message(
         post_message = await post_message_db.get_post_message(post_message_id)
         return post_message
     except PostMessageNotFoundError as e:
+        if isinstance(event, Message):
+            is_message = True
+        else:
+            is_message = False
+
         logger.info(
             f"user_id={user_id}: tried to edit post_message_id={post_message_id} but it doesn't exist",
             extra=extra_params(user_id=user_id, bot_idf=bot_id, post_message_id=post_message_id)
         )
 
         match post_message_type:
-            case PostMessageType.MAILING:
-                await query.answer("🚫 Рассылка уже завершена или удалена", show_alert=True)
-            case PostMessageType.CHANNEL_POST:
-                await query.answer("🚫 Запись в канал уже отправлена или удалена", show_alert=True)
-            case PostMessageType.CONTEST:
-                await query.answer("🚫 Конкурс в канал уже отправлен или удалён", show_alert=True)
-            case PostMessageType.PARTNERSHIP_POST:
-                await query.answer("🚫 Партнерский пост в канал уже отправлен или удалён", show_alert=True)
+            case PostMessageType.MAILING | PostMessageType.MAILING.value:
+                text = "🚫 Рассылка уже завершена или удалена"
+            case PostMessageType.CHANNEL_POST | PostMessageType.CHANNEL_POST.value:
+                text = "🚫 Запись в канал уже отправлена или удалена"
+            case PostMessageType.CONTEST | PostMessageType.CONTEST.value:
+                text = "🚫 Конкурс в канал уже отправлен или удалён"
+            case PostMessageType.PARTNERSHIP_POST | PostMessageType.PARTNERSHIP_POST.value:
+                text = "🚫 Партнерский пост в канал уже отправлен или удалён"
             case _:
                 raise UnknownPostMessageTypeError
 
-        await query.message.delete()
+        if is_message:
+            await event.answer(text, reply_markup=ReplyBotMenuKeyboard.get_keyboard(bot_id))
+        else:
+            await event.answer(text, show_alert=True)
+            await event.message.delete()
 
         raise e
 

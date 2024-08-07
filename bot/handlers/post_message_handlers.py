@@ -12,7 +12,7 @@ from bot.states import States
 from bot.handlers.routers import post_message_router
 from bot.keyboards.channel_keyboards import InlineChannelMenuKeyboard
 from bot.keyboards.main_menu_keyboards import ReplyBotMenuKeyboard
-from bot.post_message.post_message_utils import is_post_message_valid, get_channel_id_from_query
+from bot.post_message.post_message_utils import is_post_message_valid, get_channel_id_from_query, get_post_message
 from bot.keyboards.post_message_keyboards import InlinePostMessageStartConfirmKeyboard, InlinePostMessageMenuKeyboard, \
     InlinePostMessageExtraSettingsKeyboard, InlinePostMessageAcceptDeletingKeyboard
 from bot.post_message.post_message_editors import edit_delay_date, edit_message, edit_button_text, edit_button_url, \
@@ -26,8 +26,8 @@ from common_utils.bot_settings_config import BOT_PROPERTIES
 from common_utils.keyboards.keyboards import InlineBotMenuKeyboard
 
 from database.config import post_message_media_file_db, post_message_db, contest_db, bot_db
-from database.models.post_message_model import PostMessageSchema, PostMessageType, UnknownPostMessageTypeError
-
+from database.models.post_message_model import PostMessageSchema, PostMessageType, UnknownPostMessageTypeError, \
+    PostMessageNotFoundError
 
 from logs.config import logger, extra_params
 
@@ -59,7 +59,28 @@ async def editing_post_message_handler(message: Message, state: FSMContext):
     state_data = await state.get_data()
     current_state = await state.get_state()
 
-    match state_data["post_message_type"]:
+    user_id = message.from_user.id
+    post_message_id = int(state_data["post_message_id"])
+    post_message_type = state_data["post_message_type"]
+
+    try:
+        await get_post_message(
+            message,
+            user_id,
+            int(state_data["bot_id"]),
+            post_message_id,
+            post_message_type
+        )
+    except PostMessageNotFoundError:
+        custom_bot = await bot_db.get_bot_by_created_by(user_id)
+        await message.answer(
+            MessageTexts.BOT_MENU_MESSAGE.value.format((await Bot(custom_bot.token).get_me()).username),
+            reply_markup=await InlineBotMenuKeyboard.get_keyboard(custom_bot.bot_id, user_id)
+        )
+        await state.set_state(States.BOT_MENU)
+        return await state.set_data({"bot_id": custom_bot.bot_id})
+
+    match post_message_type:
         case PostMessageType.MAILING.value:
             post_message_type = PostMessageType.MAILING
         case PostMessageType.CHANNEL_POST.value:
