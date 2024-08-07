@@ -97,8 +97,8 @@ async def order_creation_process(order: OrderSchema, order_user_data: Chat):
         )
 
     await main_bot.edit_message_reply_markup(
-        main_msg.chat.id,
-        main_msg.message_id,
+        chat_id=main_msg.chat.id,
+        message_id=main_msg.message_id,
         reply_markup=InlineOrderStatusesKeyboard.get_keyboard(
             order.id, msg.message_id, msg.chat.id, current_status=order.status
         )
