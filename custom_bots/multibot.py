@@ -4,7 +4,6 @@ import ssl
 from aiohttp import web
 
 from aiogram import Bot, Dispatcher, Router
-from aiogram.enums import ParseMode
 from aiogram.fsm.state import State, StatesGroup
 from aiogram.client.session.aiohttp import AiohttpSession
 from aiogram.webhook.aiohttp_server import (
@@ -76,7 +75,7 @@ async def main():
 
     TokenBasedRequestHandler(
         dispatcher=multibot_dispatcher,
-        bot_settings={"parse_mode": ParseMode.HTML},
+        bot_settings=BOT_PROPERTIES,
         session=session,
     ).register(app, path=OTHER_BOTS_PATH)
 
