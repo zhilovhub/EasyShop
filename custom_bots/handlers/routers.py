@@ -22,5 +22,13 @@ multi_bot_channel_router.chat_member.middleware(ErrorMiddleware())
 multi_bot_channel_router.callback_query.middleware(ErrorMiddleware())
 multi_bot_channel_router.chat_member.outer_middleware(log_middleware)
 
+payment_router = Router(name="payment")
+payment_router.message.outer_middleware(log_middleware)
+payment_router.message.middleware(ErrorMiddleware())
+payment_router.callback_query.outer_middleware(log_middleware)
+payment_router.callback_query.middleware(ErrorMiddleware())
+payment_router.pre_checkout_query.outer_middleware(log_middleware)
+payment_router.pre_checkout_query.middleware(ErrorMiddleware())
+
 inline_mode_router = Router(name="inline")
 inline_mode_router.inline_query.outer_middleware(log_middleware)

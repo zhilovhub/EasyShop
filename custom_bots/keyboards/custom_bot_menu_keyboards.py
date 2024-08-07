@@ -26,7 +26,7 @@ class ReplyCustomBotMenuKeyboard:
                 [
                     KeyboardButton(
                         text=actions.SHOP.value,
-                        web_app=make_webapp_info(bot_id))
+                    )
                 ],
             ], resize_keyboard=True, one_time_keyboard=False
         )

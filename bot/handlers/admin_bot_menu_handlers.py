@@ -34,7 +34,8 @@ from common_utils.bot_utils import create_bot_options, create_custom_bot
 from common_utils.message_texts import MessageTexts as CommonMessageTexts
 from common_utils.bot_settings_config import BOT_PROPERTIES
 from common_utils.keyboards.keyboards import (InlineBotEditOrderOptionsKeyboard, InlineBotMenuKeyboard,
-                                              InlineBotSettingsMenuKeyboard, InlineAdministratorsManageKeyboard)
+                                              InlineBotSettingsMenuKeyboard, InlineAdministratorsManageKeyboard,
+                                              InlinePaymentSettingsKeyboard)
 from common_utils.order_utils.order_type import OrderType
 from common_utils.order_utils.order_utils import create_order
 from common_utils.broadcasting.broadcasting import send_event, EventTypes
@@ -608,6 +609,11 @@ async def bot_settings_callback_handler(query: CallbackQuery, state: FSMContext)
             await query.answer()
             await state.set_state(States.EDITING_BG_COLOR)
             await state.set_data(state_data)
+        case callback_data.ActionEnum.PAYMENT_METHOD:
+            await query.message.edit_text(
+                MessageTexts.PAYMENT_METHOD_SETTINGS.value.format(custom_bot_data.username),
+                reply_markup=await InlinePaymentSettingsKeyboard.get_keyboard(user_bot.bot_id, user_bot.payment_type)
+            )
         case callback_data.ActionEnum.BACK_TO_BOT_MENU:
             await query.message.edit_text(
                 MessageTexts.BOT_MENU_MESSAGE.value.format(custom_bot_data.username),

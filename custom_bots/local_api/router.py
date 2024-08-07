@@ -45,7 +45,7 @@ async def add_bot_handler(request):
         OTHER_BOTS_URL.format(bot_token=bot.token),
         allowed_updates=["message", "my_chat_member",
                          "callback_query", "chat_member", "channel_post",
-                         "inline_query"]
+                         "inline_query", "pre_checkout_query", "shipping_query"]
     )
     if result:
         custom_bot_logger.debug(
@@ -106,12 +106,14 @@ async def send_web_app_data_to_bot(request):
     custom_bot_logger.debug(f"new request to with tg_bot : {custom_bot_tg}")
     sent_data = await request.json()
 
+    invoice_link = None
+
     try:
         custom_bot_logger.debug(f"new request to with sent_data : {sent_data}")
         user_id = sent_data["from_user"]
         order = await create_order(user_id, sent_data, OrderType.CUSTOM_BOT_ORDER, _json=False)
         order_user_data = await custom_bot_tg.get_chat(user_id)
-        await order_creation_process(order, order_user_data)
+        invoice_link = await order_creation_process(order, order_user_data)
     except NotEnoughProductsInStockToReduce as e:
         await custom_bot_tg.send_message(
             user_id,
@@ -141,7 +143,12 @@ async def send_web_app_data_to_bot(request):
         )
         raise e
 
-    return web.Response(status=200, text=f"Data was sent to bot successfully")
+    try:
+        return web.Response(status=200,
+                            body=json.dumps({"invoice_url": invoice_link}),
+                            content_type='application/json')
+    except Exception as e:
+        custom_bot_logger.error("error while sending response from local Api", exc_info=e)
 
 
 @routes.post('/send_hex_color_to_bot')

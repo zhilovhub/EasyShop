@@ -70,6 +70,7 @@ class DatabaseSettings(Settings):
 class MainTelegramBotSettings(Settings):
     """MainTelegramBot settings"""
     TELEGRAM_TOKEN: str
+    TEST_PROVIDER_TOKEN: str
     BOT_DEBUG_MODE: bool
 
     DESTINATION_PHONE_NUMBER: str

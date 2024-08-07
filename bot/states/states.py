@@ -22,6 +22,8 @@ class States(StatesGroup):
     EDITING_POST_MEDIA_FILES = State()
     EDITING_POST_DELAY_DATE = State()
 
+    SETTING_PROVIDER_TOKEN = State()
+
     EDITING_CONTEST_WINNERS_COUNT = State()
     EDITING_CONTEST_FINISH_DATE = State()
 

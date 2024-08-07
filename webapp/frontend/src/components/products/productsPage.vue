@@ -297,6 +297,10 @@ export default {
     },
   },
   mounted() {
+    if (!tg.initData) {
+      alert("Бот был обновлён, пожалуйста пропишите команду /start.");
+      tg.close();
+    }
     tg.BackButton.hide();  // если что-то прячем, то делаем это сразу
 
     if (this.$store.state.itemsAddToCartArray.length > 0) {

@@ -1,6 +1,10 @@
 from pydantic import BaseModel, ConfigDict, Field, validate_call
 
-from sqlalchemy import Column, BigInteger, String, Boolean, select, insert, update, delete
+from enum import Enum
+from typing import Optional
+
+from sqlalchemy import (Column, BigInteger, String, Boolean, select, insert, update, delete, TypeDecorator, Unicode,
+                        Dialect)
 from sqlalchemy.ext.asyncio import AsyncEngine
 
 from database.models import Base
@@ -15,6 +19,68 @@ class OptionNotFoundError(KwargsException):
     """Raised when provided option not found in database"""
 
 
+class CurrencyCodesValues(Enum):
+    RUSSIAN_RUBLE = "RUB"
+    US_DOLLAR = "USD"
+    EURO = "EUR"
+    ISRAELI_SHEQEL = "ILS"
+
+    TELEGRAM_STARS = "XTR"
+
+
+class CurrencySymbolsValues(Enum):
+    RUSSIAN_RUBLE = "₽"
+    US_DOLLAR = "$"
+    EURO = "€"
+    ISRAELI_SHEQEL = "₪"
+
+    TELEGRAM_STARS = "⭐️"
+
+
+class CurrencyCodes(TypeDecorator):  # noqa
+    """Class to convert Enum values to db values (and reverse)"""
+    impl = Unicode
+    cache_ok = True
+
+    def process_bind_param(self, value: Optional[CurrencyCodesValues], dialect: Dialect) -> String:
+        return value.value
+
+    def process_result_value(self, value: Optional[String], dialect: Dialect) -> Optional[CurrencyCodesValues]:
+        match value:
+            case CurrencyCodesValues.RUSSIAN_RUBLE.value:
+                return CurrencyCodesValues.RUSSIAN_RUBLE
+            case CurrencyCodesValues.US_DOLLAR.value:
+                return CurrencyCodesValues.US_DOLLAR
+            case CurrencyCodesValues.EURO.value:
+                return CurrencyCodesValues.EURO
+            case CurrencyCodesValues.ISRAELI_SHEQEL.value:
+                return CurrencyCodesValues.ISRAELI_SHEQEL
+            case CurrencyCodesValues.TELEGRAM_STARS.value:
+                return CurrencyCodesValues.TELEGRAM_STARS
+
+
+class CurrencySymbols(TypeDecorator):  # noqa
+    """Class to convert Enum values to db values (and reverse)"""
+    impl = Unicode
+    cache_ok = True
+
+    def process_bind_param(self, value: Optional[CurrencySymbolsValues], dialect: Dialect) -> String:
+        return value.value
+
+    def process_result_value(self, value: Optional[String], dialect: Dialect) -> Optional[CurrencySymbolsValues]:
+        match value:
+            case CurrencySymbolsValues.RUSSIAN_RUBLE.value:
+                return CurrencySymbolsValues.RUSSIAN_RUBLE
+            case CurrencySymbolsValues.US_DOLLAR.value:
+                return CurrencySymbolsValues.US_DOLLAR
+            case CurrencySymbolsValues.EURO.value:
+                return CurrencySymbolsValues.EURO
+            case CurrencySymbolsValues.ISRAELI_SHEQEL.value:
+                return CurrencySymbolsValues.ISRAELI_SHEQEL
+            case CurrencySymbolsValues.TELEGRAM_STARS.value:
+                return CurrencySymbolsValues.TELEGRAM_STARS
+
+
 class Option(Base):
     __tablename__ = "options"
 
@@ -26,6 +92,15 @@ class Option(Base):
     bg_color = Column(String, nullable=True)
     web_app_button = Column(String, nullable=False)
 
+    currency_code = Column(CurrencyCodes, nullable=False)
+    currency_symbol = Column(CurrencySymbols, nullable=False)
+    request_name_in_payment = Column(Boolean, nullable=False, default=False)
+    request_email_in_payment = Column(Boolean, nullable=False, default=False)
+    request_phone_in_payment = Column(Boolean, nullable=False, default=False)
+    request_address_in_payment = Column(Boolean, nullable=False, default=False)
+    show_photo_in_payment = Column(Boolean, nullable=False, default=True)
+    show_payment_in_webview = Column(Boolean, nullable=False, default=True)
+
 
 class OptionSchemaWithoutId(BaseModel):
     model_config = ConfigDict(from_attributes=True)
@@ -36,6 +111,14 @@ class OptionSchemaWithoutId(BaseModel):
     auto_reduce: bool = False
     bg_color: str | None = None
     web_app_button: str
+    currency_code: CurrencyCodesValues = CurrencyCodesValues.RUSSIAN_RUBLE
+    currency_symbol: CurrencySymbolsValues = CurrencySymbolsValues.RUSSIAN_RUBLE
+    request_name_in_payment: bool = False
+    request_email_in_payment: bool = False
+    request_phone_in_payment: bool = False
+    request_address_in_payment: bool = False
+    show_photo_in_payment: bool = True
+    show_payment_in_webview: bool = True
 
 
 class OptionSchema(OptionSchemaWithoutId):

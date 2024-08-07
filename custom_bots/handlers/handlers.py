@@ -9,6 +9,8 @@ from custom_bots.handlers.routers import multi_bot_router
 from custom_bots.utils.order_creation import order_creation_process
 from custom_bots.keyboards.custom_bot_menu_keyboards import ReplyCustomBotMenuKeyboard
 
+from common_utils.keyboards.keyboards import InlineCustomBotMainWebAppButton
+
 from common_utils.bot_utils import create_bot_options
 from common_utils.order_utils.order_type import OrderType
 from common_utils.order_utils.order_utils import create_order
@@ -69,8 +71,11 @@ async def main_menu_handler(message: Message):
         return await message.answer("Бот не инициализирован")
 
     match message.text:
+        case ReplyCustomBotMenuKeyboard.Callback.ActionEnum.SHOP.value:
+            await message.answer(
+                "Кнопка для входа в магазин 👇",
+                reply_markup=InlineCustomBotMainWebAppButton.get_keyboard(bot.bot_id))
         case _:
-            # default_msg = await get_option("default_msg", message.bot.token)
             try:
                 options = await option_db.get_option(bot.options_id)
             except OptionNotFoundError:

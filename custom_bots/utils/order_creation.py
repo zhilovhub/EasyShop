@@ -2,26 +2,32 @@ from aiogram import Bot
 from aiogram.types import Chat
 from aiogram.enums import ParseMode
 
-from custom_bots.multibot import main_bot, PREV_ORDER_MSGS
+from custom_bots.multibot import main_bot, PREV_ORDER_MSGS, API_URL
 from custom_bots.utils.custom_message_texts import CustomMessageTexts
 
 from database.config import order_db, product_db, bot_db, option_db
-from database.models.order_model import OrderSchema
+from database.models.order_model import OrderSchema, OrderStatusValues
 from database.models.option_model import OptionNotFoundError
+from database.models.bot_model import BotPaymentTypeValues
 
 from common_utils.bot_utils import create_bot_options
+from common_utils.invoice import create_invoice_params
 from common_utils.message_texts import MessageTexts as CommonMessageTexts
 from common_utils.keyboards.order_manage_keyboards import InlineOrderStatusesKeyboard, InlineOrderCustomBotKeyboard
 
 from logs.config import extra_params, custom_bot_logger
 
 
-async def order_creation_process(order: OrderSchema, order_user_data: Chat):
+async def order_creation_process(order: OrderSchema, order_user_data: Chat) -> str | None:
     bot_id = order.bot_id
     user_id = order_user_data.id
 
     custom_bot = await bot_db.get_bot(bot_id)
     custom_bot_tg = Bot(custom_bot.token)
+    custom_bot_options = await option_db.get_option(custom_bot.options_id)
+
+    if custom_bot.payment_type in (BotPaymentTypeValues.TG_PROVIDER, BotPaymentTypeValues.STARS):
+        order.status = OrderStatusValues.WAITING_PAYMENT
 
     await order_db.add_order(order)
 
@@ -62,9 +68,6 @@ async def order_creation_process(order: OrderSchema, order_user_data: Chat):
                 if product_schema.count < amount:
                     products_not_enough.append(product_schema)
 
-    msg_id_data = PREV_ORDER_MSGS.get_data()
-    msg_id_data[order.id] = (main_msg.chat.id, main_msg.message_id)
-    PREV_ORDER_MSGS.update_data(msg_id_data)
     text = await CommonMessageTexts.generate_order_notification_text(
         order,
         products,
@@ -74,6 +77,10 @@ async def order_creation_process(order: OrderSchema, order_user_data: Chat):
     msg = await custom_bot_tg.send_message(
         chat_id=user_id, reply_markup=InlineOrderCustomBotKeyboard.get_keyboard(order.id), **text
     )
+
+    msg_id_data = PREV_ORDER_MSGS.get_data()
+    msg_id_data[order.id] = (main_msg.chat.id, main_msg.message_id, msg.message_id)
+    PREV_ORDER_MSGS.update_data(msg_id_data)
 
     if len(products_to_refill) != 0:
         await main_bot.send_message(
@@ -104,8 +111,32 @@ async def order_creation_process(order: OrderSchema, order_user_data: Chat):
         )
     )
 
+    photo_url = None
+    for product, amount, extra_options in products:
+        if product.picture:
+            photo_url = f"{API_URL}/files/get_product_thumbnail/{product.id}"
+            break
+
+    invoice_link = None
+    if custom_bot.payment_type in (BotPaymentTypeValues.TG_PROVIDER, BotPaymentTypeValues.STARS):
+        params = await create_invoice_params(
+                bot_id=bot_id,
+                user_id=user_id,
+                order_items=order.items,
+                title=f"Оплата заказа №{order.id}",
+                description=f"Счет на оплату заказа №{order.id}.",
+                photo_url=photo_url,
+                order_id=order.id,
+            )
+        if custom_bot_options.show_payment_in_webview:
+            invoice_link = await custom_bot_tg.create_invoice_link(**params)
+        else:
+            await custom_bot_tg.send_invoice(chat_id=user_id, **params)
+
     custom_bot_logger.info(
         f"user_id={user_id}: order with order_id {order.id} is created",
         extra=extra_params(
             user_id=user_id, bot_id=bot_id, order_id=order.id)
     )
+
+    return invoice_link

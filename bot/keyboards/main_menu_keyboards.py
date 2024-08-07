@@ -43,7 +43,7 @@ class ReplyBotMenuKeyboard:
 
         model_config = ConfigDict(from_attributes=True, populate_by_name=True)
 
-        n: str = Field(default="bot_menu", frozen=True)
+        n: str = Field(default="main_bot_menu", frozen=True)
         a: ActionEnum
 
     @staticmethod
