@@ -426,7 +426,7 @@ async def bot_menu_photo_handler(message: Message, state: FSMContext):
     else:
         return await message.answer("Цена должна быть <b>целым числом</b>")
 
-    await bot.download(photo_file_id, destination=f"{common_settings.common_settings.FILES_PATH}{filename}")
+    await bot.download(photo_file_id, destination=f"{common_settings.FILES_PATH}{filename}")
 
     new_product = ProductWithoutId(bot_id=state_data['bot_id'],
                                    name=params[0],
