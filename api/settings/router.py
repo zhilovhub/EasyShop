@@ -15,7 +15,7 @@ from common_utils.config import custom_telegram_bot_settings
 from common_utils.exceptions.local_api_exceptions import LocalAPIException
 
 
-PATH = "/api/settings"
+PATH = "/settings"
 router = APIRouter(
     prefix=PATH,
     tags=["settings"],

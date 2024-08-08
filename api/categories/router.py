@@ -8,7 +8,7 @@ from api.utils import check_admin_authorization, RESPONSES_DICT, HTTPInternalErr
 
 from logs.config import api_logger, extra_params
 
-PATH = "/api/categories"
+PATH = "/categories"
 router = APIRouter(
     prefix=PATH,
     tags=["categories"],

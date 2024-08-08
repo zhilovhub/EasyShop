@@ -5,7 +5,6 @@ from starlette.status import HTTP_401_UNAUTHORIZED
 
 from fastapi import FastAPI, Depends, HTTPException
 from fastapi.security import HTTPBasic, HTTPBasicCredentials
-from fastapi.staticfiles import StaticFiles
 from fastapi.openapi.docs import get_swagger_ui_html
 from fastapi.openapi.utils import get_openapi
 from fastapi.middleware.cors import CORSMiddleware
@@ -46,7 +45,8 @@ tags_metadata = [
 security = HTTPBasic()
 
 _app_title = "FastApi"
-_app_version = "0.1.1"
+_app_version = "0.1.2"
+_root_prefix = "/api"
 
 app = FastAPI(
     title=_app_title,
@@ -56,12 +56,12 @@ app = FastAPI(
     redoc_url=None,
     openapi_url=None,
 )
-app.include_router(settings_router)
-app.include_router(order_router)
-app.include_router(category_router)
-app.include_router(product_router)
-app.include_router(files_router)
-app.mount("/static", StaticFiles(directory=common_settings.FILES_PATH), name="static")
+
+app.include_router(settings_router, prefix=_root_prefix)
+app.include_router(order_router, prefix=_root_prefix)
+app.include_router(category_router, prefix=_root_prefix)
+app.include_router(product_router, prefix=_root_prefix)
+app.include_router(files_router, prefix=_root_prefix)
 
 origins = ["*"]
 app.add_middleware(
@@ -87,12 +87,12 @@ def _get_current_username(credentials: HTTPBasicCredentials = Depends(security))
         )
 
 
-@app.get("/docs", include_in_schema=False, dependencies=[Depends(_get_current_username)])
+@app.get(f"{_root_prefix}/docs", include_in_schema=False, dependencies=[Depends(_get_current_username)])
 async def get_swagger_documentation():
-    return get_swagger_ui_html(openapi_url="/openapi.json", title="docs")
+    return get_swagger_ui_html(openapi_url=f"{_root_prefix}/openapi.json", title="docs")
 
 
-@app.get("/openapi.json", include_in_schema=False, dependencies=[Depends(_get_current_username)])
+@app.get(f"{_root_prefix}/openapi.json", include_in_schema=False, dependencies=[Depends(_get_current_username)])
 async def get_open_api():
     return get_openapi(title=_app_title, version=_app_version, routes=app.routes)
 

@@ -55,13 +55,7 @@ async def handle_inline_query(query: InlineQuery):
                 thumb = None
                 url = None
                 if product.picture:
-                    # thumb = "https://ezbots.ru:8888/r.png"
-                    # thumb = f"https://koshka.top/uploads/posts/2021-11/1638103603_50-koshka-top-p
-                    # -samie-malenkie-koshechki-54.jpg"
                     thumb = f"{API_URL}/files/get_product_thumbnail/{product.id}"
-                    # thumb = "https://ezbots.ru:2024/static/A.png"
-                    # thumb = f"https://external-content.duckduckgo.com/iu/?u=https%3A%2F%2Ftoppng.com
-                    # %2Fuploads%2Fpreview%2Flinux-logo-png-linux-tux-black-white-115628885292kgc8ongco.png&f=1&nofb=1&ipt=822eeb3705d3e8d05ea0f00b7a07832aeaada0ff876978a2f7a805f707f312d8&ipo=images"
                 custom_bot_logger.debug(f"thumb for product {product.id} : {thumb}")
 
                 text, entities = product.convert_to_product_page_text().render()

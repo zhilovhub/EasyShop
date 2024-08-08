@@ -7,7 +7,7 @@ import heic2any from "heic2any";
 export const Store = new Vuex.Store({
   state: {
     bot_id: null,
-    api_url: `https://ezbots.ru:${import.meta.env.VITE_API_PORT}`,
+    api_url: `https://ezbots.ru:${import.meta.env.VITE_API_PORT}/api`,
     itemsAddToCartArray: [],
     items: [],
     filters: [],
@@ -42,7 +42,7 @@ export const Store = new Vuex.Store({
           "is_category_filter": false,
           "reverse_order": Store.state.reverse_order
         }
-        const response = await fetch(`${Store.state.api_url}/api/products/get_all_products/?bot_id=${Store.state.bot_id}&price_min=${Store.state.price_min}&price_max=${Store.state.price_max}&is_admin_request=${is_admin_request}`, {
+        const response = await fetch(`${Store.state.api_url}/products/get_all_products/?bot_id=${Store.state.bot_id}&price_min=${Store.state.price_min}&price_max=${Store.state.price_max}&is_admin_request=${is_admin_request}`, {
           method: 'Post',
           headers: {
             'Content-Type': 'application/json',
@@ -66,7 +66,7 @@ export const Store = new Vuex.Store({
     },
     async deleteProduct({commit}, productId) {
       try {
-        await fetch(`${Store.state.api_url}/api/products/del_product/${Store.state.bot_id}/${productId}`, {
+        await fetch(`${Store.state.api_url}/products/del_product/${Store.state.bot_id}/${productId}`, {
           method: 'DELETE',
           headers: {
             'Content-Type': 'application/json',
@@ -83,7 +83,7 @@ export const Store = new Vuex.Store({
     },
     async getCategories({commit}) {
       try {
-        const response = await fetch(`${Store.state.api_url}/api/categories/get_all_categories/${Store.state.bot_id}`, {
+        const response = await fetch(`${Store.state.api_url}/categories/get_all_categories/${Store.state.bot_id}`, {
           method: 'GET',
           headers: {
             'Content-Type': 'application/json',
@@ -102,7 +102,7 @@ export const Store = new Vuex.Store({
     },
     async addCategory({commit}, name) {
       try {
-        await fetch(`${Store.state.api_url}/api/categories/add_category`, {
+        await fetch(`${Store.state.api_url}/categories/add_category`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -162,7 +162,7 @@ export const Store = new Vuex.Store({
     async addProduct({commit, dispatch}, productInformation) {
       try {
         const { name , category, description, article, price, count, extra_options, images } = productInformation;
-        const response = await fetch(`${Store.state.api_url}/api/products/add_product`, {
+        const response = await fetch(`${Store.state.api_url}/products/add_product`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -193,7 +193,7 @@ export const Store = new Vuex.Store({
         const productId = await response.json()
         if (productId && typeof productId !== 'object') {
           try {
-            await fetch(`${Store.state.api_url}/api/products/add_product_photo?bot_id=${Store.state.bot_id}&product_id=${productId}`, {
+            await fetch(`${Store.state.api_url}/products/add_product_photo?bot_id=${Store.state.bot_id}&product_id=${productId}`, {
               method: 'POST',
               headers: {
                 'Access-Control-Allow-Origin': '*',
@@ -212,7 +212,7 @@ export const Store = new Vuex.Store({
       async getProduct({commit}, productInformation) {
         try{
           const {productId, botId} = productInformation;
-          let response = await fetch(`${Store.state.api_url}/api/products/get_product/${botId}/${productId}`)
+          let response = await fetch(`${Store.state.api_url}/products/get_product/${botId}/${productId}`)
           response = await response.json();
           console.log(response)
           return response;
@@ -223,7 +223,7 @@ export const Store = new Vuex.Store({
       async editProduct({commit}, productInformation) {
         try {
           const { name , category, description, article, price, count, extra_options, picture, id} = productInformation;
-          const response = await fetch(`${Store.state.api_url}/api/products/edit_product`, {
+          const response = await fetch(`${Store.state.api_url}/products/edit_product`, {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
@@ -255,7 +255,7 @@ export const Store = new Vuex.Store({
 
           if (productId) {
             try {
-              await fetch(`${Store.state.api_url}/api/products/add_product_photo?bot_id=${Store.state.bot_id}&product_id=${productId}`, {
+              await fetch(`${Store.state.api_url}/products/add_product_photo?bot_id=${Store.state.bot_id}&product_id=${productId}`, {
                 method: 'POST',
                 headers: {
                   'Access-Control-Allow-Origin': '*',
@@ -275,7 +275,7 @@ export const Store = new Vuex.Store({
       async getWebAppOptions() {
         console.log(Store.state.bot_id);
         try {
-          const response = await fetch(`${Store.state.api_url}/api/settings/get_web_app_options/${Store.state.bot_id}`, {
+          const response = await fetch(`${Store.state.api_url}/settings/get_web_app_options/${Store.state.bot_id}`, {
             method: 'GET',
             headers: {
               'Content-Type': 'application/json',
@@ -318,7 +318,7 @@ export const Store = new Vuex.Store({
             tg.offEvent('mainButtonClicked', mainButtonFunction);
             data.query_id = tg.initDataUnsafe.query_id;
             data.from_user = tg.initDataUnsafe.user.id;
-            const response = await fetch(`${Store.state.api_url}/api/orders/send_order_data_to_bot`, {
+            const response = await fetch(`${Store.state.api_url}/orders/send_order_data_to_bot`, {
               method: 'POST',
               headers: {
                 'Content-Type': 'application/json',
@@ -346,7 +346,7 @@ export const Store = new Vuex.Store({
         const {color} = sent_color_data;
         console.log(color)
         try {
-            const response = await fetch(`${Store.state.api_url}/api/settings/send_hex_color_to_bot`, {
+            const response = await fetch(`${Store.state.api_url}/settings/send_hex_color_to_bot`, {
               method: 'POST',
               headers: {
                 'Content-Type': 'application/json',

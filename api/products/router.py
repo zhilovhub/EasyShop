@@ -26,7 +26,7 @@ from database.models.product_model import (
 
 from logs.config import api_logger, extra_params
 
-PATH = "/api/products"
+PATH = "/products"
 router = APIRouter(
     prefix=PATH,
     tags=["products"],

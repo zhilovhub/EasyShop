@@ -17,7 +17,7 @@ from database.models.order_model import OrderNotFoundError, OrderSchema
 
 from logs.config import api_logger, extra_params
 
-PATH = "/api/orders"
+PATH = "/orders"
 router = APIRouter(
     prefix=PATH,
     tags=["orders"],
