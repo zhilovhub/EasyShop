@@ -453,6 +453,17 @@ export default {
       this.chosenCategory = item.id;
       console.log("new chosen cat", this.chosenCategory)
     },
+    deleteImage() {
+      if (!this.imagePreviews.length) return;
+
+      let currentIndex = this.$refs.swiper?.$el?.swiper?.activeIndex;
+      console.log(currentIndex, this.$refs.swiper?.$el?.swiper?.activeIndex)
+
+      if (currentIndex >= 0 && currentIndex < this.imagePreviews.length) {
+        this.imagePreviews.splice(currentIndex, 1);
+        this.imageFiles.splice(currentIndex, 1);
+      }
+    },
   },
 };
 </script>
@@ -556,8 +567,14 @@ export default {
       <div v-else class="card">
         <h1>Фото товара</h1>
         <div class="upload-image-block">
+          <div v-if="this.imagePreviews.length>0 && this.imageFiles.length>0" @click="deleteImage()" class="delete-photo-block">
+            <svg width="13" height="13" viewBox="0 0 13 13" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M7.64881 6.50023L12.7619 1.38765C13.0793 1.07026 13.0793 0.55566 12.7619 0.238291C12.4445 -0.0791046 11.9299 -0.0791046 11.6126 0.238291L6.49998 5.3514L1.38741 0.238291C1.07001 -0.0791046 0.555416 -0.0791046 0.238046 0.238291C-0.0793234 0.555686 -0.0793488 1.07028 0.238046 1.38765L5.35115 6.50023L0.238046 11.6128C-0.0793488 11.9302 -0.0793488 12.4448 0.238046 12.7622C0.555442 13.0796 1.07004 13.0796 1.38741 12.7622L6.49998 7.64905L11.6126 12.7622C11.9299 13.0796 12.4445 13.0796 12.7619 12.7622C13.0793 12.4448 13.0793 11.9302 12.7619 11.6128L7.64881 6.50023Z" fill="black"/>
+            </svg>
+          </div>
           <div class="image-preview-block" v-if="imagePreviews && imagePreviews.length>0">
             <swiper
+              ref="swiper"
               :slidesPerView="1"
               :scrollbar="{ hide: false }"
               :modules="modules"
@@ -1031,6 +1048,17 @@ export default {
       }
     }
   }
+}
+
+.delete-photo-block {
+  position: absolute;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 30px;
+  height: 30px;
+  top: 5%;
+  right: 5%;
 }
 
 .red-placeholder::placeholder{
