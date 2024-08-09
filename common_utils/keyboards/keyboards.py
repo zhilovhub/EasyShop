@@ -1023,7 +1023,7 @@ class InlineCustomBotModeProductKeyboardButton:
         )
 
 
-class InlineCustomBotMainWebAppButton:
+class InlineBotMainWebAppButton:
     class Callback(BaseModel):
         class ActionEnum(Enum):
             SHOP = "🛍 Открыть магазин"
@@ -1035,7 +1035,7 @@ class InlineCustomBotMainWebAppButton:
 
     @staticmethod
     def get_keyboard(bot_id: int) -> InlineKeyboardMarkup:
-        actions = InlineCustomBotMainWebAppButton.Callback.ActionEnum
+        actions = InlineBotMainWebAppButton.Callback.ActionEnum
 
         return InlineKeyboardMarkup(
             inline_keyboard=[

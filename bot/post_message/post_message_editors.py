@@ -239,7 +239,7 @@ async def _button_text_save(
 
     await message.answer(
         "Предпросмотр 👇",
-        reply_markup=ReplyBotMenuKeyboard.get_keyboard(post_message.bot_id)
+        reply_markupReplyBotMenuKeyboard.get_keyboard()
     )
     await send_post_message(
         bot,
@@ -401,7 +401,7 @@ async def _message_save(
 
     await message.answer(
         "Предпросмотр 👇",
-        reply_markup=ReplyBotMenuKeyboard.get_keyboard(post_message.bot_id)
+        reply_markupReplyBotMenuKeyboard.get_keyboard()
     )
     await send_post_message(
         bot,
@@ -575,7 +575,7 @@ async def _contest_finish_date_save(
 
     await message.reply(
         f"Дата окончания конкурса установлена на: <b>{datetime_obj.strftime('%Y-%m-%d %H:%M')}</b>",
-        reply_markup=ReplyBotMenuKeyboard.get_keyboard(post_message.bot_id)
+        reply_markupReplyBotMenuKeyboard.get_keyboard()
     )
 
     custom_bot_token = (await bot_db.get_bot(post_message.bot_id)).token
@@ -621,7 +621,7 @@ async def _delay_save(
     await message.reply(
         f"Запланировано на: <b>{datetime_obj.strftime('%Y-%m-%d %H:%M')}</b>\n\n"
         f"Для отложенного запуска нажмите <b>Запустить</b> в меню",
-        reply_markup=ReplyBotMenuKeyboard.get_keyboard(post_message.bot_id)
+        reply_markupReplyBotMenuKeyboard.get_keyboard()
     )
 
     custom_bot_token = (await bot_db.get_bot(post_message.bot_id)).token
@@ -710,7 +710,7 @@ async def _button_url_save(
 
     await message.answer(
         "Предпросмотр 👇",
-        reply_markup=ReplyBotMenuKeyboard.get_keyboard(post_message.bot_id)
+        reply_markupReplyBotMenuKeyboard.get_keyboard()
     )
     await send_post_message(
         bot,
@@ -931,7 +931,7 @@ async def _reply_no_button(
 
     await message.answer(
         "В настраиваемом сообщении кнопки уже нет",
-        reply_markup=ReplyBotMenuKeyboard.get_keyboard(bot_id)
+        reply_markup=ReplyBotMenuKeyboard.get_keyboard()
     )
 
     custom_bot_token = (await bot_db.get_bot(bot_id)).token
@@ -967,7 +967,7 @@ async def _back_to_post_message_menu(
     """
     await message.answer(
         "Возвращаемся в меню...",
-        reply_markup=ReplyBotMenuKeyboard.get_keyboard(bot_id)
+        reply_markup=ReplyBotMenuKeyboard.get_keyboard()
     )
 
     custom_bot_token = (await bot_db.get_bot(bot_id)).token

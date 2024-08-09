@@ -623,7 +623,7 @@ async def edit_choose_option_name(message: Message, state: FSMContext):
             case ReplyBackBotMenuKeyboard.Callback.ActionEnum.BACK_TO_BOT_MENU.value:
                 await message.answer(
                     "Возвращаемся в меню настроек...",
-                    reply_markup=ReplyBotMenuKeyboard.get_keyboard(bot_id=bot_id)
+                    reply_markup=ReplyBotMenuKeyboard.get_keyboard()
                 )
                 await message.answer(
                     f"Меню редактирования варианта ответа {choose_option.choose_option_name}",
@@ -639,7 +639,7 @@ async def edit_choose_option_name(message: Message, state: FSMContext):
 
                 await message.answer(
                     "Текст варианта ответа изменен!",
-                    reply_markup=ReplyBotMenuKeyboard.get_keyboard(bot_id)
+                    reply_markup=ReplyBotMenuKeyboard.get_keyboard()
                 )
                 await message.answer(
                     f"Меню редактирования варианта ответа {choose_option.choose_option_name}",
@@ -669,7 +669,7 @@ async def handle_provider_token_input(message: Message, state: FSMContext):
             case ReplyBackBotMenuKeyboard.Callback.ActionEnum.BACK_TO_BOT_MENU.value:
                 await message.answer(
                     "Возвращаемся в настройки платежа...",
-                    reply_markup=ReplyBotMenuKeyboard.get_keyboard(bot_id=bot_id)
+                    reply_markup=ReplyBotMenuKeyboard.get_keyboard()
                 )
                 await state.set_state(States.BOT_MENU)
                 await state.set_data(state_data)
@@ -723,7 +723,7 @@ async def make_new_choose_option(message: Message, state: FSMContext):
             case ReplyBackBotMenuKeyboard.Callback.ActionEnum.BACK_TO_BOT_MENU.value:
                 await message.answer(
                     "Возвращаемся в меню настроек...",
-                    reply_markup=ReplyBotMenuKeyboard.get_keyboard(bot_id=bot_id)
+                    reply_markup=ReplyBotMenuKeyboard.get_keyboard()
                 )
                 await message.answer(
                     f"Текущий тип опции - {order_option.option_type.value}",
@@ -741,7 +741,7 @@ async def make_new_choose_option(message: Message, state: FSMContext):
                 )
                 await message.answer(
                     "Новая вариант ответа опции на выбор был добавлен",
-                    reply_markup=ReplyBotMenuKeyboard.get_keyboard(bot_id)
+                    reply_markup=ReplyBotMenuKeyboard.get_keyboard()
                 )
                 await message.answer(
                     f"Текущий тип опции - {order_option.option_type.value}",
@@ -767,7 +767,7 @@ async def edit_order_option_position(message: Message, state: FSMContext):
             case ReplyBackBotMenuKeyboard.Callback.ActionEnum.BACK_TO_BOT_MENU.value:
                 await message.answer(
                     "Возвращаемся в меню настроек...",
-                    reply_markup=ReplyBotMenuKeyboard.get_keyboard(bot_id=state_data["bot_id"])
+                    reply_markup=ReplyBotMenuKeyboard.get_keyboard()
                 )
                 await message.answer(
                     **MessageTexts.generate_order_option_info(order_option),
@@ -791,7 +791,7 @@ async def edit_order_option_position(message: Message, state: FSMContext):
                     await order_option_db.update_order_option(option)
                 await message.answer(
                     "Новая позиция опции добавлена",
-                    reply_markup=ReplyBotMenuKeyboard.get_keyboard(bot_id=custom_bot.bot_id)
+                    reply_markup=ReplyBotMenuKeyboard.get_keyboard()
                 )
                 await message.answer(
                     **MessageTexts.generate_order_option_info(order_option),
@@ -814,7 +814,7 @@ async def edit_order_option_name(message: Message, state: FSMContext):
             case ReplyBackBotMenuKeyboard.Callback.ActionEnum.BACK_TO_BOT_MENU.value:
                 await message.answer(
                     "Возвращаемся в меню настроек...",
-                    reply_markup=ReplyBotMenuKeyboard.get_keyboard(bot_id=state_data["bot_id"])
+                    reply_markup=ReplyBotMenuKeyboard.get_keyboard()
                 )
                 await message.answer(
                     **MessageTexts.generate_order_option_info(order_option),
@@ -827,7 +827,7 @@ async def edit_order_option_name(message: Message, state: FSMContext):
                 await order_option_db.update_order_option(order_option)
                 await message.answer(
                     "Новое название опции добавлено",
-                    reply_markup=ReplyBotMenuKeyboard.get_keyboard(bot_id=custom_bot.bot_id)
+                    reply_markup=ReplyBotMenuKeyboard.get_keyboard()
                 )
                 await message.answer(
                     **MessageTexts.generate_order_option_info(order_option),
@@ -850,7 +850,7 @@ async def edit_order_option_emoji(message: Message, state: FSMContext):
             case ReplyBackBotMenuKeyboard.Callback.ActionEnum.BACK_TO_BOT_MENU.value:
                 await message.answer(
                     "Возвращаемся в меню настроек...",
-                    reply_markup=ReplyBotMenuKeyboard.get_keyboard(bot_id=state_data["bot_id"])
+                    reply_markup=ReplyBotMenuKeyboard.get_keyboard()
                 )
                 await message.answer(
                     **MessageTexts.generate_order_option_info(order_option),
@@ -870,7 +870,7 @@ async def edit_order_option_emoji(message: Message, state: FSMContext):
                     await order_option_db.update_order_option(order_option)
                     await message.answer(
                         "Новый эмодзи добавлен",
-                        reply_markup=ReplyBotMenuKeyboard.get_keyboard(bot_id=custom_bot.bot_id)
+                        reply_markup=ReplyBotMenuKeyboard.get_keyboard()
                     )
                     await message.answer(
                         **MessageTexts.generate_order_option_info(order_option),
@@ -899,7 +899,7 @@ async def create_new_order_option(message: Message, state: FSMContext):
             case ReplyBackBotMenuKeyboard.Callback.ActionEnum.BACK_TO_BOT_MENU.value:
                 await message.answer(
                     "Возвращаемся в меню настроек...",
-                    reply_markup=ReplyBotMenuKeyboard.get_keyboard(bot_id=bot_id)
+                    reply_markup=ReplyBotMenuKeyboard.get_keyboard()
                 )
                 await message.answer(
                     **MessageTexts.generate_order_options_info(order_options),
@@ -924,7 +924,7 @@ async def create_new_order_option(message: Message, state: FSMContext):
                 )
                 await message.answer(
                     "Новая опция успешно добавлена!",
-                    reply_markup=ReplyBotMenuKeyboard.get_keyboard(bot_id=bot_id)
+                    reply_markup=ReplyBotMenuKeyboard.get_keyboard()
                 )
                 order_options = await order_option_db.get_all_order_options(custom_bot.bot_id)
                 await message.answer(
@@ -951,7 +951,7 @@ async def editing_start_message_handler(message: Message, state: FSMContext):
             case ReplyBackBotMenuKeyboard.Callback.ActionEnum.BACK_TO_BOT_MENU.value:
                 await message.answer(
                     "Возвращаемся в меню настроек...",
-                    reply_markup=ReplyBotMenuKeyboard.get_keyboard(bot_id=state_data["bot_id"])
+                    reply_markup=ReplyBotMenuKeyboard.get_keyboard()
                 )
                 await message.answer(
                     MessageTexts.BOT_MENU_MESSAGE.value.format((await Bot(custom_bot.token).get_me()).username),
@@ -972,7 +972,7 @@ async def editing_start_message_handler(message: Message, state: FSMContext):
 
                 await message.answer(
                     "Стартовое сообщение изменено!",
-                    reply_markup=ReplyBotMenuKeyboard.get_keyboard(bot_id=state_data["bot_id"])
+                    reply_markup=ReplyBotMenuKeyboard.get_keyboard()
                 )
                 await message.answer(
                     MessageTexts.BOT_MENU_MESSAGE.value.format((await Bot(custom_bot.token).get_me()).username),
@@ -998,7 +998,7 @@ async def editing_default_message_handler(message: Message, state: FSMContext):
             case ReplyBackBotMenuKeyboard.Callback.ActionEnum.BACK_TO_BOT_MENU.value:
                 await message.answer(
                     "Возвращаемся в меню настроек...",
-                    reply_markup=ReplyBotMenuKeyboard.get_keyboard(bot_id=state_data["bot_id"])
+                    reply_markup=ReplyBotMenuKeyboard.get_keyboard()
                 )
                 await message.answer(
                     MessageTexts.BOT_MENU_MESSAGE.value.format((await Bot(custom_bot.token).get_me()).username),
@@ -1019,7 +1019,7 @@ async def editing_default_message_handler(message: Message, state: FSMContext):
 
                 await message.answer(
                     "Сообщение-затычка изменена!",
-                    reply_markup=ReplyBotMenuKeyboard.get_keyboard(bot_id=state_data["bot_id"])
+                    reply_markup=ReplyBotMenuKeyboard.get_keyboard()
                 )
                 await message.answer(
                     MessageTexts.BOT_MENU_MESSAGE.value.format((await Bot(custom_bot.token).get_me()).username),
@@ -1044,7 +1044,7 @@ async def editing_bg_color_handler(message: Message, state: FSMContext):
             case ReplyBackBotMenuKeyboard.Callback.ActionEnum.BACK_TO_BOT_MENU.value:
                 await message.answer(
                     "Возвращаемся в меню настроек...",
-                    reply_markup=ReplyBotMenuKeyboard.get_keyboard(bot_id=state_data["bot_id"])
+                    reply_markup=ReplyBotMenuKeyboard.get_keyboard()
                 )
                 await message.answer(
                     MessageTexts.BOT_MENU_MESSAGE.value.format((await Bot(custom_bot.token).get_me()).username),
@@ -1071,7 +1071,7 @@ async def editing_bg_color_handler(message: Message, state: FSMContext):
 
                 await message.answer(
                     "Цвет фона изменен!",
-                    reply_markup=ReplyBotMenuKeyboard.get_keyboard(bot_id=state_data["bot_id"])
+                    reply_markup=ReplyBotMenuKeyboard.get_keyboard()
                 )
                 await message.answer(
                     MessageTexts.BOT_MENU_MESSAGE.value.format((await Bot(custom_bot.token).get_me()).username),
@@ -1096,7 +1096,7 @@ async def editing_post_order_message_handler(message: Message, state: FSMContext
             case ReplyBackBotMenuKeyboard.Callback.ActionEnum.BACK_TO_BOT_MENU.value:
                 await message.answer(
                     "Возвращаемся в главное меню...",
-                    reply_markup=ReplyBotMenuKeyboard.get_keyboard(bot_id=state_data["bot_id"])
+                    reply_markup=ReplyBotMenuKeyboard.get_keyboard()
                 )
                 await message.answer(
                     MessageTexts.BOT_MENU_MESSAGE.value.format((await Bot(custom_bot.token).get_me()).username),
@@ -1117,7 +1117,7 @@ async def editing_post_order_message_handler(message: Message, state: FSMContext
 
                 await message.answer(
                     "Сообщение после заказа изменено!",
-                    reply_markup=ReplyBotMenuKeyboard.get_keyboard(bot_id=state_data["bot_id"])
+                    reply_markup=ReplyBotMenuKeyboard.get_keyboard()
                 )
                 await message.answer(
                     MessageTexts.BOT_MENU_MESSAGE.value.format((await Bot(custom_bot.token).get_me()).username),
@@ -1141,7 +1141,7 @@ async def delete_bot_handler(message: Message, state: FSMContext):
         case ReplyBackBotMenuKeyboard.Callback.ActionEnum.BACK_TO_BOT_MENU.value:
             await message.answer(
                 "Возвращаемся в главное меню...",
-                reply_markup=ReplyBotMenuKeyboard.get_keyboard(bot_id=state_data["bot_id"])
+                reply_markup=ReplyBotMenuKeyboard.get_keyboard()
             )
             await message.answer(
                 MessageTexts.BOT_MENU_MESSAGE.value.format((await Bot(custom_bot.token).get_me()).username),

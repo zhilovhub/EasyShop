@@ -222,7 +222,7 @@ async def handle_stock_import_input(message: Message, state: FSMContext):
         )
         await message.answer(
             text="Возвращаемся назад...",
-            reply_markup=ReplyBotMenuKeyboard.get_keyboard(bot_id)
+            reply_markup=ReplyBotMenuKeyboard.get_keyboard()
         )
         await state.set_state(States.BOT_MENU)
         await state.set_data(state_data)
@@ -338,7 +338,7 @@ async def _back_to_stock_menu(message: Message, state: FSMContext) -> None:
 
     await message.answer(
         "Возвращаемся в меню склада...",
-        reply_markup=ReplyBotMenuKeyboard.get_keyboard(bot_id)
+        reply_markup=ReplyBotMenuKeyboard.get_keyboard()
     )
     await message.answer(
         "Меню склада:",

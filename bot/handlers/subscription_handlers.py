@@ -104,7 +104,7 @@ async def waiting_payment_pay_handler(message: Message, state: FSMContext):
 
             await message.answer(
                 "Возвращаемся в главное меню...",
-                reply_markup=ReplyBotMenuKeyboard.get_keyboard(bot_id=state_data["bot_id"])
+                reply_markup=ReplyBotMenuKeyboard.get_keyboard()
             )
             await message.answer(
                 MessageTexts.BOT_MENU_MESSAGE.value.format((await Bot(custom_bot.token).get_me()).username),
@@ -181,7 +181,7 @@ async def waiting_payment_approve_handler(message: Message, state: FSMContext):
 
             await message.answer(
                 "Возвращаемся в главное меню (мы Вас оповестим, когда оплата пройдет модерацию)...",
-                reply_markup=ReplyBotMenuKeyboard.get_keyboard(bot_id=state_data["bot_id"])
+                reply_markup=ReplyBotMenuKeyboard.get_keyboard()
             )
             await message.answer(
                 MessageTexts.BOT_MENU_MESSAGE.value.format((await Bot(custom_bot.token).get_me()).username),
@@ -245,7 +245,7 @@ async def approve_pay_callback(query: CallbackQuery):
         await bot.send_message(
             user_id,
             "Оплата подписки подтверждена ✅",
-            reply_markup=ReplyBotMenuKeyboard.get_keyboard(bot_id)
+            reply_markup=ReplyBotMenuKeyboard.get_keyboard()
         )
         await bot.send_message(
             user_id,

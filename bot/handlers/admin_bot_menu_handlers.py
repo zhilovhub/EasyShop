@@ -35,7 +35,7 @@ from common_utils.message_texts import MessageTexts as CommonMessageTexts
 from common_utils.bot_settings_config import BOT_PROPERTIES
 from common_utils.keyboards.keyboards import (InlineBotEditOrderOptionsKeyboard, InlineBotMenuKeyboard,
                                               InlineBotSettingsMenuKeyboard, InlineAdministratorsManageKeyboard,
-                                              InlinePaymentSettingsKeyboard)
+                                              InlinePaymentSettingsKeyboard, InlineBotMainWebAppButton)
 from common_utils.order_utils.order_type import OrderType
 from common_utils.order_utils.order_utils import create_order
 from common_utils.broadcasting.broadcasting import send_event, EventTypes
@@ -385,7 +385,7 @@ async def waiting_for_the_token_handler(message: Message, state: FSMContext):
 
     await message.answer(
         MessageTexts.BOT_INITIALIZING_MESSAGE.value.format(bot_fullname, bot_username),
-        reply_markup=ReplyBotMenuKeyboard.get_keyboard(bot_id)
+        reply_markup=ReplyBotMenuKeyboard.get_keyboard()
     )
     await message.answer(
         MessageTexts.BOT_MENU_MESSAGE.value.format(bot_username),
@@ -694,6 +694,11 @@ async def bot_menu_handler(message: Message, state: FSMContext):
     custom_bot = await bot_db.get_bot(state_data['bot_id'])
 
     match message.text:
+        case ReplyBotMenuKeyboard.Callback.ActionEnum.SHOP.value:
+            await message.answer(
+                "Кнопка для входа в магазин 👇",
+                reply_markup=InlineBotMainWebAppButton.get_keyboard(bot.bot_id)
+            )
         case ReplyBotMenuKeyboard.Callback.ActionEnum.SETTINGS.value:
             await message.answer(
                 MessageTexts.BOT_MENU_MESSAGE.value.format((await Bot(custom_bot.token).get_me()).username),
@@ -707,7 +712,7 @@ async def bot_menu_handler(message: Message, state: FSMContext):
         case _:
             await message.answer(
                 "Для навигации используйте кнопки 👇",
-                reply_markup=ReplyBotMenuKeyboard.get_keyboard(bot_id=state_data["bot_id"])
+                reply_markup=ReplyBotMenuKeyboard.get_keyboard()
             )
             await message.answer(
                 MessageTexts.BOT_MENU_MESSAGE.value.format((await Bot(custom_bot.token).get_me()).username),

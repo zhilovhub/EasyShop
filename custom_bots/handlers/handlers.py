@@ -3,13 +3,12 @@ import json
 from aiogram import F, Bot
 from aiogram.types import Message
 
+from common_utils.keyboards.keyboards import InlineBotMainWebAppButton
 from custom_bots.multibot import CustomUserStates
 from custom_bots.utils.utils import format_locales
 from custom_bots.handlers.routers import multi_bot_router
 from custom_bots.utils.order_creation import order_creation_process
 from custom_bots.keyboards.custom_bot_menu_keyboards import ReplyCustomBotMenuKeyboard
-
-from common_utils.keyboards.keyboards import InlineCustomBotMainWebAppButton
 
 from common_utils.bot_utils import create_bot_options
 from common_utils.order_utils.order_type import OrderType
@@ -74,7 +73,8 @@ async def main_menu_handler(message: Message):
         case ReplyCustomBotMenuKeyboard.Callback.ActionEnum.SHOP.value:
             await message.answer(
                 "Кнопка для входа в магазин 👇",
-                reply_markup=InlineCustomBotMainWebAppButton.get_keyboard(bot.bot_id))
+                reply_markup=InlineBotMainWebAppButton.get_keyboard(bot.bot_id)
+            )
         case _:
             try:
                 options = await option_db.get_option(bot.options_id)
