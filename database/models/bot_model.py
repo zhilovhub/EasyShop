@@ -1,8 +1,12 @@
 from datetime import datetime
 
+from enum import Enum
+
 from aiogram.utils.token import validate_token
 
-from sqlalchemy import BigInteger, Column, String, DateTime, JSON, ForeignKey
+from typing import Optional
+
+from sqlalchemy import BigInteger, Column, String, DateTime, JSON, ForeignKey, Unicode, Dialect, TypeDecorator
 from sqlalchemy import select, update, delete, insert
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncEngine
@@ -27,6 +31,34 @@ class BotIntegrityError(KwargsException):
     # TODO hide bot_token
 
 
+class UnknownBotPaymentType(KwargsException):
+    """Raised when provided user status is not expected"""
+
+
+class BotPaymentTypeValues(Enum):
+    MANUAL = "manual"
+    STARS = "stars"
+    TG_PROVIDER = "tg_provider"
+
+
+class BotPaymentType(TypeDecorator):  # noqa
+    """Class to convert Enum values to db values (and reverse)"""
+    impl = Unicode
+    cache_ok = True
+
+    def process_bind_param(self, value: Optional[BotPaymentTypeValues], dialect: Dialect) -> String:
+        return value.value
+
+    def process_result_value(self, value: Optional[String], dialect: Dialect) -> Optional[BotPaymentTypeValues]:
+        match value:
+            case BotPaymentTypeValues.MANUAL.value:
+                return BotPaymentTypeValues.MANUAL
+            case BotPaymentTypeValues.STARS.value:
+                return BotPaymentTypeValues.STARS
+            case BotPaymentTypeValues.TG_PROVIDER.value:
+                return BotPaymentTypeValues.TG_PROVIDER
+
+
 class Bot(Base):
     __tablename__ = "bots"
 
@@ -40,6 +72,9 @@ class Bot(Base):
     locale = Column(String(10), nullable=False)
     admin_invite_link_hash = Column(String(15), unique=True)
 
+    payment_type = Column(BotPaymentType, nullable=False)
+    provider_token = Column(String)
+
 
 class BotSchemaWithoutId(BaseModel):
     model_config = ConfigDict(from_attributes=True, populate_by_name=True)
@@ -52,6 +87,9 @@ class BotSchemaWithoutId(BaseModel):
     options_id: int
     locale: str = Field()
     admin_invite_link_hash: str | None = Field(max_length=15, default=None)
+
+    payment_type: BotPaymentTypeValues = BotPaymentTypeValues.MANUAL
+    provider_token: str | None = None
 
 
 class BotSchema(BotSchemaWithoutId):

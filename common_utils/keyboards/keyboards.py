@@ -5,10 +5,13 @@ from pydantic import BaseModel, ConfigDict, Field, ValidationError
 from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 
 from common_utils.keyboards.keyboard_utils import callback_json_validator, get_bot_channels, get_bot_username, \
-    get_bot_mailing, get_bot_status, make_product_deep_link_url, make_product_webapp_info, get_bot_order_options
+    get_bot_mailing, get_bot_status, make_product_deep_link_url, make_product_webapp_info, get_bot_order_options, \
+    make_webapp_info
 
-from database.config import user_role_db, order_option_db, order_choose_option_db
+from database.config import user_role_db, order_option_db, order_choose_option_db, option_db, bot_db
 from database.models.user_role_model import UserRoleValues
+from database.models.bot_model import BotPaymentTypeValues
+from database.models.option_model import CurrencyCodesValues, CurrencySymbolsValues
 from database.models.order_option_model import OrderOptionTypeValues, UnknownOrderOptionType
 
 
@@ -73,7 +76,7 @@ class InlineBotMenuKeyboard:
                 callback_data=InlineBotMenuKeyboard.callback_json(
                     actions.CHANNEL_LIST, bot_id
                 )
-        )
+            )
 
         mailing_inline_button = InlineKeyboardButton(
             text="💌 Создать рассылку в ЛС",
@@ -86,7 +89,7 @@ class InlineBotMenuKeyboard:
                 callback_data=InlineBotMenuKeyboard.callback_json(
                     actions.MAILING_OPEN, bot_id
                 )
-        )
+            )
 
         leave_admin_or_delete_bot_button = InlineKeyboardButton(
             text="🗑 Удалить бота",
@@ -99,7 +102,7 @@ class InlineBotMenuKeyboard:
                 callback_data=InlineBotMenuKeyboard.callback_json(
                     actions.LEAVE_ADMINISTRATING, bot_id
                 )
-        )
+            )
 
         bot_setup_buttons = [
             InlineKeyboardButton(
@@ -122,7 +125,7 @@ class InlineBotMenuKeyboard:
                         actions.BOT_SETTINGS, bot_id
                     )
                 ),
-        ]
+            ]
 
         return InlineKeyboardMarkup(
             inline_keyboard=[
@@ -190,8 +193,9 @@ class InlineBotSettingsMenuKeyboard:
             BOT_EDIT_EXPLANATION_TEXT = "explain_text"
             EDIT_BG_COLOR = "edit_color"
             EDIT_ORDER_OPTIONS = "edit_ord_op"
+            PAYMENT_METHOD = "payment_method"
 
-            BACK_TO_BOT_MENU = "back"
+            BACK_TO_BOT_MENU = "back_menu"
 
         model_config = ConfigDict(from_attributes=True, populate_by_name=True)
 
@@ -255,6 +259,14 @@ class InlineBotSettingsMenuKeyboard:
                 ],
                 [
                     InlineKeyboardButton(
+                        text="💳 Изменить способ оплаты",
+                        callback_data=InlineBotSettingsMenuKeyboard.callback_json(
+                            actions.PAYMENT_METHOD, bot_id
+                        )
+                    ),
+                ],
+                [
+                    InlineKeyboardButton(
                         text="🔙 Назад",
                         callback_data=InlineBotSettingsMenuKeyboard.callback_json(
                             actions.BACK_TO_BOT_MENU, bot_id
@@ -275,7 +287,7 @@ class InlineBotEditOrderOptionsKeyboard:
 
         model_config = ConfigDict(from_attributes=True, populate_by_name=True)
 
-        n: str = Field(default="bot_menu", frozen=True)
+        n: str = Field(default="bot_order_options", frozen=True)
         a: ActionEnum
 
         bot_id: int
@@ -493,7 +505,7 @@ class InlineBotEditOrderOptionKeyboard:
 
         model_config = ConfigDict(from_attributes=True, populate_by_name=True)
 
-        n: str = Field(default="bot_menu", frozen=True)
+        n: str = Field(default="bot_edit_oo", frozen=True)
         a: ActionEnum
 
         bot_id: int
@@ -637,6 +649,328 @@ class InlineAdministratorsManageKeyboard:
         )
 
 
+class InlinePaymentSettingsKeyboard:
+    class Callback(BaseModel):
+        class ActionEnum(Enum):
+            MANUAL_METHOD = "manual"
+            TG_PROVIDER = "tg_provider"
+            TG_PROVIDER_SETUP = "setup_tg_pay"
+            STARS = "stars"
+            STARS_SETUP = "stars_setup"
+            SELECT_CURRENCY = "currency"
+
+            BACK_TO_BOT_MENU = "back"
+
+        model_config = ConfigDict(from_attributes=True, populate_by_name=True)
+
+        n: str = Field(default="bot_payment_settings", frozen=True)
+        a: ActionEnum
+
+        bot_id: int
+
+    @staticmethod
+    @callback_json_validator
+    def callback_json(action: Callback.ActionEnum, bot_id: int) -> str:
+        return InlinePaymentSettingsKeyboard.Callback(
+            a=action, bot_id=bot_id
+        ).model_dump_json(by_alias=True)
+
+    @staticmethod
+    def callback_validator(json_string: str) -> bool:
+        try:
+            InlinePaymentSettingsKeyboard.Callback.model_validate_json(json_string)
+            return True
+        except ValidationError:
+            return False
+
+    @staticmethod
+    async def get_keyboard(bot_id: int, selected_variant: BotPaymentTypeValues) -> InlineKeyboardMarkup:
+        actions = InlinePaymentSettingsKeyboard.Callback.ActionEnum
+
+        keyboard_buttons = [
+            [
+                InlineKeyboardButton(
+                    text="🤝 Ручная оплата" +
+                         f"{' ☑️' if selected_variant == BotPaymentTypeValues.MANUAL else ''}",
+                    callback_data=InlinePaymentSettingsKeyboard.callback_json(
+                        actions.MANUAL_METHOD, bot_id
+                    )
+                )
+            ],
+            [
+                InlineKeyboardButton(
+                    text="📱 через телеграм (физ. товары)" +
+                         f"{' ☑️' if selected_variant == BotPaymentTypeValues.TG_PROVIDER else ''}",
+                    callback_data=InlinePaymentSettingsKeyboard.callback_json(
+                        actions.TG_PROVIDER, bot_id
+                    )
+                )
+            ],
+        ]
+        if selected_variant == BotPaymentTypeValues.TG_PROVIDER:
+            keyboard_buttons.append([
+                InlineKeyboardButton(text="⚙️ Настроить встроенные платежи",
+                                     callback_data=InlinePaymentSettingsKeyboard.callback_json(
+                                         actions.TG_PROVIDER_SETUP, bot_id
+                                     ))
+            ])
+        keyboard_buttons += [
+            [
+                InlineKeyboardButton(
+                    text="⭐️ Оплата в stars (цифр. товары)" +
+                         f"{' ☑️' if selected_variant == BotPaymentTypeValues.STARS else ''}",
+                    callback_data=InlinePaymentSettingsKeyboard.callback_json(
+                        actions.STARS, bot_id
+                    )
+                )
+            ],
+        ]
+        if selected_variant == BotPaymentTypeValues.STARS:
+            keyboard_buttons.append([
+                InlineKeyboardButton(text="⚙️ Настроить меню платежей в звездах",
+                                     callback_data=InlinePaymentSettingsKeyboard.callback_json(
+                                         actions.STARS_SETUP, bot_id
+                                     ))
+            ])
+        keyboard_buttons += [
+            [
+                InlineKeyboardButton(
+                    text="💱 Выбрать валюту магазина",
+                    callback_data=InlinePaymentSettingsKeyboard.callback_json(
+                        actions.SELECT_CURRENCY, bot_id
+                    )
+                )
+            ],
+            [
+                InlineKeyboardButton(
+                    text="🔙 Назад",
+                    callback_data=InlinePaymentSettingsKeyboard.callback_json(
+                        actions.BACK_TO_BOT_MENU, bot_id
+                    )
+                )
+            ],
+        ]
+
+        return InlineKeyboardMarkup(
+            inline_keyboard=keyboard_buttons
+        )
+
+
+class InlineCurrencySelectKeyboard:
+    class Callback(BaseModel):
+        class ActionEnum(Enum):
+            RUB = "rub"
+            USD = "usd"
+            EUR = "eur"
+            ISL = "ils"
+
+            BACK_TO_PAYMENT_MENU = "back_pay"
+
+        model_config = ConfigDict(from_attributes=True, populate_by_name=True)
+
+        n: str = Field(default="select_currency", frozen=True)
+        a: ActionEnum
+
+        bot_id: int
+
+    @staticmethod
+    @callback_json_validator
+    def callback_json(action: Callback.ActionEnum, bot_id: int) -> str:
+        return InlineCurrencySelectKeyboard.Callback(
+            a=action, bot_id=bot_id
+        ).model_dump_json(by_alias=True)
+
+    @staticmethod
+    def callback_validator(json_string: str) -> bool:
+        try:
+            InlineCurrencySelectKeyboard.Callback.model_validate_json(json_string)
+            return True
+        except ValidationError:
+            return False
+
+    @staticmethod
+    async def get_keyboard(bot_id: int, selected_variant: CurrencyCodesValues) -> InlineKeyboardMarkup:
+        actions = InlineCurrencySelectKeyboard.Callback.ActionEnum
+
+        return InlineKeyboardMarkup(
+            inline_keyboard=[
+                [
+                    InlineKeyboardButton(
+                        text=f"{'🔘' if selected_variant == CurrencyCodesValues.RUSSIAN_RUBLE else '⚪️'} RUB",
+                        callback_data=InlineCurrencySelectKeyboard.callback_json(
+                            actions.RUB, bot_id
+                        )
+                    ),
+                    InlineKeyboardButton(
+                        text=f"{'🔘' if selected_variant == CurrencyCodesValues.US_DOLLAR else '⚪️'} USD",
+                        callback_data=InlineCurrencySelectKeyboard.callback_json(
+                            actions.USD, bot_id
+                        )
+                    ),
+                    InlineKeyboardButton(
+                        text=f"{'🔘' if selected_variant == CurrencyCodesValues.EURO else '⚪️'} EUR",
+                        callback_data=InlineCurrencySelectKeyboard.callback_json(
+                            actions.EUR, bot_id
+                        )
+                    ),
+                    InlineKeyboardButton(
+                        text=f"{'🔘' if selected_variant == CurrencyCodesValues.ISRAELI_SHEQEL else '⚪️'} ILS",
+                        callback_data=InlineCurrencySelectKeyboard.callback_json(
+                            actions.ISL, bot_id
+                        )
+                    ),
+                ],
+                [
+                    InlineKeyboardButton(
+                        text="🔙 Назад",
+                        callback_data=InlineCurrencySelectKeyboard.callback_json(
+                            actions.BACK_TO_PAYMENT_MENU, bot_id
+                        )
+                    )
+                ],
+            ]
+        )
+
+
+class InlinePaymentSetupKeyboard:
+    class Callback(BaseModel):
+        class ActionEnum(Enum):
+            NAME = "name"
+            EMAIL = "email"
+            PHONE = "phone"
+            SHIPPING = "address"
+
+            PHOTO = "photo"
+            WEBVIEW = "webview"
+
+            SET_PROVIDER_TOKEN = "token"
+            SHOW_PAYMENT = "show"
+            SEND_TO_BOT = "send_to_bot"
+
+            BACK_TO_PAYMENT_MENU = "back_pay"
+
+        model_config = ConfigDict(from_attributes=True, populate_by_name=True)
+
+        n: str = Field(default="setup_payment_menu", frozen=True)
+        a: ActionEnum
+
+        bot_id: int
+
+    @staticmethod
+    @callback_json_validator
+    def callback_json(action: Callback.ActionEnum, bot_id: int) -> str:
+        return InlinePaymentSetupKeyboard.Callback(
+            a=action, bot_id=bot_id
+        ).model_dump_json(by_alias=True)
+
+    @staticmethod
+    def callback_validator(json_string: str) -> bool:
+        try:
+            InlinePaymentSetupKeyboard.Callback.model_validate_json(json_string)
+            return True
+        except ValidationError:
+            return False
+
+    @staticmethod
+    async def get_keyboard(bot_id: int, options_id: int, stars: bool = False) -> InlineKeyboardMarkup:
+        actions = InlinePaymentSetupKeyboard.Callback.ActionEnum
+
+        custom_bot = await bot_db.get_bot(bot_id)
+        custom_bot_option = await option_db.get_option(options_id)
+
+        if not stars:
+            keyboard_buttons = [
+                [
+                    InlineKeyboardButton(
+                        text=f"Просить имя{' ☑️' if custom_bot_option.request_name_in_payment else ''}",
+                        callback_data=InlinePaymentSetupKeyboard.callback_json(
+                            actions.NAME, bot_id
+                        )
+                    ),
+                    InlineKeyboardButton(
+                        text=f"Просить почту{' ☑️' if custom_bot_option.request_email_in_payment else ''}",
+                        callback_data=InlinePaymentSetupKeyboard.callback_json(
+                            actions.EMAIL, bot_id
+                        )
+                    )
+                ],
+                [
+                    InlineKeyboardButton(
+                        text=f"Просить телефон{' ☑️' if custom_bot_option.request_phone_in_payment else ''}",
+                        callback_data=InlinePaymentSetupKeyboard.callback_json(
+                            actions.PHONE, bot_id
+                        )
+                    ),
+                    InlineKeyboardButton(
+                        text=f"Просить адрес{' ☑️' if custom_bot_option.request_address_in_payment else ''}",
+                        callback_data=InlinePaymentSetupKeyboard.callback_json(
+                            actions.SHIPPING, bot_id
+                        )
+                    )
+                ],
+            ]
+        else:
+            keyboard_buttons = []
+
+        keyboard_buttons += [
+            [
+                InlineKeyboardButton(
+                    text=f"Фото заказа{' ☑️' if custom_bot_option.show_photo_in_payment else ''}",
+                    callback_data=InlinePaymentSetupKeyboard.callback_json(
+                        actions.PHOTO, bot_id
+                    )
+                ),
+                InlineKeyboardButton(
+                    text=f"WebView{' ☑️' if custom_bot_option.show_payment_in_webview else ''}",
+                    callback_data=InlinePaymentSetupKeyboard.callback_json(
+                        actions.WEBVIEW, bot_id
+                    )
+                )
+            ],
+        ]
+        if not stars:
+            keyboard_buttons += [
+                [
+                    InlineKeyboardButton(
+                        text=f"🔐 Provider Token{' ☑️' if custom_bot.provider_token else ''}",
+                        callback_data=InlinePaymentSetupKeyboard.callback_json(
+                            actions.SET_PROVIDER_TOKEN, bot_id
+                        )
+                    )
+                ],
+            ]
+        keyboard_buttons += [
+            [
+                InlineKeyboardButton(
+                    text=f"👀 Посмотреть платеж",
+                    callback_data=InlinePaymentSetupKeyboard.callback_json(
+                        actions.SHOW_PAYMENT, bot_id
+                    )
+                )
+            ],
+            [
+                InlineKeyboardButton(
+                    text=f"📩 Отправить в Вашего бота",
+                    callback_data=InlinePaymentSetupKeyboard.callback_json(
+                        actions.SEND_TO_BOT, bot_id
+                    )
+                )
+            ],
+            [
+                InlineKeyboardButton(
+                    text="🔙 Назад",
+                    callback_data=InlinePaymentSetupKeyboard.callback_json(
+                        actions.BACK_TO_PAYMENT_MENU, bot_id
+                    )
+                )
+            ],
+        ]
+
+        return InlineKeyboardMarkup(
+            inline_keyboard=keyboard_buttons
+        )
+
+
 class InlineModeProductKeyboardButton:
     class Callback(BaseModel):
         class ActionEnum(Enum):
@@ -683,6 +1017,32 @@ class InlineCustomBotModeProductKeyboardButton:
                     InlineKeyboardButton(
                         text=actions.SHOP.value,
                         web_app=make_product_webapp_info(product_id, bot_id)
+                    )
+                ],
+            ]
+        )
+
+
+class InlineBotMainWebAppButton:
+    class Callback(BaseModel):
+        class ActionEnum(Enum):
+            SHOP = "🛍 Открыть магазин"
+
+        model_config = ConfigDict(from_attributes=True, populate_by_name=True)
+
+        n: str = Field(default="inline_main_web_app", frozen=True)
+        a: ActionEnum
+
+    @staticmethod
+    def get_keyboard(bot_id: int) -> InlineKeyboardMarkup:
+        actions = InlineBotMainWebAppButton.Callback.ActionEnum
+
+        return InlineKeyboardMarkup(
+            inline_keyboard=[
+                [
+                    InlineKeyboardButton(
+                        text=actions.SHOP.value,
+                        web_app=make_webapp_info(bot_id)
                     )
                 ],
             ]

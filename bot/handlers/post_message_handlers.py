@@ -371,7 +371,7 @@ async def _delete_post_message(
             )
             await query.message.answer(
                 text="Рассылочное сообщение удалено",
-                reply_markup=ReplyBotMenuKeyboard.get_keyboard(post_message.bot_id)
+                reply_markup=ReplyBotMenuKeyboard.get_keyboard()
             )
             await query.message.answer(
                 text=MessageTexts.BOT_MENU_MESSAGE.value.format(custom_bot_username),
@@ -390,7 +390,7 @@ async def _delete_post_message(
             )
             await query.message.answer(
                 text="Запись в канал удалена",
-                reply_markup=ReplyBotMenuKeyboard.get_keyboard(post_message.bot_id)
+                reply_markup=ReplyBotMenuKeyboard.get_keyboard()
             )
             await query.message.answer(
                 text=MessageTexts.BOT_CHANNEL_MENU_MESSAGE.value.format(channel_username, custom_bot_username),

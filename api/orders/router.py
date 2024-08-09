@@ -117,12 +117,16 @@ class OrderData(BaseModel):
     delivery_method: str
     time: str | None
     comment: str | None
-    query_id: str | None
-    from_user: int | None
+    query_id: str | None = None
+    from_user: int | None = None
+
+
+class SendOrderDataResponse(BaseModel):
+    invoice_url: str | None = None
 
 
 @router.post("/send_order_data_to_bot")
-async def send_order_data_to_bot_api(order_data: OrderData, authorization_data: str = Header()) -> str:
+async def send_order_data_to_bot_api(order_data: OrderData, authorization_data: str = Header()) -> SendOrderDataResponse:
     """
     :raises HTTPInternalError:
     """
@@ -138,8 +142,9 @@ async def send_order_data_to_bot_api(order_data: OrderData, authorization_data: 
             ) as response:
                 if response.status != 200:
                     api_logger.error(f"Local API returned {response.status} status code "
-                                     f"with text {await response.text()}")
+                                     f"with body {await response.json()}")
                     raise LocalAPIException
+                invoice_url = (await response.json())['invoice_url']
     except LocalAPIException:
         raise HTTPInternalError(detail_message="Local Api error")
     except Exception as e:
@@ -150,4 +155,4 @@ async def send_order_data_to_bot_api(order_data: OrderData, authorization_data: 
         )
         raise HTTPInternalError
 
-    return "success"
+    return SendOrderDataResponse(invoice_url=invoice_url)

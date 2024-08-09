@@ -313,33 +313,40 @@ export const Store = new Vuex.Store({
           'comment': comment || '',
           'delivery_method': delivery_method || ''
         };
-        if (tg.initDataUnsafe && tg.initDataUnsafe.query_id) {
-          try {
-            tg.offEvent('mainButtonClicked', mainButtonFunction);
+        try {
+          tg.offEvent('mainButtonClicked', mainButtonFunction);
+          if (tg.initDataUnsafe.query_id) {
             data.query_id = tg.initDataUnsafe.query_id;
+          }
+          if (tg.initDataUnsafe.user.id) {
             data.from_user = tg.initDataUnsafe.user.id;
-            const response = await fetch(`${Store.state.api_url}/orders/send_order_data_to_bot`, {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-                'Access-Control-Allow-Origin': '*',
-                'authorization-data': tg.initData,
-              },
-              body: JSON.stringify(data)
-            });
-            if (!response.ok) {
-              throw new Error('Network response was not ok');
+          }
+
+          const response = await fetch(`${Store.state.api_url}/orders/send_order_data_to_bot`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Access-Control-Allow-Origin': '*',
+              'authorization-data': tg.initData,
+            },
+            body: JSON.stringify(data)
+          });
+          if (!response.ok) {
+            throw new Error('Network response was not ok');
+          } else {
+            const resp_data = await response.json()
+            console.log(resp_data)
+            let invoice_url = resp_data.invoice_url
+            if (invoice_url) {
+              tg.openInvoice(invoice_url)
             } else {
               tg.close();
             }
-          } catch (error) {
-            console.error('There was a problem with the fetch operation:', error);
-            alert("Произошла ошибка при создании заказа :(")
-            tg.onEvent('mainButtonClicked', mainButtonFunction);
           }
-        } else {
-          await tg.sendData(JSON.stringify(data));
-          tg.close();
+        } catch (error) {
+          console.error('There was a problem with the fetch operation:', error);
+          alert("Произошла ошибка при создании заказа :(")
+          tg.onEvent('mainButtonClicked', mainButtonFunction);
         }
       },
       async postColorData({commit}, sent_color_data){

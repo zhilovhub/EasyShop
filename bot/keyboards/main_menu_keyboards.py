@@ -43,11 +43,11 @@ class ReplyBotMenuKeyboard:
 
         model_config = ConfigDict(from_attributes=True, populate_by_name=True)
 
-        n: str = Field(default="bot_menu", frozen=True)
+        n: str = Field(default="main_bot_menu", frozen=True)
         a: ActionEnum
 
     @staticmethod
-    def get_keyboard(bot_id: int) -> ReplyKeyboardMarkup:
+    def get_keyboard() -> ReplyKeyboardMarkup:
         actions = ReplyBotMenuKeyboard.Callback.ActionEnum
 
         return ReplyKeyboardMarkup(
@@ -59,7 +59,6 @@ class ReplyBotMenuKeyboard:
                 [
                     KeyboardButton(
                         text=actions.SHOP.value,
-                        web_app=make_webapp_info(bot_id=bot_id)
                     )
                 ]
             ],

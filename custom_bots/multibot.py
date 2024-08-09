@@ -65,10 +65,11 @@ class CustomUserStates(StatesGroup):
 
 
 async def main():
-    from custom_bots.handlers import multi_bot_router, multi_bot_channel_router, inline_mode_router
+    from custom_bots.handlers import multi_bot_router, multi_bot_channel_router, inline_mode_router, payment_router
 
     multibot_dispatcher = Dispatcher(storage=custom_bot_storage)
 
+    multibot_dispatcher.include_router(payment_router)
     multibot_dispatcher.include_router(multi_bot_channel_router)
     multibot_dispatcher.include_router(multi_bot_router)
     multibot_dispatcher.include_router(inline_mode_router)

@@ -93,11 +93,13 @@ async def on_start():
 
 if __name__ == "__main__":
     from bot.handlers import (admin_bot_menu_router, channel_menu_router, custom_bot_editing_router, commands_router,
-                              subscribe_router, stock_menu_router, post_message_router, admin_group_commands_router)
+                              subscribe_router, stock_menu_router, post_message_router, admin_group_commands_router,
+                              payment_router)
 
     dp.include_router(admin_group_commands_router)  # не знаю почему не работает если ставить не первым
 
     dp.include_router(commands_router)  # should be first
+    dp.include_router(payment_router)
     dp.include_router(custom_bot_editing_router)  # should be before admin_bot_menu
     dp.include_router(admin_bot_menu_router)
     dp.include_router(stock_menu_router)

@@ -95,7 +95,7 @@ async def get_post_message(
                 raise UnknownPostMessageTypeError
 
         if is_message:
-            await event.answer(text, reply_markup=ReplyBotMenuKeyboard.get_keyboard(bot_id))
+            await event.answer(text, reply_markup=ReplyBotMenuKeyboard.get_keyboard())
         else:
             await event.answer(text, show_alert=True)
             await event.message.delete()

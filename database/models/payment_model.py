@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from sqlalchemy import BigInteger, Column, String, DateTime, ForeignKey
+from sqlalchemy import BigInteger, Column, String, DateTime, ForeignKey, Boolean
 from sqlalchemy import select, update, insert
 from sqlalchemy.ext.asyncio import AsyncEngine
 
@@ -35,6 +35,8 @@ class Payment(Base):
     status = Column(String(55), nullable=False)
     created_at = Column(DateTime, nullable=False)
     last_update = Column(DateTime, nullable=False)
+    from_main_bot = Column(Boolean)
+    custom_bot_id = Column(BigInteger)  # не добавляю ссылку на Bot.id чтобы платежи не удалялись при удалении бота
 
 
 class PaymentSchemaWithoutId(BaseModel):
@@ -45,6 +47,8 @@ class PaymentSchemaWithoutId(BaseModel):
     status: str = Field(max_length=55)
     created_at: datetime
     last_update: datetime
+    from_main_bot: bool
+    custom_bot_id: int | None = None  # не добавляю ссылку на Bot.id чтобы платежи не удалялись при удалении бота
 
     @classmethod
     @field_validator("status")

@@ -30,6 +30,16 @@ export default {
     },
   },
   methods: {
+    invoiceClosed(data) {
+      console.log(data)
+      if (data.status === "paid") {
+        tg.showAlert("Оплата прошла успешно")
+        tg.close()
+      } else {
+        tg.showAlert("Произошла ошибка при оплате")
+        tg.onEvent('mainButtonClicked', this.orderBtnClicked);
+      }
+    },
     orderBtnClicked() {
       const townValue = document.getElementById('townValue');
       const addressValue = document.getElementById('addressValue');
@@ -80,12 +90,14 @@ export default {
 
     tg.onEvent('backButtonClicked', this.backButtonMethod);
     tg.onEvent('mainButtonClicked', this.orderBtnClicked);
+    tg.onEvent('invoiceClosed', this.invoiceClosed);
 
     tg.MainButton.show();
   },
   unmounted() {
     tg.offEvent('backButtonClicked', this.backButtonMethod);
     tg.offEvent('mainButtonClicked', this.orderBtnClicked);
+    tg.offEvent('invoiceClosed', this.invoiceClosed);
   }
 }
 </script>

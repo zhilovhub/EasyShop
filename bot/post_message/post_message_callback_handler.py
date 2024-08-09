@@ -71,7 +71,7 @@ async def _cancel_send(
             await query.message.answer(
                 f"Рассылка остановлена\nСообщений разослано - "
                 f"{post_message.sent_post_message_amount}/{custom_users_length}",
-                reply_markup=ReplyBotMenuKeyboard.get_keyboard(post_message.bot_id)
+                reply_markup=ReplyBotMenuKeyboard.get_keyboard()
             )
             await query.message.edit_text(
                 MessageTexts.BOT_MENU_MESSAGE.value.format(custom_bot_username),
@@ -84,7 +84,7 @@ async def _cancel_send(
             username = (await Bot(custom_bot_token).get_chat(channel_id)).username
             await query.message.answer(
                 f"Отправка записи отменена",
-                reply_markup=ReplyBotMenuKeyboard.get_keyboard(post_message.bot_id)
+                reply_markup=ReplyBotMenuKeyboard.get_keyboard()
             )
             await query.message.edit_text(
                 MessageTexts.BOT_CHANNEL_MENU_MESSAGE.value.format(username, custom_bot_username),
@@ -111,7 +111,7 @@ async def _cancel_send(
                 await post_message_db.delete_post_message(post_message.post_message_id)
                 await query.message.answer(
                     f"Конкурс отменен",
-                    reply_markup=ReplyBotMenuKeyboard.get_keyboard(post_message.bot_id)
+                    reply_markup=ReplyBotMenuKeyboard.get_keyboard()
                 )
             await query.message.edit_text(
                 MessageTexts.BOT_CHANNEL_MENU_MESSAGE.value.format(username, custom_bot_username),
