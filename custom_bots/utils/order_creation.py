@@ -1,4 +1,5 @@
 from aiogram import Bot
+from aiogram.exceptions import TelegramBadRequest
 from aiogram.types import Chat
 from aiogram.enums import ParseMode
 
@@ -95,13 +96,14 @@ async def order_creation_process(order: OrderSchema, order_user_data: Chat) -> s
             **CustomMessageTexts.generate_not_enough_in_stock(products_not_enough, order.id)
         )
 
-    post_order_text = options.post_order_msg
-    if post_order_text:
-        await custom_bot_tg.send_message(
-            chat_id=user_id,
-            text=post_order_text,
-            parse_mode=ParseMode.HTML
-        )
+    if custom_bot.payment_type == BotPaymentTypeValues.MANUAL:
+        post_order_text = options.post_order_msg
+        if post_order_text:
+            await custom_bot_tg.send_message(
+                chat_id=user_id,
+                text=post_order_text,
+                parse_mode=ParseMode.HTML
+            )
 
     await main_bot.edit_message_reply_markup(
         chat_id=main_msg.chat.id,
@@ -119,7 +121,8 @@ async def order_creation_process(order: OrderSchema, order_user_data: Chat) -> s
 
     invoice_link = None
     if custom_bot.payment_type in (BotPaymentTypeValues.TG_PROVIDER, BotPaymentTypeValues.STARS):
-        params = await create_invoice_params(
+        try:
+            params = await create_invoice_params(
                 bot_id=bot_id,
                 user_id=user_id,
                 order_items=order.items,
@@ -128,10 +131,50 @@ async def order_creation_process(order: OrderSchema, order_user_data: Chat) -> s
                 photo_url=photo_url,
                 order_id=order.id,
             )
-        if custom_bot_options.show_payment_in_webview:
-            invoice_link = await custom_bot_tg.create_invoice_link(**params)
-        else:
-            await custom_bot_tg.send_invoice(chat_id=user_id, **params)
+            if custom_bot_options.show_payment_in_webview:
+                invoice_link = await custom_bot_tg.create_invoice_link(**params)
+            else:
+                await custom_bot_tg.send_invoice(chat_id=user_id, **params)
+        except TelegramBadRequest as ex:
+            await custom_bot_tg.send_message(user_id, CustomMessageTexts.ERROR_IN_CREATING_INVOICE.value)
+            order.status = OrderStatusValues.CANCELLED
+            await order_db.update_order(order)
+            text = await CommonMessageTexts.generate_order_notification_text(
+                order,
+                products,
+                username,
+                False
+            )
+            await custom_bot_tg.edit_message_text(chat_id=user_id, message_id=msg.message_id, **text, reply_markup=None)
+            admin_text = await CommonMessageTexts.generate_order_notification_text(
+                order,
+                products,
+                username,
+                True
+            )
+            await main_msg.edit_text(
+                **admin_text,
+                reply_markup=InlineOrderStatusesKeyboard.get_keyboard(
+                    order.id, msg.message_id, msg.chat.id, current_status=order.status
+                ))
+            if "CURRENCY_INVALID" in str(ex):
+                await main_msg.answer(
+                    f"❗️ Произошла ошибка при создании платежа, заказ отменен.\n\n"
+                    f"⚠️ Указанная Вами валюта ({custom_bot_options.currency_symbol.value}) "
+                    f"не поддерживается платежным провайдером, чей токен Вы указали.",
+                    show_alert=True)
+            elif "PAYMENT_PROVIDER_INVALID" in str(ex):
+                await main_msg.answer(
+                    f"❗️ Произошла ошибка при создании платежа, заказ отменен.\n\n"
+                    f"⚠️ Указанный Вами Provider Token не действует."
+                    f"\n\nПерепроверьте правильность написания и добавьте его еще раз, "
+                    f"если это не помогло, обратитесь в поддержку.",
+                    show_alert=True)
+            else:
+                await main_msg.answer(
+                    f"❗️ Произошла ошибка при создании платежа, заказ отменен.",
+                    show_alert=True)
+                raise ex
 
     custom_bot_logger.info(
         f"user_id={user_id}: order with order_id {order.id} is created",

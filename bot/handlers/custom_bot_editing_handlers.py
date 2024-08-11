@@ -72,6 +72,16 @@ async def manage_payment_settings(query: CallbackQuery, state: FSMContext):
                                                                               custom_bot.payment_type)
             )
             return await query.answer("🤝 Выбран ручной метод оплаты", show_alert=True)
+        case callback_data.ActionEnum.BOT_EDIT_POST_ORDER_MESSAGE:
+            await query.message.answer(
+                "Введите текст, который будет отображаться у пользователей Вашего бота "
+                "после <b>оформления ими заказа:</b>\n\n"
+                "❗️<b>Совет</b>: введите туда, куда пользователи должны отправлять Вам деньги",
+                reply_markup=ReplyBackBotMenuKeyboard.get_keyboard())
+            await query.answer()
+            state_data = await state.get_data()
+            await state.set_state(States.EDITING_POST_ORDER_MESSAGE)
+            await state.set_data(state_data)
         case callback_data.ActionEnum.TG_PROVIDER:
             custom_bot.payment_type = BotPaymentTypeValues.TG_PROVIDER
             await bot_db.update_bot(custom_bot)
@@ -290,14 +300,14 @@ async def manage_payment_settings(query: CallbackQuery, state: FSMContext):
                     return await query.answer("⚠️ Вы ни разу не писали своему боту."
                                               "\n\nОн не может отправить Вам сообщение первым.",
                                               show_alert=True)
-                if "CURRENCY_INVALID" in str(ex):
+                elif "CURRENCY_INVALID" in str(ex):
                     return await query.answer(f"⚠️ Указанная Вами валюта ({custom_bot_options.currency_symbol.value}) "
                                               f"не поддерживается платежным провайдером, чей токен Вы указали.",
                                               show_alert=True)
-                if "PAYMENT_PROVIDER_INVALID" in str(ex):
+                elif "PAYMENT_PROVIDER_INVALID" in str(ex):
                     return await query.answer(f"⚠️ Указанный Вами Provider Token не действует."
                                               f"\n\nПерепроверьте правильность написания и добавьте его еще раз, "
-                                              f"если это не помогло, обратитесь к своему платёжному провайдеру.",
+                                              f"если это не помогло, обратитесь в поддержку.",
                                               show_alert=True)
                 else:
                     raise ex
@@ -328,13 +338,19 @@ async def select_currency_settings(query: CallbackQuery, state: FSMContext):
                                                                           custom_bot.payment_type)
         )
 
+    if custom_bot.payment_type == BotPaymentTypeValues.TG_PROVIDER:
+        add_text = ("\n\n❗️ Обязательно проверьте свой платеж кнопкой"
+                    "\n«📩 Отправить в Вашего бота»\nв настройках встроенных платежей.")
+    else:
+        add_text = ""
+
     match callback_data.a:
         case callback_data.ActionEnum.RUB:
             custom_bot_options.currency_code = CurrencyCodesValues.RUSSIAN_RUBLE
             custom_bot_options.currency_symbol = CurrencySymbolsValues.RUSSIAN_RUBLE
             await option_db.update_option(custom_bot_options)
             await query.answer(f"💱 Российский рубль ({CurrencySymbolsValues.RUSSIAN_RUBLE.value}) "
-                               f"\nвыбран валютой магазина.", show_alert=True)
+                               f"\nвыбран валютой магазина.{add_text}", show_alert=True)
             return await query.message.edit_text(
                 MessageTexts.CURRENCY_SELECT_TEXT.value.format(custom_bot_data.username),
                 reply_markup=await InlineCurrencySelectKeyboard.get_keyboard(callback_data.bot_id,
@@ -345,7 +361,7 @@ async def select_currency_settings(query: CallbackQuery, state: FSMContext):
             custom_bot_options.currency_symbol = CurrencySymbolsValues.EURO
             await option_db.update_option(custom_bot_options)
             await query.answer(f"💱 Евро ({CurrencySymbolsValues.EURO.value}) "
-                               f"\nвыбран валютой магазина.", show_alert=True)
+                               f"\nвыбран валютой магазина.{add_text}", show_alert=True)
             return await query.message.edit_text(
                 MessageTexts.CURRENCY_SELECT_TEXT.value.format(custom_bot_data.username),
                 reply_markup=await InlineCurrencySelectKeyboard.get_keyboard(callback_data.bot_id,
@@ -356,7 +372,7 @@ async def select_currency_settings(query: CallbackQuery, state: FSMContext):
             custom_bot_options.currency_symbol = CurrencySymbolsValues.US_DOLLAR
             await option_db.update_option(custom_bot_options)
             await query.answer(f"💱 Доллар США ({CurrencySymbolsValues.US_DOLLAR.value}) "
-                               f"\nвыбран валютой магазина.", show_alert=True)
+                               f"\nвыбран валютой магазина.{add_text}", show_alert=True)
             return await query.message.edit_text(
                 MessageTexts.CURRENCY_SELECT_TEXT.value.format(custom_bot_data.username),
                 reply_markup=await InlineCurrencySelectKeyboard.get_keyboard(callback_data.bot_id,
@@ -367,7 +383,7 @@ async def select_currency_settings(query: CallbackQuery, state: FSMContext):
             custom_bot_options.currency_symbol = CurrencySymbolsValues.ISRAELI_SHEQEL
             await option_db.update_option(custom_bot_options)
             await query.answer(f"💱 Израильский шекель ({CurrencySymbolsValues.ISRAELI_SHEQEL.value}) "
-                               f"\nвыбран валютой магазина.", show_alert=True)
+                               f"\nвыбран валютой магазина.{add_text}", show_alert=True)
             return await query.message.edit_text(
                 MessageTexts.CURRENCY_SELECT_TEXT.value.format(custom_bot_data.username),
                 reply_markup=await InlineCurrencySelectKeyboard.get_keyboard(callback_data.bot_id,
@@ -1091,16 +1107,18 @@ async def editing_post_order_message_handler(message: Message, state: FSMContext
     if message_text:
         state_data = await state.get_data()
         custom_bot = await bot_db.get_bot(state_data['bot_id'])
+        custom_bot_data = await Bot(custom_bot.token).get_me()
 
         match message_text:
             case ReplyBackBotMenuKeyboard.Callback.ActionEnum.BACK_TO_BOT_MENU.value:
                 await message.answer(
-                    "Возвращаемся в главное меню...",
+                    "Возвращаемся в меню оплаты...",
                     reply_markup=ReplyBotMenuKeyboard.get_keyboard()
                 )
                 await message.answer(
-                    MessageTexts.BOT_MENU_MESSAGE.value.format((await Bot(custom_bot.token).get_me()).username),
-                    reply_markup=await InlineBotMenuKeyboard.get_keyboard(custom_bot.bot_id, message.from_user.id)
+                    MessageTexts.PAYMENT_METHOD_SETTINGS.value.format(custom_bot_data.username),
+                    reply_markup=await InlinePaymentSettingsKeyboard.get_keyboard(custom_bot.bot_id,
+                                                                                  custom_bot.payment_type)
                 )
                 await state.set_state(States.BOT_MENU)
                 await state.set_data(state_data)

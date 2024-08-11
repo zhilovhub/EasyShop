@@ -38,6 +38,10 @@ class ErrorMiddleware(BaseMiddleware):
             await asyncio.sleep(ex.retry_after + 1000)
             return await handler(event, data)
         except TelegramAPIError as ex:
+            if "message is not modified" in str(ex):
+                logger.debug(f"Message is not modified API error while handling event: {event}")
+                if isinstance(event, CallbackQuery):
+                    return await event.answer("Эта кнопка уже нажата.")
             logger.error("Telegram API error while handling event", exc_info=ex)
             await notify_about_error(event, str(ex))
         except Exception as ex:

@@ -25,7 +25,6 @@ class InlineBotMenuKeyboard:
 
             BOT_SETTINGS = "settings"
             ADMINS = "admins"
-            BOT_EDIT_POST_ORDER_MESSAGE = "pom"
 
             BOT_STOP = "stop_bot"
             BOT_START = "start_bot"
@@ -129,14 +128,6 @@ class InlineBotMenuKeyboard:
 
         return InlineKeyboardMarkup(
             inline_keyboard=[
-                [
-                    InlineKeyboardButton(
-                        text="💳 Платежная информация",
-                        callback_data=InlineBotMenuKeyboard.callback_json(
-                            actions.BOT_EDIT_POST_ORDER_MESSAGE, bot_id
-                        )
-                    )
-                ],
                 bot_setup_buttons,
                 [
                     InlineKeyboardButton(
@@ -653,6 +644,7 @@ class InlinePaymentSettingsKeyboard:
     class Callback(BaseModel):
         class ActionEnum(Enum):
             MANUAL_METHOD = "manual"
+            BOT_EDIT_POST_ORDER_MESSAGE = "pom"
             TG_PROVIDER = "tg_provider"
             TG_PROVIDER_SETUP = "setup_tg_pay"
             STARS = "stars"
@@ -691,16 +683,29 @@ class InlinePaymentSettingsKeyboard:
             [
                 InlineKeyboardButton(
                     text="🤝 Ручная оплата" +
-                         f"{' ☑️' if selected_variant == BotPaymentTypeValues.MANUAL else ''}",
+                         f"{' ✅' if selected_variant == BotPaymentTypeValues.MANUAL else ''}",
                     callback_data=InlinePaymentSettingsKeyboard.callback_json(
                         actions.MANUAL_METHOD, bot_id
                     )
                 )
             ],
+        ]
+        if selected_variant == BotPaymentTypeValues.MANUAL:
+            keyboard_buttons.append(
+                [
+                    InlineKeyboardButton(
+                        text="💳 Платежная информация",
+                        callback_data=InlinePaymentSettingsKeyboard.callback_json(
+                            actions.BOT_EDIT_POST_ORDER_MESSAGE, bot_id
+                        )
+                    )
+                ],
+            )
+        keyboard_buttons += [
             [
                 InlineKeyboardButton(
                     text="📱 через телеграм (физ. товары)" +
-                         f"{' ☑️' if selected_variant == BotPaymentTypeValues.TG_PROVIDER else ''}",
+                         f"{' ✅' if selected_variant == BotPaymentTypeValues.TG_PROVIDER else ''}",
                     callback_data=InlinePaymentSettingsKeyboard.callback_json(
                         actions.TG_PROVIDER, bot_id
                     )
@@ -718,7 +723,7 @@ class InlinePaymentSettingsKeyboard:
             [
                 InlineKeyboardButton(
                     text="⭐️ Оплата в stars (цифр. товары)" +
-                         f"{' ☑️' if selected_variant == BotPaymentTypeValues.STARS else ''}",
+                         f"{' ✅' if selected_variant == BotPaymentTypeValues.STARS else ''}",
                     callback_data=InlinePaymentSettingsKeyboard.callback_json(
                         actions.STARS, bot_id
                     )
@@ -882,13 +887,13 @@ class InlinePaymentSetupKeyboard:
             keyboard_buttons = [
                 [
                     InlineKeyboardButton(
-                        text=f"Просить имя{' ☑️' if custom_bot_option.request_name_in_payment else ''}",
+                        text=f"Просить имя{' ✅' if custom_bot_option.request_name_in_payment else ''}",
                         callback_data=InlinePaymentSetupKeyboard.callback_json(
                             actions.NAME, bot_id
                         )
                     ),
                     InlineKeyboardButton(
-                        text=f"Просить почту{' ☑️' if custom_bot_option.request_email_in_payment else ''}",
+                        text=f"Просить почту{' ✅' if custom_bot_option.request_email_in_payment else ''}",
                         callback_data=InlinePaymentSetupKeyboard.callback_json(
                             actions.EMAIL, bot_id
                         )
@@ -896,13 +901,13 @@ class InlinePaymentSetupKeyboard:
                 ],
                 [
                     InlineKeyboardButton(
-                        text=f"Просить телефон{' ☑️' if custom_bot_option.request_phone_in_payment else ''}",
+                        text=f"Просить телефон{' ✅' if custom_bot_option.request_phone_in_payment else ''}",
                         callback_data=InlinePaymentSetupKeyboard.callback_json(
                             actions.PHONE, bot_id
                         )
                     ),
                     InlineKeyboardButton(
-                        text=f"Просить адрес{' ☑️' if custom_bot_option.request_address_in_payment else ''}",
+                        text=f"Просить адрес{' ✅' if custom_bot_option.request_address_in_payment else ''}",
                         callback_data=InlinePaymentSetupKeyboard.callback_json(
                             actions.SHIPPING, bot_id
                         )
@@ -915,13 +920,13 @@ class InlinePaymentSetupKeyboard:
         keyboard_buttons += [
             [
                 InlineKeyboardButton(
-                    text=f"Фото заказа{' ☑️' if custom_bot_option.show_photo_in_payment else ''}",
+                    text=f"Фото заказа{' ✅' if custom_bot_option.show_photo_in_payment else ''}",
                     callback_data=InlinePaymentSetupKeyboard.callback_json(
                         actions.PHOTO, bot_id
                     )
                 ),
                 InlineKeyboardButton(
-                    text=f"WebView{' ☑️' if custom_bot_option.show_payment_in_webview else ''}",
+                    text=f"WebView{' ✅' if custom_bot_option.show_payment_in_webview else ''}",
                     callback_data=InlinePaymentSetupKeyboard.callback_json(
                         actions.WEBVIEW, bot_id
                     )
@@ -932,7 +937,7 @@ class InlinePaymentSetupKeyboard:
             keyboard_buttons += [
                 [
                     InlineKeyboardButton(
-                        text=f"🔐 Provider Token{' ☑️' if custom_bot.provider_token else ''}",
+                        text=f"🔐 Provider Token{' ✅' if custom_bot.provider_token else ''}",
                         callback_data=InlinePaymentSetupKeyboard.callback_json(
                             actions.SET_PROVIDER_TOKEN, bot_id
                         )

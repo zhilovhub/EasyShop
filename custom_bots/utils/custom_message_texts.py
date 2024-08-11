@@ -10,6 +10,8 @@ class CustomMessageTexts(Enum):
 
     BOT_REMOVED_FROM_CHANNEL_MESSAGE = "Ваш бот @{} был <b>удалён</b> из канала @{}"
 
+    ERROR_IN_CREATING_INVOICE = "Произошла ошибка при создании платежа, администратор магазина уведомлен."
+
     @staticmethod
     def generate_not_enough_in_stock(products: List[ProductSchema], order_id):
         result = Text(f"Чтобы выполнить заказ ", Bold(order_id), " на Вашем складе не хватает следующих товаров:\n\n")
