@@ -150,7 +150,7 @@ async def send_order_data_to_bot_api(
                     url=f"http://{custom_telegram_bot_settings.WEBHOOK_LOCAL_API_URL_HOST}:"
                         f"{custom_telegram_bot_settings.WEBHOOK_LOCAL_API_PORT}"
                         f"/send_web_app_data_to_bot/{order_data.bot_id}",
-                    data=order_data.model_dump_json(include={"order_type": order_type})
+                    data=order_data.model_dump_json()
             ) as response:
                 if response.status != 200:
                     api_logger.error(f"Local API returned {response.status} status code "
