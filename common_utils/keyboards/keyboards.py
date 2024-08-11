@@ -11,7 +11,7 @@ from common_utils.keyboards.keyboard_utils import callback_json_validator, get_b
 from database.config import user_role_db, order_option_db, order_choose_option_db, option_db, bot_db
 from database.models.user_role_model import UserRoleValues
 from database.models.bot_model import BotPaymentTypeValues
-from database.models.option_model import CurrencyCodesValues, CurrencySymbolsValues
+from database.models.option_model import CurrencyCodesValues
 from database.models.order_option_model import OrderOptionTypeValues, UnknownOrderOptionType
 
 
@@ -690,17 +690,6 @@ class InlinePaymentSettingsKeyboard:
                 )
             ],
         ]
-        if selected_variant == BotPaymentTypeValues.MANUAL:
-            keyboard_buttons.append(
-                [
-                    InlineKeyboardButton(
-                        text="💳 Платежная информация",
-                        callback_data=InlinePaymentSettingsKeyboard.callback_json(
-                            actions.BOT_EDIT_POST_ORDER_MESSAGE, bot_id
-                        )
-                    )
-                ],
-            )
         keyboard_buttons += [
             [
                 InlineKeyboardButton(
@@ -712,13 +701,6 @@ class InlinePaymentSettingsKeyboard:
                 )
             ],
         ]
-        if selected_variant == BotPaymentTypeValues.TG_PROVIDER:
-            keyboard_buttons.append([
-                InlineKeyboardButton(text="⚙️ Настроить встроенные платежи",
-                                     callback_data=InlinePaymentSettingsKeyboard.callback_json(
-                                         actions.TG_PROVIDER_SETUP, bot_id
-                                     ))
-            ])
         keyboard_buttons += [
             [
                 InlineKeyboardButton(
@@ -730,6 +712,24 @@ class InlinePaymentSettingsKeyboard:
                 )
             ],
         ]
+        if selected_variant == BotPaymentTypeValues.MANUAL:
+            keyboard_buttons.append(
+                [
+                    InlineKeyboardButton(
+                        text="💳 Платежная информация",
+                        callback_data=InlinePaymentSettingsKeyboard.callback_json(
+                            actions.BOT_EDIT_POST_ORDER_MESSAGE, bot_id
+                        )
+                    )
+                ],
+            )
+        if selected_variant == BotPaymentTypeValues.TG_PROVIDER:
+            keyboard_buttons.append([
+                InlineKeyboardButton(text="⚙️ Настроить встроенные платежи",
+                                     callback_data=InlinePaymentSettingsKeyboard.callback_json(
+                                         actions.TG_PROVIDER_SETUP, bot_id
+                                     ))
+            ])
         if selected_variant == BotPaymentTypeValues.STARS:
             keyboard_buttons.append([
                 InlineKeyboardButton(text="⚙️ Настроить меню платежей в звездах",

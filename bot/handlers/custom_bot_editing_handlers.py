@@ -1,8 +1,8 @@
 import re
 
 from aiogram import Bot
-from aiogram.exceptions import TelegramBadRequest
 from aiogram.types import Message, CallbackQuery, ReplyKeyboardRemove, InputMediaPhoto, FSInputFile
+from aiogram.exceptions import TelegramBadRequest
 from aiogram.fsm.context import FSMContext
 
 from bot.main import bot, cache_resources_file_id_store
@@ -12,20 +12,20 @@ from bot.handlers.routers import custom_bot_editing_router
 from bot.utils.send_instructions import send_instructions
 from bot.keyboards.main_menu_keyboards import ReplyBotMenuKeyboard, ReplyBackBotMenuKeyboard
 
-from common_utils.bot_utils import create_bot_options
 from common_utils.config import common_settings
 from common_utils.invoice import create_invoice_params
+from common_utils.bot_utils import create_bot_options
 from common_utils.keyboards.keyboards import InlineBotEditOrderOptionKeyboard, InlineBotEditOrderOptionsKeyboard, \
     InlineBotMenuKeyboard, InlineBotSettingsMenuKeyboard, InlineEditOrderChooseOptionKeyboard, \
     InlineEditOrderOptionTypeKeyboard, InlinePaymentSettingsKeyboard, InlineCurrencySelectKeyboard, \
     InlinePaymentSetupKeyboard
 
 from database.config import bot_db, option_db, order_option_db, order_choose_option_db
+from database.models.bot_model import BotPaymentTypeValues
 from database.models.option_model import OptionNotFoundError, CurrencyCodesValues, CurrencySymbolsValues
 from database.models.order_option_model import OrderOptionNotFoundError, OrderOptionSchemaWithoutId, \
     OrderOptionTypeValues
 from database.models.order_choose_option_model import OrderChooseOptionSchemaWithoutId
-from database.models.bot_model import BotPaymentTypeValues
 
 from logs.config import logger
 
@@ -57,7 +57,8 @@ async def manage_payment_settings(query: CallbackQuery, state: FSMContext):
     custom_bot_options = await option_db.get_option(custom_bot.options_id)
 
     # check if currency code is still xtr, but stars is not selected
-    if custom_bot.payment_type != BotPaymentTypeValues.STARS and custom_bot_options.currency_code == CurrencyCodesValues.TELEGRAM_STARS:
+    if custom_bot.payment_type != BotPaymentTypeValues.STARS \
+            and custom_bot_options.currency_code == CurrencyCodesValues.TELEGRAM_STARS:
         custom_bot_options.currency_code = CurrencyCodesValues.RUSSIAN_RUBLE
         custom_bot_options.currency_symbol = CurrencySymbolsValues.RUSSIAN_RUBLE
         await option_db.update_option(custom_bot_options)
@@ -322,7 +323,7 @@ async def manage_payment_settings(query: CallbackQuery, state: FSMContext):
 @custom_bot_editing_router.callback_query(
     lambda query: InlineCurrencySelectKeyboard.callback_validator(query.data)
 )
-async def select_currency_settings(query: CallbackQuery, state: FSMContext):
+async def select_currency_settings(query: CallbackQuery):
     callback_data = InlineCurrencySelectKeyboard.Callback.model_validate_json(query.data)
 
     custom_bot = await bot_db.get_bot(callback_data.bot_id)
@@ -696,7 +697,6 @@ async def handle_provider_token_input(message: Message, state: FSMContext):
                                                                                stars)
                 )
             case _:
-                params = message.text.strip().split(':')
                 params = message.text.strip().split(':')
                 if len(params) != 3:
                     return await message.answer("Неверный формат токена.\n\nФормат ожидаемого токена:"

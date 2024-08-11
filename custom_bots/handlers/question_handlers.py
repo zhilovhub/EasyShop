@@ -21,13 +21,12 @@ async def handle_waiting_for_question_state(message: Message, state: FSMContext)
     state_data = await state.get_data()
 
     user_id = message.from_user.id
-    bot_data = await bot_db.get_bot_by_token(message.bot.token)
 
     match message.text:
         case ReplyBackQuestionMenuKeyboard.Callback.ActionEnum.BACK_TO_MAIN_MENU.value:
             await message.answer(
                 "Возвращаюсь в главное меню...",
-                reply_markup=ReplyCustomBotMenuKeyboard.get_keyboard(bot_data.bot_id)
+                reply_markup=ReplyCustomBotMenuKeyboard.get_keyboard()
             )
         case _:
             if not state_data or 'order_id' not in state_data:
@@ -50,7 +49,7 @@ async def handle_waiting_for_question_state(message: Message, state: FSMContext)
             await message.answer(
                 f"\n\nПосле отправки вопроса, Вы сможете отправить следующий <b>минимум через 1 час</b> или "
                 f"<b>после ответа администратора</b>",
-                reply_markup=ReplyCustomBotMenuKeyboard.get_keyboard(bot_data.bot_id)
+                reply_markup=ReplyCustomBotMenuKeyboard.get_keyboard()
             )
 
     await state.set_state(CustomUserStates.MAIN_MENU)
@@ -145,7 +144,7 @@ async def ask_question_callback(query: CallbackQuery, state: FSMContext):
             )
             await query.message.answer(
                 cancel_text,
-                reply_markup=ReplyCustomBotMenuKeyboard.get_keyboard(bot_data.bot_id)
+                reply_markup=ReplyCustomBotMenuKeyboard.get_keyboard()
             )
             await query.message.edit_reply_markup(reply_markup=None)
 

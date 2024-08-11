@@ -37,6 +37,152 @@ class ReplyBackChannelMenuKeyboard:
         )
 
 
+class InlineChannelPublishAcceptKeyboard:
+    class Callback(BaseModel):
+        class ActionEnum(Enum):
+            SEND = "sen"
+            BACK_TO_CHANNEL_PICK = "bb"
+
+        model_config = ConfigDict(from_attributes=True, populate_by_name=True)
+
+        n: str = Field(default="cla", frozen=True)
+        a: ActionEnum
+
+        bot_id: int = Field(alias="bi")
+        mid: int = Field(alias="m")
+        pid: int = Field(alias="p")
+        chid: int | None = Field(alias="ci")
+
+    @staticmethod
+    @callback_json_validator
+    def callback_json(
+            action: Callback.ActionEnum,
+            bot_id: int,
+            msg_id,
+            product_id: int,
+            channel_id: int | None
+    ) -> str:
+        return InlineChannelPublishAcceptKeyboard.Callback(
+            a=action,
+            bot_id=bot_id,
+            chid=channel_id,
+            pid=product_id,
+            mid=msg_id
+        ).model_dump_json(by_alias=True)
+
+    @staticmethod
+    def callback_validator(json_string: str) -> bool:
+        try:
+            InlineChannelPublishAcceptKeyboard.Callback.model_validate_json(json_string)
+            return True
+        except ValidationError:
+            return False
+
+    @staticmethod
+    def get_keyboard(
+            bot_id: int,
+            msg_id: int,
+            product_id: int,
+            channel_id: int
+    ) -> InlineKeyboardMarkup:
+        actions = InlineChannelPublishAcceptKeyboard.Callback.ActionEnum
+
+        return InlineKeyboardMarkup(
+            inline_keyboard=[
+                [
+                    InlineKeyboardButton(
+                        text="Отправить",
+                        callback_data=InlineChannelPublishAcceptKeyboard.callback_json(
+                            actions.SEND, bot_id=bot_id, msg_id=msg_id, product_id=product_id, channel_id=channel_id
+                        )
+                    )
+                ],
+                [
+                    InlineKeyboardButton(
+                        text="🔙 Назад",
+                        callback_data=InlineChannelPublishAcceptKeyboard.callback_json(
+                            actions.BACK_TO_CHANNEL_PICK,
+                            bot_id=bot_id,
+                            product_id=product_id,
+                            msg_id=msg_id,
+                            channel_id=channel_id
+                        )
+                    )
+                ]
+            ]
+        )
+
+
+class InlineChannelsListPublishKeyboard:
+    class Callback(BaseModel):
+        class ActionEnum(Enum):
+            PICK_CHANNEL = "p"
+            CANCEL = "c"
+
+        model_config = ConfigDict(from_attributes=True, populate_by_name=True)
+
+        n: str = Field(default="cl", frozen=True)
+        a: ActionEnum
+
+        bot_id: int = Field(alias="bi")
+        mid: int = Field(alias="m")
+        chid: int | None = Field(alias="ci")
+        pid: int = Field(alias="p")
+
+    @staticmethod
+    @callback_json_validator
+    def callback_json(
+            action: Callback.ActionEnum,
+            bot_id: int,
+            msg_id,
+            product_id: int,
+            channel_id: int | None,
+    ) -> str:
+        return InlineChannelsListPublishKeyboard.Callback(
+            a=action,
+            bot_id=bot_id,
+            chid=channel_id,
+            mid=msg_id,
+            pid=product_id
+        ).model_dump_json(by_alias=True)
+
+    @staticmethod
+    def callback_validator(json_string: str) -> bool:
+        try:
+            InlineChannelsListPublishKeyboard.Callback.model_validate_json(json_string)
+            return True
+        except ValidationError:
+            return False
+
+    @staticmethod
+    async def get_keyboard(
+            bot_id: int,
+            msg_id: int,
+            product_id: int
+    ) -> InlineKeyboardMarkup:
+        actions = InlineChannelsListPublishKeyboard.Callback.ActionEnum
+
+        resized_channels_buttons = await _get_resized_channels_button(
+            keyboard=InlineChannelsListPublishKeyboard,
+            action=actions.PICK_CHANNEL,
+            bot_id=bot_id,
+            msg_id=msg_id,
+            product_id=product_id
+        )
+
+        return InlineKeyboardMarkup(inline_keyboard=[
+            *resized_channels_buttons,
+            [
+                InlineKeyboardButton(
+                    text="Отмена",
+                    callback_data=InlineChannelsListPublishKeyboard.callback_json(
+                        actions.CANCEL, bot_id, msg_id, product_id, None
+                    )
+                )
+            ],
+        ])
+
+
 class InlineChannelsListKeyboard:
     class Callback(BaseModel):
         class ActionEnum(Enum):
@@ -78,16 +224,11 @@ class InlineChannelsListKeyboard:
     ) -> InlineKeyboardMarkup:
         actions = InlineChannelsListKeyboard.Callback.ActionEnum
 
-        all_channels = await get_bot_channels(bot_id=bot_id)
-        channels_buttons = [
-            InlineKeyboardButton(
-                text='@' + channel[1],
-                callback_data=InlineChannelsListKeyboard.callback_json(
-                    actions.OPEN_CHANNEL, bot_id=bot_id, channel_id=channel[0].channel_id
-                )
-            ) for channel in all_channels
-        ]
-        resized_channels_buttons = [channels_buttons[i:i + 4] for i in range(0, len(channels_buttons), 4)]
+        resized_channels_buttons = await _get_resized_channels_button(
+            keyboard=InlineChannelsListKeyboard,
+            action=actions.OPEN_CHANNEL,
+            bot_id=bot_id
+        )
 
         return InlineKeyboardMarkup(inline_keyboard=[
             *resized_channels_buttons,
@@ -294,3 +435,36 @@ class InlineContestTypeKeyboard:
                 ),
             ],
         ])
+
+
+async def _get_resized_channels_button(
+        keyboard: InlineChannelsListPublishKeyboard.__class__ | InlineChannelsListKeyboard.__class__,
+        action,
+        bot_id: int,
+        msg_id: int | None = None,
+        product_id: int | None = None
+
+) -> list[list[InlineKeyboardButton]]:
+    """Returns resized inline keyboard with channels as buttons"""
+    all_channels = await get_bot_channels(bot_id=bot_id)
+
+    if isinstance(keyboard, InlineChannelsListKeyboard):
+        channels_buttons = [
+            InlineKeyboardButton(
+                text='@' + channel[1],
+                callback_data=keyboard.callback_json(
+                    action, bot_id=bot_id, channel_id=channel[0].channel_id
+                )
+            ) for channel in all_channels
+        ]
+    else:
+        channels_buttons = [
+            InlineKeyboardButton(
+                text='@' + channel[1],
+                callback_data=keyboard.callback_json(
+                    action, bot_id=bot_id, msg_id=msg_id, product_id=product_id, channel_id=channel[0].channel_id
+                )
+            ) for channel in all_channels
+        ]
+
+    return [channels_buttons[i:i + 4] for i in range(0, len(channels_buttons), 4)]

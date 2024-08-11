@@ -4,6 +4,7 @@ from aiogram import Bot
 from aiogram.exceptions import TelegramUnauthorizedError
 from aiogram.types import InlineQueryResultArticle, InputTextMessageContent
 
+from bot.handlers.admin_bot_menu_handlers import send_new_order_notify
 from custom_bots.multibot import web, session, OTHER_BOTS_URL, main_bot
 from custom_bots.utils.utils import is_bot_token
 from custom_bots.utils.order_creation import order_creation_process
@@ -15,7 +16,7 @@ from database.config import bot_db
 from database.models.bot_model import BotNotFoundError
 from database.models.product_model import NotEnoughProductsInStockToReduce
 
-from logs.config import custom_bot_logger, extra_params
+from logs.config import custom_bot_logger, extra_params, logger
 
 routes = web.RouteTableDef()
 
@@ -101,54 +102,75 @@ async def send_web_app_data_to_bot(request):
     if not is_bot_token(bot.token):
         return web.Response(status=400, text="Incorrect bot token format.")
 
-    user_id = -1
     custom_bot_tg = Bot(bot.token)
     custom_bot_logger.debug(f"new request to with tg_bot : {custom_bot_tg}")
     sent_data = await request.json()
+    custom_bot_logger.debug(f"new request to with sent_data : {sent_data}")
+
+    user_id = sent_data["from_user"]
+    order_type = sent_data["order_type"]
 
     invoice_link = None
 
-    try:
-        custom_bot_logger.debug(f"new request to with sent_data : {sent_data}")
-        user_id = sent_data["from_user"]
-        order = await create_order(user_id, sent_data, OrderType.CUSTOM_BOT_ORDER, _json=False)
-        order_user_data = await custom_bot_tg.get_chat(user_id)
-        invoice_link = await order_creation_process(order, order_user_data)
-    except NotEnoughProductsInStockToReduce as e:
-        await custom_bot_tg.send_message(
-            user_id,
-            f":(\nК сожалению на складе недостаточно <b>{e.product.name}</b> для выполнения Вашего заказа."
-        )
-    except Exception as e:
-        await custom_bot_tg.send_message(
-            user_id,
-            "Произошла ошибка при создании заказа, администраторы уведомлены."
-        )
+    match order_type:
+        case OrderType.MAIN_BOT_TEST_ORDER:
+            try:
+                order = await create_order(user_id, sent_data, OrderType.MAIN_BOT_TEST_ORDER, _json=False)
 
-        try:
-            data = json.loads(sent_data)
-            bot_id = data["bot_id"]
-        except Exception as another_e:
-            bot_id = -1
-            custom_bot_logger.error(
-                f"user_id={user_id}: Unable to find bot_id from event.web_app_data.data",
-                extra=extra_params(user_id=user_id),
-                exc_info=another_e
-            )
+                logger.info(f"order with id #{order.id} created")
+            except NotEnoughProductsInStockToReduce as e:
+                logger.info("not enough items for order creation")
+                return await main_bot.send_message(
+                    chat_id=user_id,
+                    text=f"К сожалению на складе недостаточно <b>{e.product.name}</b> для выполнения Вашего заказа.")
+            except Exception as e:
+                logger.error("error while creating order", exc_info=e)
+                raise e
+            try:
+                await send_new_order_notify(order, user_id)
+            except Exception as e:
+                logger.error("error while sending test order notification", exc_info=e)
+                raise e
+        case OrderType.CUSTOM_BOT_ORDER:
+            try:
+                order = await create_order(user_id, sent_data, OrderType.CUSTOM_BOT_ORDER, _json=False)
+                order_user_data = await custom_bot_tg.get_chat(user_id)
+                invoice_link = await order_creation_process(order, order_user_data)
+            except NotEnoughProductsInStockToReduce as e:
+                await custom_bot_tg.send_message(
+                    chat_id=user_id,
+                    text=f"К сожалению на складе недостаточно <b>{e.product.name}</b> для выполнения Вашего заказа."
+                )
+            except Exception as e:
+                await custom_bot_tg.send_message(
+                    chat_id=user_id,
+                    text="Произошла ошибка при создании заказа, администраторы уведомлены."
+                )
 
-        custom_bot_logger.error(
-            f"user_id={user_id}: Unable to create an order in bot_id={bot_id}",
-            extra=extra_params(user_id=user_id, bot_id=bot_id),
-            exc_info=e
-        )
-        raise e
+                try:
+                    data = json.loads(sent_data)
+                    bot_id = data["bot_id"]
+                except Exception as another_e:
+                    bot_id = -1
+                    custom_bot_logger.error(
+                        f"user_id={user_id}: Unable to find bot_id from event.web_app_data.data",
+                        extra=extra_params(user_id=user_id),
+                        exc_info=another_e
+                    )
 
-    try:
-        return web.Response(status=200,
-                            body=json.dumps({"invoice_url": invoice_link}),
-                            content_type='application/json')
-    except Exception as e:
-        custom_bot_logger.error("error while sending response from local Api", exc_info=e)
+                custom_bot_logger.error(
+                    f"user_id={user_id}: Unable to create an order in bot_id={bot_id}",
+                    extra=extra_params(user_id=user_id, bot_id=bot_id),
+                    exc_info=e
+                )
+                raise e
+
+            try:
+                return web.Response(status=200,
+                                    body=json.dumps({"invoice_url": invoice_link}),
+                                    content_type='application/json')
+            except Exception as e:
+                custom_bot_logger.error("error while sending response from local Api", exc_info=e)
 
 
 @routes.post('/send_hex_color_to_bot')

@@ -93,8 +93,6 @@ async def start_cmd(message: Message, state: FSMContext):
     start_msg = options.start_msg
     await message.answer(
         format_locales(start_msg, message.from_user, message.chat),
-        reply_markup=ReplyCustomBotMenuKeyboard.get_keyboard(
-            bot.bot_id
-        )
+        reply_markup=ReplyCustomBotMenuKeyboard.get_keyboard()
     )
     await state.set_state(CustomUserStates.MAIN_MENU)

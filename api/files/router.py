@@ -78,7 +78,7 @@ async def get_product_thumbnail(product_id: int) -> FileResponse:
 
     file_name = product.picture[0]
 
-    file_ext = product.picture[0].split('.')[-1]  # TODO fix bug with BLOB
+    # file_ext = product.picture[0].split('.')[-1]  # TODO fix bug with BLOB
     thumbnail_path = _get_file_thumbnail_path(common_settings.FILES_PATH + file_name)
 
     headers = {

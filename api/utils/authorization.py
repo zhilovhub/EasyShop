@@ -23,7 +23,8 @@ async def check_admin_authorization(bot_id: int, data_string: str, custom_bot_va
 
     :returns: True if (hash from telegram is valid) or the (mode is DEBUG and data_string is "DEBUG") else False
 
-    :raises HTTPException:
+    :raises HTTPUnauthorizedError:
+    :raises HTTPBotNotFoundError:
     """
     if api_settings.API_DEBUG_MODE and data_string == "DEBUG":
         return True

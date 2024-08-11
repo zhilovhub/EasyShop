@@ -7,9 +7,11 @@ from pydantic import ValidationError, BaseModel
 
 from fastapi import APIRouter, Depends, Header
 
-from api.utils import check_admin_authorization, HTTPBadRequestError, HTTPInternalError, RESPONSES_DICT
-from common_utils.config import custom_telegram_bot_settings
+from api.utils import check_admin_authorization, HTTPBadRequestError, HTTPInternalError, RESPONSES_DICT, \
+    HTTPUnauthorizedError, HTTPBotNotFoundError
 
+from common_utils.config import custom_telegram_bot_settings
+from common_utils.order_utils.order_type import OrderType
 from common_utils.exceptions.local_api_exceptions import LocalAPIException
 
 from database.config import order_db
@@ -126,11 +128,21 @@ class SendOrderDataResponse(BaseModel):
 
 
 @router.post("/send_order_data_to_bot")
-async def send_order_data_to_bot_api(order_data: OrderData, authorization_data: str = Header()) -> SendOrderDataResponse:
+async def send_order_data_to_bot_api(
+        order_data: OrderData,
+        authorization_data: str = Header()
+) -> SendOrderDataResponse:
     """
     :raises HTTPInternalError:
     """
-    await check_admin_authorization(order_data.bot_id, authorization_data, custom_bot_validate=True)
+    try:
+        await check_admin_authorization(order_data.bot_id, authorization_data, custom_bot_validate=True)
+        order_type = OrderType.CUSTOM_BOT_ORDER.value
+    except HTTPUnauthorizedError:
+        await check_admin_authorization(order_data.bot_id, authorization_data, custom_bot_validate=False)
+        order_type = OrderType.MAIN_BOT_TEST_ORDER.value
+    except (HTTPUnauthorizedError, HTTPBotNotFoundError) as e:
+        raise e
     try:
         api_logger.debug(f"get new order data from web_app: {order_data}")
         async with aiohttp.ClientSession() as session:
@@ -138,7 +150,7 @@ async def send_order_data_to_bot_api(order_data: OrderData, authorization_data: 
                     url=f"http://{custom_telegram_bot_settings.WEBHOOK_LOCAL_API_URL_HOST}:"
                         f"{custom_telegram_bot_settings.WEBHOOK_LOCAL_API_PORT}"
                         f"/send_web_app_data_to_bot/{order_data.bot_id}",
-                    data=order_data.model_dump_json()
+                    data=order_data.model_dump_json(include={"order_type": order_type})
             ) as response:
                 if response.status != 200:
                     api_logger.error(f"Local API returned {response.status} status code "

@@ -88,7 +88,5 @@ async def main_menu_handler(message: Message):
 
             await message.answer(
                 format_locales(default_msg, message.from_user, message.chat),
-                reply_markup=ReplyCustomBotMenuKeyboard.get_keyboard(
-                    bot.bot_id
-                )
+                reply_markup=ReplyCustomBotMenuKeyboard.get_keyboard()
             )

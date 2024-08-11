@@ -55,7 +55,7 @@ class MessageTexts(Enum):
 📌 Наш канал: @EzShopOfficial
 📌 По всем вопросам: @maxzim398
 📌 <b>Подробная инструкция:</b> https://ezshoptg.tilda.ws/
-    """
+    """  # noqa
 
     SUBSCRIPTION_EXPIRE_NOTIFY = """
 Напоминаю о том, что Ваша подписка заканчивается <b>{expire_date}</b> (через <b>{expire_days}</b> дней).
@@ -233,3 +233,12 @@ class MessageTexts(Enum):
             order_option.position_index,
         )
         return result.as_kwargs()
+
+    @staticmethod
+    def generate_publish_product(product: ProductSchema):
+        result = f"В продаже " \
+            f"{product.name}\n\n" \
+            "Цена " \
+            f"{product.price}\n\n" \
+            f"Успейте купить!"
+        return result

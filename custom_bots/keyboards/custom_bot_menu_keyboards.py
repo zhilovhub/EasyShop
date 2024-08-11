@@ -18,7 +18,7 @@ class ReplyCustomBotMenuKeyboard:
         a: ActionEnum
 
     @staticmethod
-    def get_keyboard(bot_id: int) -> ReplyKeyboardMarkup:
+    def get_keyboard() -> ReplyKeyboardMarkup:
         actions = ReplyCustomBotMenuKeyboard.Callback.ActionEnum
 
         return ReplyKeyboardMarkup(

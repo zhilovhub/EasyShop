@@ -6,77 +6,218 @@ from sqlalchemy.exc import IntegrityError
 
 from aiogram import F, Bot
 from aiogram.enums import ParseMode
-from aiogram.types import Message, CallbackQuery
+from aiogram.types import Message, CallbackQuery, FSInputFile
 from aiogram.exceptions import TelegramUnauthorizedError
 from aiogram.fsm.context import FSMContext
 from aiogram.utils.token import validate_token, TokenValidationError
 from aiogram.fsm.storage.base import StorageKey
 from aiogram.utils.formatting import Text, Bold, Italic
 
+from bot.main import bot, QUESTION_MESSAGES, cache_resources_file_id_store
 from bot.utils import MessageTexts
 from bot.states.states import States
 from bot.handlers.routers import admin_bot_menu_router
 from bot.utils.product_utils import generate_article
 from bot.utils.custom_bot_api import start_custom_bot, stop_custom_bot
-from bot.keyboards.channel_keyboards import InlineChannelsListKeyboard
-from bot.main import bot, QUESTION_MESSAGES, cache_resources_file_id_store
-from bot.keyboards.main_menu_keyboards import (ReplyBotMenuKeyboard, ReplyBackBotMenuKeyboard,
-                                               SelectHexColorWebAppInlineKeyboard)
+from bot.utils.send_instructions import send_instructions
+from bot.keyboards.channel_keyboards import (
+    InlineChannelPublishAcceptKeyboard,
+    InlineChannelsListKeyboard,
+    InlineChannelsListPublishKeyboard
+)
+from bot.keyboards.main_menu_keyboards import (
+    InlineAcceptPublishProductKeyboard,
+    ReplyBotMenuKeyboard,
+    ReplyBackBotMenuKeyboard,
+    SelectHexColorWebAppInlineKeyboard
+)
 from bot.keyboards.stock_menu_keyboards import InlineStockMenuKeyboard, InlineWebStockKeyboard
 from bot.keyboards.post_message_keyboards import InlinePostMessageMenuKeyboard
 from bot.post_message.post_message_create import post_message_create
 
-from bot.utils.send_instructions import send_instructions
 
 from common_utils import generate_admin_invite_link
 from common_utils.config import common_settings
 from common_utils.bot_utils import create_bot_options, create_custom_bot
 from common_utils.message_texts import MessageTexts as CommonMessageTexts
 from common_utils.bot_settings_config import BOT_PROPERTIES
-from common_utils.keyboards.keyboards import (InlineBotEditOrderOptionsKeyboard, InlineBotMenuKeyboard,
-                                              InlineBotSettingsMenuKeyboard, InlineAdministratorsManageKeyboard,
-                                              InlinePaymentSettingsKeyboard, InlineBotMainWebAppButton)
-from common_utils.order_utils.order_type import OrderType
-from common_utils.order_utils.order_utils import create_order
+from common_utils.keyboards.keyboards import (
+    InlineBotEditOrderOptionsKeyboard, InlineBotMenuKeyboard, InlineBotSettingsMenuKeyboard,
+    InlineAdministratorsManageKeyboard, InlineModeProductKeyboardButton, InlinePaymentSettingsKeyboard,
+    InlineBotMainWebAppButton
+)
 from common_utils.broadcasting.broadcasting import send_event, EventTypes
 from common_utils.storage.custom_bot_storage import custom_bot_storage
 from common_utils.keyboards.order_manage_keyboards import InlineOrderCancelKeyboard, InlineOrderStatusesKeyboard, \
     InlineAcceptReviewKeyboard, InlineOrderCustomBotKeyboard, InlineCreateReviewKeyboard
 
 from database.config import (bot_db, product_db, order_db, product_review_db, user_db, custom_bot_user_db, mailing_db,
-                             user_role_db, option_db, order_option_db)
-from database.models.bot_model import BotIntegrityError
-from database.models.user_role_model import UserRoleSchema, UserRoleValues
+                             user_role_db, option_db, order_option_db, channel_db)
+from database.models.bot_model import BotIntegrityError, BotNotFoundError
 from database.models.order_model import OrderSchema, OrderNotFoundError, OrderStatusValues
 from database.models.option_model import OptionNotFoundError
 from database.models.mailing_model import MailingNotFoundError
-from database.models.product_model import ProductWithoutId, NotEnoughProductsInStockToReduce
+from database.models.product_model import ProductWithoutId, ProductNotFoundError
+from database.models.user_role_model import UserRoleSchema, UserRoleValues
 from database.models.post_message_model import PostMessageType
 from database.models.product_review_model import ProductReviewNotFoundError
 
 from logs.config import logger, extra_params
 
+import json
+
 
 @admin_bot_menu_router.message(F.web_app_data)
 async def process_web_app_request(event: Message):
-    """Срабатывает, когда админ в главном боте делает тестовый заказ"""
+    """Срабатывает, когда админ выбрал товар для отправки в канал"""
 
-    user_id = event.from_user.id
-    try:
-        order = await create_order(event.from_user.id, event.web_app_data.data, OrderType.MAIN_BOT_TEST_ORDER)
+    data = json.loads(event.web_app_data.data)
 
-        logger.info(f"order with id #{order.id} created")
-    except NotEnoughProductsInStockToReduce as e:
-        logger.info("not enough items for order creation")
-        return await event.answer(
-            f":(\nК сожалению на складе недостаточно <b>{e.product.name}</b> для выполнения Вашего заказа.")
-    except Exception as e:
-        logger.warning("error while creating order", exc_info=e)
-        return await event.answer("Произошла ошибка при создании заказа, попробуйте еще раз.")
-    try:
-        await send_new_order_notify(order, user_id)
-    except Exception as e:
-        logger.error("error while sending test order notification", exc_info=e)
+    # _json: bool = True
+    # if _json:
+    #     data = json.loads(event.web_app_data.data)
+    # else:
+    #     data = event.web_app_data.data
+
+    # data = {'bot_id': '1', 'product_id': 3}
+    if data.get("product_id") is None:
+        raise Exception("It is impossible")
+    else:
+        product_id = data["product_id"]
+
+        try:
+            product = await product_db.get_product(product_id)
+        except ProductNotFoundError as e:
+            logger.error("error while picking product for publish", exc_info=e)
+            raise e
+
+        try:
+            bot_id = int(data["bot_id"])
+            custom_bot = await bot_db.get_bot(bot_id)
+        except BotNotFoundError as e:
+            logger.error("error while picking product for publish bot not found", exc_info=e)
+            raise e
+        except ValueError as e:
+            logger.error("error while picking product for publish bot id not int", exc_info=e)
+            raise e
+
+        channels = await channel_db.get_all_channels(custom_bot.bot_id)
+        if len(channels) == 0:
+            return await event.answer(
+                "У вас сейчас нет добавленных каналов\n\nДобавьте, после чего попробуйте опубликовать товар заново",
+                reply_markup=await InlineChannelsListKeyboard.get_keyboard(custom_bot.bot_id)
+            )
+        custom_bot_data = await Bot(token=custom_bot.token).get_me()
+        message = await event.answer_photo(
+            photo=FSInputFile(f"{common_settings.FILES_PATH}{product.picture[0]}"),
+            caption=MessageTexts.generate_publish_product(product),
+            reply_markup=InlineModeProductKeyboardButton.get_keyboard(
+                product_id=product_id,
+                bot_username=custom_bot_data.username)
+        )
+        await message.reply(
+            "Подтвердить отправление?",
+            reply_markup=InlineAcceptPublishProductKeyboard.get_keyboard(
+                custom_bot.bot_id, product_id, message.message_id)
+        )
+
+
+@admin_bot_menu_router.callback_query(lambda query: InlineAcceptPublishProductKeyboard.callback_validator(query.data))
+async def get_channel_for_publish(query: CallbackQuery):
+    """Срабатывает когда пользователь (не) подтверждает отправление продукта в канал"""
+    callback_data = InlineAcceptPublishProductKeyboard.Callback.model_validate_json(query.data)
+    bot_id = callback_data.bot_id
+    custom_bot = await bot_db.get_bot(bot_id)
+
+    match callback_data.a:
+        case callback_data.ActionEnum.ACCEPT:
+            await query.answer("Выберите канал: ", show_alert=True)
+            await query.message.delete()
+            await query.message.answer(
+                MessageTexts.BOT_CHANNELS_LIST_MESSAGE.value.format((await Bot(custom_bot.token).get_me()).username),
+                reply_markup=await InlineChannelsListPublishKeyboard.get_keyboard(
+                    custom_bot.bot_id,
+                    callback_data.pid,
+                    callback_data.msg_id
+                )
+            )
+
+        case callback_data.ActionEnum.REJECT:
+            await query.message.answer("Отправка отменена")
+            await query.message.delete()
+            await query.message.answer(
+                MessageTexts.BOT_MENU_MESSAGE.value.format((await Bot(custom_bot.token).get_me()).username),
+                reply_markup=await InlineBotMenuKeyboard.get_keyboard(custom_bot.bot_id, query.from_user.id)
+            )
+
+
+@admin_bot_menu_router.callback_query(lambda query: InlineChannelsListPublishKeyboard.callback_validator(query.data))
+async def pick_channel_for_publish(query: CallbackQuery):
+    callback_data = InlineChannelsListPublishKeyboard.Callback.model_validate_json(query.data)
+    bot_id = callback_data.bot_id
+    custom_bot = await bot_db.get_bot(bot_id)
+    channel = await Bot(token=custom_bot.token).get_chat(callback_data.chid)
+
+    match callback_data.a:
+        case callback_data.ActionEnum.CANCEL:
+            await query.message.answer("Отправка отменена")
+            await query.message.delete()
+            await query.message.answer(
+                MessageTexts.BOT_MENU_MESSAGE.value.format((await Bot(custom_bot.token).get_me()).username),
+                reply_markup=await InlineBotMenuKeyboard.get_keyboard(custom_bot.bot_id, query.from_user.id)
+            )
+        case callback_data.ActionEnum.PICK_CHANNEL:
+            await query.message.delete()
+            await bot.send_message(
+                chat_id=query.from_user.id,
+                reply_to_message_id=callback_data.mid,
+                text=f"Подтвердите отправку этого сообщения в канал @{channel.username}",
+                reply_markup=InlineChannelPublishAcceptKeyboard.get_keyboard(
+                    custom_bot.bot_id,
+                    msg_id=callback_data.mid,
+                    product_id=callback_data.pid,
+                    channel_id=callback_data.chid
+                )
+            )
+
+
+@admin_bot_menu_router.callback_query(lambda query: InlineChannelPublishAcceptKeyboard.callback_validator(query.data))
+async def publish_product_in_channel(query: CallbackQuery):
+    callback_data = InlineChannelPublishAcceptKeyboard.Callback.model_validate_json(query.data)
+    bot_id = callback_data.bot_id
+    custom_bot = await bot_db.get_bot(bot_id)
+    custom_tg_bot = Bot(token=custom_bot.token)
+
+    match callback_data.a:
+        case callback_data.ActionEnum.BACK_TO_CHANNEL_PICK:
+            await query.answer("Выберите канал", show_alert=True)
+            await query.message.delete()
+            await query.message.answer(
+                MessageTexts.BOT_CHANNELS_LIST_MESSAGE.value.format((await Bot(custom_bot.token).get_me()).username),
+                reply_markup=await InlineChannelsListPublishKeyboard.get_keyboard(
+                    custom_bot.bot_id,
+                    callback_data.mid,
+                    callback_data.pid
+                )
+            )
+
+        case callback_data.ActionEnum.SEND:
+            try:
+                product = await product_db.get_product(callback_data.pid)
+            except ProductNotFoundError:
+                await query.answer("Товар уже удален", show_alert=True)
+                await query.message.delete()
+                return
+            await query.message.delete()
+            await custom_tg_bot.send_photo(
+                chat_id=callback_data.chid,
+                photo=FSInputFile(f"{common_settings.FILES_PATH}{product.picture[0]}"),
+                caption=MessageTexts.generate_publish_product(product),
+                reply_markup=InlineModeProductKeyboardButton.get_keyboard(
+                    product_id=callback_data.pid,
+                    bot_username=(await custom_tg_bot.get_me()).username
+                )
+            )
 
 
 @admin_bot_menu_router.message(F.reply_to_message)
