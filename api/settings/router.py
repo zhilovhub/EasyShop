@@ -64,7 +64,7 @@ class HexColorData(BaseModel):
 
 
 @router.post("/send_hex_color_to_bot")
-async def send_order_data_to_bot_api(data: HexColorData) -> str:
+async def send_hex_color_to_bot_api(data: HexColorData) -> str:
     """
     :raises HTTPInternalError:
     """

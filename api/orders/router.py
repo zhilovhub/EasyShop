@@ -154,7 +154,7 @@ async def send_order_data_to_bot_api(
             ) as response:
                 if response.status != 200:
                     api_logger.error(f"Local API returned {response.status} status code "
-                                     f"with body {await response.json()}")
+                                     f"with body {await response.text()}")
                     raise LocalAPIException
                 invoice_url = (await response.json())['invoice_url']
     except LocalAPIException:
