@@ -1,3 +1,4 @@
+import json
 from datetime import datetime
 import random
 import string
@@ -144,13 +145,17 @@ async def send_order_data_to_bot_api(
     except (HTTPUnauthorizedError, HTTPBotNotFoundError) as e:
         raise e
     try:
-        api_logger.debug(f"get new order data from web_app: {order_data}")
+        order_data_json = order_data.model_dump()
+        order_data_json["order_type"] = order_type
+        order_data_json = json.dumps(order_data_json)
+
+        api_logger.debug(f"get new order data from web_app: {order_data_json}")
         async with aiohttp.ClientSession() as session:
             async with session.post(
                     url=f"http://{custom_telegram_bot_settings.WEBHOOK_LOCAL_API_URL_HOST}:"
                         f"{custom_telegram_bot_settings.WEBHOOK_LOCAL_API_PORT}"
                         f"/send_web_app_data_to_bot/{order_data.bot_id}",
-                    data=order_data.model_dump_json()
+                    data=order_data_json
             ) as response:
                 if response.status != 200:
                     api_logger.error(f"Local API returned {response.status} status code "
