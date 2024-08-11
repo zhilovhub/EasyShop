@@ -1,4 +1,3 @@
-import json
 from datetime import datetime
 import random
 import string
@@ -121,7 +120,8 @@ class OrderData(BaseModel):
     time: str | None
     comment: str | None
     query_id: str | None = None
-    from_user: int | None = None
+    from_user: int | None = None,
+    order_type: OrderType | None = None
 
 
 class SendOrderDataResponse(BaseModel):
@@ -138,24 +138,20 @@ async def send_order_data_to_bot_api(
     """
     try:
         await check_admin_authorization(order_data.bot_id, authorization_data, custom_bot_validate=True)
-        order_type = OrderType.CUSTOM_BOT_ORDER.value
+        order_data.order_type = OrderType.CUSTOM_BOT_ORDER.value
     except HTTPUnauthorizedError:
         await check_admin_authorization(order_data.bot_id, authorization_data, custom_bot_validate=False)
-        order_type = OrderType.MAIN_BOT_TEST_ORDER.value
+        order_data.order_type = OrderType.MAIN_BOT_TEST_ORDER.value
     except (HTTPUnauthorizedError, HTTPBotNotFoundError) as e:
         raise e
     try:
-        order_data_json = order_data.model_dump()
-        order_data_json["order_type"] = order_type
-        order_data_json = json.dumps(order_data_json)
-
-        api_logger.debug(f"get new order data from web_app: {order_data_json}")
+        api_logger.debug(f"get new order data from web_app: {order_data}")
         async with aiohttp.ClientSession() as session:
             async with session.post(
                     url=f"http://{custom_telegram_bot_settings.WEBHOOK_LOCAL_API_URL_HOST}:"
                         f"{custom_telegram_bot_settings.WEBHOOK_LOCAL_API_PORT}"
                         f"/send_web_app_data_to_bot/{order_data.bot_id}",
-                    data=order_data_json
+                    data=order_data.model_dump_json()
             ) as response:
                 if response.status != 200:
                     api_logger.error(f"Local API returned {response.status} status code "
