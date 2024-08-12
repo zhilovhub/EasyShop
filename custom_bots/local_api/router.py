@@ -165,12 +165,12 @@ async def send_web_app_data_to_bot(request):
                 )
                 raise e
 
-            try:
-                return web.Response(status=200,
-                                    body=json.dumps({"invoice_url": invoice_link}),
-                                    content_type='application/json')
-            except Exception as e:
-                custom_bot_logger.error("error while sending response from local Api", exc_info=e)
+    try:
+        return web.Response(status=200,
+                            body=json.dumps({"invoice_url": invoice_link}),
+                            content_type='application/json')
+    except Exception as e:
+        custom_bot_logger.error("error while sending response from local Api", exc_info=e)
 
 
 @routes.post('/send_hex_color_to_bot')
