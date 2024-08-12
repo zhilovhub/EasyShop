@@ -22,6 +22,7 @@ class EventTypes(Enum):
     # Main bot events
     NEW_USER = "new_user"
     STARTED_TRIAL_TRY = "stared_trial_try"
+    STARTED_BIG_TRIAL_TRY = "started_big_trial_try"
     STARTED_TRIAL_SUCCESS = "stared_trial_success"
     SUBSCRIBED_PROCESS = "subscribed_process"
     SUBSCRIBED_SUCCESS = "subscribed_success"
@@ -51,6 +52,15 @@ def get_event_message_text(
                 "\nid = ", Bold(f"{user_id}"),
                 "\nusername = ", Bold(f"@{username}"),
                 "\nИмя = ", Bold(f"{user_full_name}")
+            )
+        case EventTypes.STARTED_BIG_TRIAL_TRY:
+            text = Text(
+                "⚠ Пользователь ",
+                Bold(f"@{username} "),
+                Bold(f"({user_full_name})"),
+                " пытается принять ",
+                Bold("пробную"),
+                " подписку на 30 дней",
             )
         case EventTypes.STARTED_TRIAL_TRY:
             text = Text(
@@ -135,11 +145,15 @@ async def send_event(
         ).render()
 
         match event_type:
-            case (EventTypes.NEW_USER |
-                  EventTypes.SUBSCRIBED_SUCCESS | EventTypes.SUBSCRIBED_PROCESS |
-                  EventTypes.STARTED_TRIAL_SUCCESS | EventTypes.STARTED_TRIAL_TRY |
-                  EventTypes.USER_CREATED_FIRST_BOT
-                  ):
+            case (
+                EventTypes.NEW_USER
+                | EventTypes.SUBSCRIBED_SUCCESS
+                | EventTypes.SUBSCRIBED_PROCESS
+                | EventTypes.STARTED_TRIAL_SUCCESS
+                | EventTypes.STARTED_TRIAL_TRY
+                | EventTypes.USER_CREATED_FIRST_BOT
+                | EventTypes.STARTED_BIG_TRIAL_TRY
+            ):
                 return await main_bot.send_message(
                     chat_id=common_settings.ADMIN_GROUP_ID,
                     text=message_text,

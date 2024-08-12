@@ -16,6 +16,7 @@ from bot.handlers.subscription_handlers import send_subscription_expire_notify, 
 from bot.keyboards.subscription_keyboards import InlineSubscriptionContinueKeyboard
 from bot.middlewaries.subscription_middleware import CheckSubscriptionMiddleware
 
+from common_utils.subscription import config
 from common_utils.keyboards.keyboards import InlineBotMenuKeyboard
 from common_utils.subscription.subscription import UserHasAlreadyStartedTrial
 from common_utils.exceptions.bot_exceptions import UnknownDeepLinkArgument
@@ -107,7 +108,7 @@ async def remove_bot_admin(user_id: int, user_state: FSMContext):
 @commands_router.message(CommandStart(deep_link=True))
 async def deep_link_start_command_handler(message: Message, state: FSMContext, command: CommandObject):
     """
-    Проверяет команду /start с параметрами: admin,
+    Проверяет команду /start с параметрами: restart, admin, kostya_seller
 
     :raises UnknownDeepLinkArgument:
     """
@@ -124,11 +125,17 @@ async def deep_link_start_command_handler(message: Message, state: FSMContext, c
             await message.answer("🚫 Вы не можете быть одновременно и админом и владельцем бота.")
         else:
             await _handle_admin_invite_link(message, state, deep_link_params)
+    elif deep_link_params[0] == "kostya_seller":
+        await _check_if_new_user(
+            message, state, config.BIG_TRIAL_DURATION_IN_DAYS
+        )  # Проверяем, новый ли пользователь и задаем пробный период на 30 дней
     else:
         raise UnknownDeepLinkArgument(arg=deep_link_params)
 
 
-async def _check_if_new_user(message: Message, state: FSMContext) -> None:
+async def _check_if_new_user(
+    message: Message, state: FSMContext, trial_duration: int = config.TRIAL_DURATION_IN_DAYS
+) -> None:
     user_id = message.from_user.id
 
     try:  # Проверка, есть ли такой пользователь (если нет то это новый пользователь)
@@ -137,11 +144,34 @@ async def _check_if_new_user(message: Message, state: FSMContext) -> None:
         logger.info(f"user {user_id} not found in db, creating new instance...")
 
         await send_event(message.from_user, EventTypes.NEW_USER)
-        await user_db.add_user(UserSchema(
-            user_id=user_id, username=message.from_user.username, registered_at=datetime.utcnow(),
-            status=UserStatusValues.NEW, locale="default", subscribed_until=None)
+        await user_db.add_user(
+            UserSchema(
+                user_id=user_id,
+                username=message.from_user.username,
+                registered_at=datetime.utcnow(),
+                status=UserStatusValues.NEW,
+                locale="default",
+                subscribed_until=None,
+            )
         )
-        await _start_trial(message, state)  # Задаём новому пользователю пробный период (статус TRIAL)
+        await _start_trial(message, state, trial_duration)  # Задаём новому пользователю пробный период (статус TRIAL)
+
+        user_bots = await user_role_db.get_user_bots(user_id)
+
+        # Отправляем инструкцию. Если у человека есть бот, к инструкции добавится клавиатурное (не inline) меню бота.
+        # Если ботов нет, то клавиатура удаляется с помощью ReplyKeyboardRemove
+        await send_instructions(
+            bot=bot,
+            custom_bot_id=user_bots[0].bot_id if user_bots else None,
+            chat_id=user_id,
+            cache_resources_file_id_store=cache_resources_file_id_store,
+        )
+
+        if not user_bots:
+            await state.set_state(States.WAITING_FOR_TOKEN)  # Просто ожидаем токен, так как ботов у человека нет
+            await state.set_data({"bot_id": -1})
+        else:
+            await _send_bot_menu(user_id, state, user_bots)  # Присылаем inline меню бота, так как у человека бот есть
 
 
 @commands_router.message(CommandStart())
@@ -154,25 +184,8 @@ async def start_command_handler(message: Message, state: FSMContext):
         3.1 Если есть боты, то переводит в состояние BOT_MENU и присылает все клавиатуры для главного меню бота.
         3.2 Если нет ботов, то переводит в состояние WAITING_FOR_TOKEN
     """
-    user_id = message.from_user.id
 
     await _check_if_new_user(message, state)  # Проверяем, новый ли пользователь
-    user_bots = await user_role_db.get_user_bots(user_id)
-
-    # Отправляем инструкцию. Если у человека есть бот, к инструкции добавится клавиатурное (не inline) меню бота.
-    # Если ботов нет, то клавиатура удаляется с помощью ReplyKeyboardRemove
-    await send_instructions(
-        bot=bot,
-        custom_bot_id=user_bots[0].bot_id if user_bots else None,
-        chat_id=user_id,
-        cache_resources_file_id_store=cache_resources_file_id_store
-    )
-
-    if not user_bots:
-        await state.set_state(States.WAITING_FOR_TOKEN)  # Просто ожидаем токен, так как ботов у человека нет
-        await state.set_data({"bot_id": -1})
-    else:
-        await _send_bot_menu(user_id, state, user_bots)  # Присылаем inline меню бота, так как у человека бот есть
 
 
 @commands_router.message(Command("rm_admin"), StateFilter(States.BOT_MENU))
@@ -226,10 +239,16 @@ async def check_subscription_command_handler(message: Message, state: FSMContext
     await check_subscription(message, state)
 
 
-async def _start_trial(message: Message, state: FSMContext):
+async def _start_trial(message: Message, state: FSMContext, trial_duration: int):
     """Оформляет пробный период пользователю"""
+    notifications_before_days = config.NOTIFICATIONS_BEFORE_DAYS
 
-    await send_event(message.from_user, EventTypes.STARTED_TRIAL_TRY)
+    match trial_duration:
+        case config.TRIAL_DURATION_IN_DAYS:
+            await send_event(message.from_user, EventTypes.STARTED_TRIAL_TRY)
+        case config.BIG_TRIAL_DURATION_IN_DAYS:
+            await send_event(message.from_user, EventTypes.STARTED_BIG_TRIAL_TRY)
+            notifications_before_days = [7, 2]
 
     user_id = message.from_user.id
 
@@ -238,7 +257,7 @@ async def _start_trial(message: Message, state: FSMContext):
     )
 
     try:
-        user = await subscription.start_trial(user_id)
+        user = await subscription.start_trial(user_id, trial_duration)
     except UserHasAlreadyStartedTrial:
         return await message.answer("Вы уже оформляли пробную подписку")
 
@@ -248,14 +267,12 @@ async def _start_trial(message: Message, state: FSMContext):
         on_expiring_notification=send_subscription_expire_notify,
         on_end_notification=send_subscription_end_notify,
         subscribed_until=user.subscribed_until,
+        notifications_before_days=notifications_before_days,
     )
     user.subscription_job_ids = notification_job_ids
     await user_db.update_user(user)
 
     await state.set_state(States.WAITING_FOR_TOKEN)
 
-    await message.answer(
-        MessageTexts.FREE_TRIAL_MESSAGE.value,
-        reply_markup=ReplyKeyboardRemove()
-    )
+    await message.answer(**MessageTexts.generate_trial_message(trial_duration), reply_markup=ReplyKeyboardRemove())
     await send_event(message.from_user, EventTypes.STARTED_TRIAL_SUCCESS)

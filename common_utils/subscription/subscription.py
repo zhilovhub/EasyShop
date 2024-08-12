@@ -37,20 +37,19 @@ class Subscription:
 
         self.scheduler = custom_scheduler
 
-    async def start_trial(self, user_id: int) -> UserSchema:
+    async def start_trial(self, user_id: int, trial_duration: int) -> UserSchema:
         """Starts trial subscription of the user"""
         user = await self.user_db.get_user(user_id)
         if user.status != UserStatusValues.NEW:
             raise UserHasAlreadyStartedTrial(f"user with user_id {user_id} has already stated a trial")
 
-        user.subscribed_until = datetime.now() + timedelta(
-            days=config.TRIAL_DURATION_IN_DAYS)
+        user.subscribed_until = datetime.now() + timedelta(days=trial_duration)
         user.status = UserStatusValues.TRIAL
 
         logger.info(
-            f"user_id={user_id}: the user started trial for {config.TRIAL_DURATION_IN_DAYS} days and he is subscribed"
+            f"user_id={user_id}: the user started trial for {trial_duration} days and he is subscribed"
             f"until {user.subscribed_until}",
-            extra=extra_params(user_id=user_id)
+            extra=extra_params(user_id=user_id),
         )
 
         return user
@@ -94,13 +93,19 @@ class Subscription:
 
         return payment_id
 
-    async def add_notifications(self, user_id, on_expiring_notification, on_end_notification,
-                                subscribed_until: datetime) -> list[str]:
+    async def add_notifications(
+        self,
+        user_id,
+        on_expiring_notification,
+        on_end_notification,
+        subscribed_until: datetime,
+        notifications_before_days: list[int] = config.NOTIFICATIONS_BEFORE_DAYS,
+    ) -> list[str]:
         """Create notifications about states of subscription"""
         user = await self.user_db.get_user(user_id)
 
         job_ids = []
-        for notification_before_days in config.NOTIFICATIONS_BEFORE_DAYS:
+        for notification_before_days in notifications_before_days:
             job_ids.append(await self.scheduler.add_scheduled_job(
                 func=on_expiring_notification,
                 run_date=subscribed_until - timedelta(days=notification_before_days),
