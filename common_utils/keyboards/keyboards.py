@@ -278,11 +278,11 @@ class InlineBotEditOrderOptionsKeyboard:
 
         model_config = ConfigDict(from_attributes=True, populate_by_name=True)
 
-        n: str = Field(default="bot_order_options", frozen=True)
+        n: str = Field(default="boo", frozen=True)
         a: ActionEnum
 
         bot_id: int
-        order_option_id: int | None
+        order_option_id: int | None = Field(alias="ooi")
 
     @staticmethod
     @callback_json_validator
