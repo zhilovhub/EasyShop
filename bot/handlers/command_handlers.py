@@ -156,22 +156,22 @@ async def _check_if_new_user(
         )
         await _start_trial(message, state, trial_duration)  # Задаём новому пользователю пробный период (статус TRIAL)
 
-        user_bots = await user_role_db.get_user_bots(user_id)
+    user_bots = await user_role_db.get_user_bots(user_id)
 
-        # Отправляем инструкцию. Если у человека есть бот, к инструкции добавится клавиатурное (не inline) меню бота.
-        # Если ботов нет, то клавиатура удаляется с помощью ReplyKeyboardRemove
-        await send_instructions(
-            bot=bot,
-            custom_bot_id=user_bots[0].bot_id if user_bots else None,
-            chat_id=user_id,
-            cache_resources_file_id_store=cache_resources_file_id_store,
-        )
+    # Отправляем инструкцию. Если у человека есть бот, к инструкции добавится клавиатурное (не inline) меню бота.
+    # Если ботов нет, то клавиатура удаляется с помощью ReplyKeyboardRemove
+    await send_instructions(
+        bot=bot,
+        custom_bot_id=user_bots[0].bot_id if user_bots else None,
+        chat_id=user_id,
+        cache_resources_file_id_store=cache_resources_file_id_store,
+    )
 
-        if not user_bots:
-            await state.set_state(States.WAITING_FOR_TOKEN)  # Просто ожидаем токен, так как ботов у человека нет
-            await state.set_data({"bot_id": -1})
-        else:
-            await _send_bot_menu(user_id, state, user_bots)  # Присылаем inline меню бота, так как у человека бот есть
+    if not user_bots:
+        await state.set_state(States.WAITING_FOR_TOKEN)  # Просто ожидаем токен, так как ботов у человека нет
+        await state.set_data({"bot_id": -1})
+    else:
+        await _send_bot_menu(user_id, state, user_bots)  # Присылаем inline меню бота, так как у человека бот есть
 
 
 @commands_router.message(CommandStart())
