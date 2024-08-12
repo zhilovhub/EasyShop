@@ -113,7 +113,7 @@ async def send_web_app_data_to_bot(request):
     invoice_link = None
 
     match order_type:
-        case OrderType.MAIN_BOT_TEST_ORDER:
+        case OrderType.MAIN_BOT_TEST_ORDER.value:
             try:
                 order = await create_order(user_id, sent_data, OrderType.MAIN_BOT_TEST_ORDER, _json=False)
 
@@ -131,7 +131,7 @@ async def send_web_app_data_to_bot(request):
             except Exception as e:
                 logger.error("error while sending test order notification", exc_info=e)
                 raise e
-        case OrderType.CUSTOM_BOT_ORDER:
+        case OrderType.CUSTOM_BOT_ORDER.value:
             try:
                 order = await create_order(user_id, sent_data, OrderType.CUSTOM_BOT_ORDER, _json=False)
                 order_user_data = await custom_bot_tg.get_chat(user_id)
