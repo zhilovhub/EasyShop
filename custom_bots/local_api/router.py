@@ -5,6 +5,8 @@ from aiogram.exceptions import TelegramUnauthorizedError
 from aiogram.types import InlineQueryResultArticle, InputTextMessageContent
 
 from bot.handlers.admin_bot_menu_handlers import send_new_order_notify
+from common_utils.config import cryptography_settings
+from common_utils.token_encryptor import TokenEncryptor
 from custom_bots.multibot import web, session, OTHER_BOTS_URL, main_bot
 from custom_bots.utils.utils import is_bot_token
 from custom_bots.utils.order_creation import order_creation_process
@@ -42,8 +44,9 @@ async def add_bot_handler(request):
         extra=extra_params(bot_id=bot_id)
     )
 
+    token_encryptor: TokenEncryptor = TokenEncryptor(cryptography_settings.TOKEN_SECRET_KEY)
     result = await new_bot.set_webhook(
-        OTHER_BOTS_URL.format(bot_token=bot.token),
+        OTHER_BOTS_URL.format(encrypted_bot_token=token_encryptor.encrypt_token(bot_token=bot.token)),
         allowed_updates=["message", "my_chat_member",
                          "callback_query", "chat_member", "channel_post",
                          "inline_query", "pre_checkout_query", "shipping_query"]

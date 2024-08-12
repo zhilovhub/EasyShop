@@ -102,11 +102,17 @@ class LogsSettings(Settings):
     FROM: str
 
 
+class CryptographySettings(Settings):
+    """Cryptography settings"""
+    TOKEN_SECRET_KEY: str
+
+
 if __name__ == '__main__':  # You can run this file to ensure in existing of vars
     Settings()
     APISettings()
     CommonSettings()
     DatabaseSettings()
+    CryptographySettings()
     MainTelegramBotSettings()
     CustomTelegramBotSettings()
     print(APISettings().model_dump())

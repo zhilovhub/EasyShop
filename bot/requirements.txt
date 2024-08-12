@@ -19,3 +19,4 @@ matplotlib
 numpy
 
 pydantic-settings
+cryptography

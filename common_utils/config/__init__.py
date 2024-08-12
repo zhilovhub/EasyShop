@@ -4,6 +4,7 @@ from .env_config import (
     LogsSettings,
     CommonSettings,
     DatabaseSettings,
+    CryptographySettings,
     MainTelegramBotSettings,
     CustomTelegramBotSettings
 )
@@ -13,5 +14,6 @@ api_settings = APISettings()
 logs_settings = LogsSettings()
 common_settings = CommonSettings()
 database_settings = DatabaseSettings()
+cryptography_settings = CryptographySettings()
 main_telegram_bot_settings = MainTelegramBotSettings()
 custom_telegram_bot_settings = CustomTelegramBotSettings()

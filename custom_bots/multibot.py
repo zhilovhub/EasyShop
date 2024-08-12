@@ -7,7 +7,6 @@ from aiogram import Bot, Dispatcher, Router
 from aiogram.fsm.state import State, StatesGroup
 from aiogram.client.session.aiohttp import AiohttpSession
 from aiogram.webhook.aiohttp_server import (
-    TokenBasedRequestHandler,
     setup_application,
 )
 
@@ -19,6 +18,8 @@ from common_utils.scheduler.scheduler import Scheduler
 from common_utils.cache_json.cache_json import JsonStore
 from common_utils.storage.custom_bot_storage import custom_bot_storage
 
+from custom_bots.utils.multi_dispathcer_server import EncryptedTokenBasedRequestHandler
+
 from logs.config import custom_bot_logger
 
 app = web.Application()
@@ -28,7 +29,7 @@ local_app = web.Application(logger=custom_bot_logger)
 main_router = Router()
 
 BASE_URL = f"{custom_telegram_bot_settings.WEBHOOK_URL}:{custom_telegram_bot_settings.WEBHOOK_PORT}"
-OTHER_BOTS_PATH = f"/{custom_telegram_bot_settings.WEBHOOK_LABEL}/" + "webhook/bot/{bot_token}"
+OTHER_BOTS_PATH = f"/{custom_telegram_bot_settings.WEBHOOK_LABEL}/" + "webhook/bot/{encrypted_bot_token}"
 
 session = AiohttpSession()
 
@@ -74,7 +75,7 @@ async def main():
     multibot_dispatcher.include_router(multi_bot_router)
     multibot_dispatcher.include_router(inline_mode_router)
 
-    TokenBasedRequestHandler(
+    EncryptedTokenBasedRequestHandler(
         dispatcher=multibot_dispatcher,
         bot_settings={"default": BOT_PROPERTIES},
         session=session,
