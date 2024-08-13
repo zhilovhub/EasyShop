@@ -42,6 +42,8 @@ class OrderOptionType(TypeDecorator):  # noqa
         match value:
             case OrderOptionTypeValues.TEXT.value:
                 return OrderOptionTypeValues.TEXT
+            case OrderOptionTypeValues.TEXT_AREA.value:
+                return OrderOptionTypeValues.TEXT_AREA
             case OrderOptionTypeValues.CHOOSE.value:
                 return OrderOptionTypeValues.CHOOSE
 
