@@ -55,7 +55,7 @@ def _create_date_graph(
     )
     y_data = []
     pos = 0
-    for date in dates:
+    for date in np.nditer(dates):
         for_data = dated_data[pos::]
         for data in for_data:
             if data[0] <= date:

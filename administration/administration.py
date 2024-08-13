@@ -82,9 +82,9 @@ if __name__ == "__main__":
     scheduler = Scheduler(
         scheduler_url=database_settings.SCHEDULER_URL, jobstore_alias="postgres", timezone=database_settings.TIMEZONE
     )
-    database = Database(sqlalchemy_url=database_settings.SQLALCHEMY_URL, logger=logger)
+    _database = Database(sqlalchemy_url=database_settings.SQLALCHEMY_URL, logger=logger)
     administration = Administration(
-        database=database, custom_scheduler=scheduler, subscription=Subscription(database, scheduler)
+        database=_database, custom_scheduler=scheduler, subscription=Subscription(_database, scheduler)
     )
 
     available_commands = (
