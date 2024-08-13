@@ -2,8 +2,19 @@ from datetime import datetime, timedelta
 
 from pydantic import BaseModel, Field, validate_call, ConfigDict
 
-from sqlalchemy import BigInteger, Column, ForeignKey, select, insert, delete, update, Boolean, DateTime, String,\
-    Interval
+from sqlalchemy import (
+    BigInteger,
+    Column,
+    ForeignKey,
+    select,
+    insert,
+    delete,
+    update,
+    Boolean,
+    DateTime,
+    String,
+    Interval,
+)
 from sqlalchemy.ext.asyncio import AsyncEngine
 
 from database.exceptions.exceptions import KwargsException
@@ -95,10 +106,7 @@ class PartnershipDao(Dao):  # TODO write tests
         for contest in raw_res:
             res.append(PartnershipSchema.model_validate(contest))
 
-        self.logger.debug(
-            f"bot_id={bot_id}: has {len(res)} partnerships",
-            extra=extra_params(bot_id=bot_id)
-        )
+        self.logger.debug(f"bot_id={bot_id}: has {len(res)} partnerships", extra=extra_params(bot_id=bot_id))
 
         return res
 
@@ -109,8 +117,10 @@ class PartnershipDao(Dao):  # TODO write tests
         """
         async with self.engine.begin() as conn:
             raw_res = await conn.execute(
-                select(Partnership).where(Partnership.post_message_id == post_message_id,  # noqa
-                                          Partnership.is_finished == False)  # noqa
+                select(Partnership).where(
+                    Partnership.post_message_id == post_message_id,
+                    Partnership.is_finished == False,  # noqa
+                )
             )
         await self.engine.dispose()
 
@@ -122,7 +132,7 @@ class PartnershipDao(Dao):  # TODO write tests
 
         self.logger.debug(
             f"bot_id={res.bot_id}: found partnership {res}",
-            extra=extra_params(bot_id=res.bot_id, partnership_id=res.partnership_id)
+            extra=extra_params(bot_id=res.bot_id, partnership_id=res.partnership_id),
         )
 
         return res
@@ -146,7 +156,7 @@ class PartnershipDao(Dao):  # TODO write tests
 
         self.logger.debug(
             f"bot_id={res.bot_id}: found partnership {res}",
-            extra=extra_params(bot_id=res.bot_id, partnership_id=res.partnership_id)
+            extra=extra_params(bot_id=res.bot_id, partnership_id=res.partnership_id),
         )
 
         return res
@@ -168,7 +178,7 @@ class PartnershipDao(Dao):  # TODO write tests
 
         self.logger.debug(
             f"bot_id={res.bot_id}: found partnership {res}",
-            extra=extra_params(bot_id=res.bot_id, partnership_id=res.partnership_id)
+            extra=extra_params(bot_id=res.bot_id, partnership_id=res.partnership_id),
         )
 
         return res
@@ -185,7 +195,7 @@ class PartnershipDao(Dao):  # TODO write tests
 
         self.logger.debug(
             f"bot_id={new_partnership.bot_id}: added partnership {partnership_id} {new_partnership}",
-            extra=extra_params(bot_id=new_partnership.bot_id, partnership_id=partnership_id)
+            extra=extra_params(bot_id=new_partnership.bot_id, partnership_id=partnership_id),
         )
 
         return partnership_id
@@ -193,14 +203,17 @@ class PartnershipDao(Dao):  # TODO write tests
     @validate_call(validate_return=True)
     async def update_partnership(self, updated_partnership: PartnershipSchema) -> None:
         async with self.engine.begin() as conn:
-            await conn.execute(update(Partnership).where(Partnership.contest_id == updated_partnership.contest_id).  # noqa
-                               values(**updated_partnership.model_dump(by_alias=True)))
+            await conn.execute(
+                update(Partnership)
+                .where(Partnership.contest_id == updated_partnership.contest_id)
+                .  # noqa
+                values(**updated_partnership.model_dump(by_alias=True))
+            )
         await self.engine.dispose()
 
         self.logger.debug(
-            f"partnership_id={updated_partnership.partnership_id}: "
-            f"updated partnership {updated_partnership}",
-            extra=extra_params(partnership_id=updated_partnership.partnership_id, bot_id=updated_partnership.bot_id)
+            f"partnership_id={updated_partnership.partnership_id}: " f"updated partnership {updated_partnership}",
+            extra=extra_params(partnership_id=updated_partnership.partnership_id, bot_id=updated_partnership.bot_id),
         )
 
     @validate_call(validate_return=True)
@@ -214,7 +227,7 @@ class PartnershipDao(Dao):  # TODO write tests
 
         self.logger.debug(
             f"bot_id={partnership.bot_id}: deleted partnership {partnership}",
-            extra=extra_params(bot_id=partnership.bot_id, partnership_id=partnership.partnership_id)
+            extra=extra_params(bot_id=partnership.bot_id, partnership_id=partnership.partnership_id),
         )
 
     @validate_call(validate_return=True)
@@ -230,10 +243,7 @@ class PartnershipDao(Dao):  # TODO write tests
 
         res = CriteriaSchema.model_validate(raw_res)
 
-        self.logger.debug(
-            f"criteria_id={criteria_id}: {res}",
-            extra=extra_params(criteria_id=criteria_id)
-        )
+        self.logger.debug(f"criteria_id={criteria_id}: {res}", extra=extra_params(criteria_id=criteria_id))
 
         return res
 
@@ -243,14 +253,13 @@ class PartnershipDao(Dao):  # TODO write tests
         :raises IntegrityError:
         """
         async with self.engine.begin() as conn:
-            criteria_id = await conn.execute(insert(Criteria).values(
-                **new_criteria.model_dump(by_alias=True))
+            criteria_id = await conn.execute(
+                insert(Criteria).values(**new_criteria.model_dump(by_alias=True))
             ).inserted_primary_key[0]
         await self.engine.dispose()
 
         self.logger.debug(
-            f"criteria_id={criteria_id}: added criteria {new_criteria}",
-            extra=extra_params(criteria_id=criteria_id)
+            f"criteria_id={criteria_id}: added criteria {new_criteria}", extra=extra_params(criteria_id=criteria_id)
         )
 
         return criteria_id
@@ -258,11 +267,15 @@ class PartnershipDao(Dao):  # TODO write tests
     @validate_call(validate_return=True)
     async def update_partnership_criteria(self, updated_criteria: CriteriaSchema):
         async with self.engine.begin() as conn:
-            await conn.execute(update(Criteria).where(Criteria.criteria_id == updated_criteria.criteria_id).  # noqa
-                               values(**updated_criteria.model_dump(by_alias=True)))
+            await conn.execute(
+                update(Criteria)
+                .where(Criteria.criteria_id == updated_criteria.criteria_id)
+                .  # noqa
+                values(**updated_criteria.model_dump(by_alias=True))
+            )
         await self.engine.dispose()
 
         self.logger.debug(
             f"criteria_id={updated_criteria.criteria_id}: updated criteria {updated_criteria}",
-            extra=extra_params(criteria_id=updated_criteria.criteria_id)
+            extra=extra_params(criteria_id=updated_criteria.criteria_id),
         )

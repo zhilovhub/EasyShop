@@ -6,13 +6,20 @@ from custom_bots.multibot import main_bot, PREV_ORDER_MSGS, CustomUserStates
 from custom_bots.handlers.routers import multi_bot_router
 from custom_bots.utils.custom_message_texts import CustomMessageTexts
 from custom_bots.keyboards.question_keyboards import ReplyBackQuestionMenuKeyboard
-from custom_bots.keyboards.order_manage_keyboards import InlinePickReviewProductKeyboard, ReplyGetReviewMarkKeyboard, \
-    ReplyReviewBackKeyboard
+from custom_bots.keyboards.order_manage_keyboards import (
+    InlinePickReviewProductKeyboard,
+    ReplyGetReviewMarkKeyboard,
+    ReplyReviewBackKeyboard,
+)
 from custom_bots.keyboards.custom_bot_menu_keyboards import ReplyCustomBotMenuKeyboard
 
 from custom_bots.utils.question_utils import is_able_to_ask
-from common_utils.keyboards.order_manage_keyboards import InlineOrderCancelKeyboard, InlineOrderCustomBotKeyboard, \
-    InlineCreateReviewKeyboard, InlineAcceptReviewKeyboard
+from common_utils.keyboards.order_manage_keyboards import (
+    InlineOrderCancelKeyboard,
+    InlineOrderCustomBotKeyboard,
+    InlineCreateReviewKeyboard,
+    InlineAcceptReviewKeyboard,
+)
 from common_utils.message_texts import MessageTexts as CommonMessageTexts
 
 from database.config import product_review_db, order_db, product_db, bot_db
@@ -35,16 +42,14 @@ async def handle_cancel_order_callback(query: CallbackQuery):
     except OrderNotFoundError:
         custom_bot_logger.warning(
             f"user_id={user_id}: unable to change the status of order_id={order_id}",
-            extra=extra_params(user_id=user_id, order_id=order_id)
+            extra=extra_params(user_id=user_id, order_id=order_id),
         )
         await query.answer("Ошибка при работе с заказом, возможно статус уже изменился", show_alert=True)
         return await query.message.edit_reply_markup(None)
 
     match callback_data.a:
         case callback_data.ActionEnum.BACK_TO_ORDER_STATUSES:
-            await query.message.edit_reply_markup(
-                reply_markup=InlineOrderCustomBotKeyboard.get_keyboard(order_id)
-            )
+            await query.message.edit_reply_markup(reply_markup=InlineOrderCustomBotKeyboard.get_keyboard(order_id))
         case callback_data.ActionEnum.CANCEL:
             if order.status == OrderStatusValues.CANCELLED:
                 return await query.answer("Этот статус уже выставлен")
@@ -53,9 +58,8 @@ async def handle_cancel_order_callback(query: CallbackQuery):
             await order_db.update_order(order)
 
             products = [
-                (await product_db.get_product(
-                    int(product_id)), product_item.amount, product_item.used_extra_options
-                 ) for product_id, product_item in order.items.items()
+                (await product_db.get_product(int(product_id)), product_item.amount, product_item.used_extra_options)
+                for product_id, product_item in order.items.items()
             ]
             # await query.message.edit_text(order.convert_to_notification_text(products=products), reply_markup=None)
             text = await CommonMessageTexts.generate_order_notification_text(
@@ -74,21 +78,25 @@ async def handle_cancel_order_callback(query: CallbackQuery):
                 order=order,
                 products=products,
                 username="@" + query.from_user.username if query.from_user.username else query.from_user.full_name,
-                is_admin=True
+                is_admin=True,
             )
 
             await main_bot.edit_message_text(
-                **text, chat_id=msg_id_data[order_id][0], message_id=msg_id_data[order_id][1], reply_markup=None,
+                **text,
+                chat_id=msg_id_data[order_id][0],
+                message_id=msg_id_data[order_id][1],
+                reply_markup=None,
             )
             await main_bot.send_message(
                 chat_id=msg_id_data[order_id][0],
-                text=f"Новый статус заказа <b>#{order_id}</b>\n<b>{order.translate_order_status()}</b>")
+                text=f"Новый статус заказа <b>#{order_id}</b>\n<b>{order.translate_order_status()}</b>",
+            )
 
             del msg_id_data[order_id]
 
             custom_bot_logger.info(
                 f"order_id={order}: is cancelled by custom_user with user_id={user_id}",
-                extra=extra_params(user_id=user_id, order_id=order)
+                extra=extra_params(user_id=user_id, order_id=order),
             )
 
 
@@ -105,20 +113,18 @@ async def handle_order_callback(query: CallbackQuery, state: FSMContext):
     except OrderNotFoundError:
         custom_bot_logger.warning(
             f"user_id={user_id}: tried to ask the question regarding order by order_id={order_id} is not found",
-            extra=extra_params(user_id=user_id, order_id=order_id)
+            extra=extra_params(user_id=user_id, order_id=order_id),
         )
         await query.answer("Ошибка при работе с заказом, возможно заказ был удалён", show_alert=True)
         return await query.message.edit_reply_markup(None)
 
     match callback_data.a:
         case callback_data.ActionEnum.PRE_CANCEL:
-            await query.message.edit_reply_markup(
-                reply_markup=InlineOrderCancelKeyboard.get_keyboard(order_id)
-            )
+            await query.message.edit_reply_markup(reply_markup=InlineOrderCancelKeyboard.get_keyboard(order_id))
         case callback_data.ActionEnum.ASK_QUESTION:
             custom_bot_logger.info(
                 f"user_id={user_id}: wants to ask the question regarding order by order_id={order_id}",
-                extra=extra_params(user_id=user_id, order_id=order_id)
+                extra=extra_params(user_id=user_id, order_id=order_id),
             )
 
             if not state_data:
@@ -126,12 +132,12 @@ async def handle_order_callback(query: CallbackQuery, state: FSMContext):
             else:
                 if not await is_able_to_ask(query, state_data, user_id, order_id):
                     return
-                state_data['order_id'] = order_id
+                state_data["order_id"] = order_id
 
             await query.answer()
             await query.message.answer(
                 "Вы можете отправить свой вопрос по заказу, отправив любое сообщение боту",
-                reply_markup=ReplyBackQuestionMenuKeyboard.get_keyboard()
+                reply_markup=ReplyBackQuestionMenuKeyboard.get_keyboard(),
             )
             await state.set_state(CustomUserStates.WAITING_FOR_QUESTION)
             await state.set_data(state_data)
@@ -147,15 +153,14 @@ async def create_order_review(query: CallbackQuery):
     except OrderNotFoundError:
         custom_bot_logger.warning(
             f"user_id={user_id}: tried to tried to create reviw to order_id={order_id} is not found",
-            extra=extra_params(user_id=user_id, order_id=order_id)
+            extra=extra_params(user_id=user_id, order_id=order_id),
         )
         await query.answer("Ошибка при работе с заказом, возможно заказ был удалён", show_alert=True)
         return await query.message.edit_reply_markup(None)
     match callback_data.a:
         case callback_data.ActionEnum.CREATE_REVIEW:
             await query.message.edit_text(
-                text="Выберите товар 🪧",
-                reply_markup=await InlinePickReviewProductKeyboard.get_keyboard(order.items)
+                text="Выберите товар 🪧", reply_markup=await InlinePickReviewProductKeyboard.get_keyboard(order.items)
             )
             await query.answer()
 
@@ -168,34 +173,29 @@ async def get_product_id(query: CallbackQuery, state: FSMContext):
         case callback_data.ActionEnum.PICK_PRODUCT:
             try:
                 await product_review_db.get_product_review_by_user_id_and_product_id(
-                    user_id=query.from_user.id, product_id=callback_data.product_id)
+                    user_id=query.from_user.id, product_id=callback_data.product_id
+                )
 
                 try:
                     await bot_db.get_bot_by_token(query.message.bot.token)
                 except BotNotFoundError:
                     custom_bot_logger.warning(
                         f"bot_token={query.message.bot.token}: this bot is not in db",
-                        extra=extra_params(bot_token=query.message.bot.token)
+                        extra=extra_params(bot_token=query.message.bot.token),
                     )
                     return await query.message.answer("Бот не инициализирован")
 
-                await query.answer(
-                    "Вы уже оставили отзыв на этот продукт!",
-                    show_alert=True
-                )
+                await query.answer("Вы уже оставили отзыв на этот продукт!", show_alert=True)
                 await state.set_state(CustomUserStates.MAIN_MENU)
                 return
             except ProductReviewNotFoundError:
                 await query.message.answer(
-                    text="Оцените качество товаров ✔️",
-                    reply_markup=ReplyGetReviewMarkKeyboard.get_keyboard()
+                    text="Оцените качество товаров ✔️", reply_markup=ReplyGetReviewMarkKeyboard.get_keyboard()
                 )
                 await query.answer()
 
                 await state.set_state(CustomUserStates.WAITING_FOR_REVIEW_MARK)
-                await state.set_data({
-                    "product_id": callback_data.product_id
-                })
+                await state.set_data({"product_id": callback_data.product_id})
 
 
 @multi_bot_router.message(StateFilter(CustomUserStates.WAITING_FOR_REVIEW_MARK))
@@ -204,17 +204,13 @@ async def get_review_mark(message: Message, state: FSMContext):
         await bot_db.get_bot_by_token(message.bot.token)
     except BotNotFoundError:
         custom_bot_logger.warning(
-            f"bot_token={message.bot.token}: this bot is not in db",
-            extra=extra_params(bot_token=message.bot.token)
+            f"bot_token={message.bot.token}: this bot is not in db", extra=extra_params(bot_token=message.bot.token)
         )
         return await message.answer("Бот не инициализирован")
 
     if message.text == "Назад 🔙":
         await state.set_state(CustomUserStates.MAIN_MENU)
-        return message.answer(
-            "Отправка отзыва отменена ✖️",
-            reply_markup=ReplyCustomBotMenuKeyboard.get_keyboard()
-        )
+        return message.answer("Отправка отзыва отменена ✖️", reply_markup=ReplyCustomBotMenuKeyboard.get_keyboard())
 
     state_data = await state.get_data()
     match message.text:
@@ -232,10 +228,12 @@ async def get_review_mark(message: Message, state: FSMContext):
             return await message.answer("Чтобы оставить оценку, нажмите на кнопку ниже 👇")
 
     await state.set_state(CustomUserStates.WAITING_FOR_REVIEW_TEXT)
-    await state.set_data({
-        "product_id": state_data["product_id"],
-        "mark": mark_value,
-    })
+    await state.set_data(
+        {
+            "product_id": state_data["product_id"],
+            "mark": mark_value,
+        }
+    )
     await message.answer("Напишите комментарий к вашему отзыву 📨", reply_markup=ReplyReviewBackKeyboard.get_keyboard())
 
 
@@ -246,17 +244,13 @@ async def get_review_text(message: Message, state: FSMContext):
         bot = await bot_db.get_bot_by_token(message.bot.token)
     except BotNotFoundError:
         custom_bot_logger.warning(
-            f"bot_token={message.bot.token}: this bot is not in db",
-            extra=extra_params(bot_token=message.bot.token)
+            f"bot_token={message.bot.token}: this bot is not in db", extra=extra_params(bot_token=message.bot.token)
         )
         return await message.answer("Бот не инициализирован")
     if message.text == "Назад 🔙":
         await state.set_state(CustomUserStates.WAITING_FOR_REVIEW_MARK)
-        await state.set_data({
-            "product_id": state_data["product_id"]
-        })
-        return message.answer(text="Оцените качество товаров ✔️",
-                              reply_markup=ReplyGetReviewMarkKeyboard.get_keyboard())
+        await state.set_data({"product_id": state_data["product_id"]})
+        return message.answer(text="Оцените качество товаров ✔️", reply_markup=ReplyGetReviewMarkKeyboard.get_keyboard())
 
     state_data = await state.get_data()
     mark = state_data["mark"]
@@ -266,7 +260,7 @@ async def get_review_text(message: Message, state: FSMContext):
             product_id=state_data["product_id"],
             mark=mark,
             review_text=message.text,
-            user_id=message.from_user.id
+            user_id=message.from_user.id,
         )
     )
     await message.answer("Спасибо за отзыв 📬", reply_markup=ReplyCustomBotMenuKeyboard.get_keyboard())
@@ -275,7 +269,7 @@ async def get_review_text(message: Message, state: FSMContext):
         await main_bot.send_message(
             chat_id=bot.created_by,
             text=CustomMessageTexts.show_product_review_info(mark, message.text, product.name),
-            reply_markup=InlineAcceptReviewKeyboard.get_keyboard(review_id)
+            reply_markup=InlineAcceptReviewKeyboard.get_keyboard(review_id),
         )
         await state.set_state(CustomUserStates.MAIN_MENU)
     except ProductNotFoundError:

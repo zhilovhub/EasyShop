@@ -83,9 +83,7 @@ class ContestDao(Dao):  # TODO write tests
         Returns all contests belonging to Bot
         """
         async with self.engine.begin() as conn:
-            raw_res = await conn.execute(
-                select(Contest).where(Contest.bot_id == bot_id)
-            )
+            raw_res = await conn.execute(select(Contest).where(Contest.bot_id == bot_id))
         await self.engine.dispose()
 
         raw_res = raw_res.fetchall()
@@ -93,10 +91,7 @@ class ContestDao(Dao):  # TODO write tests
         for contest in raw_res:
             res.append(ContestSchema.model_validate(contest))
 
-        self.logger.debug(
-            f"bot_id={bot_id}: has {len(res)} contests",
-            extra=extra_params(bot_id=bot_id)
-        )
+        self.logger.debug(f"bot_id={bot_id}: has {len(res)} contests", extra=extra_params(bot_id=bot_id))
 
         return res
 
@@ -122,7 +117,7 @@ class ContestDao(Dao):  # TODO write tests
 
         self.logger.debug(
             f"bot_id={res.bot_id}: found contest: {res}",
-            extra=extra_params(bot_id=res.bot_id, contest_id=res.contest_id)
+            extra=extra_params(bot_id=res.bot_id, contest_id=res.contest_id),
         )
 
         return res
@@ -149,7 +144,7 @@ class ContestDao(Dao):  # TODO write tests
 
         self.logger.debug(
             f"bot_id={res.bot_id}: found contest: {res}",
-            extra=extra_params(bot_id=res.bot_id, contest_id=res.contest_id)
+            extra=extra_params(bot_id=res.bot_id, contest_id=res.contest_id),
         )
 
         return res
@@ -174,7 +169,7 @@ class ContestDao(Dao):  # TODO write tests
 
         self.logger.debug(
             f"bot_id={res.bot_id}: found contest: {res}",
-            extra=extra_params(bot_id=res.bot_id, contest_id=res.contest_id)
+            extra=extra_params(bot_id=res.bot_id, contest_id=res.contest_id),
         )
 
         return res
@@ -185,13 +180,11 @@ class ContestDao(Dao):  # TODO write tests
         :raises IntegrityError:
         """
         async with self.engine.begin() as conn:
-            contest_id = (
-                await conn.execute(insert(Contest).values(new_contest.model_dump()))
-            ).inserted_primary_key[0]
+            contest_id = (await conn.execute(insert(Contest).values(new_contest.model_dump()))).inserted_primary_key[0]
 
         self.logger.debug(
             f"bot_id={new_contest.bot_id}: added contest {new_contest}",
-            extra=extra_params(bot_id=new_contest.bot_id, contest_id=contest_id)
+            extra=extra_params(bot_id=new_contest.bot_id, contest_id=contest_id),
         )
 
         return contest_id
@@ -202,13 +195,16 @@ class ContestDao(Dao):  # TODO write tests
         Updates Contest in database
         """
         async with self.engine.begin() as conn:
-            await conn.execute(update(Contest).where(Contest.contest_id == updated_contest.contest_id).
-                               values(**updated_contest.model_dump(by_alias=True)))
+            await conn.execute(
+                update(Contest)
+                .where(Contest.contest_id == updated_contest.contest_id)
+                .values(**updated_contest.model_dump(by_alias=True))
+            )
         await self.engine.dispose()
 
         self.logger.debug(
             f"contest_id={updated_contest.contest_id}: updated contest {updated_contest}",
-            extra=extra_params(contest_id=updated_contest.contest_id, bot_id=updated_contest.bot_id)
+            extra=extra_params(contest_id=updated_contest.contest_id, bot_id=updated_contest.bot_id),
         )
 
     @validate_call(validate_return=True)
@@ -217,16 +213,11 @@ class ContestDao(Dao):  # TODO write tests
         Deletes Contest from database
         """
         async with self.engine.begin() as conn:
-            await conn.execute(
-                delete(Contest).where(
-                    Contest.contest_id == contest.contest_id
-                )
-            )
+            await conn.execute(delete(Contest).where(Contest.contest_id == contest.contest_id))
 
         self.logger.debug(
             f"bot_id={contest.bot_id}: deleted contest {contest}",
-            extra=extra_params(bot_id=contest.bot_id,
-                               contest_id=contest.contest_id)
+            extra=extra_params(bot_id=contest.bot_id, contest_id=contest.contest_id),
         )
 
     @validate_call(validate_return=True)
@@ -244,10 +235,7 @@ class ContestDao(Dao):  # TODO write tests
         for user in raw_res:
             res.append(ContestUserSchema.model_validate(user))
 
-        self.logger.debug(
-            f"contest={contest_id}: has {len(res)} users",
-            extra=extra_params(contest_id=contest_id)
-        )
+        self.logger.debug(f"contest={contest_id}: has {len(res)} users", extra=extra_params(contest_id=contest_id))
 
         return res
 
@@ -259,8 +247,9 @@ class ContestDao(Dao):  # TODO write tests
         :raises ContestUserNotFoundError:
         """
         async with self.engine.begin() as conn:
-            raw_res = await conn.execute(select(ContestUser).where(ContestUser.contest_id == contest_id,
-                                                                   ContestUser.user_id == user_id))
+            raw_res = await conn.execute(
+                select(ContestUser).where(ContestUser.contest_id == contest_id, ContestUser.user_id == user_id)
+            )
         await self.engine.dispose()
 
         res = raw_res.fetchone()
@@ -270,8 +259,7 @@ class ContestDao(Dao):  # TODO write tests
         res = ContestUserSchema.model_validate(res)
 
         self.logger.debug(
-            f"contest_id={contest_id}: found user {user_id}",
-            extra=extra_params(user_id=user_id, contest_id=contest_id)
+            f"contest_id={contest_id}: found user {user_id}", extra=extra_params(user_id=user_id, contest_id=contest_id)
         )
 
         return res
@@ -281,21 +269,21 @@ class ContestDao(Dao):  # TODO write tests
         """
         :raises IntegrityError:
         """
-        new_user = ContestUserSchema(contest_id=contest_id,
-                                     user_id=user_id,
-                                     join_date=datetime.now().replace(tzinfo=None),
-                                     is_won=False,
-                                     full_name=full_name,
-                                     username=username)
+        new_user = ContestUserSchema(
+            contest_id=contest_id,
+            user_id=user_id,
+            join_date=datetime.now().replace(tzinfo=None),
+            is_won=False,
+            full_name=full_name,
+            username=username,
+        )
         async with self.engine.begin() as conn:
-            await conn.execute(insert(ContestUser).values(
-                **new_user.model_dump(by_alias=True))
-            )
+            await conn.execute(insert(ContestUser).values(**new_user.model_dump(by_alias=True)))
         await self.engine.dispose()
 
         self.logger.debug(
             f"contest_id={contest_id}: joined user {new_user}",
-            extra=extra_params(user_id=user_id, contest_id=contest_id)
+            extra=extra_params(user_id=user_id, contest_id=contest_id),
         )
 
     @validate_call(validate_return=True)
@@ -304,12 +292,14 @@ class ContestDao(Dao):  # TODO write tests
         Updates ContestUser in database
         """
         async with self.engine.begin() as conn:
-            await conn.execute(update(ContestUser).where(ContestUser.contest_id == updated_user.contest_id,
-                                                         ContestUser.user_id == updated_user.user_id).
-                               values(**updated_user.model_dump(by_alias=True)))
+            await conn.execute(
+                update(ContestUser)
+                .where(ContestUser.contest_id == updated_user.contest_id, ContestUser.user_id == updated_user.user_id)
+                .values(**updated_user.model_dump(by_alias=True))
+            )
         await self.engine.dispose()
 
         self.logger.debug(
             f"contest_id={updated_user.contest_id}: updated contest {updated_user}",
-            extra=extra_params(contest_id=updated_user.contest_id, user_id=updated_user.user_id)
+            extra=extra_params(contest_id=updated_user.contest_id, user_id=updated_user.user_id),
         )

@@ -83,7 +83,7 @@ def _get_current_username(credentials: HTTPBasicCredentials = Depends(security))
         raise HTTPException(
             status_code=HTTP_401_UNAUTHORIZED,
             detail="Incorrect email or password",
-            headers={"WWW-Authenticate": "Basic"}
+            headers={"WWW-Authenticate": "Basic"},
         )
 
 
@@ -105,12 +105,14 @@ if __name__ == "__main__":
     except Exception as e:  # noqa
         pass
 
-    for log_file in ('all.log', 'err.log'):
-        with open(common_settings.LOGS_PATH + log_file, 'a') as log:
-            log.write(f'=============================\n'
-                      f'New api session\n'
-                      f'[{datetime.datetime.now()}]\n'
-                      f'=============================\n')
+    for log_file in ("all.log", "err.log"):
+        with open(common_settings.LOGS_PATH + log_file, "a") as log:
+            log.write(
+                f"=============================\n"
+                f"New api session\n"
+                f"[{datetime.datetime.now()}]\n"
+                f"=============================\n"
+            )
 
     if api_settings.API_PROTOCOL == "http":
         uvicorn.run(
@@ -119,7 +121,7 @@ if __name__ == "__main__":
             port=api_settings.API_PORT,
             log_level="info",
             uds=api_settings.UDS_PATH,
-            log_config=logger_configuration
+            log_config=logger_configuration,
         )
     elif api_settings.API_PROTOCOL == "https":
         uvicorn.run(
@@ -130,7 +132,7 @@ if __name__ == "__main__":
             uds=api_settings.UDS_PATH,
             ssl_keyfile=api_settings.SSL_KEY_PATH,
             ssl_certfile=api_settings.SSL_CERT_PATH,
-            log_config=logger_configuration
+            log_config=logger_configuration,
         )
 
 # Start uvicorn from cli (no logs)

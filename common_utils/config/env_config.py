@@ -12,6 +12,7 @@ class Mode(Enum):
 
 class Settings(BaseSettings):
     """Base Settings class for other Settings"""
+
     model_config = SettingsConfigDict(
         extra="ignore",
         env_file=find_dotenv("../../.env", raise_error_if_not_found=True),
@@ -22,6 +23,7 @@ class Settings(BaseSettings):
 
 class APISettings(Settings):
     """API settings"""
+
     API_PROTOCOL: str
     API_HOST: str
     API_PORT: int
@@ -37,6 +39,7 @@ class APISettings(Settings):
 
 class CommonSettings(Settings):
     """Common settings"""
+
     PROJECT_ROOT: str
     FILES_PATH: str
 
@@ -56,6 +59,7 @@ class CommonSettings(Settings):
 
 class DatabaseSettings(Settings):
     """Database settings"""
+
     SQLALCHEMY_URL: str
     SCHEDULER_URL: str
 
@@ -69,6 +73,7 @@ class DatabaseSettings(Settings):
 
 class MainTelegramBotSettings(Settings):
     """MainTelegramBot settings"""
+
     TELEGRAM_TOKEN: str
     TEST_PROVIDER_TOKEN: str
     BOT_DEBUG_MODE: bool
@@ -79,6 +84,7 @@ class MainTelegramBotSettings(Settings):
 
 class CustomTelegramBotSettings(Settings):
     """CustomTelegramBot settings"""
+
     WEBHOOK_URL: str
     WEBHOOK_HOST: str
     WEBHOOK_PORT: int
@@ -97,6 +103,7 @@ class CustomTelegramBotSettings(Settings):
 
 class LogsSettings(Settings):
     """Logs settings"""
+
     LOG_TO_GRAFANA: bool
     GRAFANA_URL: str
     FROM: str
@@ -104,10 +111,11 @@ class LogsSettings(Settings):
 
 class CryptographySettings(Settings):
     """Cryptography settings"""
+
     TOKEN_SECRET_KEY: str
 
 
-if __name__ == '__main__':  # You can run this file to ensure in existing of vars
+if __name__ == "__main__":  # You can run this file to ensure in existing of vars
     Settings()
     APISettings()
     CommonSettings()

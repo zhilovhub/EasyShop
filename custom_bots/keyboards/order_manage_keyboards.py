@@ -43,7 +43,9 @@ class ReplyGetReviewMarkKeyboard:
                 [
                     KeyboardButton(text=actions.BACK.value),
                 ],
-            ], resize_keyboard=True, one_time_keyboard=False
+            ],
+            resize_keyboard=True,
+            one_time_keyboard=False,
         )
 
 
@@ -66,7 +68,9 @@ class ReplyReviewBackKeyboard:
                 [
                     KeyboardButton(text=actions.BACK.value),
                 ],
-            ], resize_keyboard=True, one_time_keyboard=False
+            ],
+            resize_keyboard=True,
+            one_time_keyboard=False,
         )
 
 
@@ -85,9 +89,7 @@ class InlinePickReviewProductKeyboard:
     @staticmethod
     @callback_json_validator
     def callback_json(action: Callback.ActionEnum, product_id: int) -> str:
-        return InlinePickReviewProductKeyboard.Callback(
-            a=action, product_id=product_id
-        ).model_dump_json(by_alias=True)
+        return InlinePickReviewProductKeyboard.Callback(a=action, product_id=product_id).model_dump_json(by_alias=True)
 
     @staticmethod
     def callback_validator(json_string: str) -> bool:
@@ -105,10 +107,11 @@ class InlinePickReviewProductKeyboard:
             product = await get_product_by_id(product_id)
             custom_bot_logger.info(f"product {product}")
             product_buttons.append(
-                [InlineKeyboardButton(
-                    text=f"{product.name}",
-                    callback_data=InlinePickReviewProductKeyboard.callback_json(actions.PICK_PRODUCT, product_id))]
+                [
+                    InlineKeyboardButton(
+                        text=f"{product.name}",
+                        callback_data=InlinePickReviewProductKeyboard.callback_json(actions.PICK_PRODUCT, product_id),
+                    )
+                ]
             )
-        return InlineKeyboardMarkup(
-            inline_keyboard=product_buttons
-        )
+        return InlineKeyboardMarkup(inline_keyboard=product_buttons)

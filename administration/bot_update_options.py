@@ -15,11 +15,7 @@ from common_utils.bot_utils import create_order_options
 from logs.config import db_logger
 
 
-database: Database = Database(
-    sqlalchemy_url="",
-    logger=db_logger,
-    unique_id="util"
-)
+database: Database = Database(sqlalchemy_url="", logger=db_logger, unique_id="util")
 db_bot: BotDao = database.get_bot_dao()
 db_order: OrderDao = database.get_order_dao()
 db_options: OptionDao = database.get_option_dao()
@@ -34,7 +30,7 @@ async def main() -> None:
             start_msg = bot.settings.get("start_msg", MessageTexts.DEFAULT_START_MESSAGE.value)
             default_msg = bot.settings.get(
                 "default_msg",
-                f"Приветствую, этот бот создан с помощью @{(await Bot(token=bot.token).get_me()).username}"
+                f"Приветствую, этот бот создан с помощью @{(await Bot(token=bot.token).get_me()).username}",
             )
             auto_reduce = bot.settings.get("auto_reduce", True)
             web_app_button = bot.settings.get("web_app_button", MessageTexts.OPEN_WEB_APP_BUTTON_TEXT.value)
@@ -46,7 +42,7 @@ async def main() -> None:
                 post_order_msg=post_order_msg,
                 auto_reduce=auto_reduce,
                 bg_color=bg_color,
-                web_app_button=web_app_button
+                web_app_button=web_app_button,
             )
 
             option_id = await db_options.add_option(options)
@@ -57,5 +53,5 @@ async def main() -> None:
             print(bot, option_id)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     asyncio.run(main())

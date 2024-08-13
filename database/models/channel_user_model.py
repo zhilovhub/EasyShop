@@ -22,8 +22,7 @@ class ChannelUser(Base):
     __tablename__ = "channel_users"
     channel_user_pk = Column(BigInteger, primary_key=True, autoincrement=True)
     channel_user_id = Column(BigInteger, nullable=False)
-    channel_id = Column(ForeignKey(Channel.channel_id,
-                        ondelete="CASCADE"), nullable=False)
+    channel_id = Column(ForeignKey(Channel.channel_id, ondelete="CASCADE"), nullable=False)
     is_channel_member = Column(BOOLEAN, nullable=True)
     join_date = Column(DateTime, nullable=False)
 
@@ -55,7 +54,7 @@ class ChannelUserDao(Dao):
                 select(ChannelUser).where(
                     (ChannelUser.channel_id == channel_id),
                     ((datetime.now() - ChannelUser.join_date) < timedelta(hours=24)),
-                    (ChannelUser.is_channel_member is True)
+                    (ChannelUser.is_channel_member is True),
                 )
             )
         await self.engine.dispose()
@@ -66,8 +65,7 @@ class ChannelUserDao(Dao):
             res.append(ChannelUserSchema.model_validate(channel_user))
 
         self.logger.debug(
-            f"There are {len(res)} ChannelUsers in our service",
-            extra=extra_params(channel_id=channel_id)
+            f"There are {len(res)} ChannelUsers in our service", extra=extra_params(channel_id=channel_id)
         )
         return res
 
@@ -81,7 +79,7 @@ class ChannelUserDao(Dao):
                 select(ChannelUser).where(
                     (ChannelUser.channel_id == channel_id),
                     ((datetime.now() - ChannelUser.join_date) < timedelta(hours=24)),
-                    (ChannelUser.is_channel_member is False)
+                    (ChannelUser.is_channel_member is False),
                 )
             )
         await self.engine.dispose()
@@ -92,16 +90,13 @@ class ChannelUserDao(Dao):
             res.append(ChannelUserSchema.model_validate(channel_user))
 
         self.logger.debug(
-            f"There are {len(res)} ChannelUsers in our service",
-            extra=extra_params(channel_id=channel_id)
+            f"There are {len(res)} ChannelUsers in our service", extra=extra_params(channel_id=channel_id)
         )
         return res
 
     @validate_call(validate_return=True)
     async def get_channel_user_by_channel_user_id_and_channel_id(
-            self,
-            channel_user_id: int,
-            channel_id: int
+        self, channel_user_id: int, channel_id: int
     ) -> ChannelUserSchema:
         """
         :raises ChannelUserNotFoundError:
@@ -109,8 +104,7 @@ class ChannelUserDao(Dao):
         async with self.engine.begin() as conn:
             raw_res = await conn.execute(
                 select(ChannelUser).where(
-                    (ChannelUser.channel_user_id == channel_user_id),
-                    (ChannelUser.channel_id == channel_id)
+                    (ChannelUser.channel_user_id == channel_user_id), (ChannelUser.channel_id == channel_id)
                 )
             )
         await self.engine.dispose()
@@ -123,7 +117,7 @@ class ChannelUserDao(Dao):
 
         self.logger.debug(
             f"channel_user_id={channel_user_id}: found ChannelUser {res}",
-            extra=extra_params(channel_user_id=channel_user_id)
+            extra=extra_params(channel_user_id=channel_user_id),
         )
 
         return res
@@ -139,7 +133,7 @@ class ChannelUserDao(Dao):
 
         self.logger.debug(
             f"channel_user_id={channel_user.channel_user_id}: added ChannelUser {channel_user}",
-            extra=extra_params(channel_user_id=channel_user.channel_user_id)
+            extra=extra_params(channel_user_id=channel_user.channel_user_id),
         )
 
     @validate_call(validate_return=True)
@@ -149,18 +143,15 @@ class ChannelUserDao(Dao):
         """
         async with self.engine.begin() as conn:
             await conn.execute(
-                update(ChannelUser).where(
-                    ChannelUser.channel_user_id == updated_channel_user.channel_user_id
-                ).values(**updated_channel_user.model_dump(by_alias=True))
+                update(ChannelUser)
+                .where(ChannelUser.channel_user_id == updated_channel_user.channel_user_id)
+                .values(**updated_channel_user.model_dump(by_alias=True))
             )
         await self.engine.dispose()
 
         self.logger.debug(
-            f"channel_user_id={updated_channel_user.channel_user_id}: "
-            f"updated ChannelUser {updated_channel_user}",
-            extra=extra_params(
-                channel_user_id=updated_channel_user.channel_user_id
-            )
+            f"channel_user_id={updated_channel_user.channel_user_id}: " f"updated ChannelUser {updated_channel_user}",
+            extra=extra_params(channel_user_id=updated_channel_user.channel_user_id),
         )
 
     @validate_call(validate_return=True)
@@ -172,5 +163,5 @@ class ChannelUserDao(Dao):
 
         self.logger.debug(
             f"channel_user_id={channel_user_id}: deleted ChannelUser {channel_user_id}",
-            extra=extra_params(channel_user_id=channel_user_id)
+            extra=extra_params(channel_user_id=channel_user_id),
         )

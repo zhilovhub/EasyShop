@@ -46,9 +46,7 @@ async def get_web_app_options_api(bot_id: int) -> WebAppOptions:
 
     except BotNotFoundError as e:
         api_logger.error(
-            f"bot_id={bot_id}: bot_id={bot_id} is not found in database",
-            extra=extra_params(bot_id=bot_id),
-            exc_info=e
+            f"bot_id={bot_id}: bot_id={bot_id} is not found in database", extra=extra_params(bot_id=bot_id), exc_info=e
         )
         raise HTTPBotNotFoundError(bot_id=bot_id)
 
@@ -56,7 +54,7 @@ async def get_web_app_options_api(bot_id: int) -> WebAppOptions:
         api_logger.error(
             f"bot_id={bot_id}: Error while execute get_bot db_method with bot_id={bot_id}",
             extra=extra_params(bot_id=bot_id),
-            exc_info=e
+            exc_info=e,
         )
         raise HTTPInternalError
 
@@ -91,9 +89,7 @@ async def get_order_options_api(bot_id: int) -> list[APIOrderOption]:
 
     except BotNotFoundError as e:
         api_logger.error(
-            f"bot_id={bot_id}: bot_id={bot_id} is not found in database",
-            extra=extra_params(bot_id=bot_id),
-            exc_info=e
+            f"bot_id={bot_id}: bot_id={bot_id} is not found in database", extra=extra_params(bot_id=bot_id), exc_info=e
         )
         raise HTTPBotNotFoundError(bot_id=bot_id)
 
@@ -101,7 +97,7 @@ async def get_order_options_api(bot_id: int) -> list[APIOrderOption]:
         api_logger.error(
             f"bot_id={bot_id}: Error while execute get_bot db_method with bot_id={bot_id}",
             extra=extra_params(bot_id=bot_id),
-            exc_info=e
+            exc_info=e,
         )
         raise HTTPInternalError
 
@@ -120,23 +116,21 @@ async def send_hex_color_to_bot_api(data: HexColorData) -> str:
         api_logger.debug(f"get new hex data from web_app : {data}")
         async with aiohttp.ClientSession() as session:
             async with session.post(
-                    url=f"http://"
-                        f"{custom_telegram_bot_settings.WEBHOOK_LOCAL_API_URL_HOST}:"
-                        f"{custom_telegram_bot_settings.WEBHOOK_LOCAL_API_PORT}"
-                    f"/send_hex_color_to_bot",
-                    data=data.model_dump_json()
+                url=f"http://"
+                f"{custom_telegram_bot_settings.WEBHOOK_LOCAL_API_URL_HOST}:"
+                f"{custom_telegram_bot_settings.WEBHOOK_LOCAL_API_PORT}"
+                f"/send_hex_color_to_bot",
+                data=data.model_dump_json(),
             ) as response:
                 if response.status != 200:
-                    api_logger.error(f"Local API returned {response.status} status code "
-                                     f"with text {await response.text()}")
+                    api_logger.error(
+                        f"Local API returned {response.status} status code " f"with text {await response.text()}"
+                    )
                     raise LocalAPIException
     except LocalAPIException:
         raise HTTPInternalError(detail_message="Local Api error")
     except Exception as e:
-        api_logger.error(
-            f"Error while execute send_hex_color_to_bot api with data={data}",
-            exc_info=e
-        )
+        api_logger.error(f"Error while execute send_hex_color_to_bot api with data={data}", exc_info=e)
         raise HTTPInternalError
 
     return "success"

@@ -3,8 +3,19 @@ from pydantic import BaseModel, ConfigDict, Field, validate_call
 from enum import Enum
 from typing import Optional
 
-from sqlalchemy import (Column, BigInteger, String, Boolean, select, insert, update, delete, TypeDecorator, Unicode,
-                        Dialect)
+from sqlalchemy import (
+    Column,
+    BigInteger,
+    String,
+    Boolean,
+    select,
+    insert,
+    update,
+    delete,
+    TypeDecorator,
+    Unicode,
+    Dialect,
+)
 from sqlalchemy.ext.asyncio import AsyncEngine
 
 from database.models import Base
@@ -39,6 +50,7 @@ class CurrencySymbolsValues(Enum):
 
 class CurrencyCodes(TypeDecorator):  # noqa
     """Class to convert Enum values to db values (and reverse)"""
+
     impl = Unicode
     cache_ok = True
 
@@ -61,6 +73,7 @@ class CurrencyCodes(TypeDecorator):  # noqa
 
 class CurrencySymbols(TypeDecorator):  # noqa
     """Class to convert Enum values to db values (and reverse)"""
+
     impl = Unicode
     cache_ok = True
 
@@ -143,10 +156,7 @@ class OptionDao(Dao):  # TODO write tests
         for option in raw_res:
             res.append(OptionSchema.model_validate(option))
 
-        self.logger.debug(
-            f"Found {len(res)} options",
-            extra=extra_params()
-        )
+        self.logger.debug(f"Found {len(res)} options", extra=extra_params())
 
         return res
 
@@ -159,9 +169,7 @@ class OptionDao(Dao):  # TODO write tests
         :raises OptionNotFoundError: no option in db
         """
         async with self.engine.begin() as conn:
-            raw_res = await conn.execute(
-                select(Option).where(Option.id == option_id)
-            )
+            raw_res = await conn.execute(select(Option).where(Option.id == option_id))
         await self.engine.dispose()
 
         res = raw_res.fetchone()
@@ -169,10 +177,7 @@ class OptionDao(Dao):  # TODO write tests
             raise OptionNotFoundError(option_id=option_id)
 
         res = OptionSchema.model_validate(res)
-        self.logger.debug(
-            f"option_id={option_id}: found option {res}",
-            extra=extra_params(option_id=option_id)
-        )
+        self.logger.debug(f"option_id={option_id}: found option {res}", extra=extra_params(option_id=option_id))
 
         return res
 
@@ -184,10 +189,7 @@ class OptionDao(Dao):  # TODO write tests
         async with self.engine.begin() as conn:
             opt_id = (await conn.execute(insert(Option).values(new_option.model_dump()))).inserted_primary_key[0]
 
-        self.logger.debug(
-            f"option_id={opt_id}: new added option {new_option}",
-            extra=extra_params(option_id=opt_id)
-        )
+        self.logger.debug(f"option_id={opt_id}: new added option {new_option}", extra=extra_params(option_id=opt_id))
 
         return opt_id
 
@@ -200,13 +202,10 @@ class OptionDao(Dao):  # TODO write tests
         await self.get_option(option_id)
 
         async with self.engine.begin() as conn:
-            await conn.execute(
-                update(Option).where(Option.id == option_id).values(updated_option.model_dump())
-            )
+            await conn.execute(update(Option).where(Option.id == option_id).values(updated_option.model_dump()))
 
         self.logger.debug(
-            f"option_id={option_id}: updated option {updated_option}",
-            extra=extra_params(option_id=option_id)
+            f"option_id={option_id}: updated option {updated_option}", extra=extra_params(option_id=option_id)
         )
 
     @validate_call(validate_return=True)
@@ -217,7 +216,4 @@ class OptionDao(Dao):  # TODO write tests
         async with self.engine.begin() as conn:
             await conn.execute(delete(Option).where(Option.id == option_id))
 
-        self.logger.debug(
-            f"option_id={option_id}: deleted option {option_id}",
-            extra=extra_params(option_id=option_id)
-        )
+        self.logger.debug(f"option_id={option_id}: deleted option {option_id}", extra=extra_params(option_id=option_id))

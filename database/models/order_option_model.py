@@ -1,8 +1,21 @@
 from typing import Optional
 from pydantic import BaseModel, ConfigDict, Field, validate_call
 
-from sqlalchemy import Column, BigInteger, Dialect, String, Boolean, Integer, TypeDecorator, Unicode, \
-    select, ForeignKey, insert, update, delete
+from sqlalchemy import (
+    Column,
+    BigInteger,
+    Dialect,
+    String,
+    Boolean,
+    Integer,
+    TypeDecorator,
+    Unicode,
+    select,
+    ForeignKey,
+    insert,
+    update,
+    delete,
+)
 from sqlalchemy.ext.asyncio import AsyncEngine
 
 from database.exceptions.exceptions import KwargsException
@@ -32,6 +45,7 @@ class OrderOptionTypeValues(Enum):
 
 class OrderOptionType(TypeDecorator):  # noqa
     """Class to convert Enum values to db values (and reverse)"""
+
     impl = Unicode
     cache_ok = True
 
@@ -88,9 +102,7 @@ class OrderOptionDao(Dao):  # TODO write tests
         :return: list of OrderOptionSchema
         """
         async with self.engine.begin() as conn:
-            raw_res = await conn.execute(
-                select(OrderOption).where(OrderOption.bot_id == bot_id)
-            )
+            raw_res = await conn.execute(select(OrderOption).where(OrderOption.bot_id == bot_id))
         await self.engine.dispose()
 
         raw_res = raw_res.fetchall()
@@ -98,10 +110,7 @@ class OrderOptionDao(Dao):  # TODO write tests
         for order_option in raw_res:
             res.append(OrderOptionSchema.model_validate(order_option))
 
-        self.logger.debug(
-            f"bot_id={bot_id}: has {len(res)} order options",
-            extra=extra_params(bot_id=bot_id)
-        )
+        self.logger.debug(f"bot_id={bot_id}: has {len(res)} order options", extra=extra_params(bot_id=bot_id))
 
         return res
 
@@ -114,9 +123,7 @@ class OrderOptionDao(Dao):  # TODO write tests
         :raises OrderOptionNotFoundError: no order option in db
         """
         async with self.engine.begin() as conn:
-            raw_res = await conn.execute(
-                select(OrderOption).where(OrderOption.id == order_option_id)
-            )
+            raw_res = await conn.execute(select(OrderOption).where(OrderOption.id == order_option_id))
         await self.engine.dispose()
 
         res = raw_res.fetchone()
@@ -126,7 +133,7 @@ class OrderOptionDao(Dao):  # TODO write tests
         res = OrderOptionSchema.model_validate(res)
         self.logger.debug(
             f"order_option_id={order_option_id}: found order option {res}",
-            extra=extra_params(order_option_id=order_option_id)
+            extra=extra_params(order_option_id=order_option_id),
         )
 
         return res
@@ -143,7 +150,7 @@ class OrderOptionDao(Dao):  # TODO write tests
 
         self.logger.debug(
             f"order_option_id={order_option_id}: new added order option {new_order_option}",
-            extra=extra_params(bot_id=new_order_option.bot_id, order_option_id=order_option_id)
+            extra=extra_params(bot_id=new_order_option.bot_id, order_option_id=order_option_id),
         )
 
         return order_option_id
@@ -163,7 +170,7 @@ class OrderOptionDao(Dao):  # TODO write tests
 
         self.logger.debug(
             f"order_option_id={order_option_id}: updated order option {updated_order_option}",
-            extra=extra_params(bot_id=bot_id, order_option_id=order_option_id)
+            extra=extra_params(bot_id=bot_id, order_option_id=order_option_id),
         )
 
     @validate_call
@@ -176,5 +183,5 @@ class OrderOptionDao(Dao):  # TODO write tests
 
         self.logger.debug(
             f"order_option_id={order_option_id}: deleted order option {order_option_id}",
-            extra=extra_params(order_option_id=order_option_id)
+            extra=extra_params(order_option_id=order_option_id),
         )

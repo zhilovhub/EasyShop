@@ -6,8 +6,11 @@ from common_utils.keyboards.keyboards import InlineBotMenuKeyboard
 
 from bot.utils import MessageTexts
 from bot.handlers.routers import channel_menu_router
-from bot.keyboards.channel_keyboards import (InlineChannelsListKeyboard, InlineChannelMenuKeyboard,
-                                             InlineContestTypeKeyboard)
+from bot.keyboards.channel_keyboards import (
+    InlineChannelsListKeyboard,
+    InlineChannelMenuKeyboard,
+    InlineContestTypeKeyboard,
+)
 from bot.keyboards.post_message_keyboards import InlinePostMessageMenuKeyboard
 from bot.post_message.post_message_create import post_message_create
 
@@ -35,16 +38,15 @@ async def channels_list_callback_handler(query: CallbackQuery):
             channel_username = (await custom_tg_bot.get_chat(channel_id)).username
             await query.message.edit_text(
                 MessageTexts.BOT_CHANNEL_MENU_MESSAGE.value.format(
-                    channel_username,
-                    (await custom_tg_bot.get_me()).username
+                    channel_username, (await custom_tg_bot.get_me()).username
                 ),
-                reply_markup=await InlineChannelMenuKeyboard.get_keyboard(custom_bot.bot_id, channel_id)
+                reply_markup=await InlineChannelMenuKeyboard.get_keyboard(custom_bot.bot_id, channel_id),
             )
         case callback_data.ActionEnum.BACK_TO_MAIN_MENU:
             await query.message.edit_text(
                 MessageTexts.BOT_MENU_MESSAGE.value.format((await Bot(custom_bot.token).get_me()).username),
                 reply_markup=await InlineBotMenuKeyboard.get_keyboard(custom_bot.bot_id, query.from_user.id),
-                parse_mode=ParseMode.HTML
+                parse_mode=ParseMode.HTML,
             )
 
 
@@ -70,9 +72,9 @@ async def channel_menu_callback_handler(query: CallbackQuery):
 
             await query.answer(
                 text=f"Прирост подписчиков в канале @{channel_username}: {len(plus_users) - len(minus_users)}\n\n"
-                     f"Отписалось - {len(minus_users)}\n"
-                     f"Подписалось - {len(plus_users)}\n",
-                show_alert=True
+                f"Отписалось - {len(minus_users)}\n"
+                f"Подписалось - {len(plus_users)}\n",
+                show_alert=True,
             )
         case callback_data.ActionEnum.LEAVE_CHANNEL:
             leave_result = await custom_tg_bot.leave_chat(chat_id=channel_id)
@@ -83,7 +85,7 @@ async def channel_menu_callback_handler(query: CallbackQuery):
                 await query.message.answer(f"Произошла ошибка при выходе из канала @{channel_username}")
             await query.message.edit_text(
                 MessageTexts.BOT_CHANNELS_LIST_MESSAGE.value.format(custom_bot_username),
-                reply_markup=await InlineChannelsListKeyboard.get_keyboard(custom_bot.bot_id)
+                reply_markup=await InlineChannelsListKeyboard.get_keyboard(custom_bot.bot_id),
             )
         case callback_data.ActionEnum.CREATE_POST_MESSAGE | callback_data.ActionEnum.EDIT_POST_MESSAGE:
             try:
@@ -99,15 +101,13 @@ async def channel_menu_callback_handler(query: CallbackQuery):
             await query.message.edit_text(
                 MessageTexts.bot_post_message_menu_message(PostMessageType.CHANNEL_POST).format(channel_username),
                 reply_markup=await InlinePostMessageMenuKeyboard.get_keyboard(
-                    bot_id=bot_id,
-                    post_message_type=PostMessageType.CHANNEL_POST,
-                    channel_id=channel_id
-                )
+                    bot_id=bot_id, post_message_type=PostMessageType.CHANNEL_POST, channel_id=channel_id
+                ),
             )
         case callback_data.ActionEnum.BACK_CHANNELS_LIST:
             await query.message.edit_text(
                 text=MessageTexts.BOT_CHANNELS_LIST_MESSAGE.value.format(custom_bot_username),
-                reply_markup=await InlineChannelsListKeyboard.get_keyboard(bot_id)
+                reply_markup=await InlineChannelsListKeyboard.get_keyboard(bot_id),
             )
         case callback_data.ActionEnum.CREATE_CONTEST | callback_data.ActionEnum.EDIT_CONTEST:
             try:
@@ -120,27 +120,22 @@ async def channel_menu_callback_handler(query: CallbackQuery):
                 if post_message.is_running:
                     message_text = MessageTexts.BOT_CHANNEL_CONTEST_MENU_WHILE_RUNNING.value.format(channel_username)
                 else:
-                    message_text = MessageTexts.bot_post_message_menu_message(
-                        PostMessageType.CONTEST
-                    ).format(channel_username)
+                    message_text = MessageTexts.bot_post_message_menu_message(PostMessageType.CONTEST).format(
+                        channel_username
+                    )
 
                 await query.message.edit_text(
                     message_text,
                     reply_markup=await InlinePostMessageMenuKeyboard.get_keyboard(
-                        bot_id=bot_id,
-                        post_message_type=PostMessageType.CONTEST,
-                        channel_id=channel_id
-                    )
+                        bot_id=bot_id, post_message_type=PostMessageType.CONTEST, channel_id=channel_id
+                    ),
                 )
                 return
             except ContestNotFoundError:
                 if callback_data.a == callback_data.ActionEnum.CREATE_CONTEST:
                     return await query.message.edit_text(
                         MessageTexts.SELECT_CONTEST_TYPE.value,
-                        reply_markup=await InlineContestTypeKeyboard.get_keyboard(
-                            bot_id=bot_id,
-                            channel_id=channel_id
-                        )
+                        reply_markup=await InlineContestTypeKeyboard.get_keyboard(bot_id=bot_id, channel_id=channel_id),
                     )
 
 
@@ -162,10 +157,9 @@ async def contest_type_callback_handler(query: CallbackQuery):
         case callback_data.ActionEnum.BACK_TO_CHANNEL_MENU:
             await query.message.edit_text(
                 MessageTexts.BOT_CHANNEL_MENU_MESSAGE.value.format(
-                    channel_username,
-                    (await custom_tg_bot.get_me()).username
+                    channel_username, (await custom_tg_bot.get_me()).username
                 ),
-                reply_markup=await InlineChannelMenuKeyboard.get_keyboard(custom_bot.bot_id, channel_id)
+                reply_markup=await InlineChannelMenuKeyboard.get_keyboard(custom_bot.bot_id, channel_id),
             )
         case callback_data.ActionEnum.RANDOMIZER:
             try:
@@ -177,11 +171,10 @@ async def contest_type_callback_handler(query: CallbackQuery):
             await query.message.edit_text(
                 MessageTexts.bot_post_message_menu_message(PostMessageType.CONTEST).format(channel_username),
                 reply_markup=await InlinePostMessageMenuKeyboard.get_keyboard(
-                    bot_id=bot_id,
-                    post_message_type=PostMessageType.CONTEST,
-                    channel_id=channel_id
-                )
+                    bot_id=bot_id, post_message_type=PostMessageType.CONTEST, channel_id=channel_id
+                ),
             )
         case _:
-            logger.warning("Unknown callback in contest type select kb",
-                           extra_params(bot_id=bot_id, user_id=query.from_user.id))
+            logger.warning(
+                "Unknown callback in contest type select kb", extra_params(bot_id=bot_id, user_id=query.from_user.id)
+            )

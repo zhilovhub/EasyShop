@@ -25,13 +25,7 @@ class ReplyBackStockMenuKeyboard:
         actions = ReplyBackStockMenuKeyboard.Callback.ActionEnum
 
         return ReplyKeyboardMarkup(
-            keyboard=[
-                [
-                    KeyboardButton(
-                        text=actions.BACK_TO_STOCK_MENU.value
-                    )
-                ]
-            ], resize_keyboard=True
+            keyboard=[[KeyboardButton(text=actions.BACK_TO_STOCK_MENU.value)]], resize_keyboard=True
         )
 
 
@@ -51,12 +45,7 @@ class InlineWebStockKeyboard:
 
         return InlineKeyboardMarkup(
             inline_keyboard=[
-                [
-                    InlineKeyboardButton(
-                        text=actions.GOOD_LIST.value,
-                        web_app=make_admin_panel_webapp_info(bot_id)
-                    )
-                ]
+                [InlineKeyboardButton(text=actions.GOOD_LIST.value, web_app=make_admin_panel_webapp_info(bot_id))]
             ]
         )
 
@@ -86,9 +75,7 @@ class InlineStockMenuKeyboard:
     @staticmethod
     @callback_json_validator
     def callback_json(action: Callback.ActionEnum, bot_id: int) -> str:
-        return InlineStockMenuKeyboard.Callback(
-            a=action, bot_id=bot_id
-        ).model_dump_json(by_alias=True)
+        return InlineStockMenuKeyboard.Callback(a=action, bot_id=bot_id).model_dump_json(by_alias=True)
 
     @staticmethod
     def callback_validator(json_string: str) -> bool:
@@ -107,57 +94,40 @@ class InlineStockMenuKeyboard:
                 [
                     InlineKeyboardButton(
                         text="🧮 Количество товаров",
-                        callback_data=InlineStockMenuKeyboard.callback_json(
-                            actions.GOODS_COUNT, bot_id
-                        )
+                        callback_data=InlineStockMenuKeyboard.callback_json(actions.GOODS_COUNT, bot_id),
                     ),
-                    InlineKeyboardButton(
-                        text="📋 Список товаров",
-                        web_app=make_admin_panel_webapp_info(bot_id)
-                    )
+                    InlineKeyboardButton(text="📋 Список товаров", web_app=make_admin_panel_webapp_info(bot_id)),
                 ],
                 [
                     InlineKeyboardButton(
                         text="🆕 Добавить товар",
-                        callback_data=InlineStockMenuKeyboard.callback_json(
-                            actions.ADD_GOOD, bot_id
-                        )
+                        callback_data=InlineStockMenuKeyboard.callback_json(actions.ADD_GOOD, bot_id),
                     ),
                 ],
                 [
                     InlineKeyboardButton(
                         text="⬆️ Экспорт товаров",
-                        callback_data=InlineStockMenuKeyboard.callback_json(
-                            actions.EXPORT, bot_id
-                        )
+                        callback_data=InlineStockMenuKeyboard.callback_json(actions.EXPORT, bot_id),
                     ),
                     InlineKeyboardButton(
                         text="⬇️ Импорт товаров",
-                        callback_data=InlineStockMenuKeyboard.callback_json(
-                            actions.IMPORT, bot_id
-                        )
+                        callback_data=InlineStockMenuKeyboard.callback_json(actions.IMPORT, bot_id),
                     ),
                 ],
                 [
                     InlineKeyboardButton(
                         text="📦 Управление остатками",
-                        callback_data=InlineStockMenuKeyboard.callback_json(
-                            actions.GOODS_COUNT_MANAGE, bot_id
-                        )
+                        callback_data=InlineStockMenuKeyboard.callback_json(actions.GOODS_COUNT_MANAGE, bot_id),
                     ),
                     InlineKeyboardButton(
                         text=f"{'✅' if auto_reduce else '❌'} Автоуменьшение на складе",
-                        callback_data=InlineStockMenuKeyboard.callback_json(
-                            actions.AUTO_REDUCE, bot_id
-                        )
+                        callback_data=InlineStockMenuKeyboard.callback_json(actions.AUTO_REDUCE, bot_id),
                     ),
                 ],
                 [
                     InlineKeyboardButton(
                         text="🔙 Назад",
-                        callback_data=InlineStockMenuKeyboard.callback_json(
-                            actions.BACK_TO_BOT_MENU, bot_id
-                        )
+                        callback_data=InlineStockMenuKeyboard.callback_json(actions.BACK_TO_BOT_MENU, bot_id),
                     ),
                 ],
             ],
@@ -180,14 +150,12 @@ class InlineStockImportMenuKeyboard:
 
         bot_id: int
 
-    @ staticmethod
-    @ callback_json_validator
+    @staticmethod
+    @callback_json_validator
     def callback_json(action: Callback.ActionEnum, bot_id: int) -> str:
-        return InlineStockImportMenuKeyboard.Callback(
-            a=action, bot_id=bot_id
-        ).model_dump_json(by_alias=True)
+        return InlineStockImportMenuKeyboard.Callback(a=action, bot_id=bot_id).model_dump_json(by_alias=True)
 
-    @ staticmethod
+    @staticmethod
     def callback_validator(json_string: str) -> bool:
         try:
             InlineStockImportMenuKeyboard.Callback.model_validate_json(json_string)
@@ -195,7 +163,7 @@ class InlineStockImportMenuKeyboard:
         except ValidationError:
             return False
 
-    @ staticmethod
+    @staticmethod
     def get_keyboard(bot_id: int) -> InlineKeyboardMarkup:
         actions = InlineStockImportMenuKeyboard.Callback.ActionEnum
 
@@ -203,18 +171,13 @@ class InlineStockImportMenuKeyboard:
             inline_keyboard=[
                 [
                     InlineKeyboardButton(
-                        text="1️⃣",
-                        callback_data=InlineStockImportMenuKeyboard.callback_json(
-                            actions.REPLACE_ALL, bot_id
-                        )
+                        text="1️⃣", callback_data=InlineStockImportMenuKeyboard.callback_json(actions.REPLACE_ALL, bot_id)
                     ),
                 ],
                 [
                     InlineKeyboardButton(
                         text="2️⃣",
-                        callback_data=InlineStockImportMenuKeyboard.callback_json(
-                            actions.REPLACE_DUPLICATES, bot_id
-                        )
+                        callback_data=InlineStockImportMenuKeyboard.callback_json(actions.REPLACE_DUPLICATES, bot_id),
                     ),
                 ],
                 [
@@ -222,15 +185,13 @@ class InlineStockImportMenuKeyboard:
                         text="3️⃣",
                         callback_data=InlineStockImportMenuKeyboard.callback_json(
                             actions.NOT_REPLACE_DUPLICATES, bot_id
-                        )
+                        ),
                     ),
                 ],
                 [
                     InlineKeyboardButton(
                         text="🔙 Назад",
-                        callback_data=InlineStockImportMenuKeyboard.callback_json(
-                            actions.BACK_TO_STOCK_MENU, bot_id
-                        )
+                        callback_data=InlineStockImportMenuKeyboard.callback_json(actions.BACK_TO_STOCK_MENU, bot_id),
                     ),
                 ],
             ],
@@ -252,13 +213,13 @@ class InlineStockImportConfirmKeyboard:
         import_action: str = Field(alias="ia")
         file_type: str = Field(alias="t")
 
-    @ staticmethod
-    @ callback_json_validator
+    @staticmethod
+    @callback_json_validator
     def callback_json(
-            action: Callback.ActionEnum,
-            bot_id: int,
-            import_action: str,
-            file_type: str,
+        action: Callback.ActionEnum,
+        bot_id: int,
+        import_action: str,
+        file_type: str,
     ) -> str:
         return InlineStockImportConfirmKeyboard.Callback(
             a=action, bot_id=bot_id, import_action=import_action, file_type=file_type
@@ -283,7 +244,7 @@ class InlineStockImportConfirmKeyboard:
                         text="✅",
                         callback_data=InlineStockImportConfirmKeyboard.callback_json(
                             actions.CONFIRM, bot_id, import_action, file_type
-                        )
+                        ),
                     ),
                 ],
                 [
@@ -291,7 +252,7 @@ class InlineStockImportConfirmKeyboard:
                         text="❌",
                         callback_data=InlineStockImportConfirmKeyboard.callback_json(
                             actions.DENY, bot_id, import_action, file_type
-                        )
+                        ),
                     )
                 ],
             ]
@@ -333,17 +294,21 @@ class InlineStockImportFileTypeKeyboard:
 
         return InlineKeyboardMarkup(
             inline_keyboard=[
-                [InlineKeyboardButton(
-                    text="Excel (.xlsx)",
-                    callback_data=InlineStockImportFileTypeKeyboard.callback_json(
-                        actions.EXCEL, bot_id, import_action
+                [
+                    InlineKeyboardButton(
+                        text="Excel (.xlsx)",
+                        callback_data=InlineStockImportFileTypeKeyboard.callback_json(
+                            actions.EXCEL, bot_id, import_action
+                        ),
                     )
-                )],
-                [InlineKeyboardButton(
-                    text="🔙 Назад",
-                    callback_data=InlineStockImportFileTypeKeyboard.callback_json(
-                        actions.BACK_TO_STOCK_MENU, bot_id, import_action
+                ],
+                [
+                    InlineKeyboardButton(
+                        text="🔙 Назад",
+                        callback_data=InlineStockImportFileTypeKeyboard.callback_json(
+                            actions.BACK_TO_STOCK_MENU, bot_id, import_action
+                        ),
                     )
-                )],
+                ],
             ]
         )

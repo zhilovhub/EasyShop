@@ -4,8 +4,23 @@ from typing import Optional
 
 from pydantic import BaseModel, Field, validate_call, ConfigDict
 
-from sqlalchemy import BigInteger, Column, ForeignKey, select, insert, delete, BOOLEAN, String, DateTime, update, \
-    TypeDecorator, Unicode, Dialect, and_, or_
+from sqlalchemy import (
+    BigInteger,
+    Column,
+    ForeignKey,
+    select,
+    insert,
+    delete,
+    BOOLEAN,
+    String,
+    DateTime,
+    update,
+    TypeDecorator,
+    Unicode,
+    Dialect,
+    and_,
+    or_,
+)
 from sqlalchemy.ext.asyncio import AsyncEngine
 
 from database.models import Base
@@ -18,6 +33,7 @@ from logs.config import extra_params
 
 class PostMessageType(Enum):
     """For what is post message?"""
+
     MAILING = "1"
     CHANNEL_POST = "2"
     CONTEST = "3"
@@ -34,6 +50,7 @@ class UnknownPostMessageTypeError(KwargsException):
 
 class PostMessageTypeModel(TypeDecorator):  # noqa
     """Class to convert Enum values to db values (and reverse)"""
+
     impl = Unicode
     cache_ok = True
 
@@ -122,7 +139,15 @@ class PostMessageDao(Dao):  # TODO write tests
         """
         async with self.engine.begin() as conn:
             raw_res = await conn.execute(
-                select(PostMessage).where(and_(PostMessage.post_message_id == post_message_id, or_(PostMessage.is_sent == False, and_(PostMessage.is_sent == True, PostMessage.is_running == True))))  # noqa: E712
+                select(PostMessage).where(
+                    and_(
+                        PostMessage.post_message_id == post_message_id,
+                        or_(
+                            PostMessage.is_sent == False,  # noqa: E712
+                            and_(PostMessage.is_sent == True, PostMessage.is_running == True),  # noqa: E712
+                        ),
+                    )
+                )
             )
         await self.engine.dispose()
 
@@ -134,7 +159,7 @@ class PostMessageDao(Dao):  # TODO write tests
 
         self.logger.debug(
             f"bot_id={res.bot_id}: found post_message {post_message_id}",
-            extra=extra_params(post_message_id=post_message_id, bot_id=res.bot_id)
+            extra=extra_params(post_message_id=post_message_id, bot_id=res.bot_id),
         )
 
         return res
@@ -151,11 +176,11 @@ class PostMessageDao(Dao):  # TODO write tests
                     and_(
                         PostMessage.post_message_type == post_message_type,
                         or_(
-                            PostMessage.is_sent == False,
-                            and_(PostMessage.is_sent == True, PostMessage.is_running == True)
-                        )
-                    )
-                )  # noqa: E712
+                            PostMessage.is_sent == False,  # noqa: E712
+                            and_(PostMessage.is_sent == True, PostMessage.is_running == True),  # noqa: E712
+                        ),
+                    ),
+                )
             )
         await self.engine.dispose()
 
@@ -167,7 +192,7 @@ class PostMessageDao(Dao):  # TODO write tests
 
         self.logger.debug(
             f"bot_id={res.bot_id}: found post_message {res}",
-            extra=extra_params(post_message_id=res.post_message_id, bot_id=bot_id)
+            extra=extra_params(post_message_id=res.post_message_id, bot_id=bot_id),
         )
 
         return res
@@ -184,7 +209,7 @@ class PostMessageDao(Dao):  # TODO write tests
 
         self.logger.debug(
             f"bot_id={new_post_message.bot_id}: added post_message_id {post_message_id} -> {new_post_message}",
-            extra=extra_params(post_message_id=post_message_id, bot_id=new_post_message.bot_id)
+            extra=extra_params(post_message_id=post_message_id, bot_id=new_post_message.bot_id),
         )
 
         return post_message_id
@@ -193,26 +218,24 @@ class PostMessageDao(Dao):  # TODO write tests
     async def update_post_message(self, updated_post_message: PostMessageSchema) -> None:
         async with self.engine.begin() as conn:
             await conn.execute(
-                update(PostMessage).where(
-                    PostMessage.post_message_id == updated_post_message.post_message_id
-                ).values(updated_post_message.model_dump())
+                update(PostMessage)
+                .where(PostMessage.post_message_id == updated_post_message.post_message_id)
+                .values(updated_post_message.model_dump())
             )
 
         self.logger.debug(
             f"bot_id={updated_post_message.bot_id}: updated post_message {updated_post_message}",
-            extra=extra_params(post_message_id=updated_post_message.post_message_id, bot_id=updated_post_message.bot_id)
+            extra=extra_params(
+                post_message_id=updated_post_message.post_message_id, bot_id=updated_post_message.bot_id
+            ),
         )
 
     @validate_call(validate_return=True)
     async def delete_post_message(self, post_message_id: int) -> None:
         async with self.engine.begin() as conn:
-            await conn.execute(
-                delete(PostMessage).where(
-                    PostMessage.post_message_id == post_message_id
-                )
-            )
+            await conn.execute(delete(PostMessage).where(PostMessage.post_message_id == post_message_id))
 
         self.logger.debug(
             f"post_message_id={post_message_id}: deleted post_message {post_message_id}",
-            extra=extra_params(post_message_id=post_message_id)
+            extra=extra_params(post_message_id=post_message_id),
         )

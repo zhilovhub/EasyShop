@@ -28,7 +28,9 @@ class ReplyCustomBotMenuKeyboard:
                         text=actions.SHOP.value,
                     )
                 ],
-            ], resize_keyboard=True, one_time_keyboard=False
+            ],
+            resize_keyboard=True,
+            one_time_keyboard=False,
         )
 
 
@@ -48,11 +50,6 @@ class InlineShopCustomBotKeyboard:
 
         return InlineKeyboardMarkup(
             inline_keyboard=[
-                [
-                    InlineKeyboardButton(
-                        text=actions.SHOP.value,
-                        web_app=make_webapp_info(bot_id)
-                    )
-                ],
+                [InlineKeyboardButton(text=actions.SHOP.value, web_app=make_webapp_info(bot_id))],
             ]
         )

@@ -6,7 +6,7 @@ from .env_config import (
     DatabaseSettings,
     CryptographySettings,
     MainTelegramBotSettings,
-    CustomTelegramBotSettings
+    CustomTelegramBotSettings,
 )
 
 settings = Settings()

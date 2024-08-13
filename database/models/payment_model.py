@@ -31,7 +31,9 @@ class Payment(Base):
 
     payment_id = Column(BigInteger, primary_key=True)
     from_user = Column(ForeignKey(User.user_id, ondelete="CASCADE"), nullable=False)
-    amount = Column(BigInteger, )
+    amount = Column(
+        BigInteger,
+    )
     status = Column(String(55), nullable=False)
     created_at = Column(DateTime, nullable=False)
     last_update = Column(DateTime, nullable=False)
@@ -74,7 +76,7 @@ class PaymentDao(Dao):
         async with self.engine.begin() as conn:
             raw_res = await conn.execute(select(Payment))
         await self.engine.dispose()
-        
+
         raw_res = raw_res.fetchall()
         res = []
         for payment in raw_res:
@@ -94,7 +96,7 @@ class PaymentDao(Dao):
         async with self.engine.begin() as conn:
             raw_res = await conn.execute(select(Payment).where(Payment.payment_id == payment_id))
         await self.engine.dispose()
-        
+
         res = raw_res.fetchone()
         if res is None:
             raise PaymentNotFoundError(payment_id=payment_id)
@@ -103,7 +105,7 @@ class PaymentDao(Dao):
 
         self.logger.debug(
             f"payment_id={payment_id}: found payment {res}",
-            extra=extra_params(payment_id=payment_id, user_id=res.from_user)
+            extra=extra_params(payment_id=payment_id, user_id=res.from_user),
         )
 
         return res
@@ -121,7 +123,7 @@ class PaymentDao(Dao):
 
         self.logger.debug(
             f"user_id={payment.from_user}: added payment {payment_id} {payment}",
-            extra=extra_params(payment_id=payment_id, user_id=payment.from_user)
+            extra=extra_params(payment_id=payment_id, user_id=payment.from_user),
         )
 
         return payment_id
@@ -131,11 +133,14 @@ class PaymentDao(Dao):
         updated_payment.last_update = datetime.now()
 
         async with self.engine.begin() as conn:
-            await conn.execute(update(User).where(Payment.payment_id == updated_payment.id).
-                               values(**updated_payment.model_dump(by_alias=True)))
+            await conn.execute(
+                update(User)
+                .where(Payment.payment_id == updated_payment.id)
+                .values(**updated_payment.model_dump(by_alias=True))
+            )
         await self.engine.dispose()
 
         self.logger.debug(
             f"user_id={updated_payment.from_user}: updated payment {updated_payment}",
-            extra=extra_params(payment_id=updated_payment.id, user_id=updated_payment.from_user)
+            extra=extra_params(payment_id=updated_payment.id, user_id=updated_payment.from_user),
         )

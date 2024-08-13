@@ -21,24 +21,28 @@ class Partnership:
     async def start_partnership(self, partnership_id: int):
         await self.partnership_db.get_partnership_by_id(partnership_id)
 
-    async def create_partnership(self, bot_id: int, post_message_id: int, price: int,
-                                 criteria: CriteriaSchemaWithoutId) -> int:
-        logger.info(f"bot_id={bot_id} : creating new criteria for partnership",
-                    exc_info=extra_params(bot_id=bot_id, post_message_id=post_message_id))
+    async def create_partnership(
+        self, bot_id: int, post_message_id: int, price: int, criteria: CriteriaSchemaWithoutId
+    ) -> int:
+        logger.info(
+            f"bot_id={bot_id} : creating new criteria for partnership",
+            exc_info=extra_params(bot_id=bot_id, post_message_id=post_message_id),
+        )
         criteria_id = await self.partnership_db.add_partnership_criteria(criteria)
 
-        new_partnership = PartnershipSchemaWithoutId(bot_id=bot_id,
-                                                     post_message_id=post_message_id,
-                                                     price=price,
-                                                     criteria_id=criteria_id)
-        logger.info(f"bot_id={bot_id} : creating new partnership",
-                    exc_info=extra_params(bot_id=bot_id, post_message_id=post_message_id))
+        new_partnership = PartnershipSchemaWithoutId(
+            bot_id=bot_id, post_message_id=post_message_id, price=price, criteria_id=criteria_id
+        )
+        logger.info(
+            f"bot_id={bot_id} : creating new partnership",
+            exc_info=extra_params(bot_id=bot_id, post_message_id=post_message_id),
+        )
         partnership_id = await self.partnership_db.add_partnership(new_partnership)
 
         return partnership_id
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     from database.models.models import Database
 
-    scheduler = Scheduler(database_settings.SCHEDULER_URL, 'postgres', database_settings.TIMEZONE)
+    scheduler = Scheduler(database_settings.SCHEDULER_URL, "postgres", database_settings.TIMEZONE)

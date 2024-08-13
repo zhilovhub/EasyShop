@@ -9,6 +9,14 @@ import bot.handlers.post_message_handlers
 import bot.handlers.admin_group_commands_handler
 import bot.handlers.payments_handler
 
-from .routers import (admin_bot_menu_router, channel_menu_router, commands_router, subscribe_router,
-                      custom_bot_editing_router, stock_menu_router, post_message_router, admin_group_commands_router,
-                      payment_router)
+from .routers import (
+    admin_bot_menu_router,
+    channel_menu_router,
+    commands_router,
+    subscribe_router,
+    custom_bot_editing_router,
+    stock_menu_router,
+    post_message_router,
+    admin_group_commands_router,
+    payment_router,
+)

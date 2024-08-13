@@ -51,9 +51,7 @@ class CategoryDao(Dao):  # TODO write tests
         :return: list of CategorySchema
         """
         async with self.engine.begin() as conn:
-            raw_res = await conn.execute(
-                select(Category).where(Category.bot_id == bot_id)
-            )
+            raw_res = await conn.execute(select(Category).where(Category.bot_id == bot_id))
         await self.engine.dispose()
 
         raw_res = raw_res.fetchall()
@@ -61,10 +59,7 @@ class CategoryDao(Dao):  # TODO write tests
         for category in raw_res:
             res.append(CategorySchema.model_validate(category))
 
-        self.logger.debug(
-            f"bot_id={bot_id}: has {len(res)} categories",
-            extra=extra_params(bot_id=bot_id)
-        )
+        self.logger.debug(f"bot_id={bot_id}: has {len(res)} categories", extra=extra_params(bot_id=bot_id))
 
         return res
 
@@ -77,9 +72,7 @@ class CategoryDao(Dao):  # TODO write tests
         :raises CategoryNotFoundError: no category in db
         """
         async with self.engine.begin() as conn:
-            raw_res = await conn.execute(
-                select(Category).where(Category.id == category_id)
-            )
+            raw_res = await conn.execute(select(Category).where(Category.id == category_id))
         await self.engine.dispose()
 
         res = raw_res.fetchone()
@@ -88,8 +81,7 @@ class CategoryDao(Dao):  # TODO write tests
 
         res = CategorySchema.model_validate(res)
         self.logger.debug(
-            f"category_id={category_id}: found category {res}",
-            extra=extra_params(category_id=category_id)
+            f"category_id={category_id}: found category {res}", extra=extra_params(category_id=category_id)
         )
 
         return res
@@ -104,15 +96,13 @@ class CategoryDao(Dao):  # TODO write tests
             for cat in all_categories:
                 if new_category.name == cat.name:
                     raise CategoryNameAlreadyExistsError(
-                        category_name=new_category.name,
-                        bot_id=new_category.bot_id,
-                        category_id=cat.id
+                        category_name=new_category.name, bot_id=new_category.bot_id, category_id=cat.id
                     )
             cat_id = (await conn.execute(insert(Category).values(new_category.model_dump()))).inserted_primary_key[0]
 
         self.logger.debug(
             f"category_id={cat_id}: new added category {new_category}",
-            extra=extra_params(bot_id=new_category.bot_id, category_id=cat_id)
+            extra=extra_params(bot_id=new_category.bot_id, category_id=cat_id),
         )
 
         return cat_id
@@ -129,17 +119,13 @@ class CategoryDao(Dao):  # TODO write tests
             all_categories = await self.get_all_categories(bot_id)
             if updated_category.name in list(map(lambda x: x.name, all_categories)):
                 raise CategoryNameAlreadyExistsError(
-                    category_name=updated_category.name,
-                    bot_id=bot_id,
-                    category_id=category_id
+                    category_name=updated_category.name, bot_id=bot_id, category_id=category_id
                 )
-            await conn.execute(
-                update(Category).where(Category.id == category_id).values(updated_category.model_dump())
-            )
+            await conn.execute(update(Category).where(Category.id == category_id).values(updated_category.model_dump()))
 
         self.logger.debug(
             f"category_id={category_id}: updated category {updated_category}",
-            extra=extra_params(bot_id=bot_id, category_id=category_id)
+            extra=extra_params(bot_id=bot_id, category_id=category_id),
         )
 
     @validate_call
@@ -151,6 +137,5 @@ class CategoryDao(Dao):  # TODO write tests
             await conn.execute(delete(Category).where(Category.id == category_id))
 
         self.logger.debug(
-            f"category_id={category_id}: deleted category {category_id}",
-            extra=extra_params(category_id=category_id)
+            f"category_id={category_id}: deleted category {category_id}", extra=extra_params(category_id=category_id)
         )

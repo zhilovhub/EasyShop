@@ -26,26 +26,23 @@ dp = Dispatcher(storage=storage)
 
 stock_manager = Stoke(db_engine)
 
-_scheduler = Scheduler(database_settings.SCHEDULER_URL, 'postgres', database_settings.TIMEZONE)
+_scheduler = Scheduler(database_settings.SCHEDULER_URL, "postgres", database_settings.TIMEZONE)
 subscription: Subscription = Subscription(database=db_engine, custom_scheduler=_scheduler)
 
 cache_resources_file_id_store = JsonStore(
-    file_path=common_settings.RESOURCES_PATH.format("cache.json"),
-    json_store_name="RESOURCES_FILE_ID_STORE"
+    file_path=common_settings.RESOURCES_PATH.format("cache.json"), json_store_name="RESOURCES_FILE_ID_STORE"
 )
 QUESTION_MESSAGES = JsonStore(
-    file_path=common_settings.RESOURCES_PATH.format("question_messages.json"),
-    json_store_name="QUESTION_MESSAGES"
+    file_path=common_settings.RESOURCES_PATH.format("question_messages.json"), json_store_name="QUESTION_MESSAGES"
 )
 
 MAINTENANCE = JsonStore(
-    file_path=common_settings.RESOURCES_PATH.format("maintenance.json"),
-    json_store_name="MAINTENANCE"
+    file_path=common_settings.RESOURCES_PATH.format("maintenance.json"), json_store_name="MAINTENANCE"
 )
 
 SENT_SUBSCRIPTION_NOTIFICATIONS = JsonStore(
     file_path=common_settings.RESOURCES_PATH.format("sent_sub_notifications.json"),
-    json_store_name="SENT_SUB_NOTIFICATIONS"
+    json_store_name="SENT_SUB_NOTIFICATIONS",
 )
 
 
@@ -54,8 +51,7 @@ async def on_start():
 
     commands = [
         BotCommand(command="start", description="Стартовая инструкция"),
-        BotCommand(command="check_subscription",
-                   description="Проверить подписку"),
+        BotCommand(command="check_subscription", description="Проверить подписку"),
     ]
     admin_commands = [
         BotCommand(command="bot_status", description="Статус бота"),
@@ -70,14 +66,10 @@ async def on_start():
 
     try:
         await bot.set_my_commands(
-            admin_commands,
-            scope=BotCommandScopeChatAdministrators(chat_id=common_settings.ADMIN_GROUP_ID)
+            admin_commands, scope=BotCommandScopeChatAdministrators(chat_id=common_settings.ADMIN_GROUP_ID)
         )
     except TelegramBadRequest as e:
-        logger.warning(
-            f"Error while setting command to chat_id = {common_settings.ADMIN_GROUP_ID}",
-            exc_info=e
-        )
+        logger.warning(f"Error while setting command to chat_id = {common_settings.ADMIN_GROUP_ID}", exc_info=e)
 
     await storage.connect()
     await db_engine.connect()
@@ -92,9 +84,17 @@ async def on_start():
 
 
 if __name__ == "__main__":
-    from bot.handlers import (admin_bot_menu_router, channel_menu_router, custom_bot_editing_router, commands_router,
-                              subscribe_router, stock_menu_router, post_message_router, admin_group_commands_router,
-                              payment_router)
+    from bot.handlers import (
+        admin_bot_menu_router,
+        channel_menu_router,
+        custom_bot_editing_router,
+        commands_router,
+        subscribe_router,
+        stock_menu_router,
+        post_message_router,
+        admin_group_commands_router,
+        payment_router,
+    )
 
     dp.include_router(admin_group_commands_router)  # не знаю почему не работает если ставить не первым
 
@@ -107,10 +107,12 @@ if __name__ == "__main__":
     dp.include_router(subscribe_router)
     dp.include_router(post_message_router)
 
-    for log_file in ('all.log', 'err.log'):
-        with open(common_settings.LOGS_PATH + log_file, 'a') as log:
-            log.write(f'=============================\n'
-                      f'New bot-app session\n'
-                      f'[{datetime.now()}]\n'
-                      f'=============================\n')
+    for log_file in ("all.log", "err.log"):
+        with open(common_settings.LOGS_PATH + log_file, "a") as log:
+            log.write(
+                f"=============================\n"
+                f"New bot-app session\n"
+                f"[{datetime.now()}]\n"
+                f"=============================\n"
+            )
     asyncio.run(on_start())

@@ -27,6 +27,7 @@ class OrderStatusValues(Enum):
 
 class OrderStatus(TypeDecorator):  # noqa
     """Class to convert Enum values to db values (and reverse)"""
+
     impl = Unicode
     cache_ok = True
 
@@ -84,10 +85,15 @@ class OrderSchema(BaseModel):
     bot_id: int
     items: dict[int, OrderItem] = Field(
         default={
-            101: OrderItem(amount=2, used_extra_options=[
-                OrderItemExtraOption(name="размер",
-                                     selected_variant="42",)
-            ])
+            101: OrderItem(
+                amount=2,
+                used_extra_options=[
+                    OrderItemExtraOption(
+                        name="размер",
+                        selected_variant="42",
+                    )
+                ],
+            )
         }
     )
     from_user: int
@@ -128,10 +134,7 @@ class OrderDao(Dao):
         for order in raw_res:
             res.append(OrderSchema.model_validate(order))
 
-        self.logger.debug(
-            f"bot_id={bot_id}: has {len(res)} orders",
-            extra=extra_params(bot_id=bot_id)
-        )
+        self.logger.debug(f"bot_id={bot_id}: has {len(res)} orders", extra=extra_params(bot_id=bot_id))
 
         return res
 
@@ -154,8 +157,7 @@ class OrderDao(Dao):
             res = OrderSchema.model_validate(non_actual_data_fix(raw_res, e))
 
         self.logger.debug(
-            f"bot_id={res.bot_id}: found order {res}",
-            extra=extra_params(order_id=order_id, bot_id=res.bot_id)
+            f"bot_id={res.bot_id}: found order {res}", extra=extra_params(order_id=order_id, bot_id=res.bot_id)
         )
 
         return res
@@ -170,7 +172,7 @@ class OrderDao(Dao):
 
         self.logger.debug(
             f"bot_id={new_order.bot_id}: added order {new_order}",
-            extra=extra_params(order_id=new_order.id, bot_id=new_order.bot_id)
+            extra=extra_params(order_id=new_order.id, bot_id=new_order.bot_id),
         )
 
     @validate_call(validate_return=True)
@@ -181,7 +183,7 @@ class OrderDao(Dao):
 
         self.logger.debug(
             f"bot_id={updated_order.bot_id}: updated order {updated_order}",
-            extra=extra_params(order_id=updated_order.id, bot_id=updated_order.bot_id)
+            extra=extra_params(order_id=updated_order.id, bot_id=updated_order.bot_id),
         )
 
     @validate_call(validate_return=True)
@@ -190,7 +192,4 @@ class OrderDao(Dao):
         async with self.engine.begin() as conn:
             await conn.execute(delete(Order).where(Order.id == order_id))
 
-        self.logger.debug(
-            f"order_id={order_id}: deleted order {order_id}",
-            extra=extra_params(order_id=order_id)
-        )
+        self.logger.debug(f"order_id={order_id}: deleted order {order_id}", extra=extra_params(order_id=order_id))

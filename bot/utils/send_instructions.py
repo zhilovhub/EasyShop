@@ -12,24 +12,14 @@ from logs.config import logger
 
 
 async def send_instructions(
-        bot: Bot,
-        custom_bot_id: int | None,
-        chat_id: int,
-        cache_resources_file_id_store: JsonStore
+    bot: Bot, custom_bot_id: int | None, chat_id: int, cache_resources_file_id_store: JsonStore
 ) -> None:
     """Sends instruction and considers whether user has bots or not. Usually is called from /start"""
     file_ids = cache_resources_file_id_store.get_data()
     file_name = "start_instruction.png"
 
     bot_father_keyboard = InlineKeyboardMarkup(
-        inline_keyboard=[
-            [
-                InlineKeyboardButton(
-                    text="🔐 Получить токен",
-                    url="t.me/BotFather"
-                )
-            ]
-        ]
+        inline_keyboard=[[InlineKeyboardButton(text="🔐 Получить токен", url="t.me/BotFather")]]
     )
 
     try:
@@ -37,19 +27,15 @@ async def send_instructions(
             chat_id=chat_id,
             photo=file_ids[file_name],
             caption=MessageTexts.INSTRUCTION_MESSAGE.value,
-            reply_markup=bot_father_keyboard
+            reply_markup=bot_father_keyboard,
         )
         if custom_bot_id:
             await bot.send_message(
-                chat_id=chat_id,
-                text="✅ У Вас уже есть бот",
-                reply_markup=ReplyBotMenuKeyboard.get_keyboard()
+                chat_id=chat_id, text="✅ У Вас уже есть бот", reply_markup=ReplyBotMenuKeyboard.get_keyboard()
             )
         else:
             await bot.send_message(
-                chat_id=chat_id,
-                text="❌ Вы всё ещё не создали бота",
-                reply_markup=ReplyKeyboardRemove()
+                chat_id=chat_id, text="❌ Вы всё ещё не создали бота", reply_markup=ReplyKeyboardRemove()
             )
     except (TelegramBadRequest, KeyError) as e:
         logger.info(f"error while sending instructions.... cache is empty, sending raw files {e}")
@@ -57,7 +43,7 @@ async def send_instructions(
             chat_id=chat_id,
             photo=FSInputFile(common_settings.RESOURCES_PATH.format(file_name)),
             caption=MessageTexts.INSTRUCTION_MESSAGE.value,
-            reply_markup=bot_father_keyboard
+            reply_markup=bot_father_keyboard,
         )
         file_ids[file_name] = instruction_message.photo[-1].file_id
         cache_resources_file_id_store.update_data(file_ids)

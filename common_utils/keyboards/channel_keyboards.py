@@ -23,9 +23,9 @@ class InlineJoinContestKeyboard:
     @staticmethod
     @callback_json_validator
     def callback_json(
-            action: Callback.ActionEnum,
-            bot_id: int,
-            post_message_id: int,
+        action: Callback.ActionEnum,
+        bot_id: int,
+        post_message_id: int,
     ) -> str:
         return InlineJoinContestKeyboard.Callback(
             a=action,
@@ -43,21 +43,23 @@ class InlineJoinContestKeyboard:
 
     @staticmethod
     async def get_keyboard(
-            bot_id: int,
-            contest_members_count: int,
-            post_message_id: int,
+        bot_id: int,
+        contest_members_count: int,
+        post_message_id: int,
     ) -> InlineKeyboardMarkup:
         actions = InlineJoinContestKeyboard.Callback.ActionEnum
 
         return InlineKeyboardMarkup(
-                inline_keyboard=[
-                    [
-                        InlineKeyboardButton(
-                            text=f"Участвовать ({contest_members_count})",
-                            callback_data=InlineJoinContestKeyboard.callback_json(
-                                actions.JOIN_CONTEST, bot_id, post_message_id,
-                            )
-                        )
-                    ]
+            inline_keyboard=[
+                [
+                    InlineKeyboardButton(
+                        text=f"Участвовать ({contest_members_count})",
+                        callback_data=InlineJoinContestKeyboard.callback_json(
+                            actions.JOIN_CONTEST,
+                            bot_id,
+                            post_message_id,
+                        ),
+                    )
                 ]
-            )
+            ]
+        )

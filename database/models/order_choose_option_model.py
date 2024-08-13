@@ -56,7 +56,7 @@ class OrderChooseOptionDao(Dao):
 
         self.logger.debug(
             f"order_option_id={order_option_id}: has {len(res)} choose options",
-            extra=extra_params(order_option_id=order_option_id)
+            extra=extra_params(order_option_id=order_option_id),
         )
 
         return res
@@ -70,9 +70,7 @@ class OrderChooseOptionDao(Dao):
         :raises OrderOptionNotFoundError: no choose option in db
         """
         async with self.engine.begin() as conn:
-            raw_res = await conn.execute(
-                select(OrderChooseOption).where(OrderChooseOption.id == choose_option_id)
-            )
+            raw_res = await conn.execute(select(OrderChooseOption).where(OrderChooseOption.id == choose_option_id))
         await self.engine.dispose()
 
         res = raw_res.fetchone()
@@ -82,7 +80,7 @@ class OrderChooseOptionDao(Dao):
         res = OrderChooseOptionSchema.model_validate(res)
         self.logger.debug(
             f"choose_option_id={choose_option_id}: found choose option {res}",
-            extra=extra_params(choose_option_id=choose_option_id)
+            extra=extra_params(choose_option_id=choose_option_id),
         )
 
         return res
@@ -101,7 +99,7 @@ class OrderChooseOptionDao(Dao):
 
         self.logger.debug(
             f"choose_option_id={choose_option_id}: new added choose option {new_choose_option}",
-            extra=extra_params(order_option_id=new_choose_option.order_option_id, choose_option_id=choose_option_id)
+            extra=extra_params(order_option_id=new_choose_option.order_option_id, choose_option_id=choose_option_id),
         )
 
         return choose_option_id
@@ -116,13 +114,14 @@ class OrderChooseOptionDao(Dao):
 
         async with self.engine.begin() as conn:
             await conn.execute(
-                update(OrderChooseOption).where(OrderChooseOption.id ==
-                                                choose_option_id).values(updated_choose_option.model_dump())
+                update(OrderChooseOption)
+                .where(OrderChooseOption.id == choose_option_id)
+                .values(updated_choose_option.model_dump())
             )
 
         self.logger.debug(
             f"choose_option_id={choose_option_id}: updated choose option {updated_choose_option}",
-            extra=extra_params(order_option_id=order_option_id, choose_option_id=choose_option_id)
+            extra=extra_params(order_option_id=order_option_id, choose_option_id=choose_option_id),
         )
 
     @validate_call
@@ -135,5 +134,5 @@ class OrderChooseOptionDao(Dao):
 
         self.logger.debug(
             f"choose_option_id={choose_option_id}: deleted choose option {choose_option_id}",
-            extra=extra_params(choose_option_id=choose_option_id)
+            extra=extra_params(choose_option_id=choose_option_id),
         )

@@ -9,10 +9,7 @@ def non_actual_data_fix(data: dict, e: ValidationError) -> dict:
     :raises ValidationError:
     """
     error_dict = e.errors()
-    logger.warning(
-        f"{len(error_dict)} errors have been found due to old data: {data}",
-        exc_info=e
-    )
+    logger.warning(f"{len(error_dict)} errors have been found due to old data: {data}", exc_info=e)
 
     for error in error_dict:
         error_type = error["type"]

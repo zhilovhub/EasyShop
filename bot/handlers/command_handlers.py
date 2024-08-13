@@ -33,13 +33,11 @@ from logs.config import logger
 async def _handle_admin_invite_link(message: Message, state: FSMContext, deep_link_params: list[str]):
     """Проверяет пригласительную ссылку и добавляет пользователя в администраторы"""
 
-    link_hash = deep_link_params[0].split('_', maxsplit=1)[-1]
+    link_hash = deep_link_params[0].split("_", maxsplit=1)[-1]
     try:
         db_bot = await bot_db.get_bot_by_invite_link_hash(link_hash)
 
-        new_role = UserRoleSchema(user_id=message.from_user.id,
-                                  bot_id=db_bot.bot_id,
-                                  role=UserRoleValues.ADMINISTRATOR)
+        new_role = UserRoleSchema(user_id=message.from_user.id, bot_id=db_bot.bot_id, role=UserRoleValues.ADMINISTRATOR)
         await user_role_db.add_user_role(new_role)
 
         custom_bot_data = await Bot(token=db_bot.token).get_me()
@@ -51,17 +49,17 @@ async def _handle_admin_invite_link(message: Message, state: FSMContext, deep_li
             f"🔔 Добавлен новый Администратор ("
             f"{'@' + message.from_user.username if message.from_user.username else message.from_user.full_name}"
             f") для бота "
-            f"@{custom_bot_data.username}"
+            f"@{custom_bot_data.username}",
         )
         db_bot.admin_invite_link_hash = None
         await bot_db.update_bot(db_bot)
 
         await message.answer(
             MessageTexts.BOT_MENU_MESSAGE.value.format(custom_bot_data.username),
-            reply_markup=await InlineBotMenuKeyboard.get_keyboard(db_bot.bot_id, message.from_user.id)
+            reply_markup=await InlineBotMenuKeyboard.get_keyboard(db_bot.bot_id, message.from_user.id),
         )
         await state.set_state(States.BOT_MENU)
-        await state.set_data({'bot_id': db_bot.bot_id})
+        await state.set_data({"bot_id": db_bot.bot_id})
 
     except BotNotFoundError:
         return await message.answer("🚫 Пригласительная ссылка не найдена.")
@@ -74,7 +72,7 @@ async def _send_bot_menu(user_id: int, state: FSMContext, user_bots: list | None
         await bot.send_message(
             user_id,
             MessageTexts.SUBSCRIBE_END_NOTIFY.value,
-            reply_markup=InlineSubscriptionContinueKeyboard.get_keyboard(bot_id=None)
+            reply_markup=InlineSubscriptionContinueKeyboard.get_keyboard(bot_id=None),
         )
         await state.set_state(States.SUBSCRIBE_ENDED)
         return await state.set_data({"bot_id": -1})
@@ -88,10 +86,10 @@ async def _send_bot_menu(user_id: int, state: FSMContext, user_bots: list | None
         await bot.send_message(
             user_id,
             MessageTexts.BOT_MENU_MESSAGE.value.format(user_bot_data.username),
-            reply_markup=await InlineBotMenuKeyboard.get_keyboard(user_bots[0].bot_id, user_id)
+            reply_markup=await InlineBotMenuKeyboard.get_keyboard(user_bots[0].bot_id, user_id),
         )
         await state.set_state(States.BOT_MENU)
-        await state.set_data({'bot_id': bot_id})
+        await state.set_data({"bot_id": bot_id})
 
 
 async def remove_bot_admin(user_id: int, user_state: FSMContext):
@@ -100,7 +98,7 @@ async def remove_bot_admin(user_id: int, user_state: FSMContext):
     if not user_bots:
         await send_instructions(bot, user_bots[0].bot_id if user_bots else None, user_id, cache_resources_file_id_store)
         await user_state.set_state(States.WAITING_FOR_TOKEN)
-        await user_state.set_data({'bot_id': -1})
+        await user_state.set_data({"bot_id": -1})
     else:
         await _send_bot_menu(user_id, user_state, user_bots)
 
@@ -193,7 +191,7 @@ async def rm_admin_command_handler(message: Message, state: FSMContext, command:
     """Обрабатывает удаление администратора, ожидая в параметрах UID администратора"""
 
     state_data = await state.get_data()
-    bot_id = state_data['bot_id']
+    bot_id = state_data["bot_id"]
     if command.args is None:
         return await message.answer("🚫 Необходимо указать айди администратора")
     try:
@@ -208,14 +206,17 @@ async def rm_admin_command_handler(message: Message, state: FSMContext, command:
 
     custom_bot_data = await Bot((await bot_db.get_bot(bot_id)).token).get_me()
 
-    await message.answer(f"🔔 Пользователь больше не администратор ({user_id}) для бота "
-                         f"@{custom_bot_data.username}")
+    await message.answer(
+        f"🔔 Пользователь больше не администратор ({user_id}) для бота " f"@{custom_bot_data.username}"
+    )
 
-    user_state = FSMContext(storage=dp.storage, key=StorageKey(
+    user_state = FSMContext(
+        storage=dp.storage,
+        key=StorageKey(
             chat_id=user_id,
             user_id=user_id,
             bot_id=bot.id,
-        )
+        ),
     )
 
     await bot.send_message(user_id, "Вы больше не администратор этого бота.", reply_markup=ReplyKeyboardRemove())
@@ -252,9 +253,7 @@ async def _start_trial(message: Message, state: FSMContext, trial_duration: int)
 
     user_id = message.from_user.id
 
-    logger.info(
-        f"starting trial subscription for user with id ({user_id} until date"
-    )
+    logger.info(f"starting trial subscription for user with id ({user_id} until date")
 
     try:
         user = await subscription.start_trial(user_id, trial_duration)

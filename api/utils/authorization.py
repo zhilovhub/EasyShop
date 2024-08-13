@@ -42,26 +42,22 @@ async def check_admin_authorization(bot_id: int, data_string: str, custom_bot_va
         except BotNotFoundError:
             raise HTTPBotNotFoundError(bot_id=bot_id)
 
-        if not custom_bot_validate and bot.created_by != json.loads(parsed_data['user'])['id']:
-            raise HTTPUnauthorizedError(detail_message=f"Unauthorized. You dont have access to bot with provided id.")
+        if not custom_bot_validate and bot.created_by != json.loads(parsed_data["user"])["id"]:
+            raise HTTPUnauthorizedError(detail_message="Unauthorized. You dont have access to bot with provided id.")
 
-        if int(parsed_data['auth_date']) + 60 * 60 < time.time():
-            raise HTTPUnauthorizedError(detail_message=f"Unauthorized. Auth date is older than hour.")
+        if int(parsed_data["auth_date"]) + 60 * 60 < time.time():
+            raise HTTPUnauthorizedError(detail_message="Unauthorized. Auth date is older than hour.")
 
-        data_hash = parsed_data.pop('hash')
+        data_hash = parsed_data.pop("hash")
 
-        data_check_string = "\n".join(
-            f"{k}={v}" for k, v in sorted(parsed_data.items(), key=itemgetter(0))
-        )
+        data_check_string = "\n".join(f"{k}={v}" for k, v in sorted(parsed_data.items(), key=itemgetter(0)))
 
         if not custom_bot_validate:
             secret_key = hmac.new(
                 key=b"WebAppData", msg=main_telegram_bot_settings.TELEGRAM_TOKEN.encode(), digestmod=hashlib.sha256
             )
         else:
-            secret_key = hmac.new(
-                key=b"WebAppData", msg=bot.token.encode(), digestmod=hashlib.sha256
-            )
+            secret_key = hmac.new(key=b"WebAppData", msg=bot.token.encode(), digestmod=hashlib.sha256)
 
         calculated_hash = hmac.new(
             key=secret_key.digest(), msg=data_check_string.encode(), digestmod=hashlib.sha256

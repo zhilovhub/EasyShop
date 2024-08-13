@@ -41,8 +41,8 @@ class CustomBotUserDao(Dao):
         :raises CustomBotUserNotFoundError:
         """
         async with self.engine.begin() as conn:
-            raw_res = await conn.execute(select(CustomBotUser).where(
-                CustomBotUser.bot_id == bot_id, CustomBotUser.user_id == user_id)
+            raw_res = await conn.execute(
+                select(CustomBotUser).where(CustomBotUser.bot_id == bot_id, CustomBotUser.user_id == user_id)
             )
         await self.engine.dispose()
 
@@ -52,10 +52,7 @@ class CustomBotUserDao(Dao):
 
         res = CustomBotUserSchema.model_validate(res)
 
-        self.logger.debug(
-            f"bot_id={bot_id}: found user {res}",
-            extra=extra_params(user_id=user_id, bot_id=bot_id)
-        )
+        self.logger.debug(f"bot_id={bot_id}: found user {res}", extra=extra_params(user_id=user_id, bot_id=bot_id))
 
         return res
 
@@ -70,14 +67,9 @@ class CustomBotUserDao(Dao):
 
         users = []
         for raw in raw_res.fetchall():
-            users.append(
-                CustomBotUserSchema.model_validate(raw)
-            )
+            users.append(CustomBotUserSchema.model_validate(raw))
 
-        self.logger.debug(
-            f"bot_id={bot_id}: has {len(users)} users",
-            extra=extra_params(bot_id=bot_id)
-        )
+        self.logger.debug(f"bot_id={bot_id}: has {len(users)} users", extra=extra_params(bot_id=bot_id))
 
         return users
 
@@ -87,14 +79,16 @@ class CustomBotUserDao(Dao):
         Updates Custom User
         """
         async with self.engine.begin() as conn:
-            await conn.execute(update(CustomBotUser).where(CustomBotUser.user_id == updated_user.user_id).
-                               values(**updated_user.model_dump(by_alias=True)))
+            await conn.execute(
+                update(CustomBotUser)
+                .where(CustomBotUser.user_id == updated_user.user_id)
+                .values(**updated_user.model_dump(by_alias=True))
+            )
         await self.engine.dispose()
 
         self.logger.debug(
-            f"user_id={updated_user.user_id}, bot_id={updated_user.bot_id}: "
-            f"updated custom bot user {updated_user}",
-            extra=extra_params(user_id=updated_user.user_id, bot_id=updated_user.bot_id)
+            f"user_id={updated_user.user_id}, bot_id={updated_user.bot_id}: " f"updated custom bot user {updated_user}",
+            extra=extra_params(user_id=updated_user.user_id, bot_id=updated_user.bot_id),
         )
 
     @validate_call(validate_return=True)
@@ -106,10 +100,7 @@ class CustomBotUserDao(Dao):
             await conn.execute(insert(CustomBotUser).values(bot_id=bot_id, user_id=user_id))
         await self.engine.dispose()
 
-        self.logger.debug(
-            f"bot_id={bot_id}: added user {user_id}",
-            extra=extra_params(user_id=user_id, bot_id=bot_id)
-        )
+        self.logger.debug(f"bot_id={bot_id}: added user {user_id}", extra=extra_params(user_id=user_id, bot_id=bot_id))
 
     @validate_call(validate_return=True)
     async def delete_custom_bot_user(self, bot_id: int, user_id: int) -> None:
@@ -123,6 +114,5 @@ class CustomBotUserDao(Dao):
         await self.engine.dispose()
 
         self.logger.debug(
-            f"bot_id={bot_id}: deleted user {user_id}",
-            extra=extra_params(user_id=user_id, bot_id=bot_id)
+            f"bot_id={bot_id}: deleted user {user_id}", extra=extra_params(user_id=user_id, bot_id=bot_id)
         )

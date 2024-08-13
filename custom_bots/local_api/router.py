@@ -23,9 +23,9 @@ from logs.config import custom_bot_logger, extra_params, logger
 routes = web.RouteTableDef()
 
 
-@routes.get('/start_bot/{bot_id}')
+@routes.get("/start_bot/{bot_id}")
 async def add_bot_handler(request):
-    bot_id = request.match_info['bot_id']
+    bot_id = request.match_info["bot_id"]
     try:
         bot = await bot_db.get_bot(int(bot_id))
     except BotNotFoundError:
@@ -39,35 +39,33 @@ async def add_bot_handler(request):
         return web.Response(status=400, text="Unauthorized telegram token.")
 
     await new_bot.delete_webhook(drop_pending_updates=True)
-    custom_bot_logger.debug(
-        f"bot_id={bot_id}: webhook is deleted",
-        extra=extra_params(bot_id=bot_id)
-    )
+    custom_bot_logger.debug(f"bot_id={bot_id}: webhook is deleted", extra=extra_params(bot_id=bot_id))
 
     token_encryptor: TokenEncryptor = TokenEncryptor(cryptography_settings.TOKEN_SECRET_KEY)
     result = await new_bot.set_webhook(
         OTHER_BOTS_URL.format(encrypted_bot_token=token_encryptor.encrypt_token(bot_token=bot.token)),
-        allowed_updates=["message", "my_chat_member",
-                         "callback_query", "chat_member", "channel_post",
-                         "inline_query", "pre_checkout_query", "shipping_query"]
+        allowed_updates=[
+            "message",
+            "my_chat_member",
+            "callback_query",
+            "chat_member",
+            "channel_post",
+            "inline_query",
+            "pre_checkout_query",
+            "shipping_query",
+        ],
     )
     if result:
-        custom_bot_logger.debug(
-            f"bot_id={bot_id}: webhook is set",
-            extra=extra_params(bot_id=bot_id)
-        )
+        custom_bot_logger.debug(f"bot_id={bot_id}: webhook is set", extra=extra_params(bot_id=bot_id))
     else:
-        custom_bot_logger.warning(
-            f"bot_id={bot_id}: webhook's setting is failed",
-            extra=extra_params(bot_id=bot_id)
-        )
+        custom_bot_logger.warning(f"bot_id={bot_id}: webhook's setting is failed", extra=extra_params(bot_id=bot_id))
 
     return web.Response(text=f"Started bot with token ({bot.token}) and username (@{new_bot_data.username})")
 
 
-@routes.get('/stop_bot/{bot_id}')
+@routes.get("/stop_bot/{bot_id}")
 async def stop_bot_handler(request):
-    bot_id = request.match_info['bot_id']
+    bot_id = request.match_info["bot_id"]
     try:
         bot = await bot_db.get_bot(int(bot_id))
     except BotNotFoundError:
@@ -83,19 +81,16 @@ async def stop_bot_handler(request):
         return web.Response(status=400, text="Unauthorized telegram token.")
 
     await new_bot.delete_webhook(drop_pending_updates=True)
-    custom_bot_logger.debug(
-        f"bot_id={bot_id}: webhook is deleted",
-        extra=extra_params(bot_id=bot_id)
-    )
+    custom_bot_logger.debug(f"bot_id={bot_id}: webhook is deleted", extra=extra_params(bot_id=bot_id))
 
     return web.Response(text=f"Stopped bot with token ({bot.token}) and username (@{new_bot_data.username})")
 
 
-@routes.post('/send_web_app_data_to_bot/{bot_id}')
+@routes.post("/send_web_app_data_to_bot/{bot_id}")
 async def send_web_app_data_to_bot(request):
     custom_bot_logger.debug(f"new request to send_web_app_data_to_bot : {request}")
 
-    bot_id = request.match_info['bot_id']
+    bot_id = request.match_info["bot_id"]
     custom_bot_logger.debug(f"new request to with bot_id : {bot_id}")
     try:
         bot = await bot_db.get_bot(int(bot_id))
@@ -125,7 +120,8 @@ async def send_web_app_data_to_bot(request):
                 logger.info("not enough items for order creation")
                 return await main_bot.send_message(
                     chat_id=user_id,
-                    text=f"К сожалению на складе недостаточно <b>{e.product.name}</b> для выполнения Вашего заказа.")
+                    text=f"К сожалению на складе недостаточно <b>{e.product.name}</b> для выполнения Вашего заказа.",
+                )
             except Exception as e:
                 logger.error("error while creating order", exc_info=e)
                 raise e
@@ -142,12 +138,11 @@ async def send_web_app_data_to_bot(request):
             except NotEnoughProductsInStockToReduce as e:
                 await custom_bot_tg.send_message(
                     chat_id=user_id,
-                    text=f"К сожалению на складе недостаточно <b>{e.product.name}</b> для выполнения Вашего заказа."
+                    text=f"К сожалению на складе недостаточно <b>{e.product.name}</b> для выполнения Вашего заказа.",
                 )
             except Exception as e:
                 await custom_bot_tg.send_message(
-                    chat_id=user_id,
-                    text="Произошла ошибка при создании заказа, администраторы уведомлены."
+                    chat_id=user_id, text="Произошла ошибка при создании заказа, администраторы уведомлены."
                 )
 
                 try:
@@ -158,42 +153,38 @@ async def send_web_app_data_to_bot(request):
                     custom_bot_logger.error(
                         f"user_id={user_id}: Unable to find bot_id from event.web_app_data.data",
                         extra=extra_params(user_id=user_id),
-                        exc_info=another_e
+                        exc_info=another_e,
                     )
 
                 custom_bot_logger.error(
                     f"user_id={user_id}: Unable to create an order in bot_id={bot_id}",
                     extra=extra_params(user_id=user_id, bot_id=bot_id),
-                    exc_info=e
+                    exc_info=e,
                 )
                 raise e
 
     try:
-        return web.Response(status=200,
-                            body=json.dumps({"invoice_url": invoice_link}),
-                            content_type='application/json')
+        return web.Response(status=200, body=json.dumps({"invoice_url": invoice_link}), content_type="application/json")
     except Exception as e:
         custom_bot_logger.error("error while sending response from local Api", exc_info=e)
 
 
-@routes.post('/send_hex_color_to_bot')
+@routes.post("/send_hex_color_to_bot")
 async def send_hex_data_to_bot(request):
     custom_bot_logger.debug(f"new request to send_hex_color_to_bot : {request}")
     try:
         data = await request.json()
 
-        await main_bot.answer_web_app_query(web_app_query_id=data['query_id'],
-                                            result=InlineQueryResultArticle(
-                                                id="hex_color",
-                                                title="hex_color",
-                                                input_message_content=InputTextMessageContent(
-                                                    message_text=data['color']
-                                                )
-                                            ))
-    except Exception as ex:
-        custom_bot_logger.error(
-            f"error on processing local api send hex request", exc_info=True
+        await main_bot.answer_web_app_query(
+            web_app_query_id=data["query_id"],
+            result=InlineQueryResultArticle(
+                id="hex_color",
+                title="hex_color",
+                input_message_content=InputTextMessageContent(message_text=data["color"]),
+            ),
         )
+    except Exception as ex:
+        custom_bot_logger.error("error on processing local api send hex request", exc_info=True)
         raise ex
 
-    return web.Response(status=200, text=f"Data was sent to bot successfully")
+    return web.Response(status=200, text="Data was sent to bot successfully")

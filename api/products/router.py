@@ -5,9 +5,17 @@ from fastapi import APIRouter, UploadFile, Depends, Header
 from pydantic import BaseModel, Field
 from sqlalchemy.exc import IntegrityError
 
-from api.utils import (check_admin_authorization, SearchWordMustNotBeEmptyError, HTTPProductNotFoundError,
-                       HTTPInternalError, HTTPBadRequestError, HTTPConflictError, RESPONSES_DICT,
-                       HTTPCustomBotIsOfflineError, HTTPBotNotFoundError)
+from api.utils import (
+    check_admin_authorization,
+    SearchWordMustNotBeEmptyError,
+    HTTPProductNotFoundError,
+    HTTPInternalError,
+    HTTPBadRequestError,
+    HTTPConflictError,
+    RESPONSES_DICT,
+    HTTPCustomBotIsOfflineError,
+    HTTPBotNotFoundError,
+)
 
 from common_utils.config import common_settings
 
@@ -21,7 +29,7 @@ from database.models.product_model import (
     ProductFilterWithoutBot,
     FilterNotFoundError,
     SameArticleProductError,
-    PRODUCT_FILTERS
+    PRODUCT_FILTERS,
 )
 
 from logs.config import api_logger, extra_params
@@ -66,16 +74,15 @@ def _remove_empty_variants(product: ProductWithoutId | ProductSchema) -> Product
 
 @router.get("/get_filters/")
 async def get_filters_api():
-    api_logger.debug(
-        f"/get_filters/ has returned {PRODUCT_FILTERS}"
-    )
+    api_logger.debug(f"/get_filters/ has returned {PRODUCT_FILTERS}")
 
     return PRODUCT_FILTERS
 
 
 @router.post("/get_all_products/")
-async def get_all_products_api(payload: GetProductsRequest = Depends(GetProductsRequest),
-                               authorization_data: str = Header()) -> list[ProductSchema]:
+async def get_all_products_api(
+    payload: GetProductsRequest = Depends(GetProductsRequest), authorization_data: str = Header()
+) -> list[ProductSchema]:
     """
     :raises HTTPBadRequestError:
     :raises HTTPBotNotFoundError:
@@ -96,9 +103,9 @@ async def get_all_products_api(payload: GetProductsRequest = Depends(GetProducts
 
     try:
         if not payload.filters:
-            products = await product_db.get_all_products(payload.bot_id,
-                                                         price_min=payload.price_min,
-                                                         price_max=payload.price_max)
+            products = await product_db.get_all_products(
+                payload.bot_id, price_min=payload.price_min, price_max=payload.price_max
+            )
         else:
             filters: list[ProductFilter] = []
             for product_filter in payload.filters:
@@ -116,7 +123,9 @@ async def get_all_products_api(payload: GetProductsRequest = Depends(GetProducts
                             is_category_filter=product_filter.is_category_filter,
                             reverse_order=product_filter.reverse_order,
                             category_id=cat_id,
-                            search_word=None))
+                            search_word=None,
+                        )
+                    )
                 elif product_filter.filter_name == "search":
                     if payload.search_word is None:
                         raise SearchWordMustNotBeEmptyError
@@ -127,7 +136,9 @@ async def get_all_products_api(payload: GetProductsRequest = Depends(GetProducts
                             is_category_filter=product_filter.is_category_filter,
                             reverse_order=product_filter.reverse_order,
                             category_id=None,
-                            search_word=payload.search_word))
+                            search_word=payload.search_word,
+                        )
+                    )
                 else:
                     filters.append(
                         ProductFilter(
@@ -136,34 +147,32 @@ async def get_all_products_api(payload: GetProductsRequest = Depends(GetProducts
                             is_category_filter=product_filter.is_category_filter,
                             reverse_order=product_filter.reverse_order,
                             category_id=None,
-                            search_word=None))
-            products = await product_db.get_all_products(payload.bot_id,
-                                                         price_min=payload.price_min,
-                                                         price_max=payload.price_max,
-                                                         filters=filters)
+                            search_word=None,
+                        )
+                    )
+            products = await product_db.get_all_products(
+                payload.bot_id, price_min=payload.price_min, price_max=payload.price_max, filters=filters
+            )
     except FilterNotFoundError as ex:
-        api_logger.error(
-            f"bot_id={payload.bot_id}: {ex.message}",
-            extra=extra_params(bot_id=payload.bot_id)
-        )
+        api_logger.error(f"bot_id={payload.bot_id}: {ex.message}", extra=extra_params(bot_id=payload.bot_id))
         raise HTTPBadRequestError(detail_message=ex.message)
     except SearchWordMustNotBeEmptyError:
         api_logger.error(
             f"bot_id={payload.bot_id}: SearchWordMustNotBeEmpty with {payload}",
-            extra=extra_params(bot_id=payload.bot_id)
+            extra=extra_params(bot_id=payload.bot_id),
         )
         raise HTTPBadRequestError(detail_message="'search' filter is provided, search_word must not be empty")
     except Exception as e:
         api_logger.error(
             f"bot_id={payload.bot_id}: Error while execute get_all_products db_method",
             extra=extra_params(bot_id=payload.bot_id),
-            exc_info=e
+            exc_info=e,
         )
         raise HTTPInternalError
 
     api_logger.info(
         f"bot_id={payload.bot_id}: has {len(products)} products -> {products}",
-        extra=extra_params(bot_id=payload.bot_id)
+        extra=extra_params(bot_id=payload.bot_id),
     )
 
     return products
@@ -182,7 +191,7 @@ async def get_product_api(bot_id: int, product_id: int) -> ProductSchema:
         api_logger.error(
             f"bot_id={bot_id}: product_id={product_id} is not found in database",
             extra=extra_params(bot_id=bot_id, product_id=product_id),
-            exc_info=e
+            exc_info=e,
         )
         raise HTTPProductNotFoundError(product_id=product_id, bot_id=bot_id)
 
@@ -190,13 +199,13 @@ async def get_product_api(bot_id: int, product_id: int) -> ProductSchema:
         api_logger.error(
             f"bot_id={bot_id}: Error while execute get_product db_method with product_id={product_id}",
             extra=extra_params(bot_id=bot_id, product_id=product_id),
-            exc_info=e
+            exc_info=e,
         )
         raise HTTPInternalError
 
     api_logger.debug(
         f"bot_id={bot_id}: product_id={product_id} is found database -> {product}",
-        extra=extra_params(bot_id=bot_id, product_id=product_id)
+        extra=extra_params(bot_id=bot_id, product_id=product_id),
     )
 
     return product
@@ -204,8 +213,8 @@ async def get_product_api(bot_id: int, product_id: int) -> ProductSchema:
 
 @router.post("/add_product")
 async def add_product_api(
-        new_product: ProductWithoutId,
-        authorization_data: str = Header(),
+    new_product: ProductWithoutId,
+    authorization_data: str = Header(),
 ) -> int:
     """
     :raises HTTPException:
@@ -217,40 +226,40 @@ async def add_product_api(
         new_product = _remove_empty_variants(new_product)
         product_id = await product_db.add_product(new_product)
     except SameArticleProductError:
-        raise HTTPConflictError(detail_message="Conflict while adding product (Item already exists)",
-                                conflicted_param="article")
+        raise HTTPConflictError(
+            detail_message="Conflict while adding product (Item already exists)", conflicted_param="article"
+        )
     except IntegrityError as ex:
         api_logger.error(
             f"bot_id={new_product.bot_id}: "
             f"IntegrityError while execute add_product db_method with product={new_product}",
             extra=extra_params(bot_id=new_product.bot_id),
-            exc_info=ex
+            exc_info=ex,
         )
-        raise HTTPConflictError(detail_message="Conflict while adding product (Item already exists)",
-                                conflicted_param="unknown",
-                                ex_msg=ex.detail)
+        raise HTTPConflictError(
+            detail_message="Conflict while adding product (Item already exists)",
+            conflicted_param="unknown",
+            ex_msg=ex.detail,
+        )
 
     except Exception as e:
         api_logger.error(
             f"bot_id={new_product.bot_id}: Error while execute add_product db_method with product={new_product}",
             extra=extra_params(bot_id=new_product.bot_id),
-            exc_info=e
+            exc_info=e,
         )
         raise HTTPInternalError
 
     api_logger.debug(
         f"bot_id={new_product.bot_id}: product_id={product_id} has been added to database -> {new_product}",
-        extra=extra_params(bot_id=new_product.bot_id, product_id=product_id)
+        extra=extra_params(bot_id=new_product.bot_id, product_id=product_id),
     )
 
     return product_id
 
 
 @router.post("/add_product_photo")
-async def create_file(bot_id: int,
-                      product_id: int,
-                      files: list[UploadFile],
-                      authorization_data: str = Header()):
+async def create_file(bot_id: int, product_id: int, files: list[UploadFile], authorization_data: str = Header()):
     """
     Updates product.picture in database and saves photo on directory
 
@@ -265,16 +274,12 @@ async def create_file(bot_id: int,
         product.picture = []
 
         for file in files:
-            random_string = ''.join(
-                random.sample(
-                    string.digits +
-                    string.ascii_letters,
-                    15))
+            random_string = "".join(random.sample(string.digits + string.ascii_letters, 15))
             photo_path = f"{bot_id}_{random_string}.{file.filename.split('.')[-1]}"
 
             api_logger.debug(
                 f"bot_id={bot_id}: downloading new file in directory {photo_path} for product_id={product_id}",
-                extra=extra_params(bot_id=bot_id, product_id=product_id)
+                extra=extra_params(bot_id=bot_id, product_id=product_id),
             )
 
             with open(common_settings.FILES_PATH + photo_path, "wb") as photo:
@@ -287,29 +292,27 @@ async def create_file(bot_id: int,
         api_logger.error(
             f"bot_id={bot_id}: product_id={product_id} is not found in database",
             extra=extra_params(bot_id=bot_id, product_id=product_id),
-            exc_info=e
+            exc_info=e,
         )
         raise HTTPProductNotFoundError(product_id=product_id, bot_id=bot_id)
     except BaseException as e:
         api_logger.error(
             f"bot_id={bot_id}: Error while adding photos to product_id={product_id}",
             extra=extra_params(bot_id=bot_id, product_id=product_id),
-            exc_info=e
+            exc_info=e,
         )
         raise
 
     api_logger.debug(
         f"bot_id={bot_id}: {len(files)} photos added to product_id={product_id}",
-        extra=extra_params(bot_id=bot_id, product_id=product_id)
+        extra=extra_params(bot_id=bot_id, product_id=product_id),
     )
 
     return f"{len(files)} photo added to product"
 
 
 @router.post("/edit_product")
-async def edit_product_api(
-        product: ProductSchema,
-        authorization_data: str = Header()) -> bool:
+async def edit_product_api(product: ProductSchema, authorization_data: str = Header()) -> bool:
     """
     :raises HTTPException:
     :raises HTTPInternalError:
@@ -323,23 +326,20 @@ async def edit_product_api(
         api_logger.error(
             f"bot_id={product.bot_id}: Error while execute update_product db_method with product={product}",
             extra=extra_params(bot_id=product.bot_id, product_id=product.id),
-            exc_info=e
+            exc_info=e,
         )
         raise HTTPInternalError
 
     api_logger.debug(
         f"bot_id={product.bot_id}: updated product={product}",
-        extra=extra_params(bot_id=product.bot_id, product_id=product.id)
+        extra=extra_params(bot_id=product.bot_id, product_id=product.id),
     )
 
     return True
 
 
 @router.delete("/del_product/{bot_id}/{product_id}")
-async def delete_product_api(
-        bot_id: int,
-        product_id: int,
-        authorization_data: str = Header()) -> str:
+async def delete_product_api(bot_id: int, product_id: int, authorization_data: str = Header()) -> str:
     """
     :raises HTTPException:
     :raises ProductNotFoundError:
@@ -354,20 +354,20 @@ async def delete_product_api(
         api_logger.error(
             f"bot_id={bot_id}: product_id={product_id} is not found in database",
             extra=extra_params(bot_id=bot_id, product_id=product_id),
-            exc_info=e
+            exc_info=e,
         )
         raise HTTPProductNotFoundError(product_id=product_id, bot_id=bot_id)
     except Exception as e:
         api_logger.error(
             f"bot_id={bot_id}: Error while execute delete_product db_method with product_id={product_id}",
             extra=extra_params(bot_id=bot_id, product_id=product_id),
-            exc_info=e
+            exc_info=e,
         )
         raise HTTPInternalError
 
     api_logger.debug(
         f"bot_id={bot_id}: product_id={product_id} is delete from database",
-        extra=extra_params(bot_id=bot_id, product_id=product_id)
+        extra=extra_params(bot_id=bot_id, product_id=product_id),
     )
 
     return "product deleted"

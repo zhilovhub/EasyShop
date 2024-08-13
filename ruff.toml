@@ -1,0 +1,10 @@
+line-length = 120
+exclude = [
+    "webapp"
+]
+
+[lint]
+select = ["F", "E", "W", "PLE", "PLW"]
+
+[lint.per-file-ignores]
+"__init__.py" = ["F401", "F403"]

@@ -51,9 +51,7 @@ class ProductReviewDao(Dao):  # TODO write tests
     @validate_call(validate_return=True)
     async def get_all_reviews_by_product_id(self, product_id: int) -> list[ProductReviewSchema]:
         async with self.engine.begin() as conn:
-            raw_res = await conn.execute(
-                select(ProductReview).where(ProductReview.product_id == product_id)
-            )
+            raw_res = await conn.execute(select(ProductReview).where(ProductReview.product_id == product_id))
         await self.engine.dispose()
 
         raw_res = raw_res.fetchall()
@@ -61,19 +59,12 @@ class ProductReviewDao(Dao):  # TODO write tests
         for product in raw_res:
             res.append(ProductReviewSchema.model_validate(product))
 
-        self.logger.debug(
-            f"product_id={product_id}: has {len(res)} reviews",
-            extra=extra_params(product_id=product_id)
-        )
+        self.logger.debug(f"product_id={product_id}: has {len(res)} reviews", extra=extra_params(product_id=product_id))
 
         return res
 
     @validate_call(validate_return=True)
-    async def get_product_review_by_user_id_and_product_id(
-            self,
-            user_id: int,
-            product_id: int
-    ) -> ProductReviewSchema:
+    async def get_product_review_by_user_id_and_product_id(self, user_id: int, product_id: int) -> ProductReviewSchema:
         """
         :raises ProductReviewNotFoundError:
         """
@@ -92,7 +83,7 @@ class ProductReviewDao(Dao):  # TODO write tests
         if res is not None:
             self.logger.debug(
                 f"product_id={product_id}, user_id {user_id}: found product_review {res}",
-                extra=extra_params(product_id=product_id, user_id=user_id)
+                extra=extra_params(product_id=product_id, user_id=user_id),
             )
 
         return res
@@ -103,9 +94,7 @@ class ProductReviewDao(Dao):  # TODO write tests
         :raises ProductReviewNotFoundError:
         """
         async with self.engine.begin() as conn:
-            raw_res = await conn.execute(
-                select(ProductReview).where(ProductReview.id == review_id)
-            )
+            raw_res = await conn.execute(select(ProductReview).where(ProductReview.id == review_id))
         await self.engine.dispose()
 
         res = raw_res.fetchone()
@@ -116,7 +105,7 @@ class ProductReviewDao(Dao):  # TODO write tests
 
         self.logger.debug(
             f"product_review_id={review_id}: found product_review {review_id}",
-            extra=extra_params(product_review_id=review_id)
+            extra=extra_params(product_review_id=review_id),
         )
 
         return res
@@ -133,7 +122,7 @@ class ProductReviewDao(Dao):  # TODO write tests
 
         self.logger.debug(
             f"product_review_id={review_id}: added product_review {review_id} {new_review}",
-            extra=extra_params(product_review=review_id)
+            extra=extra_params(product_review=review_id),
         )
 
         return review_id
@@ -148,7 +137,7 @@ class ProductReviewDao(Dao):  # TODO write tests
 
         self.logger.debug(
             f"product_review_id={updated_review.id}: updated product_review {updated_review}",
-            extra=extra_params(product_review=updated_review.id)
+            extra=extra_params(product_review=updated_review.id),
         )
 
     @validate_call(validate_return=True)
@@ -158,5 +147,5 @@ class ProductReviewDao(Dao):  # TODO write tests
 
         self.logger.debug(
             f"product_review_id={review_id}: deleted product_review {review_id}",
-            extra=extra_params(product_review=review_id)
+            extra=extra_params(product_review=review_id),
         )

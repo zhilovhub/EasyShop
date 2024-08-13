@@ -36,22 +36,28 @@ class EventTypes(Enum):
 
 
 def get_event_message_text(
-        event_type: EventTypes,
-        username: str | None = None,
-        user_id: int | None = None,
-        user_full_name: str | None = None,
-        bot_username: str | None = None,
-        error_message: str | None = None,
+    event_type: EventTypes,
+    username: str | None = None,
+    user_id: int | None = None,
+    user_full_name: str | None = None,
+    bot_username: str | None = None,
+    error_message: str | None = None,
 ) -> Text:
     match event_type:
         case EventTypes.NEW_USER:
             text = Text(
-                "🆕 С ботом ", Bold(f"@{bot_username}"),
-                " завел диалог ", Bold("новый пользователь"), "!\n\n",
+                "🆕 С ботом ",
+                Bold(f"@{bot_username}"),
+                " завел диалог ",
+                Bold("новый пользователь"),
+                "!\n\n",
                 "Его данные:",
-                "\nid = ", Bold(f"{user_id}"),
-                "\nusername = ", Bold(f"@{username}"),
-                "\nИмя = ", Bold(f"{user_full_name}")
+                "\nid = ",
+                Bold(f"{user_id}"),
+                "\nusername = ",
+                Bold(f"@{username}"),
+                "\nИмя = ",
+                Bold(f"{user_full_name}"),
             )
         case EventTypes.STARTED_BIG_TRIAL_TRY:
             text = Text(
@@ -67,71 +73,98 @@ def get_event_message_text(
                 "⚠ Пользователь ",
                 Bold(f"@{username} "),
                 Bold(f"({user_full_name})"),
-                " пытается принять ", Italic("пробную"), " подписку...",
+                " пытается принять ",
+                Italic("пробную"),
+                " подписку...",
             )
         case EventTypes.STARTED_TRIAL_SUCCESS:
             text = Text(
                 "🍟 Пользователь ",
                 Bold(f"@{username} "),
                 Bold(f"({user_full_name})"),
-                " ", Bold("принял"), " ", Italic("пробную"), " подписку!",
+                " ",
+                Bold("принял"),
+                " ",
+                Italic("пробную"),
+                " подписку!",
             )
         case EventTypes.SUBSCRIBED_PROCESS:
             text = Text(
                 "⚠ Пользователь ",
                 Bold(f"@{username} "),
                 Bold(f"({user_full_name})"),
-                " начал оформлять ", Italic("ПЛАТНУЮ"), " подписку...",
+                " начал оформлять ",
+                Italic("ПЛАТНУЮ"),
+                " подписку...",
             )
         case EventTypes.SUBSCRIBED_SUCCESS:
             text = Text(
                 "🎉✨✅ Пользователь ",
                 Bold(f"@{username} "),
                 Bold(f"({user_full_name})"),
-                " ", Bold("принял"), " ", Italic("ПЛАТНУЮ"), " подписку!",
+                " ",
+                Bold("принял"),
+                " ",
+                Italic("ПЛАТНУЮ"),
+                " подписку!",
             )
         case EventTypes.USER_CREATED_FIRST_BOT:
             text = Text(
                 "🤖 Пользователь впервые создал бота!\n\n",
                 "👤 Данные:",
-                "\nid = ", Bold(f"{user_id}"),
-                "\nusername = ", Bold(f"@{username}"),
-                "\nИмя = ", Bold(f"{user_full_name}"),
-                "\n\nЮзернейм бота: ", Bold(f"@{bot_username}")
+                "\nid = ",
+                Bold(f"{user_id}"),
+                "\nusername = ",
+                Bold(f"@{username}"),
+                "\nИмя = ",
+                Bold(f"{user_full_name}"),
+                "\n\nЮзернейм бота: ",
+                Bold(f"@{bot_username}"),
             )
         case EventTypes.FIRST_USER_MESSAGE:
             text = Text(
-                "🆕📨 Пользовательскому боту (", Bold(f"@{bot_username}"), ") написал новый человек!\n\n",
+                "🆕📨 Пользовательскому боту (",
+                Bold(f"@{bot_username}"),
+                ") написал новый человек!\n\n",
                 "👤 Данные:",
-                "\nid = ", Bold(f"{user_id}"),
-                "\nusername = ", Bold(f"@{username}"),
-                "\nИмя = ", Bold(f"{user_full_name}"),
+                "\nid = ",
+                Bold(f"{user_id}"),
+                "\nusername = ",
+                Bold(f"@{username}"),
+                "\nИмя = ",
+                Bold(f"{user_full_name}"),
             )
         case EventTypes.FIRST_ADMIN_MESSAGE:
             text = Text(
-                "📨 Администратор бота (", Bold(f"@{bot_username}"), ") впервые написал своему боту!\n\n",
+                "📨 Администратор бота (",
+                Bold(f"@{bot_username}"),
+                ") впервые написал своему боту!\n\n",
                 "👤 Данные админа:",
-                "\nid = ", Bold(f"{user_id}"),
-                "\nusername = ", Bold(f"@{username}"),
-                "\nИмя = ", Bold(f"{user_full_name}"),
+                "\nid = ",
+                Bold(f"{user_id}"),
+                "\nusername = ",
+                Bold(f"@{username}"),
+                "\nИмя = ",
+                Bold(f"{user_full_name}"),
             )
         case EventTypes.UNKNOWN_ERROR:
             text = Text(
-                "❗️ Произошла неизвестная ошибка при работе бота.\n\nBot: ", Bold(f"@{bot_username}"),
-                "\n\nUsername: ", Bold(f"@{username}"),
-                "\n\nUID: ", Bold(f"{user_id}"),
-                "\n\nError message: \n", Pre(f"{error_message}"),
-                )
+                "❗️ Произошла неизвестная ошибка при работе бота.\n\nBot: ",
+                Bold(f"@{bot_username}"),
+                "\n\nUsername: ",
+                Bold(f"@{username}"),
+                "\n\nUID: ",
+                Bold(f"{user_id}"),
+                "\n\nError message: \n",
+                Pre(f"{error_message}"),
+            )
         case _:
             raise UnknownEventTypeError
     return text
 
 
 async def send_event(
-        user: User,
-        event_type: EventTypes,
-        event_bot: Bot = main_bot,
-        err_msg: str = 'Не указано'
+    user: User, event_type: EventTypes, event_bot: Bot = main_bot, err_msg: str = "Не указано"
 ) -> Message:
     try:
         bot_username = (await event_bot.get_me()).username
@@ -158,25 +191,23 @@ async def send_event(
                     chat_id=common_settings.ADMIN_GROUP_ID,
                     text=message_text,
                     entities=message_entities,
-                    parse_mode=None
+                    parse_mode=None,
                 )
             case EventTypes.FIRST_ADMIN_MESSAGE | EventTypes.FIRST_USER_MESSAGE:
                 return await main_bot.send_message(
                     chat_id=common_settings.ADMIN_GROUP_ID,
                     text=message_text,
                     entities=message_entities,
-                    parse_mode=None
+                    parse_mode=None,
                 )
             case EventTypes.UNKNOWN_ERROR:
                 return await main_bot.send_message(
                     chat_id=common_settings.ADMIN_BUGS_GROUP_ID,
                     text=message_text,
                     entities=message_entities,
-                    parse_mode=None
+                    parse_mode=None,
                 )
             case _:
                 raise UnknownEventTypeError
     except Exception as e:
-        logger.warning(
-            f"cant send event to admin group (event_type: {event_type}).", exc_info=e
-        )
+        logger.warning(f"cant send event to admin group (event_type: {event_type}).", exc_info=e)

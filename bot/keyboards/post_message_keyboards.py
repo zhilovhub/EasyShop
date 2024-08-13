@@ -27,16 +27,8 @@ class ReplyConfirmMediaFilesKeyboard:
         actions = ReplyConfirmMediaFilesKeyboard.Callback.ActionEnum
 
         return ReplyKeyboardMarkup(
-            keyboard=[
-                [
-                    KeyboardButton(
-                        text=actions.CONFIRM.value
-                    ),
-                    KeyboardButton(
-                        text=actions.CLEAR.value
-                    )
-                ]
-            ], resize_keyboard=True
+            keyboard=[[KeyboardButton(text=actions.CONFIRM.value), KeyboardButton(text=actions.CLEAR.value)]],
+            resize_keyboard=True,
         )
 
 
@@ -57,13 +49,7 @@ class ReplyBackPostMessageMenuKeyboard:
         actions = ReplyBackPostMessageMenuKeyboard.Callback.ActionEnum
 
         return ReplyKeyboardMarkup(
-            keyboard=[
-                [
-                    KeyboardButton(
-                        text=actions.BACK_TO_POST_MESSAGE_MENU.value
-                    )
-                ]
-            ], resize_keyboard=True
+            keyboard=[[KeyboardButton(text=actions.BACK_TO_POST_MESSAGE_MENU.value)]], resize_keyboard=True
         )
 
 
@@ -86,11 +72,11 @@ class InlinePostMessageAcceptDeletingKeyboard:
     @staticmethod
     @callback_json_validator
     def callback_json(
-            action: Callback.ActionEnum,
-            bot_id: int,
-            post_message_id: int,
-            post_message_type: PostMessageType,
-            channel_id: int | None = None
+        action: Callback.ActionEnum,
+        bot_id: int,
+        post_message_id: int,
+        post_message_type: PostMessageType,
+        channel_id: int | None = None,
     ) -> str:
         to_exclude = set()
         if channel_id is None:
@@ -101,7 +87,7 @@ class InlinePostMessageAcceptDeletingKeyboard:
             bot_id=bot_id,
             post_message_id=post_message_id,
             post_message_type=post_message_type,
-            channel_id=channel_id
+            channel_id=channel_id,
         ).model_dump_json(by_alias=True, exclude=to_exclude)
 
     @staticmethod
@@ -114,29 +100,28 @@ class InlinePostMessageAcceptDeletingKeyboard:
 
     @staticmethod
     async def get_keyboard(
-            bot_id: int,
-            post_message_id: int,
-            post_message_type: PostMessageType,
-            channel_id: int | None
+        bot_id: int, post_message_id: int, post_message_type: PostMessageType, channel_id: int | None
     ) -> InlineKeyboardMarkup:
         actions = InlinePostMessageAcceptDeletingKeyboard.Callback.ActionEnum
 
-        return InlineKeyboardMarkup(inline_keyboard=[
-            [
-                InlineKeyboardButton(
-                    text="🗑 Удалить",
-                    callback_data=InlinePostMessageAcceptDeletingKeyboard.callback_json(
-                        actions.ACCEPT_DELETE, bot_id, post_message_id, post_message_type, channel_id
-                    )
-                ),
-                InlineKeyboardButton(
-                    text="🔙 Назад",
-                    callback_data=InlinePostMessageAcceptDeletingKeyboard.callback_json(
-                        actions.BACK_TO_POST_MESSAGE_MENU, bot_id, post_message_id, post_message_type, channel_id
-                    )
-                )
+        return InlineKeyboardMarkup(
+            inline_keyboard=[
+                [
+                    InlineKeyboardButton(
+                        text="🗑 Удалить",
+                        callback_data=InlinePostMessageAcceptDeletingKeyboard.callback_json(
+                            actions.ACCEPT_DELETE, bot_id, post_message_id, post_message_type, channel_id
+                        ),
+                    ),
+                    InlineKeyboardButton(
+                        text="🔙 Назад",
+                        callback_data=InlinePostMessageAcceptDeletingKeyboard.callback_json(
+                            actions.BACK_TO_POST_MESSAGE_MENU, bot_id, post_message_id, post_message_type, channel_id
+                        ),
+                    ),
+                ]
             ]
-        ])
+        )
 
 
 class InlinePostMessageMenuKeyboard:
@@ -185,11 +170,11 @@ class InlinePostMessageMenuKeyboard:
     @staticmethod
     @callback_json_validator
     def callback_json(
-            action: Callback.ActionEnum,
-            bot_id: int,
-            post_message_id: int,
-            post_message_type: PostMessageType,
-            channel_id: int | None = None
+        action: Callback.ActionEnum,
+        bot_id: int,
+        post_message_id: int,
+        post_message_type: PostMessageType,
+        channel_id: int | None = None,
     ) -> str:
         to_exclude = set()
         if channel_id is None:
@@ -200,7 +185,7 @@ class InlinePostMessageMenuKeyboard:
             bot_id=bot_id,
             post_message_id=post_message_id,
             post_message_type=post_message_type,
-            channel_id=channel_id
+            channel_id=channel_id,
         ).model_dump_json(by_alias=True, exclude=to_exclude)
 
     @staticmethod
@@ -213,9 +198,7 @@ class InlinePostMessageMenuKeyboard:
 
     @staticmethod
     async def get_keyboard(
-            bot_id: int,
-            post_message_type: PostMessageType,
-            channel_id: int | None
+        bot_id: int, post_message_type: PostMessageType, channel_id: int | None
     ) -> InlineKeyboardMarkup:
         actions = InlinePostMessageMenuKeyboard.Callback.ActionEnum
 
@@ -239,80 +222,44 @@ class InlinePostMessageMenuKeyboard:
                 text="✖️ Убрать откладывание",
                 callback_data=InlinePostMessageMenuKeyboard.callback_json(
                     actions.REMOVE_DELAY, bot_id, post_message_id, post_message_type, channel_id
-                )
+                ),
             )
         else:
             delay_btn = InlineKeyboardButton(
                 text="⏰ Отложить",
                 callback_data=InlinePostMessageMenuKeyboard.callback_json(
                     actions.DELAY, bot_id, post_message_id, post_message_type, channel_id
-                )
+                ),
             )
 
         if post_message.is_running:
             statistic_button = InlineKeyboardButton(
-                                text="📊 Статистика",
-                                callback_data=InlinePostMessageMenuKeyboard.callback_json(
-                                    actions.STATISTICS, bot_id, post_message_id, post_message_type, channel_id
-                                )
-                            )
+                text="📊 Статистика",
+                callback_data=InlinePostMessageMenuKeyboard.callback_json(
+                    actions.STATISTICS, bot_id, post_message_id, post_message_type, channel_id
+                ),
+            )
             cancel_button = InlineKeyboardButton(
-                                text="🚫 Отменить",
-                                callback_data=InlinePostMessageMenuKeyboard.callback_json(
-                                    actions.CANCEL, bot_id, post_message_id, post_message_type, channel_id
-                                )
-                            )
+                text="🚫 Отменить",
+                callback_data=InlinePostMessageMenuKeyboard.callback_json(
+                    actions.CANCEL, bot_id, post_message_id, post_message_type, channel_id
+                ),
+            )
             contest_button = InlineKeyboardButton(
-                                text="🏁 Досрочно завершить",
-                                callback_data=InlinePostMessageMenuKeyboard.callback_json(
-                                    actions.PRE_FINISH, bot_id, post_message_id, post_message_type, channel_id
-                                )
-                            )
+                text="🏁 Досрочно завершить",
+                callback_data=InlinePostMessageMenuKeyboard.callback_json(
+                    actions.PRE_FINISH, bot_id, post_message_id, post_message_type, channel_id
+                ),
+            )
             match post_message_type:
                 case PostMessageType.MAILING:
-                    return InlineKeyboardMarkup(
-                        inline_keyboard=[
-                            [
-                                statistic_button
-                            ],
-                            [
-                                cancel_button
-                            ]
-                        ]
-                    )
+                    return InlineKeyboardMarkup(inline_keyboard=[[statistic_button], [cancel_button]])
                 case PostMessageType.CHANNEL_POST:
-                    return InlineKeyboardMarkup(
-                        inline_keyboard=[
-                            [
-                                cancel_button
-                            ]
-                        ]
-                    )
+                    return InlineKeyboardMarkup(inline_keyboard=[[cancel_button]])
                 case PostMessageType.CONTEST:
-                    return InlineKeyboardMarkup(
-                        inline_keyboard=[
-                            [
-                                statistic_button
-                            ],
-                            [
-                                contest_button
-                            ],
-                            [
-                                cancel_button
-                            ]
-                        ]
-                    )
+                    return InlineKeyboardMarkup(inline_keyboard=[[statistic_button], [contest_button], [cancel_button]])
                 case PostMessageType.PARTNERSHIP_POST:
-                    return InlineKeyboardMarkup(
-                        inline_keyboard=[
-                            [
-                                statistic_button
-                            ],
-                            [
-                                cancel_button
-                            ]
-                        ]
-                    )
+                    return InlineKeyboardMarkup(inline_keyboard=[[statistic_button], [cancel_button]])
                 case _:
                     raise UnknownPostMessageTypeError
         else:
@@ -323,23 +270,23 @@ class InlinePostMessageMenuKeyboard:
                             text="🌐 Ссылка кнопки",
                             callback_data=InlinePostMessageMenuKeyboard.callback_json(
                                 actions.BUTTON_URL, bot_id, post_message_id, post_message_type, channel_id
-                            )
+                            ),
                         ),
                         InlineKeyboardButton(
                             text="🔤 Текст на кнопке",
                             callback_data=InlinePostMessageMenuKeyboard.callback_json(
                                 actions.BUTTON_TEXT, bot_id, post_message_id, post_message_type, channel_id
-                            )
-                        )
+                            ),
+                        ),
                     ],
                     [
                         InlineKeyboardButton(
                             text="🗑 Удалить кнопку",
                             callback_data=InlinePostMessageMenuKeyboard.callback_json(
                                 actions.BUTTON_DELETE, bot_id, post_message_id, post_message_type, channel_id
-                            )
+                            ),
                         )
-                    ]
+                    ],
                 ]
             else:
                 if post_message.post_message_type != PostMessageType.CONTEST:
@@ -349,7 +296,7 @@ class InlinePostMessageMenuKeyboard:
                                 text="➕ Добавить кнопку",
                                 callback_data=InlinePostMessageMenuKeyboard.callback_json(
                                     actions.BUTTON_ADD, bot_id, post_message_id, post_message_type, channel_id
-                                )
+                                ),
                             ),
                         ]
                     ]
@@ -360,7 +307,7 @@ class InlinePostMessageMenuKeyboard:
                                 text="🏆 Количество победителей",
                                 callback_data=InlinePostMessageMenuKeyboard.callback_json(
                                     actions.WINNERS_COUNT, bot_id, post_message_id, post_message_type, channel_id
-                                )
+                                ),
                             )
                         ],
                         [
@@ -368,9 +315,9 @@ class InlinePostMessageMenuKeyboard:
                                 text="📅 Дата окончания конкурса",
                                 callback_data=InlinePostMessageMenuKeyboard.callback_json(
                                     actions.CONTEST_FINISH_DATE, bot_id, post_message_id, post_message_type, channel_id
-                                )
+                                ),
                             )
-                        ]
+                        ],
                     ]
             buttons = [
                 [
@@ -378,30 +325,31 @@ class InlinePostMessageMenuKeyboard:
                         text="📝 Текст сообщения",
                         callback_data=InlinePostMessageMenuKeyboard.callback_json(
                             actions.POST_MESSAGE_TEXT, bot_id, post_message_id, post_message_type, channel_id
-                        )
+                        ),
                     ),
                     InlineKeyboardButton(
                         text="🗂 Медиафайлы",
                         callback_data=InlinePostMessageMenuKeyboard.callback_json(
                             actions.POST_MESSAGE_MEDIA, bot_id, post_message_id, post_message_type, channel_id
-                        )
-                    )
+                        ),
+                    ),
                 ],
             ]
             if button_buttons:
                 buttons = buttons + button_buttons
-            buttons = buttons + [[
+            buttons = buttons + [
+                [
                     InlineKeyboardButton(
                         text="▶️ Запустить",
                         callback_data=InlinePostMessageMenuKeyboard.callback_json(
                             actions.START, bot_id, post_message_id, post_message_type, channel_id
-                        )
+                        ),
                     ),
                     InlineKeyboardButton(
                         text="👀 Проверить",
                         callback_data=InlinePostMessageMenuKeyboard.callback_json(
                             actions.DEMO, bot_id, post_message_id, post_message_type, channel_id
-                        )
+                        ),
                     ),
                 ],
                 [
@@ -410,7 +358,7 @@ class InlinePostMessageMenuKeyboard:
                         text="⚙️ Доп настройки",
                         callback_data=InlinePostMessageMenuKeyboard.callback_json(
                             actions.EXTRA_SETTINGS, bot_id, post_message_id, post_message_type, channel_id
-                        )
+                        ),
                     ),
                 ],
                 [
@@ -418,15 +366,16 @@ class InlinePostMessageMenuKeyboard:
                         text="🔙 Назад",
                         callback_data=InlinePostMessageMenuKeyboard.callback_json(
                             actions.BACK, bot_id, post_message_id, post_message_type, channel_id
-                        )
+                        ),
                     ),
                     InlineKeyboardButton(
                         text=delete_button_text,
                         callback_data=InlinePostMessageMenuKeyboard.callback_json(
                             actions.DELETE_POST_MESSAGE, bot_id, post_message_id, post_message_type, channel_id
-                        )
+                        ),
                     ),
-                ]]
+                ],
+            ]
 
             return InlineKeyboardMarkup(inline_keyboard=buttons)
 
@@ -452,11 +401,11 @@ class InlinePostMessageExtraSettingsKeyboard:
     @staticmethod
     @callback_json_validator
     def callback_json(
-            action: Callback.ActionEnum,
-            bot_id: int,
-            post_message_id: int,
-            post_message_type: PostMessageType,
-            channel_id: int | None = None
+        action: Callback.ActionEnum,
+        bot_id: int,
+        post_message_id: int,
+        post_message_type: PostMessageType,
+        channel_id: int | None = None,
     ) -> str:
         to_exclude = set()
         if channel_id is None:
@@ -467,7 +416,7 @@ class InlinePostMessageExtraSettingsKeyboard:
             bot_id=bot_id,
             post_message_id=post_message_id,
             post_message_type=post_message_type,
-            channel_id=channel_id
+            channel_id=channel_id,
         ).model_dump_json(by_alias=True, exclude=to_exclude)
 
     @staticmethod
@@ -480,12 +429,12 @@ class InlinePostMessageExtraSettingsKeyboard:
 
     @staticmethod
     def get_keyboard(
-            bot_id: int,
-            post_message_id: int,
-            is_notification_sound: bool,
-            is_link_preview: bool,
-            post_message_type: PostMessageType,
-            channel_id: int
+        bot_id: int,
+        post_message_id: int,
+        is_notification_sound: bool,
+        is_link_preview: bool,
+        post_message_type: PostMessageType,
+        channel_id: int,
     ) -> InlineKeyboardMarkup:
         actions = InlinePostMessageExtraSettingsKeyboard.Callback.ActionEnum
 
@@ -502,32 +451,34 @@ class InlinePostMessageExtraSettingsKeyboard:
         else:
             preview_text += "❌"
 
-        return InlineKeyboardMarkup(inline_keyboard=[
-            [
-                InlineKeyboardButton(
-                    text=notification_text,
-                    callback_data=InlinePostMessageExtraSettingsKeyboard.callback_json(
-                        actions.NOTIFICATION_SOUND, bot_id, post_message_id, post_message_type, channel_id
+        return InlineKeyboardMarkup(
+            inline_keyboard=[
+                [
+                    InlineKeyboardButton(
+                        text=notification_text,
+                        callback_data=InlinePostMessageExtraSettingsKeyboard.callback_json(
+                            actions.NOTIFICATION_SOUND, bot_id, post_message_id, post_message_type, channel_id
+                        ),
                     )
-                )
-            ],
-            [
-                InlineKeyboardButton(
-                    text=preview_text,
-                    callback_data=InlinePostMessageExtraSettingsKeyboard.callback_json(
-                        actions.LINK_PREVIEW, bot_id, post_message_id, post_message_type, channel_id
+                ],
+                [
+                    InlineKeyboardButton(
+                        text=preview_text,
+                        callback_data=InlinePostMessageExtraSettingsKeyboard.callback_json(
+                            actions.LINK_PREVIEW, bot_id, post_message_id, post_message_type, channel_id
+                        ),
                     )
-                )
-            ],
-            [
-                InlineKeyboardButton(
-                    text="🔙 Назад",
-                    callback_data=InlinePostMessageExtraSettingsKeyboard.callback_json(
-                        actions.BACK_TO_POST_MESSAGE_MENU, bot_id, post_message_id, post_message_type, channel_id
-                    )
-                ),
+                ],
+                [
+                    InlineKeyboardButton(
+                        text="🔙 Назад",
+                        callback_data=InlinePostMessageExtraSettingsKeyboard.callback_json(
+                            actions.BACK_TO_POST_MESSAGE_MENU, bot_id, post_message_id, post_message_type, channel_id
+                        ),
+                    ),
+                ],
             ]
-        ])
+        )
 
 
 class InlinePostMessageStartConfirmKeyboard:
@@ -550,11 +501,11 @@ class InlinePostMessageStartConfirmKeyboard:
     @staticmethod
     @callback_json_validator
     def callback_json(
-            action: Callback.ActionEnum,
-            bot_id: int,
-            post_message_id: int,
-            post_message_type: PostMessageType,
-            channel_id: int | None = None
+        action: Callback.ActionEnum,
+        bot_id: int,
+        post_message_id: int,
+        post_message_type: PostMessageType,
+        channel_id: int | None = None,
     ) -> str:
         to_exclude = set()
         if channel_id is None:
@@ -565,7 +516,7 @@ class InlinePostMessageStartConfirmKeyboard:
             bot_id=bot_id,
             post_message_id=post_message_id,
             post_message_type=post_message_type,
-            channel_id=channel_id
+            channel_id=channel_id,
         ).model_dump_json(by_alias=True, exclude=to_exclude)
 
     @staticmethod
@@ -578,26 +529,25 @@ class InlinePostMessageStartConfirmKeyboard:
 
     @staticmethod
     def get_keyboard(
-            bot_id: int,
-            post_message_id: int,
-            post_message_type: PostMessageType,
-            channel_id: int
+        bot_id: int, post_message_id: int, post_message_type: PostMessageType, channel_id: int
     ) -> InlineKeyboardMarkup:
         actions = InlinePostMessageStartConfirmKeyboard.Callback.ActionEnum
 
-        return InlineKeyboardMarkup(inline_keyboard=[
-            [
-                InlineKeyboardButton(
-                    text="📩 Отправить",
-                    callback_data=InlinePostMessageStartConfirmKeyboard.callback_json(
-                        actions.START_CONFIRM, bot_id, post_message_id, post_message_type, channel_id
-                    )
-                ),
-                InlineKeyboardButton(
-                    text="🔙 Назад",
-                    callback_data=InlinePostMessageStartConfirmKeyboard.callback_json(
-                        actions.BACK_TO_POST_MESSAGE_MENU, bot_id, post_message_id, post_message_type, channel_id
-                    )
-                )
+        return InlineKeyboardMarkup(
+            inline_keyboard=[
+                [
+                    InlineKeyboardButton(
+                        text="📩 Отправить",
+                        callback_data=InlinePostMessageStartConfirmKeyboard.callback_json(
+                            actions.START_CONFIRM, bot_id, post_message_id, post_message_type, channel_id
+                        ),
+                    ),
+                    InlineKeyboardButton(
+                        text="🔙 Назад",
+                        callback_data=InlinePostMessageStartConfirmKeyboard.callback_json(
+                            actions.BACK_TO_POST_MESSAGE_MENU, bot_id, post_message_id, post_message_type, channel_id
+                        ),
+                    ),
+                ]
             ]
-        ])
+        )

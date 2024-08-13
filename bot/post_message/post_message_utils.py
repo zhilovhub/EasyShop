@@ -2,18 +2,22 @@ from aiogram.types import CallbackQuery, Message
 
 from bot.keyboards.main_menu_keyboards import ReplyBotMenuKeyboard
 from database.config import post_message_db, contest_db
-from database.models.post_message_model import PostMessageSchema, PostMessageNotFoundError, PostMessageType, \
-    UnknownPostMessageTypeError
+from database.models.post_message_model import (
+    PostMessageSchema,
+    PostMessageNotFoundError,
+    PostMessageType,
+    UnknownPostMessageTypeError,
+)
 from database.models.post_message_media_files import PostMessageMediaFileSchema
 
 from logs.config import extra_params, logger
 
 
 async def is_post_message_valid(
-        query: CallbackQuery,
-        post_message: PostMessageSchema,
-        post_message_type: PostMessageType,
-        media_files: list[PostMessageMediaFileSchema]
+    query: CallbackQuery,
+    post_message: PostMessageSchema,
+    post_message_type: PostMessageType,
+    media_files: list[PostMessageMediaFileSchema],
 ) -> bool:
     """
     Check if Post Message is valid for telegram and specific post_message_type
@@ -28,10 +32,7 @@ async def is_post_message_valid(
         case PostMessageType.CONTEST:
             contest = await contest_db.get_contest_by_post_message_id(post_message.post_message_id)
             if contest.finish_date is None:
-                await query.answer(
-                    "Введите дату окончания конкурса",
-                    show_alert=True
-                )
+                await query.answer("Введите дату окончания конкурса", show_alert=True)
                 return False
         case PostMessageType.PARTNERSHIP_POST:
             pass
@@ -40,26 +41,22 @@ async def is_post_message_valid(
 
     if len(media_files) > 1 and post_message.has_button:
         await query.answer(
-            "Telegram не позволяет прикрепить кнопку, если в сообщении минимум 2 медиафайла",
-            show_alert=True
+            "Telegram не позволяет прикрепить кнопку, если в сообщении минимум 2 медиафайла", show_alert=True
         )
         return False
     elif not media_files and not post_message.description:
-        await query.answer(
-            text="В Вашем рассылочном сообщении нет ни текста, ни медиафайлов",
-            show_alert=True
-        )
+        await query.answer(text="В Вашем рассылочном сообщении нет ни текста, ни медиафайлов", show_alert=True)
         return False
 
     return True
 
 
 async def get_post_message(
-        event: Message | CallbackQuery,
-        user_id: int,
-        bot_id: int,
-        post_message_id: int,
-        post_message_type: PostMessageType | int
+    event: Message | CallbackQuery,
+    user_id: int,
+    bot_id: int,
+    post_message_id: int,
+    post_message_type: PostMessageType | int,
 ) -> PostMessageSchema:
     """
     Returns post message or answers that it doesn't exists anymore
@@ -79,7 +76,7 @@ async def get_post_message(
 
         logger.info(
             f"user_id={user_id}: tried to edit post_message_id={post_message_id} but it doesn't exist",
-            extra=extra_params(user_id=user_id, bot_idf=bot_id, post_message_id=post_message_id)
+            extra=extra_params(user_id=user_id, bot_idf=bot_id, post_message_id=post_message_id),
         )
 
         match post_message_type:

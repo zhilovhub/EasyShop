@@ -11,8 +11,13 @@ from aiogram.webhook.aiohttp_server import (
 )
 
 from common_utils.bot_settings_config import BOT_PROPERTIES
-from common_utils.config import custom_telegram_bot_settings, main_telegram_bot_settings, api_settings, \
-    common_settings, database_settings
+from common_utils.config import (
+    custom_telegram_bot_settings,
+    main_telegram_bot_settings,
+    api_settings,
+    common_settings,
+    database_settings,
+)
 from common_utils.start_message import send_start_message_to_admins
 from common_utils.scheduler.scheduler import Scheduler
 from common_utils.cache_json.cache_json import JsonStore
@@ -37,16 +42,16 @@ main_bot = Bot(main_telegram_bot_settings.TELEGRAM_TOKEN, default=BOT_PROPERTIES
 
 OTHER_BOTS_URL = f"{BASE_URL}{OTHER_BOTS_PATH}"
 
-FULL_WEB_APP_URL = f"{custom_telegram_bot_settings.WEB_APP_URL}:" \
-                   f"{custom_telegram_bot_settings.WEB_APP_PORT}/products-page/?bot_id=[bot_id]"
+FULL_WEB_APP_URL = (
+    f"{custom_telegram_bot_settings.WEB_APP_URL}:"
+    f"{custom_telegram_bot_settings.WEB_APP_PORT}/products-page/?bot_id=[bot_id]"
+)
 
 API_URL = f"https://ezbots.ru:{api_settings.API_PORT}/api"
 
-PREV_ORDER_MSGS = JsonStore(
-    file_path="prev_orders_msg_id.json", json_store_name="PREV_ORDER_MSGS")
+PREV_ORDER_MSGS = JsonStore(file_path="prev_orders_msg_id.json", json_store_name="PREV_ORDER_MSGS")
 QUESTION_MESSAGES = JsonStore(
-    file_path=common_settings.RESOURCES_PATH.format("question_messages.json"),
-    json_store_name="QUESTION_MESSAGES"
+    file_path=common_settings.RESOURCES_PATH.format("question_messages.json"), json_store_name="QUESTION_MESSAGES"
 )
 
 scheduler = Scheduler(
@@ -54,7 +59,7 @@ scheduler = Scheduler(
     "postgres",
     database_settings.TIMEZONE,
     tablename="custom_bot_apscheduler_jobs",
-    unique_id="multi_bot"
+    unique_id="multi_bot",
 )
 
 
@@ -119,7 +124,7 @@ async def main():
             host=custom_telegram_bot_settings.WEBHOOK_LOCAL_API_URL_OUTSIDE,
             port=custom_telegram_bot_settings.WEBHOOK_LOCAL_API_PORT,
             access_log=custom_bot_logger,
-            print=custom_bot_logger.debug
+            print=custom_bot_logger.debug,
         ),
         web._run_app(  # noqa
             app,
@@ -127,13 +132,11 @@ async def main():
             port=custom_telegram_bot_settings.WEBHOOK_SERVER_PORT_TO_REDIRECT,
             ssl_context=ssl_context,
             access_log=custom_bot_logger,
-            print=custom_bot_logger.debug
+            print=custom_bot_logger.debug,
         ),
         send_start_message_to_admins(
-            Bot(main_telegram_bot_settings.TELEGRAM_TOKEN),
-            common_settings.TECH_ADMINS,
-            "Custom bots started!"
-        )
+            Bot(main_telegram_bot_settings.TELEGRAM_TOKEN), common_settings.TECH_ADMINS, "Custom bots started!"
+        ),
     )
 
 

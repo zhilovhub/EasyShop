@@ -23,9 +23,7 @@ class InlineSubscriptionContinueKeyboard:
     @staticmethod
     @callback_json_validator
     def callback_json(action: Callback.ActionEnum, bot_id: int | None) -> str:
-        return InlineSubscriptionContinueKeyboard.Callback(
-            a=action, bot_id=bot_id
-        ).model_dump_json(by_alias=True)
+        return InlineSubscriptionContinueKeyboard.Callback(a=action, bot_id=bot_id).model_dump_json(by_alias=True)
 
     @staticmethod
     def callback_validator(json_string: str) -> bool:
@@ -46,7 +44,7 @@ class InlineSubscriptionContinueKeyboard:
                         text="Продлить подписку",
                         callback_data=InlineSubscriptionContinueKeyboard.callback_json(
                             actions.CONTINUE_SUBSCRIPTION, bot_id
-                        )
+                        ),
                     ),
                 ],
             ],
@@ -69,9 +67,9 @@ class InlineAdminRefundKeyboard:
     @staticmethod
     @callback_json_validator
     def callback_json(action: Callback.ActionEnum, bot_id: int | None, payment_id: int) -> str:
-        return InlineAdminRefundKeyboard.Callback(
-            a=action, bot_id=bot_id, payment_id=payment_id
-        ).model_dump_json(by_alias=True)
+        return InlineAdminRefundKeyboard.Callback(a=action, bot_id=bot_id, payment_id=payment_id).model_dump_json(
+            by_alias=True
+        )
 
     @staticmethod
     def callback_validator(json_string: str) -> bool:
@@ -92,7 +90,7 @@ class InlineAdminRefundKeyboard:
                         text="↩️ Сделать возврат",
                         callback_data=InlineAdminRefundKeyboard.callback_json(
                             actions.REFUND_SUBSCRIPTION, bot_id, payment_id
-                        )
+                        ),
                     ),
                 ],
             ],

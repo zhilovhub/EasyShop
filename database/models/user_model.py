@@ -33,6 +33,7 @@ class UserStatusValues(Enum):
 
 class UserStatus(TypeDecorator):  # noqa
     """Class to convert Enum values to db values (and reverse)"""
+
     impl = Unicode
     cache_ok = True
 
@@ -104,10 +105,7 @@ class UserDao(Dao):
 
         res = UserSchema.model_validate(res)
 
-        self.logger.debug(
-            f"user_id={user_id}: user {user_id} is found",
-            extra=extra_params(user_id=user_id)
-        )
+        self.logger.debug(f"user_id={user_id}: user {user_id} is found", extra=extra_params(user_id=user_id))
 
         return res
 
@@ -120,21 +118,18 @@ class UserDao(Dao):
             await conn.execute(insert(User).values(**user.model_dump(by_alias=True)))
         await self.engine.dispose()
 
-        self.logger.debug(
-            f"user_id={user.id}: added user {user}",
-            extra=extra_params(user_id=user.id)
-        )
+        self.logger.debug(f"user_id={user.id}: added user {user}", extra=extra_params(user_id=user.id))
 
     @validate_call(validate_return=True)
     async def update_user(self, updated_user: UserSchema) -> None:
         async with self.engine.begin() as conn:
-            await conn.execute(update(User).where(User.user_id == updated_user.id).
-                               values(**updated_user.model_dump(by_alias=True)))
+            await conn.execute(
+                update(User).where(User.user_id == updated_user.id).values(**updated_user.model_dump(by_alias=True))
+            )
         await self.engine.dispose()
 
         self.logger.debug(
-            f"user_id={updated_user.id}: updated user {updated_user}",
-            extra=extra_params(user_id=updated_user.id)
+            f"user_id={updated_user.id}: updated user {updated_user}", extra=extra_params(user_id=updated_user.id)
         )
 
     @validate_call(validate_return=True)
@@ -143,7 +138,4 @@ class UserDao(Dao):
             await conn.execute(delete(User).where(User.user_id == user_id))
         await self.engine.dispose()
 
-        self.logger.debug(
-            f"user_id={user_id}: deleted user {user_id}",
-            extra=extra_params(user_id=user_id)
-        )
+        self.logger.debug(f"user_id={user_id}: deleted user {user_id}", extra=extra_params(user_id=user_id))

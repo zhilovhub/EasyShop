@@ -34,10 +34,7 @@ class FilterNotFoundError(Exception):
         super().__init__(self.message)
 
 
-PRODUCT_FILTERS = {"rating": "По рейтингу",
-                   "popular": "По популярности",
-                   "price": "По цене",
-                   "search": "По поиску"}
+PRODUCT_FILTERS = {"rating": "По рейтингу", "popular": "По популярности", "price": "По цене", "search": "По поиску"}
 
 
 class ProductFilterWithoutBot(BaseModel):
@@ -51,7 +48,7 @@ class ProductFilter(ProductFilterWithoutBot):
     category_id: int | None
     search_word: str | None
 
-    @model_validator(mode='after')
+    @model_validator(mode="after")
     def validate_filter_name(self):
         """
         :raises FilterNotFoundError:
@@ -82,12 +79,12 @@ class Product(Base):
     price = Column(Integer, nullable=False)
     count = Column(BigInteger, nullable=False, default=0)
     picture = Column(ARRAY(String))
-    extra_options = Column(JSON, default='[]')
+    extra_options = Column(JSON, default="[]")
 
 
 class ExtraOptionType(str, Enum):
-    TEXT = 'text'
-    BLOCK = 'block'
+    TEXT = "text"
+    BLOCK = "block"
     PRICED_BLOCK = "priced_block"
 
 
@@ -123,7 +120,7 @@ class ProductSchema(ProductWithoutId):
         if used_extra_options:
             options_text = Text()
             for option in used_extra_options:
-                options_text += Text(f"\n • ", Italic(option.name), " : ", Underline(option.selected_variant))
+                options_text += Text("\n • ", Italic(option.name), " : ", Underline(option.selected_variant))
                 if option.price:
                     option_price = option.price - self.price
                     if option_price <= 0:
@@ -131,7 +128,7 @@ class ProductSchema(ProductWithoutId):
                     else:
                         option_price_text = f"+{option_price}"
                     options_text += f" ({option_price_text}₽)"
-                options_text += '\n'
+                options_text += "\n"
             return Text(Bold(f"{self.name} {self.price}₽ x {count}шт"), f" {options_text}")
         return Bold(f"{self.name} {self.price}₽ x {count}шт")
 
@@ -141,8 +138,10 @@ class ProductSchema(ProductWithoutId):
             "🔤 Название: ",
             Bold(f"{self.name}"),
             "\n\n📝 Описание:\n",
-            Pre(f"{self.description}"), "\n\n",
-            f"💰 Цена: ", Bold(f"{self.price}₽"),
+            Pre(f"{self.description}"),
+            "\n\n",
+            "💰 Цена: ",
+            Bold(f"{self.price}₽"),
         )
         return res
 
@@ -150,17 +149,19 @@ class ProductSchema(ProductWithoutId):
 class NotEnoughProductsInStockToReduce(Exception):  # TODO Arsen should delete
     """Raised when auto_reduce on order option is enabled and product reduce amount is more than product count"""
 
-    def __init__(self, product: ProductSchema, amount: int,
-                 message: str = "Product with name ('{PRODUCT_NAME}') and id ({PRODUCT_ID}) has not enough items "
-                                "in stock (need: {ITEMS_NEED}, stock: {ITEMS_STOCK})"):
-
+    def __init__(
+        self,
+        product: ProductSchema,
+        amount: int,
+        message: str = "Product with name ('{PRODUCT_NAME}') and id ({PRODUCT_ID}) has not enough items "
+        "in stock (need: {ITEMS_NEED}, stock: {ITEMS_STOCK})",
+    ):
         self.product = product
-        self.message = message.replace("{PRODUCT_NAME}", product.name.lower()).replace(
-            "{PRODUCT_ID}", str(product.id)
-        ).replace(
-            "{ITEMS_NEED}", str(amount)
-        ).replace(
-            "{ITEMS_STOCK}", str(product.count)
+        self.message = (
+            message.replace("{PRODUCT_NAME}", product.name.lower())
+            .replace("{PRODUCT_ID}", str(product.id))
+            .replace("{ITEMS_NEED}", str(amount))
+            .replace("{ITEMS_STOCK}", str(product.count))
         )
         super().__init__(self.message)
 
@@ -171,11 +172,7 @@ class ProductDao(Dao):
 
     @validate_call(validate_return=True)
     async def get_all_products(
-            self,
-            bot_id: int,
-            price_min: int = 0,
-            price_max: int = 2147483647,
-            filters: list[ProductFilter] | None = None
+        self, bot_id: int, price_min: int = 0, price_max: int = 2147483647, filters: list[ProductFilter] | None = None
     ) -> list[ProductSchema]:
         """
         :param bot_id: id of the Bot
@@ -200,7 +197,8 @@ class ProductDao(Dao):
                                 sql_select = sql_select.order_by(asc(Product.price))
                         case "search":
                             sql_select = sql_select.filter(
-                                Product.name.ilike('%' + product_filter.search_word.lower() + '%'))
+                                Product.name.ilike("%" + product_filter.search_word.lower() + "%")
+                            )
                         case "rating":
                             pass
                         case "popular":
@@ -215,10 +213,7 @@ class ProductDao(Dao):
         for product in raw_res:
             res.append(ProductSchema.model_validate(product))
 
-        self.logger.debug(
-            f"bot_id={bot_id}: has {len(res)} products",
-            extra=extra_params(bot_id=bot_id)
-        )
+        self.logger.debug(f"bot_id={bot_id}: has {len(res)} products", extra=extra_params(bot_id=bot_id))
 
         return res
 
@@ -239,8 +234,7 @@ class ProductDao(Dao):
         res = ProductSchema.model_validate(raw_res)
 
         self.logger.debug(
-            f"bot_id={res.bot_id}: found product {res}",
-            extra=extra_params(product_id=res.id, bot_id=res.bot_id)
+            f"bot_id={res.bot_id}: found product {res}", extra=extra_params(product_id=res.id, bot_id=res.bot_id)
         )
 
         return res
@@ -263,7 +257,7 @@ class ProductDao(Dao):
 
         self.logger.debug(
             f"bot_id={res.bot_id}, article={res.article}: found product {res}",
-            extra=extra_params(product_id=res.id, bot_id=res.bot_id, article=res.article)
+            extra=extra_params(product_id=res.id, bot_id=res.bot_id, article=res.article),
         )
 
         return res
@@ -294,14 +288,15 @@ class ProductDao(Dao):
 
         self.logger.debug(
             f"bot_id={new_product.bot_id}: added product {product_id} {new_product}",
-            extra=extra_params(product_id=product_id, bot_id=new_product.bot_id)
+            extra=extra_params(product_id=product_id, bot_id=new_product.bot_id),
         )
 
         return product_id
 
     @validate_call(validate_return=True)
-    async def upsert_product(self, new_product: ProductWithoutId,
-                             replace_duplicates: bool = False) -> int:  # TODO write tests for it
+    async def upsert_product(
+        self, new_product: ProductWithoutId, replace_duplicates: bool = False
+    ) -> int:  # TODO write tests for it
         """
         Inserts product if it doesn't exist otherwise update
 
@@ -310,23 +305,28 @@ class ProductDao(Dao):
         new_product_dict = new_product.model_dump(exclude={"id"})
         async with self.engine.begin() as conn:
             if replace_duplicates:
-                upsert_query = upsert(Product).values(new_product_dict).on_conflict_do_update(
-                    constraint=f"products_pkey",
-                    set_=new_product_dict
+                upsert_query = (
+                    upsert(Product)
+                    .values(new_product_dict)
+                    .on_conflict_do_update(constraint="products_pkey", set_=new_product_dict)
                 )
                 product_id = (await conn.execute(upsert_query)).inserted_primary_key[0]
                 self.logger.debug(
                     f"bot_id={new_product.bot_id}: upserted product {product_id} {new_product}",
-                    extra=extra_params(product_id=product_id, bot_id=new_product.bot_id)
+                    extra=extra_params(product_id=product_id, bot_id=new_product.bot_id),
                 )
             else:
-                upsert_query = upsert(Product).values(new_product_dict).on_conflict_do_nothing(
-                    constraint=f"products_pkey",
+                upsert_query = (
+                    upsert(Product)
+                    .values(new_product_dict)
+                    .on_conflict_do_nothing(
+                        constraint="products_pkey",
+                    )
                 )
                 product_id = (await conn.execute(upsert_query)).inserted_primary_key[0]
                 self.logger.debug(
                     f"bot_id={new_product.bot_id}: upserted product {product_id} {new_product}",
-                    extra=extra_params(product_id=product_id, bot_id=new_product.bot_id)
+                    extra=extra_params(product_id=product_id, bot_id=new_product.bot_id),
                 )
 
         return product_id
@@ -345,13 +345,11 @@ class ProductDao(Dao):
 
         await self.get_product(updated_product.id)
         async with self.engine.begin() as conn:
-            await conn.execute(
-                update(Product).where(Product.id == updated_product.id).values(updated_product_dump)
-            )
+            await conn.execute(update(Product).where(Product.id == updated_product.id).values(updated_product_dump))
 
         self.logger.debug(
             f"bot_id={updated_product.bot_id}: updated product {updated_product}",
-            extra=extra_params(product_id=updated_product.id, bot_id=updated_product.bot_id)
+            extra=extra_params(product_id=updated_product.id, bot_id=updated_product.bot_id),
         )
 
     @validate_call(validate_return=True)
@@ -360,8 +358,7 @@ class ProductDao(Dao):
             await conn.execute(delete(Product).where(Product.id == product_id))
 
         self.logger.debug(
-            f"product_id={product_id}: deleted product {product_id}",
-            extra=extra_params(product_id=product_id)
+            f"product_id={product_id}: deleted product {product_id}", extra=extra_params(product_id=product_id)
         )
 
     @validate_call(validate_return=True)
@@ -369,7 +366,4 @@ class ProductDao(Dao):
         async with self.engine.begin() as conn:
             await conn.execute(delete(Product).where(Product.bot_id == bot_id))
 
-        self.logger.debug(
-            f"bot_id={bot_id}: all products are deleted",
-            extra=extra_params(bot_id=bot_id)
-        )
+        self.logger.debug(f"bot_id={bot_id}: all products are deleted", extra=extra_params(bot_id=bot_id))

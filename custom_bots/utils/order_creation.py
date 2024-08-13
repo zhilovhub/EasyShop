@@ -43,15 +43,8 @@ async def order_creation_process(order: OrderSchema, order_user_data: Chat) -> s
 
     admin_id = custom_bot.created_by
 
-    text = await CommonMessageTexts.generate_order_notification_text(
-        order,
-        products,
-        username,
-        True
-    )
-    main_msg = await main_bot.send_message(
-        admin_id, **text
-    )
+    text = await CommonMessageTexts.generate_order_notification_text(order, products, username, True)
+    main_msg = await main_bot.send_message(admin_id, **text)
     products_to_refill = []
     products_not_enough = []
     try:
@@ -69,12 +62,7 @@ async def order_creation_process(order: OrderSchema, order_user_data: Chat) -> s
                 if product_schema.count < amount:
                     products_not_enough.append(product_schema)
 
-    text = await CommonMessageTexts.generate_order_notification_text(
-        order,
-        products,
-        username,
-        False
-    )
+    text = await CommonMessageTexts.generate_order_notification_text(order, products, username, False)
     msg = await custom_bot_tg.send_message(
         chat_id=user_id, reply_markup=InlineOrderCustomBotKeyboard.get_keyboard(order.id), **text
     )
@@ -87,30 +75,26 @@ async def order_creation_process(order: OrderSchema, order_user_data: Chat) -> s
         await main_bot.send_message(
             chat_id=admin_id,
             reply_to_message_id=main_msg.message_id,
-            **CustomMessageTexts.generate_stock_info_to_refill(products_to_refill, order.id)
+            **CustomMessageTexts.generate_stock_info_to_refill(products_to_refill, order.id),
         )
     if len(products_not_enough) != 0:
         await main_bot.send_message(
             chat_id=admin_id,
             reply_to_message_id=main_msg.message_id,
-            **CustomMessageTexts.generate_not_enough_in_stock(products_not_enough, order.id)
+            **CustomMessageTexts.generate_not_enough_in_stock(products_not_enough, order.id),
         )
 
     if custom_bot.payment_type == BotPaymentTypeValues.MANUAL:
         post_order_text = options.post_order_msg
         if post_order_text:
-            await custom_bot_tg.send_message(
-                chat_id=user_id,
-                text=post_order_text,
-                parse_mode=ParseMode.HTML
-            )
+            await custom_bot_tg.send_message(chat_id=user_id, text=post_order_text, parse_mode=ParseMode.HTML)
 
     await main_bot.edit_message_reply_markup(
         chat_id=main_msg.chat.id,
         message_id=main_msg.message_id,
         reply_markup=InlineOrderStatusesKeyboard.get_keyboard(
             order.id, msg.message_id, msg.chat.id, current_status=order.status
-        )
+        ),
     )
 
     photo_url = None
@@ -139,44 +123,37 @@ async def order_creation_process(order: OrderSchema, order_user_data: Chat) -> s
             await custom_bot_tg.send_message(user_id, CustomMessageTexts.ERROR_IN_CREATING_INVOICE.value)
             order.status = OrderStatusValues.CANCELLED
             await order_db.update_order(order)
-            text = await CommonMessageTexts.generate_order_notification_text(
-                order,
-                products,
-                username,
-                False
-            )
+            text = await CommonMessageTexts.generate_order_notification_text(order, products, username, False)
             await custom_bot_tg.edit_message_text(chat_id=user_id, message_id=msg.message_id, **text, reply_markup=None)
-            admin_text = await CommonMessageTexts.generate_order_notification_text(
-                order,
-                products,
-                username,
-                True
-            )
+            admin_text = await CommonMessageTexts.generate_order_notification_text(order, products, username, True)
             await main_msg.edit_text(
                 **admin_text,
                 reply_markup=InlineOrderStatusesKeyboard.get_keyboard(
                     order.id, msg.message_id, msg.chat.id, current_status=order.status
-                ))
+                ),
+            )
             if "CURRENCY_INVALID" in str(ex):
                 await main_msg.answer(
                     f"❗️ Произошла ошибка при создании платежа, заказ отменен.\n\n"
                     f"⚠️ Указанная Вами валюта ({custom_bot_options.currency_symbol.value}) "
-                    f"не поддерживается платежным провайдером, чей токен Вы указали.",)
+                    f"не поддерживается платежным провайдером, чей токен Вы указали.",
+                )
             elif "PAYMENT_PROVIDER_INVALID" in str(ex):
                 await main_msg.answer(
-                    f"❗️ Произошла ошибка при создании платежа, заказ отменен.\n\n"
-                    f"⚠️ Указанный Вами Provider Token не действует."
-                    f"\n\nПерепроверьте правильность написания и добавьте его еще раз, "
-                    f"если это не помогло, обратитесь в поддержку.",)
+                    "❗️ Произошла ошибка при создании платежа, заказ отменен.\n\n"
+                    "⚠️ Указанный Вами Provider Token не действует."
+                    "\n\nПерепроверьте правильность написания и добавьте его еще раз, "
+                    "если это не помогло, обратитесь в поддержку.",
+                )
             else:
                 await main_msg.answer(
-                    f"❗️ Произошла ошибка при создании платежа, заказ отменен.",)
+                    "❗️ Произошла ошибка при создании платежа, заказ отменен.",
+                )
                 raise ex
 
     custom_bot_logger.info(
         f"user_id={user_id}: order with order_id {order.id} is created",
-        extra=extra_params(
-            user_id=user_id, bot_id=bot_id, order_id=order.id)
+        extra=extra_params(user_id=user_id, bot_id=bot_id, order_id=order.id),
     )
 
     return invoice_link

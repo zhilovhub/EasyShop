@@ -14,7 +14,7 @@ RESPONSES_DICT = {  # keep it sorted by keys
 def _generate_extra_params_text(**extra_params):
     return_text = ""
     if extra_params:
-        return_text += ' extra params: '
+        return_text += " extra params: "
         for k, v in extra_params.items():
             if v:
                 return_text += f"{k}={v} "
@@ -28,7 +28,7 @@ class SearchWordMustNotBeEmptyError(Exception):
 class HTTPBadRequestError(HTTPException):
     """Raised when Bad request error occurred: status 400"""
 
-    def __init__(self, detail_message: str = RESPONSES_DICT[400]['description'], **extra_params):
+    def __init__(self, detail_message: str = RESPONSES_DICT[400]["description"], **extra_params):
         self.status_code = 400
         self.detail = detail_message + _generate_extra_params_text(**extra_params)
         super().__init__(status_code=self.status_code, detail=self.detail)
@@ -37,7 +37,7 @@ class HTTPBadRequestError(HTTPException):
 class HTTPUnauthorizedError(HTTPException):
     """Raised when Bad request error occurred: status 400"""
 
-    def __init__(self, detail_message: str = RESPONSES_DICT[401]['description'], **extra_params):
+    def __init__(self, detail_message: str = RESPONSES_DICT[401]["description"], **extra_params):
         self.status_code = 401
         self.detail = detail_message + _generate_extra_params_text(**extra_params)
         super().__init__(status_code=self.status_code, detail=self.detail)
@@ -46,7 +46,7 @@ class HTTPUnauthorizedError(HTTPException):
 class HTTPCustomBotIsOfflineError(HTTPException):
     """Raised when Conflict error occurred: status 406"""
 
-    def __init__(self, detail_message: str = RESPONSES_DICT[406]['description'], **extra_params):
+    def __init__(self, detail_message: str = RESPONSES_DICT[406]["description"], **extra_params):
         self.status_code = 406
         self.detail = detail_message + _generate_extra_params_text(**extra_params)
         super().__init__(status_code=self.status_code, detail=self.detail)
@@ -55,7 +55,7 @@ class HTTPCustomBotIsOfflineError(HTTPException):
 class HTTPConflictError(HTTPException):
     """Raised when Conflict error occurred: status 409"""
 
-    def __init__(self, detail_message: str = RESPONSES_DICT[409]['description'], **extra_params):
+    def __init__(self, detail_message: str = RESPONSES_DICT[409]["description"], **extra_params):
         self.status_code = 409
         self.detail = detail_message + _generate_extra_params_text(**extra_params)
         super().__init__(status_code=self.status_code, detail=self.detail)
@@ -64,7 +64,7 @@ class HTTPConflictError(HTTPException):
 class HTTPInternalError(HTTPException):
     """Raised when unknown internal server error occurred: status 500"""
 
-    def __init__(self, detail_message: str = RESPONSES_DICT[500]['description'], **extra_params):
+    def __init__(self, detail_message: str = RESPONSES_DICT[500]["description"], **extra_params):
         self.status_code = 500
         self.detail = detail_message + _generate_extra_params_text(**extra_params)
         super().__init__(status_code=self.status_code, detail=self.detail)
@@ -73,7 +73,7 @@ class HTTPInternalError(HTTPException):
 class HTTPItemNotFoundError(HTTPException):
     """Raised when item not found in database"""
 
-    def __init__(self, detail_message: str = RESPONSES_DICT[404]['description'], **extra_params):
+    def __init__(self, detail_message: str = RESPONSES_DICT[404]["description"], **extra_params):
         self.status_code = 404
         self.detail = detail_message + _generate_extra_params_text(**extra_params)
         super().__init__(status_code=self.status_code, detail=self.detail)

@@ -29,10 +29,10 @@ def _create_zip_buffer(images) -> BufferedInputFile:
     :return: Zip File with images
     """
     zip_buffer = BytesIO()
-    with ZipFile(zip_buffer, 'w') as zip_file:
+    with ZipFile(zip_buffer, "w") as zip_file:
         for file_path in images:
             file_name = os.path.basename(file_path)
-            with open(file_path, 'rb') as file:
+            with open(file_path, "rb") as file:
                 zip_file.writestr(file_name, file.read())
     zip_buffer.seek(0)
     buffer_file = BufferedInputFile(zip_buffer.read(), filename="images.zip")
@@ -71,7 +71,7 @@ def create_excel(data: dict, sheet_name, table_type) -> Workbook:
                     if cell.value:
                         cell.alignment = alignment
                         max_length = max(max_length, len(str(cell.value)))
-                adjusted_width = (max_length + 2)
+                adjusted_width = max_length + 2
                 ws.column_dimensions[column].width = adjusted_width
         case "banned":
             pass
@@ -83,8 +83,9 @@ def create_excel(data: dict, sheet_name, table_type) -> Workbook:
             header_fill = PatternFill(fgColor="FFCCFFCC", patternType="solid", fill_type="solid")
             even_fill = PatternFill(fgColor="FFE6FFCC", patternType="solid", fill_type="solid")
             odd_fill = PatternFill(fgColor="FFFFF2CC", patternType="solid", fill_type="solid")
-            thin_border = Border(left=Side(style='thin'), right=Side(style='thin'),
-                                 top=Side(style='thin'), bottom=Side(style='thin'))
+            thin_border = Border(
+                left=Side(style="thin"), right=Side(style="thin"), top=Side(style="thin"), bottom=Side(style="thin")
+            )
             bold_font = Font(bold=True)
             for col in range(1, len(headers) + 1):
                 cell = ws.cell(row=1, column=col)
@@ -111,7 +112,7 @@ def create_excel(data: dict, sheet_name, table_type) -> Workbook:
                 for cell in ws[column]:
                     if cell.value:
                         max_length = max(max_length, len(str(cell.value)))
-                adjusted_width = (max_length + 2)
+                adjusted_width = max_length + 2
                 ws.column_dimensions[column].width = adjusted_width
         case _:
             pass
@@ -124,14 +125,15 @@ async def send_demo_import_xlsx(bot_id):
         bot = await bot_db.get_bot(bot_id=bot_id)
         created_by = bot.created_by
     except BotNotFoundError as e:
-        logger.error(f"Provided to excel function bot not found bot_id={bot_id}",
-                     extra_params(bot_id=bot_id), exc_info=e)
+        logger.error(
+            f"Provided to excel function bot not found bot_id={bot_id}", extra_params(bot_id=bot_id), exc_info=e
+        )
         return
-    wb_data = [{"Имя": "шаблон", "Описание": "шаблон", "Цена": 0,
-               "Остаток": 0, "Артикул": "шаблон", "Категория": "Шаблон"}]
+    wb_data = [
+        {"Имя": "шаблон", "Описание": "шаблон", "Цена": 0, "Остаток": 0, "Артикул": "шаблон", "Категория": "Шаблон"}
+    ]
     buffered_file = _make_xlsx_buffer("demo_import", wb_data)
-    await main_bot.send_document(created_by, document=buffered_file,
-                                 caption="шаблон.xlsx")
+    await main_bot.send_document(created_by, document=buffered_file, caption="шаблон.xlsx")
 
 
 async def send_ban_users_xlsx(users_list: List[int], bot_id: int):
@@ -139,8 +141,9 @@ async def send_ban_users_xlsx(users_list: List[int], bot_id: int):
         bot = await bot_db.get_bot(bot_id=bot_id)
         created_by = bot.created_by
     except BotNotFoundError as e:
-        logger.error(f"Provided to excel function bot not found bot_id={bot_id}",
-                     extra_params(bot_id=bot_id), exc_info=e)
+        logger.error(
+            f"Provided to excel function bot not found bot_id={bot_id}", extra_params(bot_id=bot_id), exc_info=e
+        )
         return
     custom_bot = Bot(token=bot.token)
     wb_data = []
@@ -148,38 +151,46 @@ async def send_ban_users_xlsx(users_list: List[int], bot_id: int):
         chat = await custom_bot.get_chat(user)
         username = chat.username
         wb_data.append(
-            {"user_id": user, "username": username, }
+            {
+                "user_id": user,
+                "username": username,
+            }
         )
     buffered_file = _make_xlsx_buffer("banned", wb_data)
-    await main_bot.send_document(created_by, document=buffered_file,
-                                 caption="ban_users.xlsx")
+    await main_bot.send_document(created_by, document=buffered_file, caption="ban_users.xlsx")
 
 
 async def send_contest_results_xlsx(users: list[ContestUserSchema], contest_id: int):
     try:
         contest = await contest_db.get_contest_by_contest_id(contest_id)
     except ContestNotFoundError:
-        logger.error(f"Provided to excel function contest not found contest_id={contest_id}",
-                     extra_params(contest_id=contest_id))
+        logger.error(
+            f"Provided to excel function contest not found contest_id={contest_id}", extra_params(contest_id=contest_id)
+        )
         return
 
     try:
         bot = await bot_db.get_bot(bot_id=contest.bot_id)
         created_by = bot.created_by
     except BotNotFoundError:
-        logger.error(f"Provided to excel function bot not found bot_id={contest.bot_id}",
-                     extra_params(bot_id=contest.bot_id))
+        logger.error(
+            f"Provided to excel function bot not found bot_id={contest.bot_id}", extra_params(bot_id=contest.bot_id)
+        )
         return
 
     wb_data = []
     for user in users:
         wb_data.append(
-            {"user_id": user.user_id, "username": "@" + str(user.username), "full_name": user.full_name,
-             "took part time": user.join_date, "won": user.is_won}
+            {
+                "user_id": user.user_id,
+                "username": "@" + str(user.username),
+                "full_name": user.full_name,
+                "took part time": user.join_date,
+                "won": user.is_won,
+            }
         )
     buffered_file = _make_xlsx_buffer("contest", wb_data)
-    await main_bot.send_document(created_by, document=buffered_file,
-                                 caption="Список участников конкурса.")
+    await main_bot.send_document(created_by, document=buffered_file, caption="Список участников конкурса.")
 
 
 async def send_products_info_xlsx(bot_id: int, products: list[ProductSchema], with_pics: bool):
@@ -190,8 +201,9 @@ async def send_products_info_xlsx(bot_id: int, products: list[ProductSchema], wi
         bot = await bot_db.get_bot(bot_id=bot_id)
         created_by = bot.created_by
     except BotNotFoundError:
-        logger.error(f"bot_id={bot_id}: Provided to excel function bot not found bot_id={bot_id}",
-                     extra_params(bot_id=bot_id))
+        logger.error(
+            f"bot_id={bot_id}: Provided to excel function bot not found bot_id={bot_id}", extra_params(bot_id=bot_id)
+        )
         return
 
     for product in products:
@@ -205,7 +217,7 @@ async def send_products_info_xlsx(bot_id: int, products: list[ProductSchema], wi
                     logger.warning(
                         f"bot_id={bot_id}: got unreal category_id={cat_id}",
                         exc_info=e,
-                        extra=extra_params(bot_id=bot_id, category_id=cat_id)
+                        extra=extra_params(bot_id=bot_id, category_id=cat_id),
                     )
                     if cat_id != 0:
                         unexisted_categories.add(cat_id)
@@ -226,19 +238,21 @@ async def send_products_info_xlsx(bot_id: int, products: list[ProductSchema], wi
             images.extend([common_settings.FILES_PATH + prod for prod in product.picture])
         else:
             images_text = "Картинки не найдены"
-        current_line = {"Имя": product.name, "Описание": product.description,
-                        "Цена": product.price, "Остаток": product.count, "Артикул": product.article,
-                        "Категория": categories_text}
+        current_line = {
+            "Имя": product.name,
+            "Описание": product.description,
+            "Цена": product.price,
+            "Остаток": product.count,
+            "Артикул": product.article,
+            "Категория": categories_text,
+        }
         if with_pics:
             current_line.update({"Картинки товара": images_text})
-        wb_data.append(
-            current_line
-        )
+        wb_data.append(current_line)
 
     if len(images) != 0 and with_pics:
         buffered_zip_file = _create_zip_buffer(images)
         await main_bot.send_document(created_by, document=buffered_zip_file, caption="Картинки ваших товаров")
 
     buffered_file = _make_xlsx_buffer("product_export", wb_data)
-    await main_bot.send_document(created_by, document=buffered_file,
-                                 caption="Список товаров загруженных в систему")
+    await main_bot.send_document(created_by, document=buffered_file, caption="Список товаров загруженных в систему")

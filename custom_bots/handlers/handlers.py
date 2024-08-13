@@ -46,13 +46,13 @@ async def process_web_app_request(event: Message):
             custom_bot_logger.error(
                 f"user_id={user_id}: Unable to find bot_id from event.web_app_data.data",
                 extra=extra_params(user_id=user_id),
-                exc_info=another_e
+                exc_info=another_e,
             )
 
         custom_bot_logger.error(
             f"user_id={user_id}: Unable to create an order in bot_id={bot_id}",
             extra=extra_params(user_id=user_id, bot_id=bot_id),
-            exc_info=e
+            exc_info=e,
         )
         raise e
 
@@ -63,8 +63,7 @@ async def main_menu_handler(message: Message):
         bot = await bot_db.get_bot_by_token(message.bot.token)
     except BotNotFoundError:
         custom_bot_logger.warning(
-            f"bot_token={message.bot.token}: this bot is not in db",
-            extra=extra_params(bot_token=message.bot.token)
+            f"bot_token={message.bot.token}: this bot is not in db", extra=extra_params(bot_token=message.bot.token)
         )
         await Bot(message.bot.token).delete_webhook()
         return await message.answer("Бот не инициализирован")
@@ -72,8 +71,7 @@ async def main_menu_handler(message: Message):
     match message.text:
         case ReplyCustomBotMenuKeyboard.Callback.ActionEnum.SHOP.value:
             await message.answer(
-                "Кнопка для входа в магазин 👇",
-                reply_markup=InlineBotMainWebAppButton.get_keyboard(bot.bot_id)
+                "Кнопка для входа в магазин 👇", reply_markup=InlineBotMainWebAppButton.get_keyboard(bot.bot_id)
             )
         case _:
             try:
@@ -88,5 +86,5 @@ async def main_menu_handler(message: Message):
 
             await message.answer(
                 format_locales(default_msg, message.from_user, message.chat),
-                reply_markup=ReplyCustomBotMenuKeyboard.get_keyboard()
+                reply_markup=ReplyCustomBotMenuKeyboard.get_keyboard(),
             )

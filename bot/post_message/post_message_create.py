@@ -8,17 +8,23 @@ from database.models.channel_post_model import ChannelPostSchemaWithoutId
 from database.models.post_message_model import PostMessageSchemaWithoutId, PostMessageType, UnknownPostMessageTypeError
 
 
-async def post_message_create(bot_id: int,
-                              post_message_type: PostMessageType,
-                              contest_winners_count: int = None) -> None:
+async def post_message_create(
+    bot_id: int, post_message_type: PostMessageType, contest_winners_count: int = None
+) -> None:
     """
     Creates post message
 
     :raises  UnknownPostMessageTypeError:
     """
-    post_message_id = await post_message_db.add_post_message(PostMessageSchemaWithoutId.model_validate(
-        {"bot_id": bot_id, "created_at": datetime.now().replace(tzinfo=None), "post_message_type": post_message_type}
-    ))
+    post_message_id = await post_message_db.add_post_message(
+        PostMessageSchemaWithoutId.model_validate(
+            {
+                "bot_id": bot_id,
+                "created_at": datetime.now().replace(tzinfo=None),
+                "post_message_type": post_message_type,
+            }
+        )
+    )
 
     data = {"bot_id": bot_id, "post_message_id": post_message_id}
     if contest_winners_count is not None:

@@ -1,7 +1,6 @@
 from pydantic import BaseModel, Field, validate_call, ConfigDict
 
-from sqlalchemy import BigInteger, Column, ForeignKey, UniqueConstraint, \
-    select, insert, delete, BOOLEAN, update
+from sqlalchemy import BigInteger, Column, ForeignKey, UniqueConstraint, select, insert, delete, BOOLEAN, update
 from sqlalchemy.ext.asyncio import AsyncEngine
 
 from database.models import Base
@@ -24,9 +23,7 @@ class Channel(Base):
     # import because everyone can add bots. So now let our admins know only about their channels
     added_by_admin = Column(BOOLEAN, nullable=False)
 
-    __table_args__ = (
-        UniqueConstraint('channel_id', 'bot_id', name='unique_channel_bot'),
-    )
+    __table_args__ = (UniqueConstraint("channel_id", "bot_id", name="unique_channel_bot"),)
 
 
 class ChannelSchema(BaseModel):
@@ -48,9 +45,7 @@ class ChannelDao(Dao):  # TODO write tests
         Returns list of ChannelSchema of bot_id
         """
         async with self.engine.begin() as conn:
-            raw_res = await conn.execute(
-                select(Channel).where(Channel.bot_id == bot_id)
-            )
+            raw_res = await conn.execute(select(Channel).where(Channel.bot_id == bot_id))
         await self.engine.dispose()
 
         raw_res = raw_res.fetchall()
@@ -58,10 +53,7 @@ class ChannelDao(Dao):  # TODO write tests
         for channel in raw_res:
             res.append(ChannelSchema.model_validate(channel))
 
-        self.logger.debug(
-            f"bot_id={bot_id}: has {len(res)} channels",
-            extra=extra_params(bot_id=bot_id)
-        )
+        self.logger.debug(f"bot_id={bot_id}: has {len(res)} channels", extra=extra_params(bot_id=bot_id))
 
         return res
 
@@ -76,15 +68,12 @@ class ChannelDao(Dao):  # TODO write tests
 
         raw_res = raw_res.fetchone()
         if not raw_res:
-            raise ChannelNotFoundError(
-                channel_id=channel_id
-            )
+            raise ChannelNotFoundError(channel_id=channel_id)
 
         res = ChannelSchema.model_validate(raw_res)
 
         self.logger.debug(
-            f"bot_id={res.bot_id}: found channel {res}",
-            extra=extra_params(bot_id=res.bot_id, channel_id=channel_id)
+            f"bot_id={res.bot_id}: found channel {res}", extra=extra_params(bot_id=res.bot_id, channel_id=channel_id)
         )
 
         return res
@@ -99,8 +88,7 @@ class ChannelDao(Dao):  # TODO write tests
 
         self.logger.debug(
             f"bot_id={new_channel.bot_id}: added channel {new_channel}",
-            extra=extra_params(bot_id=new_channel.bot_id,
-                               channel_id=new_channel.channel_id)
+            extra=extra_params(bot_id=new_channel.bot_id, channel_id=new_channel.channel_id),
         )
 
     @validate_call(validate_return=True)
@@ -109,13 +97,16 @@ class ChannelDao(Dao):  # TODO write tests
         Updates Channel in database
         """
         async with self.engine.begin() as conn:
-            await conn.execute(update(Channel).where(Channel.channel_id == updated_channel.channel_id).
-                               values(**updated_channel.model_dump(by_alias=True)))
+            await conn.execute(
+                update(Channel)
+                .where(Channel.channel_id == updated_channel.channel_id)
+                .values(**updated_channel.model_dump(by_alias=True))
+            )
         await self.engine.dispose()
 
         self.logger.debug(
             f"channel_id={updated_channel.channel_id}: updated channel {updated_channel}",
-            extra=extra_params(channel_id=updated_channel.channel_id, bot_id=updated_channel.bot_id)
+            extra=extra_params(channel_id=updated_channel.channel_id, bot_id=updated_channel.bot_id),
         )
 
     @validate_call(validate_return=True)
@@ -125,13 +116,10 @@ class ChannelDao(Dao):  # TODO write tests
         """
         async with self.engine.begin() as conn:
             await conn.execute(
-                delete(Channel).where(
-                    Channel.channel_id == channel.channel_id, Channel.bot_id == channel.bot_id
-                )
+                delete(Channel).where(Channel.channel_id == channel.channel_id, Channel.bot_id == channel.bot_id)
             )
 
         self.logger.debug(
             f"bot_id={channel.bot_id}: deleted channel {channel}",
-            extra=extra_params(bot_id=channel.bot_id,
-                               channel_id=channel.channel_id)
+            extra=extra_params(bot_id=channel.bot_id, channel_id=channel.channel_id),
         )

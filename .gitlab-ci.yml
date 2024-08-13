@@ -1,7 +1,35 @@
 stages:
+#  - build
+  - test
   - deploy
 
-job_deploy:
+.standard-rules:
+  rules:
+    - if: '$CI_COMMIT_BRANCH != "master_release" && $CI_PIPELINE_SOURCE == "push"'
+      when: on_success
+
+#build-job:
+#  extends:
+#    - .standard-rules
+#  stage: build
+#  script:
+#    - ls -ltra  # TODO install .env variables
+
+test-pep8-job:
+  image: python
+  extends:
+    - .standard-rules
+  allow_failure: true
+  stage: test
+  script:
+    - python -m venv venv
+    - pip install ruff
+    - ruff format --check
+    - ruff check
+
+deploy-job:
+  extends:
+    - .standard-rules
   stage: deploy
   before_script:
     - command -v ssh-agent >/dev/null || ( apt-get update -y && apt-get install openssh-client -y )
@@ -17,20 +45,17 @@ job_deploy:
     - echo $CI_PIPELINE_SOURCE
     - echo This commit is sent by $AUTHOR
     - |
-      if [ $CI_COMMIT_BRANCH == master_debug ]; 
+      if [ $CI_COMMIT_BRANCH == master_debug ];
       then LABEL=debug;
-      elif [ $AUTHOR == zhilovhub ]; 
+      elif [ $AUTHOR == zhilovhub ];
       then LABEL=ilya;
-      elif [ $AUTHOR == m0nkai ]; 
+      elif [ $AUTHOR == m0nkai ];
       then LABEL=arsen;
-      elif [ $AUTHOR == V533 ]; 
+      elif [ $AUTHOR == V533 ];
       then LABEL=vova;
-      elif [ $AUTHOR == lvovkir ]; 
-      then LABEL=front; 
-      else LABEL=null; 
+      elif [ $AUTHOR == lvovkir ];
+      then LABEL=front;
+      else LABEL=null;
       fi
     - if [ $LABEL == null ]; then exit 10; else echo Current label is $LABEL; fi
     - ssh $USER@$IP "bash autopull.sh $LABEL $CI_COMMIT_BRANCH"
-  rules:
-    - if: '$CI_COMMIT_BRANCH != "master_release" && $CI_PIPELINE_SOURCE == "push"'
-      when: on_success

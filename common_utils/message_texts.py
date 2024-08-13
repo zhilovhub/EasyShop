@@ -1,7 +1,6 @@
 from enum import Enum
 from typing import Any
 
-from database.config import order_option_db
 from database.models.order_model import OrderSchema, OrderItemExtraOption
 from database.models.product_model import ProductSchema
 from database.models.order_option_model import OrderOptionSchemaWithoutId
@@ -9,56 +8,56 @@ from database.models.order_option_model import OrderOptionSchemaWithoutId
 from aiogram.utils.formatting import Text, Bold
 
 TEMP_order_options = {  # TODO удалить, когда фронт будет возвращать кастомные опции
-        0: OrderOptionSchemaWithoutId(
-            bot_id=0,
-            option_name="Имя клиента",
-            required=True,
-            emoji="👤",
-            position_index=1,
-        ),
-        1: OrderOptionSchemaWithoutId(
-            bot_id=0,
-            option_name="Номер телефона",
-            required=True,
-            emoji="📱",
-            position_index=2,
-        ),
-        2: OrderOptionSchemaWithoutId(
-            bot_id=0,
-            option_name="Город",
-            required=True,
-            emoji="🌇",
-            position_index=3,
-        ),
-        3: OrderOptionSchemaWithoutId(
-            bot_id=0,
-            option_name="Адрес доставки",
-            required=True,
-            emoji="🛤",
-            position_index=4,
-        ),
-        4: OrderOptionSchemaWithoutId(
-            bot_id=0,
-            option_name="Время доставки",
-            required=True,
-            emoji="⏰",
-            position_index=5,
-        ),
-        5: OrderOptionSchemaWithoutId(
-            bot_id=0,
-            option_name="Комментарий",
-            required=True,
-            emoji="💌",
-            position_index=6,
-        ),
-        6: OrderOptionSchemaWithoutId(
-            bot_id=0,
-            option_name="Способ доставки",
-            required=True,
-            emoji="🚐",
-            position_index=7,
-        ),
-    }
+    0: OrderOptionSchemaWithoutId(
+        bot_id=0,
+        option_name="Имя клиента",
+        required=True,
+        emoji="👤",
+        position_index=1,
+    ),
+    1: OrderOptionSchemaWithoutId(
+        bot_id=0,
+        option_name="Номер телефона",
+        required=True,
+        emoji="📱",
+        position_index=2,
+    ),
+    2: OrderOptionSchemaWithoutId(
+        bot_id=0,
+        option_name="Город",
+        required=True,
+        emoji="🌇",
+        position_index=3,
+    ),
+    3: OrderOptionSchemaWithoutId(
+        bot_id=0,
+        option_name="Адрес доставки",
+        required=True,
+        emoji="🛤",
+        position_index=4,
+    ),
+    4: OrderOptionSchemaWithoutId(
+        bot_id=0,
+        option_name="Время доставки",
+        required=True,
+        emoji="⏰",
+        position_index=5,
+    ),
+    5: OrderOptionSchemaWithoutId(
+        bot_id=0,
+        option_name="Комментарий",
+        required=True,
+        emoji="💌",
+        position_index=6,
+    ),
+    6: OrderOptionSchemaWithoutId(
+        bot_id=0,
+        option_name="Способ доставки",
+        required=True,
+        emoji="🚐",
+        position_index=7,
+    ),
+}
 
 
 class MessageTexts(Enum):
@@ -73,10 +72,10 @@ class MessageTexts(Enum):
 
     @staticmethod
     async def generate_order_notification_text(
-            order: OrderSchema,
-            products: list[tuple[ProductSchema, int, list[OrderItemExtraOption] | None]],
-            username: str = '@username',
-            is_admin: bool = False
+        order: OrderSchema,
+        products: list[tuple[ProductSchema, int, list[OrderItemExtraOption] | None]],
+        username: str = "@username",
+        is_admin: bool = False,
     ) -> dict[str, Any]:
         """
         Translate OrderSchema into the text for notifications
@@ -90,10 +89,12 @@ class MessageTexts(Enum):
         total_price = 0
         for ind, product_item in enumerate(products, start=1):
             product_schema, amount, extra_options = product_item
-            products_converted.append(Text(
-                f"{ind}. ",
-                product_schema.convert_to_notification_text(count=amount, used_extra_options=extra_options)
-            ))
+            products_converted.append(
+                Text(
+                    f"{ind}. ",
+                    product_schema.convert_to_notification_text(count=amount, used_extra_options=extra_options),
+                )
+            )
             product_price = product_schema.price
             if extra_options:
                 for option in extra_options:
@@ -118,22 +119,32 @@ class MessageTexts(Enum):
 
         if not is_admin:
             result = Text(
-                f"Ваш заказ ", Bold(f"#{order.id}\n\n"),
-                f"Список товаров: \n\n",
-                *products_text, "\n\n",
-                f"Итого: ", Bold(f"{total_price}₽\n\n"),
-                order_options_text, "\n\n "
-                f"Статус: ", Bold(order.translate_order_status())
+                "Ваш заказ ",
+                Bold(f"#{order.id}\n\n"),
+                "Список товаров: \n\n",
+                *products_text,
+                "\n\n",
+                "Итого: ",
+                Bold(f"{total_price}₽\n\n"),
+                order_options_text,
+                "\n\n " "Статус: ",
+                Bold(order.translate_order_status()),
             )
         else:
             result = Text(
-                f"Новый заказ ", Bold(f"#{order.id}\n"),
-                f"от пользователя ", Bold(username), "\n\n",
-                f"Список товаров:\n\n",
-                *products_text, "\n\n",
-                f"Итого: ", Bold(f"{total_price}₽\n\n"),
-                order_options_text, "\n\n"
-                f"Статус: ", Bold(order.translate_order_status())
+                "Новый заказ ",
+                Bold(f"#{order.id}\n"),
+                "от пользователя ",
+                Bold(username),
+                "\n\n",
+                "Список товаров:\n\n",
+                *products_text,
+                "\n\n",
+                "Итого: ",
+                Bold(f"{total_price}₽\n\n"),
+                order_options_text,
+                "\n\n" "Статус: ",
+                Bold(order.translate_order_status()),
             )
 
         return result.as_kwargs()

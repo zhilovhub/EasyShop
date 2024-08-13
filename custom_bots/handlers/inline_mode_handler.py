@@ -28,7 +28,7 @@ async def handle_inline_query(query: InlineQuery):
                 is_category_filter=False,
                 reverse_order=False,
                 category_id=None,
-                search_word=query.query.strip()
+                search_word=query.query.strip(),
             )
         ]
     else:
@@ -37,13 +37,18 @@ async def handle_inline_query(query: InlineQuery):
     found_products = await product_db.get_all_products(custom_bot_object.bot_id, filters=filters)
     custom_bot_logger.debug(f"found {len(found_products)} products with inline query: '{query.query}'")
     if not found_products:
-        return await query.answer(results=[InlineQueryResultArticle(
-            id="not found",
-            title="Товары не найдены.",
-            description="По указанному запросу не было найдено ни одного товара в базе бота.",
-            input_message_content=InputTextMessageContent(
-                message_text="Товары не найдены.")
-        )], is_personal=True, cache_time=10)
+        return await query.answer(
+            results=[
+                InlineQueryResultArticle(
+                    id="not found",
+                    title="Товары не найдены.",
+                    description="По указанному запросу не было найдено ни одного товара в базе бота.",
+                    input_message_content=InputTextMessageContent(message_text="Товары не найдены."),
+                )
+            ],
+            is_personal=True,
+            cache_time=10,
+        )
     else:
         try:
             results = []
@@ -60,22 +65,25 @@ async def handle_inline_query(query: InlineQuery):
 
                 text, entities = product.convert_to_product_page_text().render()
 
-                results.append(InlineQueryResultArticle(
-                    id=f"found product {product.id}",
-                    title=f"{product.name}",
-                    description=f"{product.description}",
-                    thumbnail_url=thumb,
-                    url=url,
-                    input_message_content=InputTextMessageContent(
-                        message_text=text,
-                        parse_mode=None,
-                        entities=entities,
-                    ),
-                    reply_markup=InlineModeProductKeyboardButton.get_keyboard(product.id, custom_bot_data.username)
-                ))
+                results.append(
+                    InlineQueryResultArticle(
+                        id=f"found product {product.id}",
+                        title=f"{product.name}",
+                        description=f"{product.description}",
+                        thumbnail_url=thumb,
+                        url=url,
+                        input_message_content=InputTextMessageContent(
+                            message_text=text,
+                            parse_mode=None,
+                            entities=entities,
+                        ),
+                        reply_markup=InlineModeProductKeyboardButton.get_keyboard(product.id, custom_bot_data.username),
+                    )
+                )
             if offset:
-                return await query.answer(results=results, is_personal=True, next_offset=str(prev_offset + 50),
-                                          cache_time=10)
+                return await query.answer(
+                    results=results, is_personal=True, next_offset=str(prev_offset + 50), cache_time=10
+                )
             else:
                 return await query.answer(results=results, is_personal=True, cache_time=10)
         except Exception as ex:

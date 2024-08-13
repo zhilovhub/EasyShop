@@ -28,17 +28,14 @@ class LogMiddleware(BaseMiddleware):
             self.redis.info()
         except redis.ConnectionError as e:
             self.redis = _MockRedis()
-            self.logger.warning(
-                f"Unable to connect to Redis",
-                exc_info=e
-            )
+            self.logger.warning("Unable to connect to Redis", exc_info=e)
 
     async def __call__(
-            self,
-            handler: Callable[[TelegramObject, Dict[str, Any]], Awaitable[Any]],
-            event: TelegramObject,
-            data: Dict[str, Any]) -> Any:
-
+        self,
+        handler: Callable[[TelegramObject, Dict[str, Any]], Awaitable[Any]],
+        event: TelegramObject,
+        data: Dict[str, Any],
+    ) -> Any:
         try:
             user: User = data["event_from_user"]
             state: FSMContext = data["state"]
@@ -49,45 +46,36 @@ class LogMiddleware(BaseMiddleware):
 
             if isinstance(event, Message):
                 if self.redis.get(str(event.message_id)) is None:
-                    self.logger.info(
-                        f"{callback_info} has written {event.text}",
-                        extra=extra_params(user_id=user.id)
-                    )
+                    self.logger.info(f"{callback_info} has written {event.text}", extra=extra_params(user_id=user.id))
                     # noinspection PyAsyncCall
                     self.redis.set(name=str(event.message_id), value="", ex=2)
             elif isinstance(event, CallbackQuery):
                 if self.redis.get(str(event.id)) is None:
                     self.logger.info(
-                            f"{callback_info} has sent callback_data {event.data}",
-                            extra=extra_params(user_id=user.id)
-                        )
+                        f"{callback_info} has sent callback_data {event.data}", extra=extra_params(user_id=user.id)
+                    )
                     # noinspection PyAsyncCall
                     self.redis.set(name=str(event.id), value="", ex=2)
             elif isinstance(event, InlineQuery):
                 if self.redis.get(str(event.id)) is None:
                     self.logger.info(
-                            f"{callback_info} has sent inline_query {event.query}",
-                            extra=extra_params(user_id=user.id)
-                        )
+                        f"{callback_info} has sent inline_query {event.query}", extra=extra_params(user_id=user.id)
+                    )
                     # noinspection PyAsyncCall
                     self.redis.set(name=str(event.id), value="", ex=2)
             elif isinstance(event, PreCheckoutQuery):
                 if self.redis.get(str(event.id)) is None:
                     self.logger.info(
-                            f"{callback_info} has sent pre_checkout_query with payload {event.invoice_payload}",
-                            extra=extra_params(user_id=user.id)
-                        )
+                        f"{callback_info} has sent pre_checkout_query with payload {event.invoice_payload}",
+                        extra=extra_params(user_id=user.id),
+                    )
                     # noinspection PyAsyncCall
                     self.redis.set(name=str(event.id), value="", ex=2)
             else:
                 self.logger.warning(
-                    f"{callback_info} has sent unexpected event {event}",
-                    extra=extra_params(user_id=user.id)
+                    f"{callback_info} has sent unexpected event {event}", extra=extra_params(user_id=user.id)
                 )
         except Exception as e:
-            self.logger.error(
-                "New event: logger error",
-                exc_info=e
-            )
+            self.logger.error("New event: logger error", exc_info=e)
 
         return await handler(event, data)

@@ -28,6 +28,7 @@ class BotNotFoundError(KwargsException):
 
 class BotIntegrityError(KwargsException):
     """Raised when there is an IntegrityError with provided bot and hides the token"""
+
     # TODO hide bot_token
 
 
@@ -43,6 +44,7 @@ class BotPaymentTypeValues(Enum):
 
 class BotPaymentType(TypeDecorator):  # noqa
     """Class to convert Enum values to db values (and reverse)"""
+
     impl = Unicode
     cache_ok = True
 
@@ -118,10 +120,7 @@ class BotDao(Dao):
         for bot in raw_res:
             res.append(BotSchema.model_validate(bot))
 
-        self.logger.debug(
-            f"user_id={user_id}: has {len(res)} bots",
-            extra=extra_params(user_id=user_id)
-        )
+        self.logger.debug(f"user_id={user_id}: has {len(res)} bots", extra=extra_params(user_id=user_id))
 
         return res
 
@@ -141,10 +140,7 @@ class BotDao(Dao):
         if res is None:
             raise BotNotFoundError(bot_id=bot_id)
 
-        self.logger.debug(
-            f"bot_id={bot_id}: bot {bot_id} is found",
-            extra=extra_params(bot_id=bot_id)
-        )
+        self.logger.debug(f"bot_id={bot_id}: bot {bot_id} is found", extra=extra_params(bot_id=bot_id))
 
         return BotSchema.model_validate(res)
 
@@ -183,7 +179,7 @@ class BotDao(Dao):
 
         self.logger.debug(
             f"bot_id={res.bot_id}: bot with created_by={created_by} is found",
-            extra=extra_params(bot_id=res.bot_id, user_id=created_by)
+            extra=extra_params(bot_id=res.bot_id, user_id=created_by),
         )
 
         return res
@@ -211,7 +207,7 @@ class BotDao(Dao):
 
         self.logger.debug(
             f"bot_id={res.bot_id}: bot with bot_token={bot_token} is found",
-            extra=extra_params(bot_id=res.bot_id, bot_token=bot_token)
+            extra=extra_params(bot_id=res.bot_id, bot_token=bot_token),
         )
 
         return res
@@ -227,20 +223,16 @@ class BotDao(Dao):
         """
         async with self.engine.begin() as conn:
             try:
-                bot_id = (await conn.execute(insert(Bot).values(
-                    **bot.model_dump(by_alias=True))
-                )).inserted_primary_key[0]
+                bot_id = (await conn.execute(insert(Bot).values(**bot.model_dump(by_alias=True)))).inserted_primary_key[
+                    0
+                ]
             except IntegrityError as e:
-                raise BotIntegrityError(
-                    bot_token=bot.token,
-                    e=e
-                )
+                raise BotIntegrityError(bot_token=bot.token, e=e)
 
         await self.engine.dispose()
 
         self.logger.debug(
-            f"bot_id={bot_id}: bot {bot_id} is added to",
-            extra=extra_params(user_id=bot.created_by, bot_id=bot_id)
+            f"bot_id={bot_id}: bot {bot_id} is added to", extra=extra_params(user_id=bot.created_by, bot_id=bot_id)
         )
 
         return bot_id
@@ -253,13 +245,14 @@ class BotDao(Dao):
         :return: None
         """
         async with self.engine.begin() as conn:
-            await conn.execute(update(Bot).where(Bot.bot_id == updated_bot.bot_id).
-                               values(**updated_bot.model_dump(by_alias=True)))
+            await conn.execute(
+                update(Bot).where(Bot.bot_id == updated_bot.bot_id).values(**updated_bot.model_dump(by_alias=True))
+            )
         await self.engine.dispose()
 
         self.logger.debug(
             f"bot_id={updated_bot.bot_id}: bot {updated_bot.bot_id} is updated",
-            extra=extra_params(user_id=updated_bot.created_by, bot_id=updated_bot.bot_id)
+            extra=extra_params(user_id=updated_bot.created_by, bot_id=updated_bot.bot_id),
         )
 
     @validate_call(validate_return=True)
@@ -273,7 +266,4 @@ class BotDao(Dao):
             await conn.execute(delete(Bot).where(Bot.bot_id == bot_id))
         await self.engine.dispose()
 
-        self.logger.debug(
-            f"bot_id={bot_id}: bot {bot_id} is deleted",
-            extra=extra_params(bot_id=bot_id)
-        )
+        self.logger.debug(f"bot_id={bot_id}: bot {bot_id} is deleted", extra=extra_params(bot_id=bot_id))

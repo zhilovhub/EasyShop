@@ -24,8 +24,7 @@ def _generate_simple_line_plot(numbers_x, numbers_y, int_y: bool = True):  # TOD
     return fig, ax
 
 
-def _generate_contest_users_count_dated_data(
-        users: list[ContestUserSchema]) -> tuple:
+def _generate_contest_users_count_dated_data(users: list[ContestUserSchema]) -> tuple:
     if not users:
         return ((datetime.now(), 0),)
 
@@ -40,15 +39,20 @@ def _generate_contest_users_count_dated_data(
     return tuple(dated_data.items())
 
 
-def _create_date_graph(date_start: datetime, date_end: datetime,
-                       dated_data: tuple | list,
-                       time_step_value: int, time_step_format: str,
-                       path: str = "line.png",
-                       x_label: str = None,
-                       y_label: str = None):
+def _create_date_graph(
+    date_start: datetime,
+    date_end: datetime,
+    dated_data: tuple | list,
+    time_step_value: int,
+    time_step_format: str,
+    path: str = "line.png",
+    x_label: str = None,
+    y_label: str = None,
+):
     dated_data = sorted(dated_data)
-    dates = np.arange(np.datetime64(date_start), np.datetime64(date_end),
-                      np.timedelta64(time_step_value, time_step_format))
+    dates = np.arange(
+        np.datetime64(date_start), np.datetime64(date_end), np.timedelta64(time_step_value, time_step_format)
+    )
     y_data = []
     pos = 0
     for date in dates:
@@ -72,11 +76,9 @@ def _create_date_graph(date_start: datetime, date_end: datetime,
         ax.set_xlabel(x_label)
     if y_label:
         ax.set_ylabel(y_label)
-    ax.xaxis.set_major_formatter(
-        ConciseDateFormatter(
-            ax.xaxis.get_major_locator()))
+    ax.xaxis.set_major_formatter(ConciseDateFormatter(ax.xaxis.get_major_locator()))
 
-    fig.savefig(path, bbox_inches='tight')
+    fig.savefig(path, bbox_inches="tight")
 
     logger.debug(f"generated new dated graph at path: {path}")
 
@@ -106,13 +108,14 @@ async def generate_contest_users_graph(contest_id: int) -> str:
     path = common_settings.FILES_PATH + f"contest_{contest_id}_graph.png"
 
     logger.debug(f"generating new dated graph for contest {contest_id}...", extra_params(contest_id=contest_id))
-    _create_date_graph(start_date, fin_date, dated_data, 1, step_format,
-                       y_label="Количество участников конкурса", path=path)
+    _create_date_graph(
+        start_date, fin_date, dated_data, 1, step_format, y_label="Количество участников конкурса", path=path
+    )
 
     return path
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     # For testing
     asyncio.run(generate_contest_users_graph(24))
 

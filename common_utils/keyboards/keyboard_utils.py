@@ -3,8 +3,15 @@ from aiogram.types import WebAppInfo
 
 from common_utils.config import custom_telegram_bot_settings
 
-from database.config import bot_db, channel_db, channel_post_db, contest_db, post_message_db, mailing_db, \
-    order_option_db
+from database.config import (
+    bot_db,
+    channel_db,
+    channel_post_db,
+    contest_db,
+    post_message_db,
+    mailing_db,
+    order_option_db,
+)
 from database.models.channel_model import ChannelSchema
 from database.models.mailing_model import MailingSchema, MailingNotFoundError
 from database.models.contest_model import ContestSchema, ContestNotFoundError
@@ -24,7 +31,7 @@ def make_select_hex_web_app_info() -> WebAppInfo:
 def make_webapp_info(bot_id: int) -> WebAppInfo:
     return WebAppInfo(
         url=f"{custom_telegram_bot_settings.WEB_APP_URL}:{custom_telegram_bot_settings.WEB_APP_PORT}"
-            f"/products-page/?bot_id={bot_id}"
+        f"/products-page/?bot_id={bot_id}"
     )
 
 
@@ -35,7 +42,7 @@ def make_product_deep_link_url(product_id: int, bot_username: str) -> str:
 def make_product_webapp_info(product_id: int, bot_id: int) -> WebAppInfo:
     return WebAppInfo(
         url=f"{custom_telegram_bot_settings.WEB_APP_URL}:{custom_telegram_bot_settings.WEB_APP_PORT}"
-            f"/products-page/{product_id}/?bot_id={bot_id}"
+        f"/products-page/{product_id}/?bot_id={bot_id}"
     )
 
 
@@ -50,8 +57,10 @@ async def get_bot_status(bot_id: int) -> str:
 
 async def get_bot_channels(bot_id: int) -> list[tuple[ChannelSchema, str]]:
     custom_bot = Bot((await bot_db.get_bot(bot_id=bot_id)).token)
-    return [(i, (await custom_bot.get_chat(i.channel_id)).username)
-            for i in (await channel_db.get_all_channels(bot_id=bot_id))]
+    return [
+        (i, (await custom_bot.get_chat(i.channel_id)).username)
+        for i in (await channel_db.get_all_channels(bot_id=bot_id))
+    ]
 
 
 async def get_bot_order_options(bot_id: int) -> list[OrderOptionSchema]:
@@ -103,11 +112,7 @@ async def get_bot_post_message(bot_id: int, post_message_type: PostMessageType) 
         post_message = await post_message_db.get_post_message_by_bot_id(bot_id, post_message_type)
         return post_message
     except PostMessageNotFoundError as e:
-        logger.warning(
-            f"bot_id={bot_id}: there is no post_message",
-            extra=extra_params(bot_id=bot_id),
-            exc_info=e
-        )
+        logger.warning(f"bot_id={bot_id}: there is no post_message", extra=extra_params(bot_id=bot_id), exc_info=e)
         return None
 
 

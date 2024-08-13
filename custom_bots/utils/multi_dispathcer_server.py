@@ -12,11 +12,11 @@ from common_utils.token_encryptor import TokenEncryptor
 
 class EncryptedTokenBasedRequestHandler(TokenBasedRequestHandler):
     def __init__(
-            self,
-            dispatcher: Dispatcher,
-            handle_in_background: bool = True,
-            bot_settings: Optional[Dict[str, Any]] = None,
-            **data: Any
+        self,
+        dispatcher: Dispatcher,
+        handle_in_background: bool = True,
+        bot_settings: Optional[Dict[str, Any]] = None,
+        **data: Any,
     ) -> None:
         """
         Handler that supports multiple bots the context will be resolved

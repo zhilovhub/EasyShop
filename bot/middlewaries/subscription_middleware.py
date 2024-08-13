@@ -19,10 +19,10 @@ class CheckSubscriptionMiddleware(BaseMiddleware):
     """
 
     async def __call__(
-            self,
-            handler: Callable[[CallbackQuery | Message, Dict[str, Any]], Awaitable[Any]],
-            event: CallbackQuery | Message,
-            data: Dict[str, Any]
+        self,
+        handler: Callable[[CallbackQuery | Message, Dict[str, Any]], Awaitable[Any]],
+        event: CallbackQuery | Message,
+        data: Dict[str, Any],
     ) -> Any:
         user_id = event.from_user.id
         message, is_message = (event, True) if isinstance(event, Message) else (event.message, False)

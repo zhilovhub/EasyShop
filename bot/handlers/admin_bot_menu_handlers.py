@@ -23,13 +23,13 @@ from bot.utils.send_instructions import send_instructions
 from bot.keyboards.channel_keyboards import (
     InlineChannelPublishAcceptKeyboard,
     InlineChannelsListKeyboard,
-    InlineChannelsListPublishKeyboard
+    InlineChannelsListPublishKeyboard,
 )
 from bot.keyboards.main_menu_keyboards import (
     InlineAcceptPublishProductKeyboard,
     ReplyBotMenuKeyboard,
     ReplyBackBotMenuKeyboard,
-    SelectHexColorWebAppInlineKeyboard
+    SelectHexColorWebAppInlineKeyboard,
 )
 from bot.keyboards.stock_menu_keyboards import InlineStockMenuKeyboard, InlineWebStockKeyboard
 from bot.keyboards.post_message_keyboards import InlinePostMessageMenuKeyboard
@@ -42,17 +42,37 @@ from common_utils.bot_utils import create_bot_options, create_custom_bot
 from common_utils.message_texts import MessageTexts as CommonMessageTexts
 from common_utils.bot_settings_config import BOT_PROPERTIES
 from common_utils.keyboards.keyboards import (
-    InlineBotEditOrderOptionsKeyboard, InlineBotMenuKeyboard, InlineBotSettingsMenuKeyboard,
-    InlineAdministratorsManageKeyboard, InlineModeProductKeyboardButton, InlinePaymentSettingsKeyboard,
-    InlineBotMainWebAppButton
+    InlineBotEditOrderOptionsKeyboard,
+    InlineBotMenuKeyboard,
+    InlineBotSettingsMenuKeyboard,
+    InlineAdministratorsManageKeyboard,
+    InlineModeProductKeyboardButton,
+    InlinePaymentSettingsKeyboard,
+    InlineBotMainWebAppButton,
 )
 from common_utils.broadcasting.broadcasting import send_event, EventTypes
 from common_utils.storage.custom_bot_storage import custom_bot_storage
-from common_utils.keyboards.order_manage_keyboards import InlineOrderCancelKeyboard, InlineOrderStatusesKeyboard, \
-    InlineAcceptReviewKeyboard, InlineOrderCustomBotKeyboard, InlineCreateReviewKeyboard
+from common_utils.keyboards.order_manage_keyboards import (
+    InlineOrderCancelKeyboard,
+    InlineOrderStatusesKeyboard,
+    InlineAcceptReviewKeyboard,
+    InlineOrderCustomBotKeyboard,
+    InlineCreateReviewKeyboard,
+)
 
-from database.config import (bot_db, product_db, order_db, product_review_db, user_db, custom_bot_user_db, mailing_db,
-                             user_role_db, option_db, order_option_db, channel_db)
+from database.config import (
+    bot_db,
+    product_db,
+    order_db,
+    product_review_db,
+    user_db,
+    custom_bot_user_db,
+    mailing_db,
+    user_role_db,
+    option_db,
+    order_option_db,
+    channel_db,
+)
 from database.models.bot_model import BotIntegrityError, BotNotFoundError
 from database.models.order_model import OrderSchema, OrderNotFoundError, OrderStatusValues
 from database.models.option_model import OptionNotFoundError
@@ -105,20 +125,21 @@ async def process_web_app_request(event: Message):
         if len(channels) == 0:
             return await event.answer(
                 "У вас сейчас нет добавленных каналов\n\nДобавьте, после чего попробуйте опубликовать товар заново",
-                reply_markup=await InlineChannelsListKeyboard.get_keyboard(custom_bot.bot_id)
+                reply_markup=await InlineChannelsListKeyboard.get_keyboard(custom_bot.bot_id),
             )
         custom_bot_data = await Bot(token=custom_bot.token).get_me()
         message = await event.answer_photo(
             photo=FSInputFile(f"{common_settings.FILES_PATH}{product.picture[0]}"),
             caption=MessageTexts.generate_publish_product(product),
             reply_markup=InlineModeProductKeyboardButton.get_keyboard(
-                product_id=product_id,
-                bot_username=custom_bot_data.username)
+                product_id=product_id, bot_username=custom_bot_data.username
+            ),
         )
         await message.reply(
             "Подтвердить отправление?",
             reply_markup=InlineAcceptPublishProductKeyboard.get_keyboard(
-                custom_bot.bot_id, product_id, message.message_id)
+                custom_bot.bot_id, product_id, message.message_id
+            ),
         )
 
 
@@ -136,10 +157,8 @@ async def get_channel_for_publish(query: CallbackQuery):
             await query.message.answer(
                 MessageTexts.BOT_CHANNELS_LIST_MESSAGE.value.format((await Bot(custom_bot.token).get_me()).username),
                 reply_markup=await InlineChannelsListPublishKeyboard.get_keyboard(
-                    custom_bot.bot_id,
-                    callback_data.pid,
-                    callback_data.msg_id
-                )
+                    custom_bot.bot_id, callback_data.pid, callback_data.msg_id
+                ),
             )
 
         case callback_data.ActionEnum.REJECT:
@@ -147,7 +166,7 @@ async def get_channel_for_publish(query: CallbackQuery):
             await query.message.delete()
             await query.message.answer(
                 MessageTexts.BOT_MENU_MESSAGE.value.format((await Bot(custom_bot.token).get_me()).username),
-                reply_markup=await InlineBotMenuKeyboard.get_keyboard(custom_bot.bot_id, query.from_user.id)
+                reply_markup=await InlineBotMenuKeyboard.get_keyboard(custom_bot.bot_id, query.from_user.id),
             )
 
 
@@ -164,7 +183,7 @@ async def pick_channel_for_publish(query: CallbackQuery):
             await query.message.delete()
             await query.message.answer(
                 MessageTexts.BOT_MENU_MESSAGE.value.format((await Bot(custom_bot.token).get_me()).username),
-                reply_markup=await InlineBotMenuKeyboard.get_keyboard(custom_bot.bot_id, query.from_user.id)
+                reply_markup=await InlineBotMenuKeyboard.get_keyboard(custom_bot.bot_id, query.from_user.id),
             )
         case callback_data.ActionEnum.PICK_CHANNEL:
             await query.message.delete()
@@ -176,8 +195,8 @@ async def pick_channel_for_publish(query: CallbackQuery):
                     custom_bot.bot_id,
                     msg_id=callback_data.mid,
                     product_id=callback_data.pid,
-                    channel_id=callback_data.chid
-                )
+                    channel_id=callback_data.chid,
+                ),
             )
 
 
@@ -195,10 +214,8 @@ async def publish_product_in_channel(query: CallbackQuery):
             await query.message.answer(
                 MessageTexts.BOT_CHANNELS_LIST_MESSAGE.value.format((await Bot(custom_bot.token).get_me()).username),
                 reply_markup=await InlineChannelsListPublishKeyboard.get_keyboard(
-                    custom_bot.bot_id,
-                    callback_data.mid,
-                    callback_data.pid
-                )
+                    custom_bot.bot_id, callback_data.mid, callback_data.pid
+                ),
             )
 
         case callback_data.ActionEnum.SEND:
@@ -214,9 +231,8 @@ async def publish_product_in_channel(query: CallbackQuery):
                 photo=FSInputFile(f"{common_settings.FILES_PATH}{product.picture[0]}"),
                 caption=MessageTexts.generate_publish_product(product),
                 reply_markup=InlineModeProductKeyboardButton.get_keyboard(
-                    product_id=callback_data.pid,
-                    bot_username=(await custom_tg_bot.get_me()).username
-                )
+                    product_id=callback_data.pid, bot_username=(await custom_tg_bot.get_me()).username
+                ),
             )
 
 
@@ -241,23 +257,18 @@ async def handle_reply_to_question(message: Message, state: FSMContext):
         return await message.answer(f"Заказ с номером №{order_id} не найден")
 
     custom_bot = await bot_db.get_bot_by_created_by(created_by=message.from_user.id)
-    await Bot(
-        token=custom_bot.token,
-        default=BOT_PROPERTIES
-    ).send_message(
+    await Bot(token=custom_bot.token, default=BOT_PROPERTIES).send_message(
         chat_id=order.from_user,
-        text=f"Поступил ответ на вопрос по заказу <b>#{order.id}</b> 👇\n\n"
-             f"<i>{message.text}</i>",
-        reply_to_message_id=question_messages_data[question_message_id]["question_from_custom_bot_message_id"]
+        text=f"Поступил ответ на вопрос по заказу <b>#{order.id}</b> 👇\n\n" f"<i>{message.text}</i>",
+        reply_to_message_id=question_messages_data[question_message_id]["question_from_custom_bot_message_id"],
     )
     await message.answer("Ответ отправлен")
 
     del question_messages_data[question_message_id]
     QUESTION_MESSAGES.update_data(question_messages_data)
-    user_state = FSMContext(storage=custom_bot_storage, key=StorageKey(
-        chat_id=order.from_user,
-        user_id=order.from_user,
-        bot_id=bot.id))
+    user_state = FSMContext(
+        storage=custom_bot_storage, key=StorageKey(chat_id=order.from_user, user_id=order.from_user, bot_id=bot.id)
+    )
     user_state_data = await user_state.get_data()
     if "last_question_time" in user_state_data:
         del user_state_data["last_question_time"]
@@ -269,7 +280,7 @@ async def handler_order_cancel_callback(query: CallbackQuery, state: FSMContext)
     """Подтверждение отмены заказа"""
 
     state_data = await state.get_data()
-    bot_data = await bot_db.get_bot(state_data['bot_id'])
+    bot_data = await bot_db.get_bot(state_data["bot_id"])
     bot_token = bot_data.token
 
     callback_data = InlineOrderCancelKeyboard.Callback.model_validate_json(query.data)
@@ -295,14 +306,12 @@ async def handler_order_cancel_callback(query: CallbackQuery, state: FSMContext)
 
             await order_db.update_order(order)
 
-            products = [(await product_db.get_product(int(product_id)), product_item.amount,
-                         product_item.used_extra_options)
-                        for product_id, product_item in order.items.items()]
+            products = [
+                (await product_db.get_product(int(product_id)), product_item.amount, product_item.used_extra_options)
+                for product_id, product_item in order.items.items()
+            ]
 
-            text = await CommonMessageTexts.generate_order_notification_text(
-                order,
-                products
-            )
+            text = await CommonMessageTexts.generate_order_notification_text(order, products)
 
             # await Bot(bot_token, default=BOT_PROPERTIES).edit_message_text(
             #     order.convert_to_notification_text(products=products),
@@ -311,24 +320,14 @@ async def handler_order_cancel_callback(query: CallbackQuery, state: FSMContext)
             #     message_id=callback_data.msg_id
             # )
             await Bot(bot_token, default=BOT_PROPERTIES).edit_message_text(
-                **text,
-                reply_markup=None,
-                chat_id=callback_data.chat_id,
-                message_id=callback_data.msg_id
+                **text, reply_markup=None, chat_id=callback_data.chat_id, message_id=callback_data.msg_id
             )
 
-            username = query.message.text[query.message.text.find("пользователя"):].split()[1].strip("\n")
+            username = query.message.text[query.message.text.find("пользователя") :].split()[1].strip("\n")
 
-            text = await CommonMessageTexts.generate_order_notification_text(
-                order,
-                products,
-                username,
-                True
-            )
+            text = await CommonMessageTexts.generate_order_notification_text(order, products, username, True)
 
-            await query.message.edit_text(
-                **text, reply_markup=None
-            )
+            await query.message.edit_text(**text, reply_markup=None)
 
             for item_id, item in order.items.items():
                 product = await product_db.get_product(item_id)
@@ -337,7 +336,7 @@ async def handler_order_cancel_callback(query: CallbackQuery, state: FSMContext)
 
             await Bot(bot_token, default=BOT_PROPERTIES).send_message(
                 chat_id=callback_data.chat_id,
-                text=f"Новый статус заказа <b>#{order.id}</b>\n<b>{order.translate_order_status()}</b>"
+                text=f"Новый статус заказа <b>#{order.id}</b>\n<b>{order.translate_order_status()}</b>",
             )
 
 
@@ -372,7 +371,7 @@ async def handle_callback(query: CallbackQuery, state: FSMContext):
     """Изменение статуса заказа админом"""
 
     state_data = await state.get_data()
-    bot_data = await bot_db.get_bot(state_data['bot_id'])
+    bot_data = await bot_db.get_bot(state_data["bot_id"])
     bot_token = bot_data.token
 
     callback_data = InlineOrderStatusesKeyboard.Callback.model_validate_json(query.data)
@@ -391,15 +390,17 @@ async def handle_callback(query: CallbackQuery, state: FSMContext):
                     callback_data.order_id, callback_data.msg_id, callback_data.chat_id
                 )
             )
-        case callback_data.ActionEnum.FINISH \
-             | callback_data.ActionEnum.PROCESS \
-             | callback_data.ActionEnum.BACKLOG \
-             | callback_data.ActionEnum.WAITING_PAYMENT:  # noqa
+        case (
+            callback_data.ActionEnum.FINISH
+            | callback_data.ActionEnum.PROCESS
+            | callback_data.ActionEnum.BACKLOG
+            | callback_data.ActionEnum.WAITING_PAYMENT
+        ):  # noqa
             new_status = {
                 callback_data.ActionEnum.FINISH: OrderStatusValues.FINISHED,
                 callback_data.ActionEnum.PROCESS: OrderStatusValues.PROCESSING,
                 callback_data.ActionEnum.BACKLOG: OrderStatusValues.BACKLOG,
-                callback_data.ActionEnum.WAITING_PAYMENT: OrderStatusValues.WAITING_PAYMENT
+                callback_data.ActionEnum.WAITING_PAYMENT: OrderStatusValues.WAITING_PAYMENT,
             }[callback_data.a]
 
             if order.status == new_status:
@@ -409,9 +410,8 @@ async def handle_callback(query: CallbackQuery, state: FSMContext):
             await order_db.update_order(order)
 
             products = [
-                (await product_db.get_product(
-                    int(product_id)), product_item.amount, product_item.used_extra_options
-                 ) for product_id, product_item in order.items.items()
+                (await product_db.get_product(int(product_id)), product_item.amount, product_item.used_extra_options)
+                for product_id, product_item in order.items.items()
             ]
             # await Bot(bot_token, default=BOT_PROPERTIES).edit_message_text(
             #     order.convert_to_notification_text(products=products),
@@ -420,33 +420,29 @@ async def handle_callback(query: CallbackQuery, state: FSMContext):
             #     chat_id=callback_data.chat_id,
             #     message_id=callback_data.msg_id
             # )
-            text = await CommonMessageTexts.generate_order_notification_text(
-                order,
-                products
-            )
+            text = await CommonMessageTexts.generate_order_notification_text(order, products)
             await Bot(bot_token, default=BOT_PROPERTIES).edit_message_text(
                 **text,
-                reply_markup=None if callback_data.a == callback_data.ActionEnum.FINISH else
-                InlineOrderCustomBotKeyboard.get_keyboard(order.id, callback_data.msg_id, callback_data.chat_id),
+                reply_markup=None
+                if callback_data.a == callback_data.ActionEnum.FINISH
+                else InlineOrderCustomBotKeyboard.get_keyboard(order.id, callback_data.msg_id, callback_data.chat_id),
                 chat_id=callback_data.chat_id,
-                message_id=callback_data.msg_id
+                message_id=callback_data.msg_id,
             )
-            username = query.message.text[query.message.text.find("пользователя"):].split()[1].strip("\n")
-            text = await CommonMessageTexts.generate_order_notification_text(
-                order,
-                products,
-                username,
-                True
-            )
+            username = query.message.text[query.message.text.find("пользователя") :].split()[1].strip("\n")
+            text = await CommonMessageTexts.generate_order_notification_text(order, products, username, True)
             await query.message.edit_text(
-                **text, reply_markup=None if callback_data.a == callback_data.ActionEnum.FINISH else
-                InlineOrderStatusesKeyboard.get_keyboard(
-                    order.id, callback_data.msg_id, callback_data.chat_id, order.status)
+                **text,
+                reply_markup=None
+                if callback_data.a == callback_data.ActionEnum.FINISH
+                else InlineOrderStatusesKeyboard.get_keyboard(
+                    order.id, callback_data.msg_id, callback_data.chat_id, order.status
+                ),
             )
 
             msg = await Bot(bot_token, default=BOT_PROPERTIES).send_message(
                 chat_id=callback_data.chat_id,
-                text=f"Новый статус заказа <b>#{order.id}</b>\n<b>{order.translate_order_status()}</b>"
+                text=f"Новый статус заказа <b>#{order.id}</b>\n<b>{order.translate_order_status()}</b>",
             )
             try:
                 options = await option_db.get_option(bot_data.options_id)
@@ -465,17 +461,15 @@ async def handle_callback(query: CallbackQuery, state: FSMContext):
                         if product.count == 0:
                             zero_products.append(product)
                     if zero_products:
-                        await query.message.answer(
-                            **MessageTexts.generate_post_order_product_info(zero_products)
-                        )
+                        await query.message.answer(**MessageTexts.generate_post_order_product_info(zero_products))
 
                 await Bot(bot_token, default=BOT_PROPERTIES).send_message(
                     reply_to_message_id=msg.message_id,
                     chat_id=callback_data.chat_id,
-                    text=f"Вы можете оставить отзыв ❤️",
+                    text="Вы можете оставить отзыв ❤️",
                     reply_markup=InlineCreateReviewKeyboard.get_keyboard(
                         order_id=order.id, chat_id=callback_data.chat_id
-                    )
+                    ),
                 )
 
 
@@ -503,8 +497,10 @@ async def waiting_for_the_token_handler(message: Message, state: FSMContext):
         return await message.answer(MessageTexts.BOT_WITH_TOKEN_NOT_FOUND_MESSAGE.value)
     except BotIntegrityError as e:
         logger.warning("", exc_info=e, extra=extra_params(user_id=user_id))
-        return await message.answer("Бот с таким токеном в системе уже найден.\n"
-                                    "Введите другой токен или перейдите в список ботов и поищите Вашего бота там")
+        return await message.answer(
+            "Бот с таким токеном в системе уже найден.\n"
+            "Введите другой токен или перейдите в список ботов и поищите Вашего бота там"
+        )
     except ClientConnectorError:
         logger.error("Cant connect to local api host (maybe service is offline)")
         return await message.answer("Сервис в данный момент недоступен, попробуйте еще раз позже")
@@ -520,17 +516,18 @@ async def waiting_for_the_token_handler(message: Message, state: FSMContext):
         await user_role_db.add_user_role(user_role)
     except IntegrityError:
         await user_role_db.update_user_role(user_role)
-    logger.info(f"user_id={user_id} bot_id={bot_id} : set user role to owner for user "
-                f"{user_id} of bot {bot_id}",
-                extra=extra_params(user_id=user_id, bot_id=bot_id))
+    logger.info(
+        f"user_id={user_id} bot_id={bot_id} : set user role to owner for user " f"{user_id} of bot {bot_id}",
+        extra=extra_params(user_id=user_id, bot_id=bot_id),
+    )
 
     await message.answer(
         MessageTexts.BOT_INITIALIZING_MESSAGE.value.format(bot_fullname, bot_username),
-        reply_markup=ReplyBotMenuKeyboard.get_keyboard()
+        reply_markup=ReplyBotMenuKeyboard.get_keyboard(),
     )
     await message.answer(
         MessageTexts.BOT_MENU_MESSAGE.value.format(bot_username),
-        reply_markup=await InlineBotMenuKeyboard.get_keyboard(user_bot.bot_id, user_id)
+        reply_markup=await InlineBotMenuKeyboard.get_keyboard(user_bot.bot_id, user_id),
     )
 
     await send_event(message.from_user, EventTypes.USER_CREATED_FIRST_BOT, event_bot=Bot(user_bot.token))
@@ -547,20 +544,21 @@ async def bot_menu_photo_handler(message: Message, state: FSMContext):
     photo_file_id = message.photo[-1].file_id
 
     if message.caption is None:
-        return await message.answer("Чтобы добавить товар, прикрепите его картинку и отправьте сообщение в виде:"
-                                    "\n\nНазвание\nЦена в рублях")
+        return await message.answer(
+            "Чтобы добавить товар, прикрепите его картинку и отправьте сообщение в виде:" "\n\nНазвание\nЦена в рублях"
+        )
 
-    params = message.caption.strip().split('\n')
+    params = message.caption.strip().split("\n")
     filename = "".join(sample(string.ascii_letters + string.digits, k=5)) + ".jpg"
 
     if len(params) != 2:
-        return await message.answer("Чтобы добавить товар, прикрепите его картинку и отправьте сообщение в виде:"
-                                    "\n\nНазвание\nЦена в рублях")
+        return await message.answer(
+            "Чтобы добавить товар, прикрепите его картинку и отправьте сообщение в виде:" "\n\nНазвание\nЦена в рублях"
+        )
 
     if len(params[0]) > 100:
         return await message.answer(
-            f"🚫 Название товара должно быть максимум из 100 символов\n\n"
-            f"Длина вашего сообщения {len(params[0])}"
+            f"🚫 Название товара должно быть максимум из 100 символов\n\n" f"Длина вашего сообщения {len(params[0])}"
         )
 
     if params[-1].isdigit():
@@ -570,22 +568,25 @@ async def bot_menu_photo_handler(message: Message, state: FSMContext):
 
     await bot.download(photo_file_id, destination=f"{common_settings.FILES_PATH}{filename}")
 
-    new_product = ProductWithoutId(bot_id=state_data['bot_id'],
-                                   name=params[0],
-                                   description="",
-                                   price=price,
-                                   count=0,
-                                   picture=[filename],
-                                   article=generate_article(),
-                                   category=[0]
-                                   )
+    new_product = ProductWithoutId(
+        bot_id=state_data["bot_id"],
+        name=params[0],
+        description="",
+        price=price,
+        count=0,
+        picture=[filename],
+        article=generate_article(),
+        category=[0],
+    )
     try:
         await product_db.add_product(new_product)
     except IntegrityError:
         return await message.answer("Товар с таким названием уже есть в боте.")
-    await message.answer("✅ Товар добавлен. Можно добавить ещё\n\n"
-                         "<i>* Более подробное управление товарами и гибкое добавление их</i> 👇",
-                         reply_markup=await InlineWebStockKeyboard.get_keyboard(state_data['bot_id']))
+    await message.answer(
+        "✅ Товар добавлен. Можно добавить ещё\n\n"
+        "<i>* Более подробное управление товарами и гибкое добавление их</i> 👇",
+        reply_markup=await InlineWebStockKeyboard.get_keyboard(state_data["bot_id"]),
+    )
 
 
 @admin_bot_menu_router.callback_query(lambda query: InlineBotMenuKeyboard.callback_validator(query.data))
@@ -612,26 +613,27 @@ async def bot_menu_callback_handler(query: CallbackQuery, state: FSMContext):
             await query.message.edit_reply_markup(reply_markup=await InlineBotSettingsMenuKeyboard.get_keyboard(bot_id))
         case callback_data.ActionEnum.ADMINS:
             await query.message.edit_reply_markup(
-                reply_markup=await InlineAdministratorsManageKeyboard.get_keyboard(bot_id))
+                reply_markup=await InlineAdministratorsManageKeyboard.get_keyboard(bot_id)
+            )
         case callback_data.ActionEnum.LEAVE_ADMINISTRATING:
             await user_role_db.del_user_role(query.from_user.id, bot_id)
-            await query.message.edit_text("Вы больше не администратор этого бота. "
-                                          "Пропишите /start для рестарта бота",
-                                          reply_markup=None)
+            await query.message.edit_text(
+                "Вы больше не администратор этого бота. " "Пропишите /start для рестарта бота", reply_markup=None
+            )
             await state.clear()
             await bot.send_message(
                 db_bot_data.created_by,
                 f"🔔 Пользователь больше не администратор ("
                 f"{'@' + query.from_user.username if query.from_user.username else query.from_user.full_name}"
                 f") для бота "
-                f"@{custom_bot_data.username}"
+                f"@{custom_bot_data.username}",
             )
         case callback_data.ActionEnum.BOT_START:
             await start_custom_bot(bot_id)
             await query.message.edit_text(
                 query.message.text,
                 parse_mode=ParseMode.HTML,
-                reply_markup=await InlineBotMenuKeyboard.get_keyboard(bot_id, query.from_user.id)
+                reply_markup=await InlineBotMenuKeyboard.get_keyboard(bot_id, query.from_user.id),
             )
             await query.answer("Ваш бот запущен ✅", show_alert=True)
         case callback_data.ActionEnum.BOT_STOP:
@@ -639,7 +641,7 @@ async def bot_menu_callback_handler(query: CallbackQuery, state: FSMContext):
             await query.message.edit_text(
                 query.message.text,
                 parse_mode=ParseMode.HTML,
-                reply_markup=await InlineBotMenuKeyboard.get_keyboard(bot_id, query.from_user.id)
+                reply_markup=await InlineBotMenuKeyboard.get_keyboard(bot_id, query.from_user.id),
             )
             await query.answer("Ваш бот приостановлен ❌", show_alert=True)
         case callback_data.ActionEnum.PARTNERSHIP:
@@ -648,17 +650,15 @@ async def bot_menu_callback_handler(query: CallbackQuery, state: FSMContext):
             await query.message.answer(
                 "Бот удалится вместе со всей базой продуктов безвозвратно.\n"
                 "Напишите ПОДТВЕРДИТЬ для подтверждения удаления",
-                reply_markup=ReplyBackBotMenuKeyboard.get_keyboard())
+                reply_markup=ReplyBackBotMenuKeyboard.get_keyboard(),
+            )
             await query.answer()
 
             await state.set_state(States.DELETE_BOT)
             await state.set_data(state_data)
         case callback_data.ActionEnum.BOT_STATISTICS:
             users = await custom_bot_user_db.get_custom_bot_users(bot_id=bot_id)
-            await query.message.answer(
-                f"Статистика:\n\n"
-                f"👨🏻‍🦱 Всего пользователей: {len(users)}"
-            )
+            await query.message.answer(f"Статистика:\n\n" f"👨🏻‍🦱 Всего пользователей: {len(users)}")
             await query.answer()
         case callback_data.ActionEnum.MAILING_ADD | callback_data.ActionEnum.MAILING_OPEN:
             try:
@@ -673,26 +673,23 @@ async def bot_menu_callback_handler(query: CallbackQuery, state: FSMContext):
 
             custom_bot = await bot_db.get_bot(bot_id=bot_id)
             await query.message.edit_text(
-                MessageTexts.bot_post_message_menu_message(
-                    PostMessageType.MAILING
-                ).format((await Bot(custom_bot.token).get_me()).username),
+                MessageTexts.bot_post_message_menu_message(PostMessageType.MAILING).format(
+                    (await Bot(custom_bot.token).get_me()).username
+                ),
                 reply_markup=await InlinePostMessageMenuKeyboard.get_keyboard(
-                    bot_id=bot_id,
-                    post_message_type=PostMessageType.MAILING,
-                    channel_id=None
-                )
+                    bot_id=bot_id, post_message_type=PostMessageType.MAILING, channel_id=None
+                ),
             )
         case callback_data.ActionEnum.BOT_GOODS_OPEN:
             await query.message.edit_text(
-                "Меню склада:",
-                reply_markup=await InlineStockMenuKeyboard.get_keyboard(bot_id, options.auto_reduce)
+                "Меню склада:", reply_markup=await InlineStockMenuKeyboard.get_keyboard(bot_id, options.auto_reduce)
             )
         case callback_data.ActionEnum.CHANNEL_LIST:
             custom_bot = await bot_db.get_bot(bot_id)
 
             await query.message.edit_text(
                 MessageTexts.BOT_CHANNELS_LIST_MESSAGE.value.format((await Bot(custom_bot.token).get_me()).username),
-                reply_markup=await InlineChannelsListKeyboard.get_keyboard(custom_bot.bot_id)
+                reply_markup=await InlineChannelsListKeyboard.get_keyboard(custom_bot.bot_id),
             )
 
 
@@ -712,14 +709,15 @@ async def bot_settings_callback_handler(query: CallbackQuery, state: FSMContext)
             order_options = await order_option_db.get_all_order_options(bot_id)
             await query.message.edit_text(
                 **MessageTexts.generate_order_options_info(order_options),
-                reply_markup=await InlineBotEditOrderOptionsKeyboard.get_keyboard(bot_id)
+                reply_markup=await InlineBotEditOrderOptionsKeyboard.get_keyboard(bot_id),
             )
             await query.answer("Раздел ещё в разработке, изменения будут сохраняться совсем скоро", show_alert=True)
         case callback_data.ActionEnum.BOT_EDIT_HELLO_TEXT:
             await query.message.answer(
                 "Введите текст, который будет отображаться у пользователей Вашего бота "
                 "при <b>первом обращении</b> и команде <b>/start</b>:",
-                reply_markup=ReplyBackBotMenuKeyboard.get_keyboard())
+                reply_markup=ReplyBackBotMenuKeyboard.get_keyboard(),
+            )
             await query.answer()
             await state.set_state(States.EDITING_START_MESSAGE)
             await state.set_data(state_data)
@@ -727,7 +725,8 @@ async def bot_settings_callback_handler(query: CallbackQuery, state: FSMContext)
             await query.message.answer(
                 "Введите текст, который будет отображаться у пользователей Вашего бота "
                 "при <b>любом</b> их сообщении: ",
-                reply_markup=ReplyBackBotMenuKeyboard.get_keyboard())
+                reply_markup=ReplyBackBotMenuKeyboard.get_keyboard(),
+            )
             await query.answer()
             await state.set_state(States.EDITING_DEFAULT_MESSAGE)
             await state.set_data(state_data)
@@ -735,21 +734,24 @@ async def bot_settings_callback_handler(query: CallbackQuery, state: FSMContext)
             await query.message.answer(
                 "Введите цвет фона в формате (#FFFFFF или telegram - для использования дефолтных цветов телеграма), "
                 "который будет отображаться у пользователей Вашего бота на странице магазина: ",
-                reply_markup=ReplyBackBotMenuKeyboard.get_keyboard())
-            await query.message.answer("Или воспользуйтесь выбором цвета на палитре.",
-                                       reply_markup=SelectHexColorWebAppInlineKeyboard.get_keyboard())
+                reply_markup=ReplyBackBotMenuKeyboard.get_keyboard(),
+            )
+            await query.message.answer(
+                "Или воспользуйтесь выбором цвета на палитре.",
+                reply_markup=SelectHexColorWebAppInlineKeyboard.get_keyboard(),
+            )
             await query.answer()
             await state.set_state(States.EDITING_BG_COLOR)
             await state.set_data(state_data)
         case callback_data.ActionEnum.PAYMENT_METHOD:
             await query.message.edit_text(
                 MessageTexts.PAYMENT_METHOD_SETTINGS.value.format(custom_bot_data.username),
-                reply_markup=await InlinePaymentSettingsKeyboard.get_keyboard(user_bot.bot_id, user_bot.payment_type)
+                reply_markup=await InlinePaymentSettingsKeyboard.get_keyboard(user_bot.bot_id, user_bot.payment_type),
             )
         case callback_data.ActionEnum.BACK_TO_BOT_MENU:
             await query.message.edit_text(
                 MessageTexts.BOT_MENU_MESSAGE.value.format(custom_bot_data.username),
-                reply_markup=await InlineBotMenuKeyboard.get_keyboard(user_bot.bot_id, query.from_user.id)
+                reply_markup=await InlineBotMenuKeyboard.get_keyboard(user_bot.bot_id, query.from_user.id),
             )
 
 
@@ -771,46 +773,54 @@ async def admins_manage_callback_handler(query: CallbackQuery):
             user_bot.admin_invite_link_hash = link_hash
             await bot_db.update_bot(user_bot)
 
-            add_admin_link_text = Text("Администраторы бота ", Bold("@" + main_bot_data.username), ":",
-                                       "\n\nℹ️ Для добавления администратора в бота отправьте нужному ",
-                                       "пользователю ссылку приглашение:\n", Bold(link), "\n\n",
-                                       "Сгенерированная ссылка ", Italic("действует 1 раз"),
-                                       " для создания новой ссылки нажмите на кнопку добавить админа еще раз.")
+            add_admin_link_text = Text(
+                "Администраторы бота ",
+                Bold("@" + main_bot_data.username),
+                ":",
+                "\n\nℹ️ Для добавления администратора в бота отправьте нужному ",
+                "пользователю ссылку приглашение:\n",
+                Bold(link),
+                "\n\n",
+                "Сгенерированная ссылка ",
+                Italic("действует 1 раз"),
+                " для создания новой ссылки нажмите на кнопку добавить админа еще раз.",
+            )
 
             await query.message.edit_text(
                 **add_admin_link_text.as_kwargs(),
                 reply_markup=await InlineAdministratorsManageKeyboard.get_keyboard(bot_id),
-                disable_web_page_preview=True
+                disable_web_page_preview=True,
             )
         case callback_data.ActionEnum.ADMIN_LIST:
             admins = await user_role_db.get_bot_admin_ids(bot_id)
             admins_text = ""
             for ind, admin in enumerate(admins, start=1):
                 admin_user = await bot.get_chat(admin)
-                admins_text += (f"=== {ind} ===\n"
-                                f"👤 Имя: {admin_user.full_name}\n🆔 UID: {admin_user.id}"
-                                f"\n🔤 Username: @{admin_user.username}\n\n")
+                admins_text += (
+                    f"=== {ind} ===\n"
+                    f"👤 Имя: {admin_user.full_name}\n🆔 UID: {admin_user.id}"
+                    f"\n🔤 Username: @{admin_user.username}\n\n"
+                )
             if not admins:
                 admins_text = Bold("Администраторы еще не добавлены")
             else:
                 admins_text += "Для удаления админа введите команду:\n/rm_admin UID"
 
-            admins_list_text = Text("Администраторы бота ", Bold("@" + main_bot_data.username), ":\n\n",
-                                    admins_text)
+            admins_list_text = Text("Администраторы бота ", Bold("@" + main_bot_data.username), ":\n\n", admins_text)
 
             text, entities = admins_list_text.render()
             if text != query.message.text:
                 await query.message.edit_text(
                     **admins_list_text.as_kwargs(),
                     reply_markup=await InlineAdministratorsManageKeyboard.get_keyboard(bot_id),
-                    disable_web_page_preview=True
+                    disable_web_page_preview=True,
                 )
             else:
                 await query.answer()
         case callback_data.ActionEnum.BACK_TO_BOT_MENU:
             await query.message.edit_text(
                 MessageTexts.BOT_MENU_MESSAGE.value.format(custom_bot_data.username),
-                reply_markup=await InlineBotMenuKeyboard.get_keyboard(user_bot.bot_id, query.from_user.id)
+                reply_markup=await InlineBotMenuKeyboard.get_keyboard(user_bot.bot_id, query.from_user.id),
             )
 
 
@@ -819,36 +829,32 @@ async def bot_menu_handler(message: Message, state: FSMContext):
     """Срабатывает, если админ просто написал сообщение. Указывает администратору что делать."""
 
     state_data = await state.get_data()
-    if "bot_id" in state_data and state_data['bot_id'] == -1:
+    if "bot_id" in state_data and state_data["bot_id"] == -1:
         await state.set_state(States.WAITING_FOR_TOKEN)
         await send_instructions(bot, None, message.from_user.id, cache_resources_file_id_store)
         return await message.answer("Ваш список ботов пуст, используйте инструкцию выше 👆")
-    custom_bot = await bot_db.get_bot(state_data['bot_id'])
+    custom_bot = await bot_db.get_bot(state_data["bot_id"])
 
     match message.text:
         case ReplyBotMenuKeyboard.Callback.ActionEnum.SHOP.value:
             await message.answer(
-                "Кнопка для входа в магазин 👇",
-                reply_markup=InlineBotMainWebAppButton.get_keyboard(custom_bot.bot_id)
+                "Кнопка для входа в магазин 👇", reply_markup=InlineBotMainWebAppButton.get_keyboard(custom_bot.bot_id)
             )
         case ReplyBotMenuKeyboard.Callback.ActionEnum.SETTINGS.value:
             await message.answer(
                 MessageTexts.BOT_MENU_MESSAGE.value.format((await Bot(custom_bot.token).get_me()).username),
-                reply_markup=await InlineBotMenuKeyboard.get_keyboard(custom_bot.bot_id, message.from_user.id)
+                reply_markup=await InlineBotMenuKeyboard.get_keyboard(custom_bot.bot_id, message.from_user.id),
             )
 
         case ReplyBotMenuKeyboard.Callback.ActionEnum.CONTACTS.value:
-            await message.answer(
-                MessageTexts.CONTACTS.value
-            )
+            await message.answer(MessageTexts.CONTACTS.value)
         case _:
             await message.answer(
-                "Для навигации используйте кнопки 👇",
-                reply_markup=ReplyBotMenuKeyboard.get_keyboard()
+                "Для навигации используйте кнопки 👇", reply_markup=ReplyBotMenuKeyboard.get_keyboard()
             )
             await message.answer(
                 MessageTexts.BOT_MENU_MESSAGE.value.format((await Bot(custom_bot.token).get_me()).username),
-                reply_markup=await InlineBotMenuKeyboard.get_keyboard(custom_bot.bot_id, message.from_user.id)
+                reply_markup=await InlineBotMenuKeyboard.get_keyboard(custom_bot.bot_id, message.from_user.id),
             )
 
 
@@ -863,12 +869,9 @@ async def send_new_order_notify(order: OrderSchema, user_id: int):
         products.append((product, order_item.amount, order_item.used_extra_options))
 
     text = await CommonMessageTexts.generate_order_notification_text(
-        order,
-        products,
-        "@" + order_user_data.username if order_user_data.username else order_user_data.full_name,
-        True
+        order, products, "@" + order_user_data.username if order_user_data.username else order_user_data.full_name, True
     )
-    await bot.send_message(user_id, f"Так будет выглядеть у тебя уведомление о новом заказе 👇")
+    await bot.send_message(user_id, "Так будет выглядеть у тебя уведомление о новом заказе 👇")
     await bot.send_message(chat_id=user_id, **text)
 
 

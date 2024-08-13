@@ -7,8 +7,14 @@ from pydantic import ValidationError, BaseModel
 
 from fastapi import APIRouter, Depends, Header
 
-from api.utils import check_admin_authorization, HTTPBadRequestError, HTTPInternalError, RESPONSES_DICT, \
-    HTTPUnauthorizedError, HTTPBotNotFoundError
+from api.utils import (
+    check_admin_authorization,
+    HTTPBadRequestError,
+    HTTPInternalError,
+    RESPONSES_DICT,
+    HTTPUnauthorizedError,
+    HTTPBotNotFoundError,
+)
 
 from common_utils.config import custom_telegram_bot_settings
 from common_utils.order_utils.order_type import OrderType
@@ -33,15 +39,14 @@ async def generate_order_id_api() -> str:
     :return: The unique order id for order
     """
     date = datetime.now().strftime("%d%m%y")
-    random_string = ''.join(random.sample(string.digits + string.ascii_letters, 5))
+    random_string = "".join(random.sample(string.digits + string.ascii_letters, 5))
     order_id = date + random_string
 
     try:
         await order_db.get_order(order_id)
     except OrderNotFoundError:
         api_logger.debug(
-            f"order_id={random_string}: order_id has been generated",
-            extra=extra_params(order_id=random_string)
+            f"order_id={random_string}: order_id has been generated", extra=extra_params(order_id=random_string)
         )
         return random_string
 
@@ -60,24 +65,17 @@ async def get_all_orders_api(bot_id: int, authorization_data: str = Header()) ->
     try:
         orders = await order_db.get_all_orders(bot_id)
     except ValidationError as ex:
-        api_logger.error(
-            f"bot_id={bot_id}: validation error",
-            extra=extra_params(bot_id=bot_id),
-            exc_info=ex
-        )
-        raise HTTPBadRequestError(detail_message=f"Incorrect input data.", ex_msg=str(ex))
+        api_logger.error(f"bot_id={bot_id}: validation error", extra=extra_params(bot_id=bot_id), exc_info=ex)
+        raise HTTPBadRequestError(detail_message="Incorrect input data.", ex_msg=str(ex))
     except Exception as e:
         api_logger.error(
             f"bot_id={bot_id}: Error while execute get_all_orders db_method",
             extra=extra_params(bot_id=bot_id),
-            exc_info=e
+            exc_info=e,
         )
         raise HTTPInternalError
 
-    api_logger.debug(
-        f"bot_id={bot_id}: has {len(orders)} orders -> {orders}",
-        extra=extra_params(bot_id=bot_id)
-    )
+    api_logger.debug(f"bot_id={bot_id}: has {len(orders)} orders -> {orders}", extra=extra_params(bot_id=bot_id))
 
     return orders
 
@@ -95,13 +93,13 @@ async def add_order_api(new_order: OrderSchema = Depends(), authorization_data: 
 
         api_logger.debug(
             f"bot_id={new_order.bot_id}: order {new_order} has been added",
-            extra=extra_params(bot_id=new_order.bot_id, order_id=new_order.id)
+            extra=extra_params(bot_id=new_order.bot_id, order_id=new_order.id),
         )
     except Exception as e:
         api_logger.error(
             f"Error while execute add_order db_method with {new_order}",
             extra=extra_params(bot_id=new_order.bot_id, order_id=new_order.id),
-            exc_info=e
+            exc_info=e,
         )
         raise HTTPInternalError
 
@@ -120,7 +118,7 @@ class OrderData(BaseModel):
     time: str | None
     comment: str | None
     query_id: str | None = None
-    from_user: int | None = None,
+    from_user: int | None = (None,)
     order_type: OrderType | None = None
 
 
@@ -130,8 +128,7 @@ class SendOrderDataResponse(BaseModel):
 
 @router.post("/send_order_data_to_bot")
 async def send_order_data_to_bot_api(
-        order_data: OrderData,
-        authorization_data: str = Header()
+    order_data: OrderData, authorization_data: str = Header()
 ) -> SendOrderDataResponse:
     """
     :raises HTTPInternalError:
@@ -148,23 +145,24 @@ async def send_order_data_to_bot_api(
         api_logger.debug(f"get new order data from web_app: {order_data}")
         async with aiohttp.ClientSession() as session:
             async with session.post(
-                    url=f"http://{custom_telegram_bot_settings.WEBHOOK_LOCAL_API_URL_HOST}:"
-                        f"{custom_telegram_bot_settings.WEBHOOK_LOCAL_API_PORT}"
-                        f"/send_web_app_data_to_bot/{order_data.bot_id}",
-                    data=order_data.model_dump_json()
+                url=f"http://{custom_telegram_bot_settings.WEBHOOK_LOCAL_API_URL_HOST}:"
+                f"{custom_telegram_bot_settings.WEBHOOK_LOCAL_API_PORT}"
+                f"/send_web_app_data_to_bot/{order_data.bot_id}",
+                data=order_data.model_dump_json(),
             ) as response:
                 if response.status != 200:
-                    api_logger.error(f"Local API returned {response.status} status code "
-                                     f"with body {await response.text()}")
+                    api_logger.error(
+                        f"Local API returned {response.status} status code " f"with body {await response.text()}"
+                    )
                     raise LocalAPIException
-                invoice_url = (await response.json())['invoice_url']
+                invoice_url = (await response.json())["invoice_url"]
     except LocalAPIException:
         raise HTTPInternalError(detail_message="Local Api error")
     except Exception as e:
         api_logger.error(
             f"Error while execute send_order_data_to_bot api with {order_data}",
             extra=extra_params(bot_id=order_data.bot_id),
-            exc_info=e
+            exc_info=e,
         )
         raise HTTPInternalError
 

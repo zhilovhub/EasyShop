@@ -24,13 +24,7 @@ class ReplyBackBotMenuKeyboard:
         actions = ReplyBackBotMenuKeyboard.Callback.ActionEnum
 
         return ReplyKeyboardMarkup(
-            keyboard=[
-                [
-                    KeyboardButton(
-                        text=actions.BACK_TO_BOT_MENU.value
-                    )
-                ]
-            ], resize_keyboard=True
+            keyboard=[[KeyboardButton(text=actions.BACK_TO_BOT_MENU.value)]], resize_keyboard=True
         )
 
 
@@ -52,17 +46,15 @@ class ReplyBotMenuKeyboard:
 
         return ReplyKeyboardMarkup(
             keyboard=[
-                [
-                    KeyboardButton(text=actions.SETTINGS.value),
-                    KeyboardButton(text=actions.CONTACTS.value)
-                ],
+                [KeyboardButton(text=actions.SETTINGS.value), KeyboardButton(text=actions.CONTACTS.value)],
                 [
                     KeyboardButton(
                         text=actions.SHOP.value,
                     )
-                ]
+                ],
             ],
-            resize_keyboard=True, one_time_keyboard=False
+            resize_keyboard=True,
+            one_time_keyboard=False,
         )
 
 
@@ -82,19 +74,13 @@ class SelectHexColorWebAppInlineKeyboard:
 
         return InlineKeyboardMarkup(
             inline_keyboard=[
-                [
-                    InlineKeyboardButton(
-                        text=actions.HEX_SELECT.value,
-                        web_app=make_select_hex_web_app_info()
-                    )
-                ],
+                [InlineKeyboardButton(text=actions.HEX_SELECT.value, web_app=make_select_hex_web_app_info())],
             ]
         )
 
 
 class InlineAcceptPublishProductKeyboard:
     class Callback(BaseModel):
-
         class ActionEnum(Enum):
             ACCEPT = "accpt"
             REJECT = "rjct"
@@ -134,14 +120,14 @@ class InlineAcceptPublishProductKeyboard:
                         text="✅",
                         callback_data=InlineAcceptPublishProductKeyboard.callback_json(
                             actions.ACCEPT, bot_id, msg_id, product_id
-                        )
+                        ),
                     ),
                     InlineKeyboardButton(
                         text="❌",
                         callback_data=InlineAcceptPublishProductKeyboard.callback_json(
                             actions.REJECT, bot_id, msg_id, product_id
-                        )
-                    )
+                        ),
+                    ),
                 ]
             ]
         )

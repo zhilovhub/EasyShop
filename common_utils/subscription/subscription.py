@@ -24,6 +24,7 @@ def singleton(class_):
 
 class UserHasAlreadyStartedTrial(Exception):
     """Error when user tries start a trial again"""
+
     pass
 
 
@@ -71,7 +72,7 @@ class Subscription:
         logger.info(
             f"user_id={user_id}: the user's payment has been approved so the user is subscribed "
             f"until {user.subscribed_until} (+{subscription_delta} days)",
-            extra=extra_params(user_id=user_id, payment_id=payment_id)
+            extra=extra_params(user_id=user_id, payment_id=payment_id),
         )
 
         return payment_id, user.subscribed_until
@@ -79,16 +80,18 @@ class Subscription:
     async def create_payment(self, user_id: int) -> int:
         """Creates a new payment"""
         current_datetime = datetime.now()
-        payment = PaymentSchemaWithoutId(from_user=user_id,
-                                         amount=config.SUBSCRIPTION_PRICE,
-                                         status="success",
-                                         created_at=current_datetime,
-                                         last_update=current_datetime)
+        payment = PaymentSchemaWithoutId(
+            from_user=user_id,
+            amount=config.SUBSCRIPTION_PRICE,
+            status="success",
+            created_at=current_datetime,
+            last_update=current_datetime,
+        )
         payment_id = await self.payment_db.add_payment(payment)
 
         logger.info(
             f"user_id={user_id}: the user's payment created: {payment}",
-            extra=extra_params(user_id=user_id, payment_id=payment_id)
+            extra=extra_params(user_id=user_id, payment_id=payment_id),
         )
 
         return payment_id
@@ -106,20 +109,20 @@ class Subscription:
 
         job_ids = []
         for notification_before_days in notifications_before_days:
-            job_ids.append(await self.scheduler.add_scheduled_job(
-                func=on_expiring_notification,
-                run_date=subscribed_until - timedelta(days=notification_before_days),
-                args=[user]
-            ))
-        job_ids.append(await self.scheduler.add_scheduled_job(
-            func=on_end_notification,
-            run_date=subscribed_until,
-            args=[user]
-        ))
+            job_ids.append(
+                await self.scheduler.add_scheduled_job(
+                    func=on_expiring_notification,
+                    run_date=subscribed_until - timedelta(days=notification_before_days),
+                    args=[user],
+                )
+            )
+        job_ids.append(
+            await self.scheduler.add_scheduled_job(func=on_end_notification, run_date=subscribed_until, args=[user])
+        )
 
         logger.debug(
             f"user_id={user_id}: user's notifications about payment are created: job_ids={job_ids}",
-            extra=extra_params(user_id=user_id)
+            extra=extra_params(user_id=user_id),
         )
 
         return job_ids
@@ -129,8 +132,7 @@ class Subscription:
         user_status = (await self.user_db.get_user(user_id)).status
 
         logger.debug(
-            f"user_id={user_id}: user's subscription status is {user_status}",
-            extra=extra_params(user_id=user_id)
+            f"user_id={user_id}: user's subscription status is {user_status}", extra=extra_params(user_id=user_id)
         )
 
         return user_status
@@ -140,10 +142,7 @@ class Subscription:
         user = await self.user_db.get_user(user_id)
         is_subscribed = user.status in (UserStatusValues.TRIAL, UserStatusValues.SUBSCRIBED)
 
-        logger.debug(
-            f"user_id={user_id}: user is subscribed with {user.status}",
-            extra=extra_params(user_id=user_id)
-        )
+        logger.debug(f"user_id={user_id}: user is subscribed with {user.status}", extra=extra_params(user_id=user_id))
 
         return is_subscribed
 
@@ -151,17 +150,13 @@ class Subscription:
     def get_subscription_price() -> int:
         """Returns the price of subscription"""
         price = config.SUBSCRIPTION_PRICE
-        logger.debug(
-            f"returned subscription_price={price}"
-        )
+        logger.debug(f"returned subscription_price={price}")
         return price
 
     @staticmethod
     def get_destination_phone_number() -> str:
         """Returns the phone number to pay to"""
-        logger.debug(
-            f"returned phone_number={main_telegram_bot_settings.DESTINATION_PHONE_NUMBER}"
-        )
+        logger.debug(f"returned phone_number={main_telegram_bot_settings.DESTINATION_PHONE_NUMBER}")
         return main_telegram_bot_settings.DESTINATION_PHONE_NUMBER
 
     async def start_scheduler(self) -> None:
@@ -171,25 +166,29 @@ class Subscription:
     async def get_when_expires_text(self, user_id: int, is_trial: bool) -> str:
         user = await self.user_db.get_user(user_id)
         subscription_type = " бесплатная " if is_trial else " "
-        return f"Твоя{subscription_type}подписка истекает " \
-               f"<b>{user.subscribed_until.strftime('%d.%m.%Y %H:%M')}</b> " \
-               f"(через <b>{(user.subscribed_until - datetime.now()).days}</b> дней)." \
-               f"\nХочешь продлить прямо сейчас?"
+        return (
+            f"Твоя{subscription_type}подписка истекает "
+            f"<b>{user.subscribed_until.strftime('%d.%m.%Y %H:%M')}</b> "
+            f"(через <b>{(user.subscribed_until - datetime.now()).days}</b> дней)."
+            f"\nХочешь продлить прямо сейчас?"
+        )
 
     @staticmethod
     def get_subscribe_instructions() -> tuple[str, str]:
         """Returns file name of QR CODE image and text of instructions"""
-        return "sbp_qr.png", \
-               f"• Стоимость подписки: <b>{config.SUBSCRIPTION_PRICE}₽</b>\n\n" \
-               f"• Оплачивайте подписку удобным способом, " \
-               f"через qr код. Либо на карту сбербанка по номеру телефона: " \
-               f"<code>{main_telegram_bot_settings.DESTINATION_PHONE_NUMBER}</code>\n\n" \
-               f"• После оплаты пришлите боту чек (скрин или пдфку) с подтверждением оплаты.\n\n" \
-               f"• В подписи к фото <b>напишите Ваши контакты для связи</b> с " \
-               f"Вами в случае возникновения вопросов по оплате.",
+        return (
+            "sbp_qr.png",
+            f"• Стоимость подписки: <b>{config.SUBSCRIPTION_PRICE}₽</b>\n\n"
+            f"• Оплачивайте подписку удобным способом, "
+            f"через qr код. Либо на карту сбербанка по номеру телефона: "
+            f"<code>{main_telegram_bot_settings.DESTINATION_PHONE_NUMBER}</code>\n\n"
+            f"• После оплаты пришлите боту чек (скрин или пдфку) с подтверждением оплаты.\n\n"
+            f"• В подписи к фото <b>напишите Ваши контакты для связи</b> с "
+            f"Вами в случае возникновения вопросов по оплате.",
+        )
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     from database.models.models import Database
 
-    scheduler = Scheduler(database_settings.SCHEDULER_URL, 'postgres', database_settings.TIMEZONE)
+    scheduler = Scheduler(database_settings.SCHEDULER_URL, "postgres", database_settings.TIMEZONE)

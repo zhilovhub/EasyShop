@@ -24,13 +24,7 @@ class ReplyBackQuestionMenuKeyboard:
         actions = ReplyBackQuestionMenuKeyboard.Callback.ActionEnum
 
         return ReplyKeyboardMarkup(
-            keyboard=[
-                [
-                    KeyboardButton(
-                        text=actions.BACK_TO_MAIN_MENU.value
-                    )
-                ]
-            ], resize_keyboard=True
+            keyboard=[[KeyboardButton(text=actions.BACK_TO_MAIN_MENU.value)]], resize_keyboard=True
         )
 
 
@@ -51,12 +45,7 @@ class InlineOrderQuestionKeyboard:
 
     @staticmethod
     @callback_json_validator
-    def callback_json(
-            action: Callback.ActionEnum,
-            order_id: str,
-            msg_id: int,
-            chat_id: int
-    ) -> str:
+    def callback_json(action: Callback.ActionEnum, order_id: str, msg_id: int, chat_id: int) -> str:
         return InlineOrderQuestionKeyboard.Callback(
             a=action,
             order_id=order_id,
@@ -73,26 +62,24 @@ class InlineOrderQuestionKeyboard:
             return False
 
     @staticmethod
-    def get_keyboard(
-            order_id: str,
-            msg_id: int = 0,
-            chat_id: int = 0
-    ) -> InlineKeyboardMarkup:
+    def get_keyboard(order_id: str, msg_id: int = 0, chat_id: int = 0) -> InlineKeyboardMarkup:
         actions = InlineOrderQuestionKeyboard.Callback.ActionEnum
 
-        return InlineKeyboardMarkup(inline_keyboard=[
-            [
-                InlineKeyboardButton(
-                    text="✅",
-                    callback_data=InlineOrderQuestionKeyboard.callback_json(
-                        actions.APPROVE, order_id, msg_id, chat_id
-                    )
-                ),
-                InlineKeyboardButton(
-                    text="❌",
-                    callback_data=InlineOrderQuestionKeyboard.callback_json(
-                        actions.CANCEL, order_id, msg_id, chat_id
-                    )
-                )
-            ],
-        ])
+        return InlineKeyboardMarkup(
+            inline_keyboard=[
+                [
+                    InlineKeyboardButton(
+                        text="✅",
+                        callback_data=InlineOrderQuestionKeyboard.callback_json(
+                            actions.APPROVE, order_id, msg_id, chat_id
+                        ),
+                    ),
+                    InlineKeyboardButton(
+                        text="❌",
+                        callback_data=InlineOrderQuestionKeyboard.callback_json(
+                            actions.CANCEL, order_id, msg_id, chat_id
+                        ),
+                    ),
+                ],
+            ]
+        )

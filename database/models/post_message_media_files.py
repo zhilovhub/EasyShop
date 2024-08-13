@@ -54,7 +54,7 @@ class PostMessageMediaFileDao(Dao):  # TODO write tests
 
         self.logger.debug(
             f"post_message_id={post_message_id}: has {len(res)} media_files",
-            extra=extra_params(post_message_id=post_message_id)
+            extra=extra_params(post_message_id=post_message_id),
         )
 
         return res
@@ -65,29 +65,27 @@ class PostMessageMediaFileDao(Dao):  # TODO write tests
         :raises IntegrityError:
         """
         async with self.engine.begin() as conn:
-            await conn.execute(
-                insert(PostMessageMediaFile).values(new_post_message_media_file.model_dump())
-            )
+            await conn.execute(insert(PostMessageMediaFile).values(new_post_message_media_file.model_dump()))
 
         self.logger.debug(
             f"post_message_id={new_post_message_media_file.post_message_id}: "
             f"added media file {new_post_message_media_file}",
-            extra=extra_params(post_message_id=new_post_message_media_file.post_message_id)
+            extra=extra_params(post_message_id=new_post_message_media_file.post_message_id),
         )
 
     @validate_call(validate_return=True)
     async def update_media_file(self, new_post_message_media_file: PostMessageMediaFileSchema) -> None:
         async with self.engine.begin() as conn:
             await conn.execute(
-                update(PostMessageMediaFile).where(
-                    PostMessageMediaFile.file_id_main_bot == new_post_message_media_file.file_id_main_bot
-                ).values(new_post_message_media_file.model_dump())
+                update(PostMessageMediaFile)
+                .where(PostMessageMediaFile.file_id_main_bot == new_post_message_media_file.file_id_main_bot)
+                .values(new_post_message_media_file.model_dump())
             )
 
         self.logger.debug(
             f"post_message_id={new_post_message_media_file.post_message_id}: "
             f"updated media file {new_post_message_media_file}",
-            extra=extra_params(post_message_id=new_post_message_media_file.post_message_id)
+            extra=extra_params(post_message_id=new_post_message_media_file.post_message_id),
         )
 
     @validate_call(validate_return=True)
@@ -106,5 +104,5 @@ class PostMessageMediaFileDao(Dao):  # TODO write tests
 
         self.logger.debug(
             f"post_message_id={post_message_id}: all media files have been deleted",
-            extra=extra_params(post_message_id=post_message_id)
+            extra=extra_params(post_message_id=post_message_id),
         )

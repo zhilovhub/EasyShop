@@ -12,7 +12,7 @@ from database.models.bot_model import Bot, BotSchema
 from database.models.user_model import User
 from database.exceptions.exceptions import KwargsException
 
-from typing import *
+from typing import Optional
 
 from logs.config import extra_params
 
@@ -28,6 +28,7 @@ class UserRoleValues(Enum):
 
 class UserRoleEnum(TypeDecorator):  # noqa
     """Class to convert Enum values to db values (and reverse)"""
+
     impl = Unicode
     cache_ok = True
 
@@ -98,8 +99,7 @@ class UserRoleDao(Dao):
                     bots.append(BotSchema.model_validate(raw_bot))
 
         self.logger.debug(
-            f"user_id={user_id}: has {len(bots)} roles in different bots",
-            extra=extra_params(user_id=user_id)
+            f"user_id={user_id}: has {len(bots)} roles in different bots", extra=extra_params(user_id=user_id)
         )
 
         return bots
@@ -110,8 +110,7 @@ class UserRoleDao(Dao):
         :raises UserRoleNotFoundError:
         """
         async with self.engine.begin() as conn:
-            raw_res = await conn.execute(select(UserRole).where(UserRole.user_id == user_id,
-                                                                UserRole.bot_id == bot_id))
+            raw_res = await conn.execute(select(UserRole).where(UserRole.user_id == user_id, UserRole.bot_id == bot_id))
         await self.engine.dispose()
 
         res = raw_res.fetchone()
@@ -122,7 +121,7 @@ class UserRoleDao(Dao):
 
         self.logger.debug(
             f"user_id={user_id} bot_id={bot_id}: found user_role {res}",
-            extra=extra_params(user_id=user_id, bot_id=bot_id)
+            extra=extra_params(user_id=user_id, bot_id=bot_id),
         )
 
         return res
@@ -138,32 +137,32 @@ class UserRoleDao(Dao):
 
         self.logger.debug(
             f"user_id={new_role.user_id} bot_id={new_role.bot_id}: added user_role {new_role}",
-            extra=extra_params(user_id=new_role.user_id, bot_id=new_role.bot_id)
+            extra=extra_params(user_id=new_role.user_id, bot_id=new_role.bot_id),
         )
 
     @validate_call(validate_return=True)
     async def update_user_role(self, updated_role: UserRoleSchema) -> None:
         async with self.engine.begin() as conn:
-            await conn.execute(update(UserRole).where(UserRole.user_id == updated_role.user_id,
-                                                      UserRole.bot_id == updated_role.bot_id).
-                               values(**updated_role.model_dump(by_alias=True)))
+            await conn.execute(
+                update(UserRole)
+                .where(UserRole.user_id == updated_role.user_id, UserRole.bot_id == updated_role.bot_id)
+                .values(**updated_role.model_dump(by_alias=True))
+            )
         await self.engine.dispose()
 
         self.logger.debug(
             f"user_id={updated_role.user_id} bot_id={updated_role.bot_id}: updated user_role {updated_role}",
-            extra=extra_params(user_id=updated_role.user_id, bot_id=updated_role.bot_id)
+            extra=extra_params(user_id=updated_role.user_id, bot_id=updated_role.bot_id),
         )
 
     @validate_call(validate_return=True)
     async def del_user_role(self, user_id: int, bot_id: int) -> None:
         async with self.engine.begin() as conn:
-            await conn.execute(delete(UserRole).where(UserRole.user_id == user_id,
-                                                      UserRole.bot_id == bot_id))
+            await conn.execute(delete(UserRole).where(UserRole.user_id == user_id, UserRole.bot_id == bot_id))
         await self.engine.dispose()
 
         self.logger.debug(
-            f"user_id={user_id} bot_id={bot_id}: deleted user_role",
-            extra=extra_params(user_id=user_id, bot_id=bot_id)
+            f"user_id={user_id} bot_id={bot_id}: deleted user_role", extra=extra_params(user_id=user_id, bot_id=bot_id)
         )
 
     @validate_call(validate_return=True)
@@ -172,8 +171,9 @@ class UserRoleDao(Dao):
         Returns all user ids who has ADMINISTRATOR role in bot
         """
         async with self.engine.begin() as conn:
-            raw_res = await conn.execute(select(UserRole).where(UserRole.bot_id == bot_id,
-                                                                UserRole.role == UserRoleValues.ADMINISTRATOR))
+            raw_res = await conn.execute(
+                select(UserRole).where(UserRole.bot_id == bot_id, UserRole.role == UserRoleValues.ADMINISTRATOR)
+            )
         await self.engine.dispose()
 
         res = raw_res.fetchall()

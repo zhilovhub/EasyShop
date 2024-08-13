@@ -32,20 +32,24 @@ class PreCheckHandler(PreCheckoutQueryHandler):
             bot_id = custom_bot.bot_id
             payload = self.event.invoice_payload
             extra_data = self.event.order_info
-            custom_bot_logger.info(f"new custom bot payment pre checkout with payload : payload={payload} "
-                                   f"and extra data : data=[{extra_data}]",
-                                   extra=extra_params(user_id=from_user.id,
-                                                      bot_id=bot_id))
+            custom_bot_logger.info(
+                f"new custom bot payment pre checkout with payload : payload={payload} "
+                f"and extra data : data=[{extra_data}]",
+                extra=extra_params(user_id=from_user.id, bot_id=bot_id),
+            )
             if "TEST" not in payload:
                 payload_params = json.loads(payload)
-                order = await order_db.get_order(payload_params['order_id'])
+                order = await order_db.get_order(payload_params["order_id"])
                 order.status = OrderStatusValues.PROCESSING
                 msg_id_data = PREV_ORDER_MSGS.get_data()
 
                 products = [
-                    (await product_db.get_product(
-                        int(product_id)), product_item.amount, product_item.used_extra_options
-                     ) for product_id, product_item in order.items.items()
+                    (
+                        await product_db.get_product(int(product_id)),
+                        product_item.amount,
+                        product_item.used_extra_options,
+                    )
+                    for product_id, product_item in order.items.items()
                 ]
 
                 for item_id, item in order.items.items():
@@ -57,44 +61,47 @@ class PreCheckHandler(PreCheckoutQueryHandler):
                     order=order,
                     products=products,
                     username="@" + from_user.username if from_user.username else from_user.full_name,
-                    is_admin=True
+                    is_admin=True,
                 )
 
                 user_text = await CommonMessageTexts.generate_order_notification_text(
                     order=order,
                     products=products,
                     username="@" + from_user.username if from_user.username else from_user.full_name,
-                    is_admin=False
+                    is_admin=False,
                 )
 
                 await main_bot.edit_message_text(
-                    **text, chat_id=msg_id_data[order.id][0], message_id=msg_id_data[order.id][1],
+                    **text,
+                    chat_id=msg_id_data[order.id][0],
+                    message_id=msg_id_data[order.id][1],
                     reply_markup=InlineOrderStatusesKeyboard.get_keyboard(
                         order.id, msg_id_data[order.id][2], from_user.id, current_status=order.status
-                    )
+                    ),
                 )
                 await main_bot.send_message(
                     chat_id=msg_id_data[order.id][0],
-                    text=f"Новый статус заказа <b>#{order.id}</b>\n<b>{order.translate_order_status()}</b>")
+                    text=f"Новый статус заказа <b>#{order.id}</b>\n<b>{order.translate_order_status()}</b>",
+                )
 
                 await self.bot.edit_message_text(
                     chat_id=self.from_user.id,
                     message_id=msg_id_data[order.id][2],
                     reply_markup=InlineOrderCustomBotKeyboard.get_keyboard(order.id),
-                    **user_text
+                    **user_text,
                 )
 
                 await order_db.update_order(order)
 
             await self.update.pre_checkout_query.answer(ok=True)
         except Exception:
-            custom_bot_logger.error(f"unhandled error while processing payment for user {from_user.id}"
-                                    f" in bot {bot_id}",
-                                    exc_info=True, extra=extra_params(user_id=from_user.id,
-                                                                      bot_id=bot_id))
+            custom_bot_logger.error(
+                f"unhandled error while processing payment for user {from_user.id}" f" in bot {bot_id}",
+                exc_info=True,
+                extra=extra_params(user_id=from_user.id, bot_id=bot_id),
+            )
             await self.update.pre_checkout_query.answer(
-                ok=False,
-                error_message="Произошла неопознанная ошибка, мы уже работаем над этим."
+                ok=False, error_message="Произошла неопознанная ошибка, мы уже работаем над этим."
             )
             raise
 
@@ -116,7 +123,7 @@ async def process_successfully_payment(message: Message):
             created_at=now,
             last_update=now,
             from_main_bot=False,
-            custom_bot_id=custom_bot.bot_id
+            custom_bot_id=custom_bot.bot_id,
         )
         pay_id = await pay_db.add_payment(db_payment)
 

@@ -46,9 +46,7 @@ class ChannelPostDao(Dao):  # TODO write tests
         Returns channel posts belonging to Bot
         """
         async with self.engine.begin() as conn:
-            raw_res = await conn.execute(
-                select(ChannelPost).where(ChannelPost.bot_id == bot_id)
-            )
+            raw_res = await conn.execute(select(ChannelPost).where(ChannelPost.bot_id == bot_id))
         await self.engine.dispose()
 
         raw_res = raw_res.fetchall()
@@ -56,10 +54,7 @@ class ChannelPostDao(Dao):  # TODO write tests
         for channel_post in raw_res:
             res.append(ChannelPostSchema.model_validate(channel_post))
 
-        self.logger.debug(
-            f"bot_id={bot_id}: has {len(res)} channel_posts",
-            extra=extra_params(bot_id=bot_id)
-        )
+        self.logger.debug(f"bot_id={bot_id}: has {len(res)} channel_posts", extra=extra_params(bot_id=bot_id))
 
         return res
 
@@ -77,15 +72,13 @@ class ChannelPostDao(Dao):  # TODO write tests
 
         raw_res = raw_res.fetchone()
         if not raw_res:
-            raise ChannelPostNotFoundError(
-                post_message_id=post_message_id
-            )
+            raise ChannelPostNotFoundError(post_message_id=post_message_id)
 
         res = ChannelPostSchema.model_validate(raw_res)
 
         self.logger.debug(
             f"bot_id={res.bot_id}: found channel_post: {res}",
-            extra=extra_params(bot_id=res.bot_id, channel_post_id=res.channel_post_id)
+            extra=extra_params(bot_id=res.bot_id, channel_post_id=res.channel_post_id),
         )
 
         return res
@@ -104,15 +97,13 @@ class ChannelPostDao(Dao):  # TODO write tests
 
         raw_res = raw_res.fetchone()
         if not raw_res:
-            raise ChannelPostNotFoundError(
-                bot_id=bot_id
-            )
+            raise ChannelPostNotFoundError(bot_id=bot_id)
 
         res = ChannelPostSchema.model_validate(raw_res)
 
         self.logger.debug(
             f"bot_id={res.bot_id}: found channel_post: {res}",
-            extra=extra_params(bot_id=res.bot_id, channel_post_id=res.channel_post_id)
+            extra=extra_params(bot_id=res.bot_id, channel_post_id=res.channel_post_id),
         )
 
         return res
@@ -131,7 +122,7 @@ class ChannelPostDao(Dao):  # TODO write tests
 
         self.logger.debug(
             f"bot_id={new_channel_post.bot_id}: added channel_post {channel_post_id}",
-            extra=extra_params(bot_id=new_channel_post.bot_id, channel_post_id=channel_post_id)
+            extra=extra_params(bot_id=new_channel_post.bot_id, channel_post_id=channel_post_id),
         )
 
         return channel_post_id
@@ -143,16 +134,17 @@ class ChannelPostDao(Dao):  # TODO write tests
         """
         async with self.engine.begin() as conn:
             await conn.execute(
-                update(ChannelPost).where(
-                    ChannelPost.channel_post_id == updated_channel_post.channel_post_id
-                ).values(**updated_channel_post.model_dump(by_alias=True))
+                update(ChannelPost)
+                .where(ChannelPost.channel_post_id == updated_channel_post.channel_post_id)
+                .values(**updated_channel_post.model_dump(by_alias=True))
             )
         await self.engine.dispose()
 
         self.logger.debug(
-            f"channel_post_id={updated_channel_post.channel_post_id}: "
-            f"updated channel_post {updated_channel_post}",
-            extra=extra_params(channel_post_id=updated_channel_post.channel_post_id, bot_id=updated_channel_post.bot_id)
+            f"channel_post_id={updated_channel_post.channel_post_id}: " f"updated channel_post {updated_channel_post}",
+            extra=extra_params(
+                channel_post_id=updated_channel_post.channel_post_id, bot_id=updated_channel_post.bot_id
+            ),
         )
 
     @validate_call(validate_return=True)
@@ -161,14 +153,9 @@ class ChannelPostDao(Dao):  # TODO write tests
         Deletes ChannelPost from database
         """
         async with self.engine.begin() as conn:
-            await conn.execute(
-                delete(ChannelPost).where(
-                    ChannelPost.channel_post_id == channel_post.channel_post_id
-                )
-            )
+            await conn.execute(delete(ChannelPost).where(ChannelPost.channel_post_id == channel_post.channel_post_id))
 
         self.logger.debug(
             f"bot_id={channel_post.bot_id}: deleted channel_post {channel_post}",
-            extra=extra_params(bot_id=channel_post.bot_id,
-                               channel_post_id=channel_post.channel_post_id)
+            extra=extra_params(bot_id=channel_post.bot_id, channel_post_id=channel_post.channel_post_id),
         )

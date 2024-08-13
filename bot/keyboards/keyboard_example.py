@@ -27,9 +27,7 @@ class ExampleKeyboard:
     @staticmethod
     @callback_json_validator
     def callback_json(action: Callback.ActionEnum, some_arg: str) -> str:  # add more arguments here if you need
-        return ExampleKeyboard.Callback(
-            a=action, some_arg=some_arg
-        ).model_dump_json(by_alias=True)
+        return ExampleKeyboard.Callback(a=action, some_arg=some_arg).model_dump_json(by_alias=True)
 
     @staticmethod
     def callback_validator(json_string: str) -> bool:
@@ -47,10 +45,7 @@ class ExampleKeyboard:
             inline_keyboard=[
                 [
                     InlineKeyboardButton(
-                        text="Some text",
-                        callback_data=ExampleKeyboard.callback_json(
-                            actions.EXAMPLE, some_arg
-                        )
+                        text="Some text", callback_data=ExampleKeyboard.callback_json(actions.EXAMPLE, some_arg)
                     )
                 ]
             ],

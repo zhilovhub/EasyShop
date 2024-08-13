@@ -25,10 +25,10 @@ class ErrorMiddleware(BaseMiddleware):
         pass
 
     async def __call__(
-            self,
-            handler: Callable[[CallbackQuery | Message, Dict[str, Any]], Awaitable[Any]],
-            event: CallbackQuery | Message | ChatMemberUpdated,
-            data: Dict[str, Any]
+        self,
+        handler: Callable[[CallbackQuery | Message, Dict[str, Any]], Awaitable[Any]],
+        event: CallbackQuery | Message | ChatMemberUpdated,
+        data: Dict[str, Any],
     ) -> Any:
         try:
             result = await handler(event, data)

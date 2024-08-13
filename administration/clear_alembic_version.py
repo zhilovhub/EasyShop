@@ -6,10 +6,7 @@ from sqlalchemy import text
 from logs.config import db_logger
 
 
-database: Database = Database(
-    sqlalchemy_url="",
-    logger=db_logger
-)
+database: Database = Database(sqlalchemy_url="", logger=db_logger)
 
 
 async def main() -> None:
@@ -19,5 +16,5 @@ async def main() -> None:
     await database.engine.dispose()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     asyncio.run(main())

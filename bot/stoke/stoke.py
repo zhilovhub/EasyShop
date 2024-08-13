@@ -33,12 +33,12 @@ class Stoke:
         self.files_path = common_settings.FILES_PATH
 
     async def import_json(
-            self,
-            bot_id: int,
-            path_to_file: str,
-            replace: bool,
-            path_to_file_with_pictures: str = None,
-            replace_duplicates: bool = False
+        self,
+        bot_id: int,
+        path_to_file: str,
+        replace: bool,
+        path_to_file_with_pictures: str = None,
+        replace_duplicates: bool = False,
     ) -> None:
         """If ``replace`` is true then first delete all products else just add or update by name"""
         with open(path_to_file, "r", encoding="utf-8") as f:
@@ -48,11 +48,7 @@ class Stoke:
             await self.product_db.delete_all_products(bot_id)
 
         await self._import_products(
-            bot_id,
-            products,
-            replace,
-            path_to_file_with_pictures,
-            replace_duplicates=replace_duplicates
+            bot_id, products, replace, path_to_file_with_pictures, replace_duplicates=replace_duplicates
         )
 
     async def export_json(self, bot_id: int, with_pictures: bool = False) -> tuple[str, str | None]:
@@ -65,12 +61,14 @@ class Stoke:
 
         json_products = []
         for product in products:
-            json_products.append({
-                "name": product.name,
-                "description": product.description,
-                "price": product.price,
-                "count": product.count
-            })
+            json_products.append(
+                {
+                    "name": product.name,
+                    "description": product.description,
+                    "price": product.price,
+                    "count": product.count,
+                }
+            )
             if with_pictures:
                 picture = product.picture[0]
                 json_products[-1]["picture"] = picture
@@ -84,12 +82,12 @@ class Stoke:
         return path_to_file, path_to_images
 
     async def import_csv(
-            self,
-            bot_id: int,
-            path_to_file: str,
-            replace: bool,
-            path_to_file_with_pictures: str = None,
-            replace_duplicates: bool = False
+        self,
+        bot_id: int,
+        path_to_file: str,
+        replace: bool,
+        path_to_file_with_pictures: str = None,
+        replace_duplicates: bool = False,
     ) -> None:
         """If ``replace`` is true then first delete all products else just add or update by name"""
         with open(path_to_file, "r", encoding="latin-1") as f:
@@ -100,21 +98,19 @@ class Stoke:
 
             products = []
             for row in reader:
-                products.append(ProductWithoutId(
-                    bot_id=bot_id,
-                    name=row[0],
-                    description=row[1] if row[1] is not None else "",
-                    price=int(row[2]),
-                    count=int(row[3]),
-                    picture=[row[4]]
-                ))
+                products.append(
+                    ProductWithoutId(
+                        bot_id=bot_id,
+                        name=row[0],
+                        description=row[1] if row[1] is not None else "",
+                        price=int(row[2]),
+                        count=int(row[3]),
+                        picture=[row[4]],
+                    )
+                )
 
         await self._import_products(
-            bot_id,
-            products,
-            replace,
-            path_to_file_with_pictures,
-            replace_duplicates=replace_duplicates
+            bot_id, products, replace, path_to_file_with_pictures, replace_duplicates=replace_duplicates
         )
 
     async def export_csv(self, bot_id: int, with_pictures: bool = False) -> tuple[str, str | None]:
@@ -133,8 +129,8 @@ class Stoke:
             for product in products:
                 picture = product.picture[0]
                 writer.writerow(
-                    [product.name, product.description, product.price, product.count] +
-                    ([picture] if with_pictures else [])
+                    [product.name, product.description, product.price, product.count]
+                    + ([picture] if with_pictures else [])
                 )
                 if with_pictures and picture:
                     shutil.copyfile(self.files_path + picture, path_to_images + picture)
@@ -179,12 +175,12 @@ class Stoke:
                 return False, err_message + "остаток или цена - не числа"
 
     async def import_xlsx(
-            self,
-            bot_id: int,
-            path_to_file: str,
-            replace: bool,
-            path_to_file_with_pictures: str = None,
-            replace_duplicates: bool = False
+        self,
+        bot_id: int,
+        path_to_file: str,
+        replace: bool,
+        path_to_file_with_pictures: str = None,
+        replace_duplicates: bool = False,
     ) -> None:
         """If ``replace`` is true then first delete all products else just add or update by name"""
         wb = load_workbook(filename=path_to_file)
@@ -196,25 +192,23 @@ class Stoke:
             try:
                 cat_id = await category_db.add_category(CategorySchemaWithoutId(bot_id=bot_id, name=row[5]))
             except CategoryNameAlreadyExistsError:
-                cat_id = list(
-                    filter(lambda x: x.name == row[5], await category_db.get_all_categories(bot_id=bot_id))
-                )[0].id
-            products.append(ProductWithoutId(
-                article=str(row[4]),
-                category=[cat_id],
-                bot_id=bot_id,
-                name=str(row[0]),
-                description=str(row[1]) if row[1] is not None else "",
-                price=int(row[2]),
-                count=int(row[3])
-            ))
+                cat_id = list(filter(lambda x: x.name == row[5], await category_db.get_all_categories(bot_id=bot_id)))[
+                    0
+                ].id
+            products.append(
+                ProductWithoutId(
+                    article=str(row[4]),
+                    category=[cat_id],
+                    bot_id=bot_id,
+                    name=str(row[0]),
+                    description=str(row[1]) if row[1] is not None else "",
+                    price=int(row[2]),
+                    count=int(row[3]),
+                )
+            )
 
         await self._import_products(
-            bot_id,
-            products,
-            replace,
-            path_to_file_with_pictures,
-            replace_duplicates=replace_duplicates
+            bot_id, products, replace, path_to_file_with_pictures, replace_duplicates=replace_duplicates
         )
 
     async def export_xlsx(self, bot_id: int, with_pictures: bool = False) -> tuple[str, str | None]:
@@ -229,23 +223,23 @@ class Stoke:
         ws = wb.active
 
         column_names = ["Название", "Описание", "Цена", "Кол-во"] + (["Картинка"] if with_pictures else [])
-        column_ind = ['A', 'B', 'C', 'D'] + (["E"] if with_pictures else [])
+        column_ind = ["A", "B", "C", "D"] + (["E"] if with_pictures else [])
 
         ft = Font()
         ft.bold = True
 
         for ind, name in zip(column_ind, column_names):
-            ws[f'{ind}1'] = name
-            ws[f'{ind}1'].font = ft
+            ws[f"{ind}1"] = name
+            ws[f"{ind}1"].font = ft
 
         for ind, product in enumerate(products, start=2):
-            ws[f'A{ind}'] = product.name
-            ws[f'B{ind}'] = product.description
-            ws[f'C{ind}'] = product.price
-            ws[f'D{ind}'] = product.count
+            ws[f"A{ind}"] = product.name
+            ws[f"B{ind}"] = product.description
+            ws[f"C{ind}"] = product.price
+            ws[f"D{ind}"] = product.count
             if with_pictures:
                 picture = product.picture[0]
-                ws[f'E{ind}'] = picture
+                ws[f"E{ind}"] = picture
                 if with_pictures and picture:
                     shutil.copyfile(self.files_path + picture, path_to_images + picture)
 
@@ -268,12 +262,12 @@ class Stoke:
         await self.product_db.update_product(product)
 
     async def _import_products(
-            self,
-            bot_id: int,
-            products: Iterable[ProductWithoutId],
-            replace: bool,
-            path_to_file_with_pictures: str = None,
-            replace_duplicates: bool = False
+        self,
+        bot_id: int,
+        products: Iterable[ProductWithoutId],
+        replace: bool,
+        path_to_file_with_pictures: str = None,
+        replace_duplicates: bool = False,
     ) -> None:
         if replace:
             await self.product_db.delete_all_products(bot_id)
@@ -294,17 +288,13 @@ class Stoke:
         product.picture = new_picture_path.split("/")[-1]
 
     def _generate_path_to_picture(self) -> str:
-        return self.files_path + ''.join(sample(digits + ascii_letters, 5)) + ".jpg"
+        return self.files_path + "".join(sample(digits + ascii_letters, 5)) + ".jpg"
 
     def _generate_path_to_file(self, bot_id: int, file_format: str) -> str:
-        return self.files_path + \
-            f"{bot_id}_" + \
-            datetime.datetime.utcnow().strftime("%d%m%y_%H%M%S") + f".{file_format}"
+        return self.files_path + f"{bot_id}_" + datetime.datetime.utcnow().strftime("%d%m%y_%H%M%S") + f".{file_format}"
 
     def _generate_path_for_pictures(self, bot_id: int) -> str:
-        path_to_pictures = self.files_path + \
-            f"{bot_id}_" + \
-            datetime.datetime.utcnow().strftime("%d%m%y_%H%M%S")
+        path_to_pictures = self.files_path + f"{bot_id}_" + datetime.datetime.utcnow().strftime("%d%m%y_%H%M%S")
         try:
             os.mkdir(path_to_pictures)
             path_to_pictures += "/pictures/"

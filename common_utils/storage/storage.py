@@ -12,7 +12,6 @@ from logs.config import logger
 
 
 class AlchemyStorageAsync(BaseStorage, ABC):
-
     def __init__(self, db_url: str, table_name: str):
         self.table_name = table_name
         self.db_url = db_url
@@ -39,16 +38,17 @@ class AlchemyStorageAsync(BaseStorage, ABC):
         if await self.get_state(key):
             async with self.engine.begin() as conn:
                 await conn.execute(
-                    update(self.storage_table).where(
-                        self.storage_table.c.id == f"{key.user_id}#{abs(key.chat_id)}"
-                    ).values(state=state.state, data={})
+                    update(self.storage_table)
+                    .where(self.storage_table.c.id == f"{key.user_id}#{abs(key.chat_id)}")
+                    .values(state=state.state, data={})
                 )
             await self.engine.dispose()
             logger.debug(f"updated state for user {key.user_id} in chat {key.chat_id} to state {state.state}.")
             return None
         async with self.engine.begin() as conn:
             await conn.execute(
-                insert(self.storage_table).values(id=f"{key.user_id}#{abs(key.chat_id)}", state=state.state, data={}))
+                insert(self.storage_table).values(id=f"{key.user_id}#{abs(key.chat_id)}", state=state.state, data={})
+            )
         await self.engine.dispose()
         logger.debug(f"set state for user {key.user_id} in chat {key.chat_id} to state {state.state}.")
 
@@ -67,9 +67,9 @@ class AlchemyStorageAsync(BaseStorage, ABC):
     async def set_data(self, key: StorageKey, data: Dict[str, Any]) -> None:
         async with self.engine.begin() as conn:
             await conn.execute(
-                update(self.storage_table).where(
-                    self.storage_table.c.id == f"{key.user_id}#{abs(key.chat_id)}"
-                ).values(data=data)
+                update(self.storage_table)
+                .where(self.storage_table.c.id == f"{key.user_id}#{abs(key.chat_id)}")
+                .values(data=data)
             )
         await self.engine.dispose()
 
@@ -89,9 +89,9 @@ class AlchemyStorageAsync(BaseStorage, ABC):
         _data.update(data)
         async with self.engine.begin() as conn:
             await conn.execute(
-                update(self.storage_table).where(
-                    self.storage_table.c.id == f"{key.user_id}#{abs(key.chat_id)}"
-                ).values(data=_data)
+                update(self.storage_table)
+                .where(self.storage_table.c.id == f"{key.user_id}#{abs(key.chat_id)}")
+                .values(data=_data)
             )
         await self.engine.dispose()
         return _data

@@ -26,7 +26,7 @@ async def on_user_join(event: ChatMemberUpdated):
     channel_id = event.chat.id
     custom_bot_logger.info(
         f"channel_id={channel_id}: user_id={user_id} joined channel",
-        extra=extra_params(user_id=user_id, channel_id=channel_id)
+        extra=extra_params(user_id=user_id, channel_id=channel_id),
     )
 
     try:
@@ -39,15 +39,17 @@ async def on_user_join(event: ChatMemberUpdated):
     except ChannelUserNotFoundError:
         custom_bot_logger.debug(
             f"channel_id={channel_id}: user_id={user_id} has first join",
-            extra=extra_params(user_id=user_id, channel_id=channel_id)
+            extra=extra_params(user_id=user_id, channel_id=channel_id),
         )
         await channel_user_db.add_channel_user(
-            ChannelUserSchemaWithoutId.model_validate({
-                "channel_user_id": user_id,
-                "channel_id": channel_id,
-                "join_date": datetime.now().replace(tzinfo=None),
-                "is_channel_member": True
-            })
+            ChannelUserSchemaWithoutId.model_validate(
+                {
+                    "channel_user_id": user_id,
+                    "channel_id": channel_id,
+                    "join_date": datetime.now().replace(tzinfo=None),
+                    "is_channel_member": True,
+                }
+            )
         )
 
 
@@ -58,7 +60,7 @@ async def on_user_leave(event: ChatMemberUpdated):
 
     custom_bot_logger.info(
         f"channel_id={channel_id}: user_id={user_id} left channel",
-        extra=extra_params(user_id=user_id, channel_id=channel_id)
+        extra=extra_params(user_id=user_id, channel_id=channel_id),
     )
 
     try:
@@ -71,15 +73,17 @@ async def on_user_leave(event: ChatMemberUpdated):
     except ChannelUserNotFoundError:
         custom_bot_logger.debug(
             f"channel_id={channel_id}: user_id={user_id} left channel before our analyze system",
-            extra=extra_params(user_id=user_id, channel_id=channel_id)
+            extra=extra_params(user_id=user_id, channel_id=channel_id),
         )
         await channel_user_db.add_channel_user(
-            ChannelUserSchemaWithoutId.model_validate({
-                "channel_user_id": user_id,
-                "channel_id": channel_id,
-                "join_date": datetime.now().replace(tzinfo=None),
-                "is_channel_member": False
-            })
+            ChannelUserSchemaWithoutId.model_validate(
+                {
+                    "channel_user_id": user_id,
+                    "channel_id": channel_id,
+                    "join_date": datetime.now().replace(tzinfo=None),
+                    "is_channel_member": False,
+                }
+            )
         )
 
 
@@ -100,36 +104,33 @@ async def my_chat_member_handler(my_chat_member: ChatMemberUpdated) -> Any:
     bot_id = custom_bot.bot_id
     performed_by_admin = my_chat_member.from_user.id == custom_bot.created_by
 
-    channel_schema = ChannelSchema(
-        channel_id=my_chat_member.chat.id,
-        bot_id=bot_id,
-        added_by_admin=performed_by_admin
-    )
+    channel_schema = ChannelSchema(channel_id=my_chat_member.chat.id, bot_id=bot_id, added_by_admin=performed_by_admin)
 
     # Bot added
-    if isinstance(my_chat_member.old_chat_member, (ChatMemberLeft, ChatMemberBanned)) and \
-            isinstance(my_chat_member.new_chat_member, ChatMemberAdministrator):
+    if isinstance(my_chat_member.old_chat_member, (ChatMemberLeft, ChatMemberBanned)) and isinstance(
+        my_chat_member.new_chat_member, ChatMemberAdministrator
+    ):
         await channel_db.add_channel(channel_schema)
-        custom_bot_logger.info(
-            f"Bot @{custom_bot_username} added to @{channel_username}")
+        custom_bot_logger.info(f"Bot @{custom_bot_username} added to @{channel_username}")
 
         await main_bot.send_message(
             chat_id=custom_bot.created_by,
-            text=CustomMessageTexts.BOT_ADDED_TO_CHANNEL_MESSAGE.value.format(
-                custom_bot_username, channel_username),
-            reply_markup=await InlineBotMenuKeyboard.get_keyboard(custom_bot.bot_id, custom_bot.created_by)
+            text=CustomMessageTexts.BOT_ADDED_TO_CHANNEL_MESSAGE.value.format(custom_bot_username, channel_username),
+            reply_markup=await InlineBotMenuKeyboard.get_keyboard(custom_bot.bot_id, custom_bot.created_by),
         )
     # Bot removed
     elif isinstance(my_chat_member.new_chat_member, (ChatMemberLeft, ChatMemberBanned)):
         await channel_db.delete_channel(channel_schema)
         custom_bot_logger.info(
-            f"Bot @{(await my_chat_member.bot.get_me()).username} removed from @{my_chat_member.chat.username}")
+            f"Bot @{(await my_chat_member.bot.get_me()).username} removed from @{my_chat_member.chat.username}"
+        )
 
         await main_bot.send_message(
             chat_id=custom_bot.created_by,
             text=CustomMessageTexts.BOT_REMOVED_FROM_CHANNEL_MESSAGE.value.format(
-                custom_bot_username, channel_username),
-            reply_markup=await InlineBotMenuKeyboard.get_keyboard(custom_bot.bot_id, custom_bot.created_by)
+                custom_bot_username, channel_username
+            ),
+            reply_markup=await InlineBotMenuKeyboard.get_keyboard(custom_bot.bot_id, custom_bot.created_by),
         )
     elif isinstance(my_chat_member.new_chat_member, ChatMemberAdministrator):
         old_user = my_chat_member.old_chat_member
@@ -150,7 +151,7 @@ async def my_chat_member_handler(my_chat_member: ChatMemberUpdated) -> Any:
         await main_bot.send_message(
             chat_id=custom_bot.created_by,
             text=final_message_text,
-            reply_markup=await InlineBotMenuKeyboard.get_keyboard(custom_bot.bot_id, custom_bot.created_by)
+            reply_markup=await InlineBotMenuKeyboard.get_keyboard(custom_bot.bot_id, custom_bot.created_by),
         )
 
 
@@ -175,18 +176,20 @@ async def channel_menu_callback_handler(query: CallbackQuery):
             try:
                 await contest_db.get_contest_user(contest.contest_id, query.from_user.id)
             except ContestUserNotFoundError:
-                await contest_db.add_contest_user(contest.contest_id,
-                                                  query.from_user.id,
-                                                  query.from_user.full_name,
-                                                  query.from_user.username)
+                await contest_db.add_contest_user(
+                    contest.contest_id, query.from_user.id, query.from_user.full_name, query.from_user.username
+                )
                 contest_members = await contest_db.get_contest_users(contest.contest_id)
-                await query.message.edit_reply_markup(reply_markup=await InlineJoinContestKeyboard.get_keyboard(
-                    custom_bot.bot_id, len(contest_members), callback_data.post_message_id
-                ))
+                await query.message.edit_reply_markup(
+                    reply_markup=await InlineJoinContestKeyboard.get_keyboard(
+                        custom_bot.bot_id, len(contest_members), callback_data.post_message_id
+                    )
+                )
                 return await query.answer("Теперь вы участвуете в конкурсе.", show_alert=True)
             else:
                 return await query.answer("Вы уже участвуете в этом конкурсе.", show_alert=True)
         case _:
-            custom_bot_logger.warning("Unknown callback in channel contest kb",
-                                      extra_params(bot_id=bot_id, contest_id=contest.contest_id,
-                                                   user_id=query.from_user.id))
+            custom_bot_logger.warning(
+                "Unknown callback in channel contest kb",
+                extra_params(bot_id=bot_id, contest_id=contest.contest_id, user_id=query.from_user.id),
+            )

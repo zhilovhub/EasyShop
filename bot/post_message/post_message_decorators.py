@@ -4,9 +4,12 @@ from aiogram.types import CallbackQuery
 from aiogram.fsm.context import FSMContext
 
 from bot.utils import MessageTexts
-from bot.keyboards.post_message_keyboards import InlinePostMessageMenuKeyboard, \
-    InlinePostMessageExtraSettingsKeyboard, InlinePostMessageStartConfirmKeyboard, \
-    InlinePostMessageAcceptDeletingKeyboard
+from bot.keyboards.post_message_keyboards import (
+    InlinePostMessageMenuKeyboard,
+    InlinePostMessageExtraSettingsKeyboard,
+    InlinePostMessageStartConfirmKeyboard,
+    InlinePostMessageAcceptDeletingKeyboard,
+)
 from bot.post_message.post_message_utils import get_post_message
 
 from database.config import bot_db
@@ -66,16 +69,19 @@ def check_callback_conflicts(func):
 
         match post_message_type:
             case PostMessageType.MAILING:  # specific buttons for mailing
-                if callback_data.a not in (
+                if (
+                    callback_data.a
+                    not in (
                         InlinePostMessageMenuKeyboard.Callback.ActionEnum.STATISTICS,
                         InlinePostMessageMenuKeyboard.Callback.ActionEnum.CANCEL,
                         InlinePostMessageAcceptDeletingKeyboard.Callback.ActionEnum.BACK_TO_POST_MESSAGE_MENU,
                         InlinePostMessageExtraSettingsKeyboard.Callback.ActionEnum.BACK_TO_POST_MESSAGE_MENU,
                         InlinePostMessageStartConfirmKeyboard.Callback.ActionEnum.BACK_TO_POST_MESSAGE_MENU,
-                ) and post_message.is_running:
+                    )
+                    and post_message.is_running
+                ):
                     await query.answer(
-                        MessageTexts.bot_post_already_started_message(post_message_type),
-                        show_alert=True
+                        MessageTexts.bot_post_already_started_message(post_message_type), show_alert=True
                     )
                     await query.message.edit_text(
                         text=MessageTexts.BOT_MAILING_MENU_WHILE_RUNNING.value.format(username),
@@ -83,9 +89,10 @@ def check_callback_conflicts(func):
                             bot_id,
                             post_message_type,
                             channel_id=callback_data.channel_id
-                            if post_message_type in (PostMessageType.CHANNEL_POST, PostMessageType.CONTEST) else None
+                            if post_message_type in (PostMessageType.CHANNEL_POST, PostMessageType.CONTEST)
+                            else None,
                         ),
-                        parse_mode=ParseMode.HTML
+                        parse_mode=ParseMode.HTML,
                     )
                     return
 
@@ -100,9 +107,7 @@ def check_callback_conflicts(func):
             logger.error(
                 "Unexpected amount of args",
                 exc_info=e,
-                extra=extra_params(
-                    user_id=user_id, bot_id=bot_id, post_message_id=post_message.post_message_id
-                )
+                extra=extra_params(user_id=user_id, bot_id=bot_id, post_message_id=post_message.post_message_id),
             )
             raise e
 

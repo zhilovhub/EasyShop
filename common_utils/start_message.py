@@ -8,8 +8,4 @@ async def send_start_message_to_admins(bot: Bot, admins: list[int], msg_text: st
         try:
             await bot.send_message(chat_id=admin_id, text=msg_text, disable_notification=disable_notification)
         except Exception as e:
-            logger.warning(
-                "Unable send start message to admin",
-                exc_info=e,
-                extra=extra_params(user_id=admin_id)
-            )
+            logger.warning("Unable send start message to admin", exc_info=e, extra=extra_params(user_id=admin_id))

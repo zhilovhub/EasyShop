@@ -12,15 +12,15 @@ from common_utils.config import main_telegram_bot_settings
 
 
 async def create_invoice_params(
-        bot_id: int,
-        user_id: int,
-        order_items: dict[int, OrderItem],
-        order_id: str,
-        photo_url: str | None = None,
-        title: str = "Оплата заказа",
-        description: str = "Описание заказа",
-        test: bool = False,
-        user_bot_test: bool = False,
+    bot_id: int,
+    user_id: int,
+    order_items: dict[int, OrderItem],
+    order_id: str,
+    photo_url: str | None = None,
+    title: str = "Оплата заказа",
+    description: str = "Описание заказа",
+    test: bool = False,
+    user_bot_test: bool = False,
 ) -> dict:
     custom_bot = await bot_db.get_bot(bot_id)
     custom_bot_option = await option_db.get_option(custom_bot.options_id)

@@ -39,14 +39,12 @@ async def send_post_messages(custom_bot, post_message, media_files, chat_id):
                 media_files=media_files,
                 post_action_type=PostActionType.RELEASE,
                 message=None,
-                is_delayed=False
+                is_delayed=False,
             )
             logger.info(
                 f"post_message_id={post_message_id}: "
                 f"sent to {ind}/{len(all_custom_bot_users)} with user_id={user.user_id}",
-                extra=extra_params(
-                    user_id=user.user_id, bot_id=post_message.bot_id, post_message_id=post_message_id
-                )
+                extra=extra_params(user_id=user.user_id, bot_id=post_message.bot_id, post_message_id=post_message_id),
             )
             post_message.sent_post_message_amount += 1
             await post_message_db.update_post_message(post_message)
@@ -55,13 +53,12 @@ async def send_post_messages(custom_bot, post_message, media_files, chat_id):
             await post_message_db.update_post_message(post_message)
             banned_users_list.append(user.user_id)
             logger.info(
-                f"post_message_id={post_message_id}: "
-                f"user_id={user.user_id} banned bot_id={post_message.bot_id}",
-                extra=extra_params(post_message_id=post_message_id, user_id=user.user_id, bot_id=post_message.bot_id)
+                f"post_message_id={post_message_id}: " f"user_id={user.user_id} banned bot_id={post_message.bot_id}",
+                extra=extra_params(post_message_id=post_message_id, user_id=user.user_id, bot_id=post_message.bot_id),
             )
 
         # 20 messages per second (limit is 30)
-        await asyncio.sleep(.05)
+        await asyncio.sleep(0.05)
 
     # Generate xlsx file
     if banned_users_list:
@@ -76,7 +73,7 @@ async def send_post_messages(custom_bot, post_message, media_files, chat_id):
         MessageTexts.show_mailing_info(
             sent_post_message_amount=post_message.sent_post_message_amount,
             custom_bot_users_len=len(all_custom_bot_users),
-        )
+        ),
     )
 
     post_message.is_running = False

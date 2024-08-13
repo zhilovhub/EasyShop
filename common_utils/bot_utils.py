@@ -65,7 +65,7 @@ async def create_order_options(order_option_db: OrderOptionDao, bot_id: int):
             required=True,
             emoji="🚐",
             position_index=5,
-            option_type=OrderOptionTypeValues.CHOOSE
+            option_type=OrderOptionTypeValues.CHOOSE,
         )
     )
 
@@ -88,7 +88,7 @@ async def create_order_options(order_option_db: OrderOptionDao, bot_id: int):
             required=True,
             emoji="💌",
             position_index=7,
-            option_type=OrderOptionTypeValues.TEXT_AREA
+            option_type=OrderOptionTypeValues.TEXT_AREA,
         )
     )
 
@@ -101,7 +101,7 @@ async def create_bot_options() -> int:
         OptionSchemaWithoutId(
             start_msg=MessageTexts.DEFAULT_START_MESSAGE.value,
             default_msg=f"Приветствую, этот бот создан с помощью @{(await bot.get_me()).username}",
-            web_app_button=MessageTexts.OPEN_WEB_APP_BUTTON_TEXT.value
+            web_app_button=MessageTexts.OPEN_WEB_APP_BUTTON_TEXT.value,
         )
     )
 
@@ -122,7 +122,7 @@ async def create_custom_bot(order_option_db: OrderOptionDao, token: str, user_id
             created_at=datetime.utcnow(),
             created_by=user_id,
             locale=lang,
-            options_id=new_option_id
+            options_id=new_option_id,
         )
         bot_id = await bot_db.add_bot(new_bot)
     except BotIntegrityError as e:

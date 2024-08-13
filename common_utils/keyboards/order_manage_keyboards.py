@@ -26,12 +26,7 @@ class InlineOrderCustomBotKeyboard:
 
     @staticmethod
     @callback_json_validator
-    def callback_json(
-            action: Callback.ActionEnum,
-            order_id: str,
-            msg_id: int,
-            chat_id: int
-    ) -> str:
+    def callback_json(action: Callback.ActionEnum, order_id: str, msg_id: int, chat_id: int) -> str:
         return InlineOrderCustomBotKeyboard.Callback(
             a=action,
             order_id=order_id,
@@ -48,31 +43,29 @@ class InlineOrderCustomBotKeyboard:
             return False
 
     @staticmethod
-    def get_keyboard(
-            order_id: str,
-            msg_id: int = 0,
-            chat_id: int = 0
-    ) -> InlineKeyboardMarkup:
+    def get_keyboard(order_id: str, msg_id: int = 0, chat_id: int = 0) -> InlineKeyboardMarkup:
         actions = InlineOrderCustomBotKeyboard.Callback.ActionEnum
 
-        return InlineKeyboardMarkup(inline_keyboard=[
-            [
-                InlineKeyboardButton(
-                    text="Задать вопрос",
-                    callback_data=InlineOrderCustomBotKeyboard.callback_json(
-                        actions.ASK_QUESTION, order_id, msg_id, chat_id
+        return InlineKeyboardMarkup(
+            inline_keyboard=[
+                [
+                    InlineKeyboardButton(
+                        text="Задать вопрос",
+                        callback_data=InlineOrderCustomBotKeyboard.callback_json(
+                            actions.ASK_QUESTION, order_id, msg_id, chat_id
+                        ),
                     )
-                )
-            ],
-            [
-                InlineKeyboardButton(
-                    text="Отменить заказ",
-                    callback_data=InlineOrderCustomBotKeyboard.callback_json(
-                        actions.PRE_CANCEL, order_id, msg_id, chat_id
+                ],
+                [
+                    InlineKeyboardButton(
+                        text="Отменить заказ",
+                        callback_data=InlineOrderCustomBotKeyboard.callback_json(
+                            actions.PRE_CANCEL, order_id, msg_id, chat_id
+                        ),
                     )
-                )
+                ],
             ]
-        ])
+        )
 
 
 class InlineOrderStatusesKeyboard:
@@ -96,12 +89,7 @@ class InlineOrderStatusesKeyboard:
 
     @staticmethod
     @callback_json_validator
-    def callback_json(
-            action: Callback.ActionEnum,
-            order_id: str,
-            msg_id: int,
-            chat_id: int
-    ) -> str:
+    def callback_json(action: Callback.ActionEnum, order_id: str, msg_id: int, chat_id: int) -> str:
         return InlineOrderStatusesKeyboard.Callback(
             a=action,
             order_id=order_id,
@@ -119,51 +107,50 @@ class InlineOrderStatusesKeyboard:
 
     @staticmethod
     def get_keyboard(
-            order_id: str,
-            msg_id: int = 0,
-            chat_id: int = 0,
-            current_status: OrderStatusValues = OrderStatusValues.BACKLOG
+        order_id: str, msg_id: int = 0, chat_id: int = 0, current_status: OrderStatusValues = OrderStatusValues.BACKLOG
     ) -> InlineKeyboardMarkup:
         actions = InlineOrderStatusesKeyboard.Callback.ActionEnum
 
-        return InlineKeyboardMarkup(inline_keyboard=[
-            [
-                InlineKeyboardButton(
-                    text=("🔸 " if current_status == OrderStatusValues.BACKLOG else "") + "Ожидание",
-                    callback_data=InlineOrderStatusesKeyboard.callback_json(
-                        actions.BACKLOG, order_id, msg_id, chat_id
-                    )
-                ),
-                InlineKeyboardButton(
-                    text=("🔸 " if current_status == OrderStatusValues.WAITING_PAYMENT else "") + "Ждет оплаты",
-                    callback_data=InlineOrderStatusesKeyboard.callback_json(
-                        actions.WAITING_PAYMENT, order_id, msg_id, chat_id
-                    )
-                ),
-            ],
-            [
-                InlineKeyboardButton(
-                    text=("🔸 " if current_status == OrderStatusValues.PROCESSING else "") + "Выполнять",
-                    callback_data=InlineOrderStatusesKeyboard.callback_json(
-                        actions.PROCESS, order_id, msg_id, chat_id
-                    )
-                ),
-            ],
-            [
-                InlineKeyboardButton(
-                    text="Отменить ❌",
-                    callback_data=InlineOrderStatusesKeyboard.callback_json(
-                        actions.PRE_CANCEL, order_id, msg_id, chat_id
-                    )
-                ),
-                InlineKeyboardButton(
-                    text="Завершить ✅",
-                    callback_data=InlineOrderStatusesKeyboard.callback_json(
-                        actions.FINISH, order_id, msg_id, chat_id
-                    )
-                )
+        return InlineKeyboardMarkup(
+            inline_keyboard=[
+                [
+                    InlineKeyboardButton(
+                        text=("🔸 " if current_status == OrderStatusValues.BACKLOG else "") + "Ожидание",
+                        callback_data=InlineOrderStatusesKeyboard.callback_json(
+                            actions.BACKLOG, order_id, msg_id, chat_id
+                        ),
+                    ),
+                    InlineKeyboardButton(
+                        text=("🔸 " if current_status == OrderStatusValues.WAITING_PAYMENT else "") + "Ждет оплаты",
+                        callback_data=InlineOrderStatusesKeyboard.callback_json(
+                            actions.WAITING_PAYMENT, order_id, msg_id, chat_id
+                        ),
+                    ),
+                ],
+                [
+                    InlineKeyboardButton(
+                        text=("🔸 " if current_status == OrderStatusValues.PROCESSING else "") + "Выполнять",
+                        callback_data=InlineOrderStatusesKeyboard.callback_json(
+                            actions.PROCESS, order_id, msg_id, chat_id
+                        ),
+                    ),
+                ],
+                [
+                    InlineKeyboardButton(
+                        text="Отменить ❌",
+                        callback_data=InlineOrderStatusesKeyboard.callback_json(
+                            actions.PRE_CANCEL, order_id, msg_id, chat_id
+                        ),
+                    ),
+                    InlineKeyboardButton(
+                        text="Завершить ✅",
+                        callback_data=InlineOrderStatusesKeyboard.callback_json(
+                            actions.FINISH, order_id, msg_id, chat_id
+                        ),
+                    ),
+                ],
             ]
-        ])
+        )
 
 
 class InlineOrderCancelKeyboard:
@@ -183,12 +170,7 @@ class InlineOrderCancelKeyboard:
 
     @staticmethod
     @callback_json_validator
-    def callback_json(
-            action: Callback.ActionEnum,
-            order_id: str,
-            msg_id: int,
-            chat_id: int
-    ) -> str:
+    def callback_json(action: Callback.ActionEnum, order_id: str, msg_id: int, chat_id: int) -> str:
         return InlineOrderCancelKeyboard.Callback(
             a=action,
             order_id=order_id,
@@ -205,31 +187,29 @@ class InlineOrderCancelKeyboard:
             return False
 
     @staticmethod
-    def get_keyboard(
-            order_id: str,
-            msg_id: int = 0,
-            chat_id: int = 0
-    ) -> InlineKeyboardMarkup:
+    def get_keyboard(order_id: str, msg_id: int = 0, chat_id: int = 0) -> InlineKeyboardMarkup:
         actions = InlineOrderCancelKeyboard.Callback.ActionEnum
 
-        return InlineKeyboardMarkup(inline_keyboard=[
-            [
-                InlineKeyboardButton(
-                    text="Точно отменить?",
-                    callback_data=InlineOrderCancelKeyboard.callback_json(
-                        actions.CANCEL, order_id, msg_id, chat_id
+        return InlineKeyboardMarkup(
+            inline_keyboard=[
+                [
+                    InlineKeyboardButton(
+                        text="Точно отменить?",
+                        callback_data=InlineOrderCancelKeyboard.callback_json(
+                            actions.CANCEL, order_id, msg_id, chat_id
+                        ),
                     )
-                )
-            ],
-            [
-                InlineKeyboardButton(
-                    text="🔙 Назад",
-                    callback_data=InlineOrderCancelKeyboard.callback_json(
-                        actions.BACK_TO_ORDER_STATUSES, order_id, msg_id, chat_id
+                ],
+                [
+                    InlineKeyboardButton(
+                        text="🔙 Назад",
+                        callback_data=InlineOrderCancelKeyboard.callback_json(
+                            actions.BACK_TO_ORDER_STATUSES, order_id, msg_id, chat_id
+                        ),
                     )
-                )
+                ],
             ]
-        ])
+        )
 
 
 class InlineCreateReviewKeyboard:
@@ -247,11 +227,7 @@ class InlineCreateReviewKeyboard:
 
     @staticmethod
     @callback_json_validator
-    def callback_json(
-            action: Callback.ActionEnum,
-            order_id: str,
-            chat_id: int
-    ) -> str:
+    def callback_json(action: Callback.ActionEnum, order_id: str, chat_id: int) -> str:
         return InlineCreateReviewKeyboard.Callback(
             a=action,
             order_id=order_id,
@@ -268,21 +244,23 @@ class InlineCreateReviewKeyboard:
 
     @staticmethod
     def get_keyboard(
-            order_id: str,
-            chat_id: int = 0,
+        order_id: str,
+        chat_id: int = 0,
     ) -> InlineKeyboardMarkup:
         actions = InlineCreateReviewKeyboard.Callback.ActionEnum
 
-        return InlineKeyboardMarkup(inline_keyboard=[
-            [
-                InlineKeyboardButton(
-                    text="Оставить отзыв",
-                    callback_data=InlineCreateReviewKeyboard.callback_json(
-                        actions.CREATE_REVIEW, order_id, chat_id
+        return InlineKeyboardMarkup(
+            inline_keyboard=[
+                [
+                    InlineKeyboardButton(
+                        text="Оставить отзыв",
+                        callback_data=InlineCreateReviewKeyboard.callback_json(
+                            actions.CREATE_REVIEW, order_id, chat_id
+                        ),
                     )
-                )
-            ],
-        ])
+                ],
+            ]
+        )
 
 
 class InlineAcceptReviewKeyboard:
@@ -301,9 +279,9 @@ class InlineAcceptReviewKeyboard:
     @staticmethod
     @callback_json_validator
     def callback_json(action: Callback.ActionEnum, product_review_id: int) -> str:
-        return InlineAcceptReviewKeyboard.Callback(
-            a=action, product_review_id=product_review_id
-        ).model_dump_json(by_alias=True)
+        return InlineAcceptReviewKeyboard.Callback(a=action, product_review_id=product_review_id).model_dump_json(
+            by_alias=True
+        )
 
     @staticmethod
     def callback_validator(json_string: str) -> bool:
@@ -322,18 +300,14 @@ class InlineAcceptReviewKeyboard:
                 [
                     InlineKeyboardButton(
                         text="Сохранить",
-                        callback_data=InlineAcceptReviewKeyboard.callback_json(
-                            actions.SAVE, product_review_id
-                        )
+                        callback_data=InlineAcceptReviewKeyboard.callback_json(actions.SAVE, product_review_id),
                     )
                 ],
                 [
                     InlineKeyboardButton(
                         text="Игнорировать",
-                        callback_data=InlineAcceptReviewKeyboard.callback_json(
-                            actions.IGNORE, product_review_id
-                        )
+                        callback_data=InlineAcceptReviewKeyboard.callback_json(actions.IGNORE, product_review_id),
                     )
-                ]
+                ],
             ],
         )
