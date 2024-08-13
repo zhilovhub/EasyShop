@@ -161,19 +161,16 @@ async def order_creation_process(order: OrderSchema, order_user_data: Chat) -> s
                 await main_msg.answer(
                     f"❗️ Произошла ошибка при создании платежа, заказ отменен.\n\n"
                     f"⚠️ Указанная Вами валюта ({custom_bot_options.currency_symbol.value}) "
-                    f"не поддерживается платежным провайдером, чей токен Вы указали.",
-                    show_alert=True)
+                    f"не поддерживается платежным провайдером, чей токен Вы указали.",)
             elif "PAYMENT_PROVIDER_INVALID" in str(ex):
                 await main_msg.answer(
                     f"❗️ Произошла ошибка при создании платежа, заказ отменен.\n\n"
                     f"⚠️ Указанный Вами Provider Token не действует."
                     f"\n\nПерепроверьте правильность написания и добавьте его еще раз, "
-                    f"если это не помогло, обратитесь в поддержку.",
-                    show_alert=True)
+                    f"если это не помогло, обратитесь в поддержку.",)
             else:
                 await main_msg.answer(
-                    f"❗️ Произошла ошибка при создании платежа, заказ отменен.",
-                    show_alert=True)
+                    f"❗️ Произошла ошибка при создании платежа, заказ отменен.",)
                 raise ex
 
     custom_bot_logger.info(

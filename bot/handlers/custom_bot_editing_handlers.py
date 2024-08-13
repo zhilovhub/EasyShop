@@ -250,12 +250,22 @@ async def manage_payment_settings(query: CallbackQuery, state: FSMContext):
                                            "\n\n💳 Номер карты:\n<code>4242 4242 4242 4242</code>"
                                            "\n\n📆 Годна до:\n<code>12/30</code>"
                                            f"\n\n*️⃣ CVC:\n<code>111</code>")
-            await query.message.answer_invoice(**(await create_invoice_params(custom_bot.bot_id,
-                                                                              query.from_user.id,
-                                                                              order_items={},
-                                                                              test=True,
-                                                                              order_id="TEST",
-                                                                              )))
+            try:
+                await query.message.answer_invoice(**(await create_invoice_params(custom_bot.bot_id,
+                                                                                  query.from_user.id,
+                                                                                  order_items={},
+                                                                                  test=True,
+                                                                                  order_id="TEST",
+                                                                                  )))
+            except TelegramBadRequest as ex:
+                if "CURRENCY_INVALID" in str(ex):
+                    return await query.answer(
+                        f"❗️ Произошла ошибка при создании тестового платежа.\n\n"
+                        f"⚠️ Указанная Вами валюта ({custom_bot_options.currency_symbol.value}) "
+                        f"не может быть использована для тестового платежа в основном боте.",
+                        show_alert=True
+                    )
+                raise ex
             await query.answer()
         case callback_data.ActionEnum.SEND_TO_BOT:
             if custom_bot.payment_type == BotPaymentTypeValues.TG_PROVIDER and not custom_bot.provider_token:

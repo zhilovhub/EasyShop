@@ -55,6 +55,9 @@ async def create_invoice_params(
             )
         payload = json.dumps({"bot_id": bot_id, "user_id": user_id, "order_id": order_id})
 
+    if provider_token is None:
+        provider_token = ""
+
     params = {
         "title": title,
         "description": description,
