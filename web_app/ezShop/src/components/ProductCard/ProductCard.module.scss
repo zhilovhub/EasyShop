@@ -1,0 +1,95 @@
+@import "../../shared/style/unification/unification.scss";
+
+.product_card{
+    // width: 175px;
+    // height: 233px;
+    border-radius: $block-radius-1;
+    background-color: $white-color;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    flex: 0 0 calc(50% - 7px);
+}
+
+.image{
+    height: 128px;
+    object-fit: cover;
+}
+
+.price{
+    font-family: $montserrat-bold;
+    font-size: $font-size-2;
+    margin-inline: 6px;
+    margin-top: 10px;
+}
+
+.name{
+    font-family: $montserrat-regular;
+    font-size: $font-size-3;
+    margin-inline: 6px;
+    margin-bottom: 10px;
+}
+
+.button{
+    @include gray-button;
+    margin: 6px;
+    margin-top: 10px;
+    justify-self: flex-end;
+    margin-top: auto;
+
+}
+
+.button_container{
+    margin: 6px;
+    display: flex;
+    flex-direction: row;
+    gap: 6px;
+    margin-top: auto;
+}
+
+.plus_btn{
+    @include accent-button;
+    flex-grow: 1;
+}
+
+.minus_btn{
+    @include gray-button;
+    flex-grow: 1;
+}
+
+.buyCount{
+    position: absolute;
+    top: 0;
+    right: 0;
+    margin-top: 7px;
+    margin-right: 7px;
+    background-color: $accent-color;
+    text-align: center;
+    align-content: center;
+    min-width: 25px;
+    min-height: 25px;
+    border-radius: 50%;
+    font-family: $montserrat-semi-bold;
+    font-size: $font-size-4;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
