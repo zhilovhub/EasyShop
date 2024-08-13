@@ -1,0 +1,28 @@
+{
+    "catalog__catalog": "Каталог",
+    "catalog__search_product": "Найти нужный товар",
+
+    "basket__basket": "Корзина",
+    "basket__msg_emty": "Товары в корзине отсутствуют",
+    "basket__hint_emty": "К сожалению, в вашей корзине пока нет товаров. Пожалуйста, вернитесь в каталог и выберите товары.",
+
+    "order__order": "Заказ",
+    "order__your_order": "Ваш заказ",
+    "order__city": "Город",
+    "order__address": "Адрес доставки",
+    "order__comment": "Комментарий",
+    "order__city_hint": "г. Москва",
+    "order__address_hint": "Дмитровское шоссе, 81",
+    "order__comment_hint": "Добавьте комментарий",
+
+    "filters__filters": "Фильтры",
+    "filters__price": "Цена, ₽",
+    "filters__sort_title": "Сортировать",
+    "filters__sort_1": "По убыванию",
+    "filters__sort_2": "По убыванию",
+    "filters__sort_3": "По возрастанию",
+    "filters__categories": "Категории",
+    "filters__from": "От",
+    "filters__before": "До"
+
+}

@@ -1,0 +1,164 @@
+@import "../variables.scss";
+
+
+@mixin gray-button{
+    background-color: $gray-color;
+    text-align: center;
+    padding-block: 12px;
+    border-radius: $block-radius-1;
+    color: $black-color;
+    font-family: $montserrat-medium;
+    font-size: $font-size-4;
+    cursor: pointer;
+}
+
+
+@mixin accent-button{
+    background-color: $accent-color;
+    text-align: center;
+    padding-block: 12px;
+    border-radius: $block-radius-1;
+    color: $black-color;
+    font-family: $montserrat-medium;
+    font-size: $font-size-4;
+    cursor: pointer;
+
+    &:hover {
+        // background-color: rgba($blue-color-1, 0.8);
+        transition: 0.5s;
+    }
+}
+
+@mixin input{
+    border: none;        /* Убираем рамку */
+    outline: none;      /* Убираем обводку при фокусе */
+    background-color: $white-color;
+    border-radius: 15px;
+    padding: 10;         /* Убираем отступы */
+    padding-inline: 14px;
+    padding-block: 15px;
+    margin: 0;          /* Убираем внешние отступы */
+    font: inherit;      /* Наследуем шрифт от родительского элемента */
+    box-shadow: none;   /* Убираем тень */
+    font-family: $montserrat-semi-bold;
+    font-size: $font-size-3;
+    color: $black-color;
+
+    -webkit-appearance: none; /* удаляем стандартный стиль на Safari */
+    -moz-appearance: none; /* удаляем стандартный стиль на Firefox */
+    appearance: none; /* удаляем стандартный стиль */
+
+    &::placeholder{
+        color: $gray-color-6;
+    }
+
+        /* Дополнительные стили для браузеров */
+    &::-webkit-outer-spin-button,
+    &::-webkit-inner-spin-button {
+        -webkit-appearance: none; /* Убираем стрелки у числового ввода */
+        margin: 0; /* Убираем отступы */
+    }
+
+    &[type="number"] {
+        -moz-appearance: textfield; /* Для Firefox, убираем стрелки */
+    }
+}
+
+@mixin search_input{
+    border: none;        /* Убираем рамку */
+    outline: none;      /* Убираем обводку при фокусе */
+    background-color: $white-color;
+    border-radius: 17px;
+    padding: 10;         /* Убираем отступы */
+    padding-right: 14px;
+    padding-left: 40px;
+    padding-block: 9px;
+    margin: 0;          /* Убираем внешние отступы */
+    font: inherit;      /* Наследуем шрифт от родительского элемента */
+    box-shadow: none;   /* Убираем тень */
+    font-family: $montserrat-semi-bold;
+    font-size: $font-size-3;
+    color: $black-color;
+
+    &::placeholder{
+        color: $gray-color-3;
+    }
+
+        /* Дополнительные стили для браузеров */
+    &::-webkit-outer-spin-button,
+    &::-webkit-inner-spin-button {
+        -webkit-appearance: none; /* Убираем стрелки у числового ввода */
+        margin: 0; /* Убираем отступы */
+    }
+
+    &[type="number"] {
+        -moz-appearance: textfield; /* Для Firefox, убираем стрелки */
+    }
+}
+
+@mixin gray_input{
+    border: none;        /* Убираем рамку */
+    outline: none;      /* Убираем обводку при фокусе */
+    background-color: $gray-color-5;
+    border-radius: 15px;
+    padding: 10;         /* Убираем отступы */
+    padding-inline: 14px;
+    padding-block: 10px;
+    margin: 0;          /* Убираем внешние отступы */
+    font: inherit;      /* Наследуем шрифт от родительского элемента */
+    box-shadow: none;   /* Убираем тень */
+    font-family: $montserrat-regular;
+    font-size: $font-size-3;
+    color: $black-color;
+
+    &::placeholder{
+        color: $gray-color-6;
+    }
+
+        /* Дополнительные стили для браузеров */
+    &::-webkit-outer-spin-button,
+    &::-webkit-inner-spin-button {
+        -webkit-appearance: none; /* Убираем стрелки у числового ввода */
+        margin: 0; /* Убираем отступы */
+    }
+
+    &[type="number"] {
+        -moz-appearance: textfield; /* Для Firefox, убираем стрелки */
+    }
+}
+
+
+@mixin textarea{
+    border: none;        /* Убираем рамку */
+    outline: none;      /* Убираем обводку при фокусе */
+    background-color: $white-color;
+    border-radius: 15px;
+    padding: 10;         /* Убираем отступы */
+    padding-inline: 14px;
+    padding-block: 15px;
+    margin: 0;          /* Убираем внешние отступы */
+    font: inherit;      /* Наследуем шрифт от родительского элемента */
+    box-shadow: none;   /* Убираем тень */
+    font-family: $montserrat-semi-bold;
+    font-size: $font-size-3;
+    color: $black-color;
+    resize: vertical;
+    max-height: 40px;
+    min-height: 20px;
+
+    &::placeholder{
+        color: $gray-color-6;
+    }
+
+        /* Дополнительные стили для браузеров */
+    &::-webkit-outer-spin-button,
+    &::-webkit-inner-spin-button {
+        -webkit-appearance: none; /* Убираем стрелки у числового ввода */
+        margin: 0; /* Убираем отступы */
+    }
+
+    &[type="number"] {
+        -moz-appearance: textfield; /* Для Firefox, убираем стрелки */
+    }
+}
+

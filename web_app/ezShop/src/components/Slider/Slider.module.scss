@@ -1,0 +1,29 @@
+@import "../../shared/style/unification/unification.scss";
+
+.slider {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    height: 300px;
+}
+
+
+.arrow_left{
+    color: $black-color;
+    width: 25px;
+}
+
+.arrow_right{
+    color: $black-color;
+    width: 25px;
+    transform: rotate(180deg);
+}
+
+.arrow_container{
+    position: absolute;
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    width: 95vw;
+}
