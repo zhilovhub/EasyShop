@@ -37,7 +37,7 @@ class ReplyBackBotMenuKeyboard:
 class ReplyBotMenuKeyboard:
     class Callback(BaseModel):
         class ActionEnum(Enum):
-            SETTINGS = "⚙ Настройки бота"
+            SETTINGS = "⚙ Меню бота"
             CONTACTS = "☎ Контакты"
             SHOP = "🛍 Мой магазин"
 
