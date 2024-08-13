@@ -1,14 +1,19 @@
-from database.models.models import Database
-from database.models.user_model import UserStatusValues
 
-from common_utils.config import database_settings
-from common_utils.singleton import singleton
-from common_utils.scheduler.scheduler import Scheduler
-from common_utils.subscription.subscription import Subscription
+try:
+    from database.models.models import Database
+    from database.models.user_model import UserStatusValues
 
-from logs.config import logger
+    from common_utils.config import database_settings
+    from common_utils.singleton import singleton
+    from common_utils.scheduler.scheduler import Scheduler
+    from common_utils.subscription.subscription import Subscription
 
-from bot.handlers.subscription_handlers import send_subscription_expire_notify, send_subscription_end_notify
+    from logs.config import logger, extra_params
+
+    from bot.handlers.subscription_handlers import send_subscription_expire_notify, send_subscription_end_notify
+except ImportError as ex:
+    print(f"IMPORT ERROR: if running module from terminal please set PYTHONPATH env variable to project root")
+    exit(1)
 
 import asyncio
 from datetime import datetime
@@ -29,6 +34,7 @@ class IncorrectParamType(Exception):
 @singleton
 class Administration:
     """Модуль системы администрации"""
+
     def __init__(self, database: Database, custom_scheduler: Scheduler, subscription: Subscription) -> None:
         self.user_db = database.get_user_dao()
         self.scheduler = custom_scheduler
@@ -83,11 +89,11 @@ if __name__ == "__main__":
         jobstore_alias='postgres',
         timezone=database_settings.TIMEZONE
     )
-    _database = Database(sqlalchemy_url=database_settings.SQLALCHEMY_URL, logger=logger)
+    database = Database(sqlalchemy_url=database_settings.SQLALCHEMY_URL, logger=logger)
     administration = Administration(
-        database=_database,
+        database=database,
         custom_scheduler=scheduler,
-        subscription=Subscription(_database, scheduler)
+        subscription=Subscription(database, scheduler)
     )
 
     available_commands = ("\n\nset_sub_until [user_id] [timestamp int] - меняет дату окончания подписки юзера"

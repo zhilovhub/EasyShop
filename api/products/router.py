@@ -7,8 +7,7 @@ from sqlalchemy.exc import IntegrityError
 
 from api.utils import (check_admin_authorization, SearchWordMustNotBeEmptyError, HTTPProductNotFoundError,
                        HTTPInternalError, HTTPBadRequestError, HTTPConflictError, RESPONSES_DICT,
-                       HTTPCustomBotIsOfflineError, HTTPBotNotFoundError, get_fastapi_file_extension,
-                       HTTPUnacceptedError, ACCEPTED_PHOTO_EXTENSIONS)
+                       HTTPCustomBotIsOfflineError, HTTPBotNotFoundError)
 
 from common_utils.config import common_settings
 
@@ -248,10 +247,10 @@ async def add_product_api(
 
 
 @router.post("/add_product_photo")
-async def add_product_photo_api(bot_id: int,
-                                product_id: int,
-                                files: list[UploadFile],
-                                authorization_data: str = Header()):
+async def create_file(bot_id: int,
+                      product_id: int,
+                      files: list[UploadFile],
+                      authorization_data: str = Header()):
     """
     Updates product.picture in database and saves photo on directory
 
@@ -271,10 +270,7 @@ async def add_product_photo_api(bot_id: int,
                     string.digits +
                     string.ascii_letters,
                     15))
-            file_extension = await get_fastapi_file_extension(file)
-            if file_extension.lower() not in ACCEPTED_PHOTO_EXTENSIONS:
-                raise HTTPUnacceptedError(file_name=file.filename, accepted_extensions=str(ACCEPTED_PHOTO_EXTENSIONS))
-            photo_path = f"{bot_id}_{random_string}{file_extension}"
+            photo_path = f"{bot_id}_{random_string}.{file.filename.split('.')[-1]}"
 
             api_logger.debug(
                 f"bot_id={bot_id}: downloading new file in directory {photo_path} for product_id={product_id}",
