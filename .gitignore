@@ -157,3 +157,6 @@ resources/*.json
 webapp/.vscode
 
 gitlab_ssh_keys/
+
+.DS_Store
+webapp/.DS_Store
