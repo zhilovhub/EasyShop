@@ -1,7 +1,7 @@
 from database.config import bot_db, option_db
 from database.models.bot_model import BotIntegrityError, BotSchemaWithoutId
 from database.models.option_model import OptionSchemaWithoutId
-from database.models.order_option_model import OrderOptionSchemaWithoutId, OrderOptionDao
+from database.models.order_option_model import OrderOptionSchemaWithoutId, OrderOptionDao, OrderOptionTypeValues
 
 from bot.main import bot
 from bot.utils.message_texts import MessageTexts
@@ -65,6 +65,7 @@ async def create_order_options(order_option_db: OrderOptionDao, bot_id: int):
             required=True,
             emoji="🚐",
             position_index=5,
+            option_type=OrderOptionTypeValues.CHOOSE
         )
     )
 
@@ -87,6 +88,7 @@ async def create_order_options(order_option_db: OrderOptionDao, bot_id: int):
             required=True,
             emoji="💌",
             position_index=7,
+            option_type=OrderOptionTypeValues.TEXT_AREA
         )
     )
 

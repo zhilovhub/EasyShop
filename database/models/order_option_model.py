@@ -26,6 +26,7 @@ class UnknownOrderOptionType(KwargsException):
 
 class OrderOptionTypeValues(Enum):
     TEXT = "text"
+    TEXT_AREA = "text_area"
     CHOOSE = "choose"
 
 
