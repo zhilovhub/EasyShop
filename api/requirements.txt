@@ -11,3 +11,4 @@ python-dotenv
 asyncpg
 aiogram
 pydantic-settings
+python-magic

@@ -27,7 +27,7 @@ def _generate_simple_line_plot(numbers_x, numbers_y, int_y: bool = True):  # TOD
 def _generate_contest_users_count_dated_data(
         users: list[ContestUserSchema]) -> tuple:
     if not users:
-        return ((datetime.now(), 0),)
+        return (datetime.now(), 0),
 
     sorted_users_by_date = sorted(users, key=lambda x: x.join_date)
     prev_date = sorted_users_by_date[0].join_date
@@ -51,7 +51,7 @@ def _create_date_graph(date_start: datetime, date_end: datetime,
                       np.timedelta64(time_step_value, time_step_format))
     y_data = []
     pos = 0
-    for date in dates:
+    for date in np.nditer(dates):
         for_data = dated_data[pos::]
         for data in for_data:
             if data[0] <= date:

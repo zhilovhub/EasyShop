@@ -4,7 +4,8 @@ from aiohttp.web_exceptions import HTTPBadRequest
 from fastapi import APIRouter
 from fastapi.responses import FileResponse
 
-from api.utils import RESPONSES_DICT, HTTPFileNotFoundError, HTTPInternalError, HTTPProductNotFoundError
+from api.utils import (RESPONSES_DICT, HTTPFileNotFoundError, HTTPInternalError, HTTPProductNotFoundError,
+                       get_bytes_file_extension, HTTPUnacceptedError, ACCEPTED_PHOTO_EXTENSIONS)
 
 from common_utils.config import common_settings
 from database.config import product_db
@@ -36,6 +37,36 @@ def _compress_file_to_thumbnail(file_path: str):
     img.save(_get_file_thumbnail_path(file_path))
 
 
+async def _recreate_blob_file(file_path: str, extension: str | None = None) -> str:
+    if not extension:
+        with open(file_path, "rb") as file:
+            file_bytes = file.read()
+            extension = await get_bytes_file_extension(file_bytes)
+            if not extension:
+                raise HTTPUnacceptedError(file_path=file_path)
+
+    old_file_name = file_path.split('/')[-1].split('.')[0]
+
+    if extension.lower() not in ACCEPTED_PHOTO_EXTENSIONS:
+        raise HTTPUnacceptedError(file_name=old_file_name, provided_extension=extension,
+                                  accepted_extensions=str(ACCEPTED_PHOTO_EXTENSIONS))
+
+    new_file_name = f"{old_file_name}{extension}"
+    api_logger.info(f"renaming .blob file to new filename with detected extension: {extension} "
+                    f"({file_path.split('/')[-1]} -> {new_file_name})")
+
+    try:
+        with open(common_settings.FILES_PATH + new_file_name, "rb"):
+            api_logger.info("renamed blob file already exists.")
+    except FileNotFoundError:
+        with open(common_settings.FILES_PATH + new_file_name, "wb") as new_file:
+            new_file.write(file_bytes)
+        api_logger.debug(f"new file created ({new_file_name}) "
+                         f"returning in api method new file except of old .blob")
+
+    return new_file_name
+
+
 @router.get("/get_file/{file_name}")
 async def get_file(file_name: str) -> FileResponse:
     """
@@ -46,10 +77,18 @@ async def get_file(file_name: str) -> FileResponse:
     :raises HTTPInternalError:
     """
     try:
-        with open(common_settings.FILES_PATH + file_name, 'rb'):
-            pass
+        with open(common_settings.FILES_PATH + file_name, 'rb') as file:
+            file_bytes = file.read()
+            file_ext = await get_bytes_file_extension(file_bytes)
+            if not file_ext:
+                raise HTTPUnacceptedError(file_name=file_name)
+            file_name_ext = file_name.split('.')[-1].lower()
+            if file_name_ext == "blob":
+                file_name = await _recreate_blob_file(common_settings.FILES_PATH + file_name)
     except FileNotFoundError:
         raise HTTPFileNotFoundError(file_name=file_name)
+    except HTTPUnacceptedError:
+        raise
     except Exception as e:
         api_logger.error(
             "Error while execute get_file",
@@ -78,7 +117,13 @@ async def get_product_thumbnail(product_id: int) -> FileResponse:
 
     file_name = product.picture[0]
 
-    # file_ext = product.picture[0].split('.')[-1]  # TODO fix bug with BLOB
+    file_name_ext = file_name.split('.')[-1].lower()
+    if file_name_ext == "blob":
+        file_name = await _recreate_blob_file(common_settings.FILES_PATH + file_name)
+        product.picture[0] = file_name
+        api_logger.info(f"edit old product photo file (renaming .blob) for product: {product.id}")
+        await product_db.update_product(product)
+
     thumbnail_path = _get_file_thumbnail_path(common_settings.FILES_PATH + file_name)
 
     headers = {
