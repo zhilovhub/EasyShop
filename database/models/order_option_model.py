@@ -51,6 +51,7 @@ class OrderOption(Base):
     id = Column(BigInteger, primary_key=True)
     bot_id = Column(ForeignKey(Bot.bot_id, ondelete="CASCADE"), nullable=False)
     option_name = Column(String, nullable=False)
+    hint = Column(String, default="Введите значение")
     required = Column(Boolean, nullable=False, default=False)
     emoji = Column(String, nullable=False)
     position_index = Column(Integer, nullable=False)
@@ -62,6 +63,7 @@ class OrderOptionSchemaWithoutId(BaseModel):
 
     bot_id: int = Field(frozen=True)
     option_name: str
+    hint: str = "Введите значение"
     required: bool = False
     emoji: str = "🔷"
     position_index: int

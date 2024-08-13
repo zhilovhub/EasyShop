@@ -17,6 +17,7 @@ async def create_order_options(order_option_db: OrderOptionDao, bot_id: int):
         OrderOptionSchemaWithoutId(
             bot_id=bot_id,
             option_name="Имя клиента",
+            hint="Иванов Иван",
             required=True,
             emoji="👤",
             position_index=1,
@@ -27,6 +28,7 @@ async def create_order_options(order_option_db: OrderOptionDao, bot_id: int):
         OrderOptionSchemaWithoutId(
             bot_id=bot_id,
             option_name="Номер телефона",
+            hint="Номер телефона",
             required=True,
             emoji="📱",
             position_index=2,
@@ -37,6 +39,7 @@ async def create_order_options(order_option_db: OrderOptionDao, bot_id: int):
         OrderOptionSchemaWithoutId(
             bot_id=bot_id,
             option_name="Город",
+            hint="г.Москва",
             required=True,
             emoji="🌇",
             position_index=3,
@@ -47,6 +50,7 @@ async def create_order_options(order_option_db: OrderOptionDao, bot_id: int):
         OrderOptionSchemaWithoutId(
             bot_id=bot_id,
             option_name="Адрес доставки",
+            hint="Дмитровское шоссе, 81",
             required=True,
             emoji="🛤",
             position_index=4,
@@ -57,6 +61,7 @@ async def create_order_options(order_option_db: OrderOptionDao, bot_id: int):
         OrderOptionSchemaWithoutId(
             bot_id=bot_id,
             option_name="Способ доставки",
+            hint="Выберете способ доставки",
             required=True,
             emoji="🚐",
             position_index=5,
@@ -67,6 +72,7 @@ async def create_order_options(order_option_db: OrderOptionDao, bot_id: int):
         OrderOptionSchemaWithoutId(
             bot_id=bot_id,
             option_name="Время доставки",
+            hint="Предпочтения по времени доставки",
             required=True,
             emoji="⏰",
             position_index=6,
@@ -77,6 +83,7 @@ async def create_order_options(order_option_db: OrderOptionDao, bot_id: int):
         OrderOptionSchemaWithoutId(
             bot_id=bot_id,
             option_name="Комментарий",
+            hint="Добавьте комментарий",
             required=True,
             emoji="💌",
             position_index=7,
