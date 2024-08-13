@@ -448,7 +448,7 @@ async def _get_resized_channels_button(
     """Returns resized inline keyboard with channels as buttons"""
     all_channels = await get_bot_channels(bot_id=bot_id)
 
-    if isinstance(keyboard, InlineChannelsListKeyboard):
+    if keyboard == InlineChannelsListKeyboard:
         channels_buttons = [
             InlineKeyboardButton(
                 text='@' + channel[1],
