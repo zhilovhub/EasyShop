@@ -10,7 +10,7 @@ from common_utils.config import main_telegram_bot_settings
 from common_utils.bot_settings_config import BOT_PROPERTIES
 from common_utils.order_utils.order_type import OrderType, UnknownOrderType
 
-from database.config import product_db
+from database.config import product_db, order_option_db
 from database.models.order_model import OrderSchema, OrderItem, OrderItemExtraOption
 
 from logs.config import logger, custom_bot_logger, extra_params
@@ -75,7 +75,7 @@ async def create_order(user_id: int, data, order_type: OrderType, _json: bool = 
     random_string = ''.join(random.sample(string.digits + string.ascii_letters, 5))
     data['order_id'] = date + random_string
 
-    return _form_order(data, order_type)
+    return await _form_order(data, order_type)
 
 
 # Old text generation
@@ -96,7 +96,7 @@ async def _handle_zero_products(event: Message, bot_owner: int, zero_products: l
         await msg.reply("\n".join([f"{p.name} [{p.id}]" for p in zero_products]))
 
 
-def _form_order(data: dict, order_type: OrderType) -> OrderSchema:
+async def _form_order(data: dict, order_type: OrderType) -> OrderSchema:
     order_options = {
         0: data["name"],
         1: data["phone_number"],
@@ -106,9 +106,18 @@ def _form_order(data: dict, order_type: OrderType) -> OrderSchema:
         5: data["comment"],
         6: data["delivery_method"]
     }
+    # order_options_from_db = await order_option_db.get_all_order_options(data["bot_id"])
+    # order_options = {}
+    # for option in order_options_from_db:
+    #     if option.id not in data:
+    #         if option.required:
+    #             logger.warning(f"option from order option db not provided in order data from web app "
+    #                            f"(option_id: {option.id})")
+    #         order_options[option.id] = None
+    #     else:
+    #         order_options[option.id] = data[option.id]
 
-    # TODO Когда фронт будет готов передавать кастомные опции, а не захардкоженные, удалить этот словарь
-    order = OrderSchema(**data, order_options=order_options)  # TODO order_options должны быть с фронта
+    order = OrderSchema(**data, order_options=order_options)
     match order_type:
         case OrderType.MAIN_BOT_TEST_ORDER:
             pass

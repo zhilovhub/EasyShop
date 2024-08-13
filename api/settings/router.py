@@ -6,8 +6,11 @@ from fastapi import APIRouter
 
 from pydantic import BaseModel
 
-from database.config import bot_db, option_db
+from database.config import bot_db, option_db, order_option_db, order_choose_option_db
+
 from database.models.bot_model import BotNotFoundError
+from database.models.order_choose_option_model import OrderChooseOptionSchema
+from database.models.order_option_model import OrderOptionSchema, OrderOptionTypeValues
 
 from api.utils import HTTPBotNotFoundError, HTTPInternalError, RESPONSES_DICT
 
@@ -40,6 +43,51 @@ async def get_web_app_options_api(bot_id: int) -> WebAppOptions:
         options = await option_db.get_option(bot.options_id)
 
         return WebAppOptions(bg_color=options.bg_color)
+
+    except BotNotFoundError as e:
+        api_logger.error(
+            f"bot_id={bot_id}: bot_id={bot_id} is not found in database",
+            extra=extra_params(bot_id=bot_id),
+            exc_info=e
+        )
+        raise HTTPBotNotFoundError(bot_id=bot_id)
+
+    except Exception as e:
+        api_logger.error(
+            f"bot_id={bot_id}: Error while execute get_bot db_method with bot_id={bot_id}",
+            extra=extra_params(bot_id=bot_id),
+            exc_info=e
+        )
+        raise HTTPInternalError
+
+
+class APIOrderOption(BaseModel):
+    option: OrderOptionSchema
+    variants: list[OrderChooseOptionSchema] | None = None
+
+
+@router.get("/get_order_options/{bot_id}/")
+async def get_order_options_api(bot_id: int) -> list[APIOrderOption]:
+    """
+    :returns: list of Pydantic APIOrderOption Model with order option
+
+    :raises HTTPBotNotFoundError:
+    :raises HTTPInternalError:
+    """
+    try:
+        bot = await bot_db.get_bot(bot_id)
+        order_options = await order_option_db.get_all_order_options(bot.bot_id)
+
+        api_res = []
+
+        for option in order_options:
+            if option.option_type == OrderOptionTypeValues.CHOOSE:
+                variants = await order_choose_option_db.get_all_choose_options(option.id)
+            else:
+                variants = None
+            api_res.append(APIOrderOption(option=option, variants=variants))
+
+        return api_res
 
     except BotNotFoundError as e:
         api_logger.error(

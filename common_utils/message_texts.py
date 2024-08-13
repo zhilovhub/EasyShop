@@ -1,6 +1,7 @@
 from enum import Enum
 from typing import Any
 
+from database.config import order_option_db
 from database.models.order_model import OrderSchema, OrderItemExtraOption
 from database.models.product_model import ProductSchema
 from database.models.order_option_model import OrderOptionSchemaWithoutId
