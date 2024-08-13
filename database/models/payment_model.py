@@ -49,7 +49,7 @@ class PaymentSchemaWithoutId(BaseModel):
     status: str = Field(max_length=55)
     created_at: datetime
     last_update: datetime
-    from_main_bot: bool
+    from_main_bot: bool = True
     custom_bot_id: int | None = None  # не добавляю ссылку на Bot.id чтобы платежи не удалялись при удалении бота
 
     @classmethod
