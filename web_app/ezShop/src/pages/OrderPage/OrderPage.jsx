@@ -110,7 +110,7 @@ function OrderPage(){
         setIsCheck(true);
 
         if(isCorrect == true){
-            alert('isCorrect');
+            alert(isCorrect);
         }
 
     }
