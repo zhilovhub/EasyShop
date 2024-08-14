@@ -61,7 +61,10 @@ async def process_successfully_payment(message: Message):
         if order_info.shipping_address:
             txt += Text("\n\nАдрес доставки: ", Bold(order_info.shipping_address))
     else:
-        txt += Text("\n\nДанные пустые, но если Вы хотите ")
+        txt += Text(
+            "\n\nДанные пустые, но если Вы хотите их запрашивать, ",
+            "выберите нужные вам параметры на клавиатуре выше"
+        )
     if "TEST" == payload["order_id"]:
         pay_id = "TEST"
         await message.answer(**txt.as_kwargs())
