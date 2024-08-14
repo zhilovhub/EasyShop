@@ -16,6 +16,7 @@ function OrderPage(){
     const productList = useSelector(state => state.productList.productList);
     const navigate = useNavigate();
     const [orderOptions, setOrderOptions] = useState([]);
+    const [isCheck, setIsCheck] = useState(false)
 
     const [backButton] = initBackButton();
     backButton.show();
@@ -53,12 +54,19 @@ function OrderPage(){
 
     }, []);
 
+
     function getOption(type, data){
         switch (type){
             case "text":
+                const [inputValue, setInputValue] = useState('');
                 return <>
                 <p className={styles.input_title}>{data.option.option_name}</p>
-                <input className={styles.input} placeholder={data.option.hint}></input>
+                <input 
+                className={styles.input} 
+                placeholder={data.option.hint} 
+                style={ isCheck && inputValue == '' && data.option.required ? {border: "2px solid red"} : {}}
+                onChange={(event) => setInputValue(event.target.value)}
+                ></input>
                 </>
             case "choose":
                 return <>
@@ -76,7 +84,11 @@ function OrderPage(){
             case "textarea":
                 return <>
                 <p className={styles.input_title}>{data.option.option_name}</p>
-                <textarea className={styles.textarea} placeholder={data.option.hint}></textarea>
+                <textarea 
+                className={styles.textarea}
+                placeholder={data.option.hint}
+                style={ isCheck && inputValue == '' && data.option.required ? {border: "2px solid red"} : {}}
+                ></textarea>
                 </>
             default:
                 <></>
@@ -93,10 +105,7 @@ function OrderPage(){
 
     function sendOrder(){
 
-        let optionList = document.getElementsByClassName("")
-        orderOptions.map(option => {
-
-        })
+        setIsCheck(true)
         
 
     }
@@ -125,10 +134,6 @@ function OrderPage(){
         <div className={styles.separator}></div>
 
         {orderOptions.map(option => 
-            // <>
-            // <p className={styles.input_title}>{option.option.option_name}</p>
-            // <input className={styles.input} placeholder={option.option.hint}></input>
-            // </>
             getOption(option.option.option_type, option)
         )}
 
