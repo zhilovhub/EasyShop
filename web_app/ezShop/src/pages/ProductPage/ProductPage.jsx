@@ -35,7 +35,7 @@ function ProductPage(){
     function getImages(){
 
     product.pictures.map(image => {
-    const url = `https://ezbots.ru:2024/api/files/get_file/${image}`;
+    const url = `https://ezbots.ru:1537/api/files/get_file/${image}`;
         fetch(url, {
             method: 'GET',
             headers: {

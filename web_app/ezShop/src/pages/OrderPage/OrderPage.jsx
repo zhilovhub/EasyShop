@@ -20,7 +20,7 @@ function OrderPage(){
     useEffect(() => {
 
 
-        const url = `https://ezbots.ru:2024/api/settings/get_order_options/110`;
+        const url = `https://ezbots.ru:1537/api/settings/get_order_options/110`;
         fetch(url, {
             method: 'GET',
             headers: {

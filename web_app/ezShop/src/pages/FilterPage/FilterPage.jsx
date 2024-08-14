@@ -22,7 +22,7 @@ function FilterPage(){
         console.log("filter.categories")
         console.log(filter.categories)
 
-        const url = `https://ezbots.ru:2024/api/categories/get_all_categories/110`;
+        const url = `https://ezbots.ru:1537/api/categories/get_all_categories/110`;
         fetch(url, {
             method: 'GET',
             headers: {

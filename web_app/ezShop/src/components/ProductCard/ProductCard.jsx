@@ -16,7 +16,7 @@ function ProductCard(props) {
     const navigate = useNavigate();
     const [imgUrl, setImgUrl] = useState('')
 
-    const url = `https://ezbots.ru:2024/api/files/get_file/${props.product.pictures[0]}`;
+    const url = `https://ezbots.ru:1537/api/files/get_file/${props.product.pictures[0]}`;
         fetch(url, {
             method: 'GET',
             headers: {
