@@ -135,7 +135,7 @@ function OrderPage(){
                 time: "temp",
                 comment: "temp",
                 delivery_method: "temp",
-                ordered_at: "temp"
+                ordered_at: "2024-07-16T10:38:42.329Z"
             }
 
             const url = `https://ezbots.ru:1537/api/orders/send_order_data_to_bot`;
