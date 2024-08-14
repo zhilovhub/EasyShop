@@ -118,36 +118,43 @@ function OrderPage(){
             alert("Вы заполнили не все поля");
         }else if (isCorrect == true){
 
-            // const data = {
-            //     bot_id
-            // }
+            const data = {
+                bot_id: botId,
+                raw_items: [],
+                ordered_at: "2024-07-16T10:38:42.329Z",
+                town: 
 
-            // const url = `https://ezbots.ru:1537/api/products/get_all_products?bot_id=${botId}`;
-            // const body = JSON.stringify([]);
-            // fetch(url, {
-            //     method: 'POST',
-            //     headers: {
-            //         'Content-Type': 'application/json',
-            //         'Accept': 'application/json',
-            //         'authorization-data': 'DEBUG'
-            //     },
-            //     body: body
-            // })
-            // .then(response => {
-            //     if (!response.ok) {
-            //         throw new Error('Network response was not ok ' + response.statusText);
-            //     }
-            //     return response.json();
-            // })
-            // .then(data => {
-            //     console.log("data");
-            //     console.log(data);
-            //     setCurrentProducts(data)
-            //     setProducts(productList)
-            // })
-            // .catch(error => {
-            //     console.error('Error:', error);
-            // });
+
+
+
+            }
+
+            const url = `https://ezbots.ru:1537/api/products/get_all_products?bot_id=${botId}`;
+            const body = JSON.stringify([]);
+            fetch(url, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                    'authorization-data': 'DEBUG'
+                },
+                body: body
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok ' + response.statusText);
+                }
+                return response.json();
+            })
+            .then(data => {
+                console.log("data");
+                console.log(data);
+                setCurrentProducts(data)
+                setProducts(productList)
+            })
+            .catch(error => {
+                console.error('Error:', error);
+            });
 
 
 
