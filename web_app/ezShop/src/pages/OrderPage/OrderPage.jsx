@@ -58,14 +58,12 @@ function OrderPage(){
     function getOption(type, data){
         switch (type){
             case "text":
-                const [inputValue, setInputValue] = useState('');
                 return <>
                 <p className={styles.input_title}>{data.option.option_name}</p>
                 <input 
                 className={styles.input} 
                 placeholder={data.option.hint} 
-                style={ isCheck && inputValue == '' && data.option.required ? {border: "2px solid red"} : {}}
-                onChange={(event) => setInputValue(event.target.value)}
+                style={ isCheck && data.option.required ? {border: "2px solid red"} : {}}
                 ></input>
                 </>
             case "choose":
@@ -87,7 +85,7 @@ function OrderPage(){
                 <textarea 
                 className={styles.textarea}
                 placeholder={data.option.hint}
-                style={ isCheck && inputValue == '' && data.option.required ? {border: "2px solid red"} : {}}
+                style={ isCheck && data.option.required ? {border: "2px solid red"} : {}}
                 ></textarea>
                 </>
             default:
