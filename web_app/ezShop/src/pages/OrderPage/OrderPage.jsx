@@ -139,7 +139,7 @@ function OrderPage(){
             }
 
             const url = `https://ezbots.ru:1537/api/orders/send_order_data_to_bot`;
-            const body = JSON.stringify([]);
+            const body = JSON.stringify(data);
             fetch(url, {
                 method: 'POST',
                 headers: {
