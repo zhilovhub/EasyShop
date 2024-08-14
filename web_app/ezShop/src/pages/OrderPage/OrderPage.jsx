@@ -8,6 +8,7 @@ import { use } from 'i18next';
 import drop_down_icon from '../../shared/icon/drop-down-icon.svg'
 import { initBackButton } from '@telegram-apps/sdk';
 import TextInput from '../../components/inputs/TextInput/TextInput';
+import { setIsCorrect } from '../../shared/redux/action/ValidateAction';
 
 
 function OrderPage(){
