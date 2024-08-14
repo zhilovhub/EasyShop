@@ -39,7 +39,9 @@ function Catalog() {
         const myUrl = new URL(currentUrl);
         let newBotId = myUrl.searchParams.get('bot_id');
 
-        dispatch(setBotId(newBotId))
+        if(newBotId){
+            dispatch(setBotId(newBotId))
+        }
         alert(botId)
 
 
