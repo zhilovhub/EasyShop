@@ -40,6 +40,7 @@ function Catalog() {
         let newBotId = myUrl.searchParams.get('bot_id');
 
         dispatch(setBotId(newBotId))
+        alert(botId)
 
 
         if (productList.length == 0){
