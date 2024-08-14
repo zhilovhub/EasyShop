@@ -122,7 +122,6 @@ function OrderPage(){
                 bot_id: botId,
                 raw_items: [],
                 ordered_at: "2024-07-16T10:38:42.329Z",
-                town: 
 
 
 
@@ -147,10 +146,6 @@ function OrderPage(){
                 return response.json();
             })
             .then(data => {
-                console.log("data");
-                console.log(data);
-                setCurrentProducts(data)
-                setProducts(productList)
             })
             .catch(error => {
                 console.error('Error:', error);
