@@ -83,6 +83,7 @@
 
 .input{
     @include search_input;
+    padding-left: 40px;
 }
 
 .search_input{

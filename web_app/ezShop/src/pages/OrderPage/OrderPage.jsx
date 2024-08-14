@@ -84,6 +84,16 @@ function OrderPage(){
         return productList.reduce((total, item) => total + (item.buyCount * item.price || 0), 0);
     }
 
+    function sendOrder(){
+
+        let optionList = document.getElementsByClassName("")
+        orderOptions.map(option => {
+
+        })
+        
+
+    }
+
     return (
         <div className={styles.main_content_scroll}>
         <div className={styles.main_content}>
@@ -118,7 +128,7 @@ function OrderPage(){
 
         </div>
 
-        <div className={styles.bottom_btn} onClick={() => {}}>Отправить</div>
+        <div className={styles.bottom_btn} onClick={sendOrder}>Отправить</div>
         </div>
     )
 

@@ -66,6 +66,13 @@ function ProductPage(){
 
     useEffect(() => {
 
+    // const currentUrl = window.location.href;
+    // const myUrl = new URL(currentUrl);
+    // let botId = myUrl.searchParams.get('bot_id');
+    // if(!botId){
+    //     botId = 110;
+    // }
+
     productList.map(productItem => {
         console.log("id-1: " + productItem.id)
         console.log("id-2: " + product.id)
