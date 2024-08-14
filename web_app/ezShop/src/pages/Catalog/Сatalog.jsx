@@ -39,9 +39,7 @@ function Catalog() {
         const myUrl = new URL(currentUrl);
         let newBotId = myUrl.searchParams.get('bot_id');
 
-        if(!botId){
-            dispatch(setBotId(newBotId))
-        }
+        dispatch(setBotId(newBotId))
 
 
         if (productList.length == 0){
