@@ -110,10 +110,44 @@ function OrderPage(){
 
         setIsCheck(true);
 
-        alert(isCorrect);
 
-        if(isCorrect == true){
-            alert(isCorrect);
+        if(isCorrect == false){
+            alert("Вы заполнили не все поля");
+        }else if (isCorrect == true){
+
+            // const data = {
+            //     bot_id
+            // }
+
+            // const url = `https://ezbots.ru:1537/api/products/get_all_products?bot_id=${botId}`;
+            // const body = JSON.stringify([]);
+            // fetch(url, {
+            //     method: 'POST',
+            //     headers: {
+            //         'Content-Type': 'application/json',
+            //         'Accept': 'application/json',
+            //         'authorization-data': 'DEBUG'
+            //     },
+            //     body: body
+            // })
+            // .then(response => {
+            //     if (!response.ok) {
+            //         throw new Error('Network response was not ok ' + response.statusText);
+            //     }
+            //     return response.json();
+            // })
+            // .then(data => {
+            //     console.log("data");
+            //     console.log(data);
+            //     setCurrentProducts(data)
+            //     setProducts(productList)
+            // })
+            // .catch(error => {
+            //     console.error('Error:', error);
+            // });
+
+
+
         }
 
         dispatch(setIsCorrect(null))

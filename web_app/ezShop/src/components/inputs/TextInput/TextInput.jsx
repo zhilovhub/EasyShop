@@ -31,7 +31,7 @@ function TextInput({isCheck, data}) {
             className={styles.input} 
             placeholder={data.option.hint}
             onChange={(event) => setInputValue(event.target.value)}
-            style={ isCheck && inputValue == '' && data.option.required ? {border: "1px solid red"} : {}}>
+            style={ isCheck && inputValue == '' && data.option.required ? {border: "1px solid rgb(249, 133, 133)"} : {}}>
             </input>
         </>
     );
