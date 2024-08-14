@@ -114,12 +114,17 @@ function OrderPage(){
 
     function sendOrder(){
 
+        alert("click");
+
         setIsCheck(true);
 
 
         if(isCorrect == false){
             alert("Вы заполнили не все поля");
         }else if (isCorrect == true){
+
+            alert("Отправка данных пошла");
+
 
             const data = {
                 bot_id: botId,
@@ -199,7 +204,7 @@ function OrderPage(){
 
         </div>
 
-        <div className={styles.bottom_btn} onClick={sendOrder}>Отправить</div>
+        <div className={styles.bottom_btn} onClick={() => sendOrder()}>Отправить</div>
         </div>
     )
 
