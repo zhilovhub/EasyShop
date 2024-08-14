@@ -9,6 +9,7 @@ import drop_down_icon from '../../shared/icon/drop-down-icon.svg'
 import { initBackButton } from '@telegram-apps/sdk';
 import TextInput from '../../components/inputs/TextInput/TextInput';
 import { setIsCorrect } from '../../shared/redux/action/ValidateAction';
+import { retrieveLaunchParams } from '@telegram-apps/sdk';
 
 
 function OrderPage(){
@@ -21,6 +22,8 @@ function OrderPage(){
     const [orderOptions, setOrderOptions] = useState([]);
     const [isCheck, setIsCheck] = useState(false)
     const isCorrect = useSelector(state => state.validate.isCorrect);
+
+    const {initData} = retrieveLaunchParams().initData;
 
     const [backButton] = initBackButton();
     backButton.show();
@@ -120,32 +123,39 @@ function OrderPage(){
 
             const data = {
                 bot_id: botId,
-                raw_items: [],
-                ordered_at: "2024-07-16T10:38:42.329Z",
-
-
-
-
+                raw_items: {},
+                name: "temp",
+                phone_number: "temp",
+                town: "temp",
+                address: "temp",
+                time: "temp",
+                comment: "temp",
+                delivery_method: "temp"
             }
 
-            const url = `https://ezbots.ru:1537/api/products/get_all_products?bot_id=${botId}`;
+            const url = `https://ezbots.ru:1537/api/orders/send_order_data_to_bot`;
             const body = JSON.stringify([]);
             fetch(url, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                     'Accept': 'application/json',
-                    'authorization-data': 'DEBUG'
+                    'authorization-data': initData
                 },
                 body: body
             })
             .then(response => {
                 if (!response.ok) {
                     throw new Error('Network response was not ok ' + response.statusText);
+                    alert('error')
                 }
                 return response.json();
             })
             .then(data => {
+
+                alert(data)
+                
+
             })
             .catch(error => {
                 console.error('Error:', error);
