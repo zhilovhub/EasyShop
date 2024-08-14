@@ -37,7 +37,7 @@ async def create_invoice_params(
             provider_token = main_telegram_bot_settings.TEST_PROVIDER_TOKEN
         else:
             provider_token = custom_bot.provider_token
-        payload = "TEST"
+        payload = json.dumps({"bot_id": bot_id, "user_id": user_id, "order_id": "TEST"})
         photo_url = "https://static.vecteezy.com/system/resources/previews/000/442/267/original/vector-shop-icon.jpg"
     else:
         provider_token = custom_bot.provider_token
