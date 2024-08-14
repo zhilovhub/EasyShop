@@ -10,6 +10,7 @@ import { initBackButton } from '@telegram-apps/sdk';
 import TextInput from '../../components/inputs/TextInput/TextInput';
 import { setIsCorrect } from '../../shared/redux/action/ValidateAction';
 import { retrieveLaunchParams } from '@telegram-apps/sdk';
+import { SDK } from '@telegram-apps/sdk';
 
 
 
@@ -24,7 +25,21 @@ function OrderPage(){
     const [isCheck, setIsCheck] = useState(false)
     const isCorrect = useSelector(state => state.validate.isCorrect);
 
-    const {initData} = retrieveLaunchParams().initData;
+    const [initData, setInitData] = useState(null);
+
+    useEffect(() => {
+      const sdk = new SDK();
+      sdk.initData()
+        .then((data) => {
+          setInitData(data);
+        })
+        .catch((error) => {
+          console.error(error);
+        });
+    }, []);
+
+
+    // const {initData} = retrieveLaunchParams().initData;
 
     const [backButton] = initBackButton();
     backButton.show();
@@ -36,7 +51,6 @@ function OrderPage(){
     useEffect(() => {
 
         alert(botId)
-
 
         const url = `https://ezbots.ru:1537/api/settings/get_order_options/110`;
         fetch(url, {
@@ -78,6 +92,7 @@ function OrderPage(){
                 // style={ isCheck && data.option.required ? {border: "2px solid red"} : {}}>
                 // </input>
                 // </>
+
             case "choose":
                 return <>
                 <p className={styles.input_title}>{data.option.option_name}</p>
