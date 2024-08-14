@@ -7,6 +7,7 @@ import { useEffect, useState } from 'react';
 import { use } from 'i18next';
 import drop_down_icon from '../../shared/icon/drop-down-icon.svg'
 import { initBackButton } from '@telegram-apps/sdk';
+import TextInput from '../../components/inputs/TextInput/TextInput';
 
 
 function OrderPage(){
@@ -58,14 +59,16 @@ function OrderPage(){
     function getOption(type, data){
         switch (type){
             case "text":
-                return <>
-                <p className={styles.input_title}>{data.option.option_name}</p>
-                <input 
-                className={styles.input} 
-                placeholder={data.option.hint} 
-                style={ isCheck && data.option.required ? {border: "2px solid red"} : {}}
-                ></input>
-                </>
+                return <TextInput isCheck={isCheck} data={data}></TextInput>
+                
+                // <>
+                // <p className={styles.input_title}>{data.option.option_name}</p>
+                // <input 
+                // className={styles.input} 
+                // placeholder={data.option.hint} 
+                // style={ isCheck && data.option.required ? {border: "2px solid red"} : {}}>
+                // </input>
+                // </>
             case "choose":
                 return <>
                 <p className={styles.input_title}>{data.option.option_name}</p>
