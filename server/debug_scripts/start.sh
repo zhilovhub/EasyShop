@@ -27,7 +27,11 @@ systemctl --user status --no-pager dev_multibot@${label}.service | grep Loaded
 systemctl --user status --no-pager dev_multibot@${label}.service | grep Active
 
 echo "[DEBUG] Building webapp frontend... [Step 4/4]"
+#
+#cd webapp/frontend
+#npm install
+#npm run build
 
-cd webapp/frontend
+cd web_app/ezShop
 npm install
-npm run build
+npm build
