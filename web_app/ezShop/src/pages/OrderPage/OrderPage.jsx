@@ -120,7 +120,7 @@ function OrderPage(){
 
 
         if(isCorrect == false){
-            // alert("Вы заполнили не все поля");
+            alert("Вы заполнили не все поля");
         }else if (isCorrect == true){
 
             alert("Отправка данных пошла");
@@ -151,11 +151,11 @@ function OrderPage(){
             })
             .then(response => {
 
-                alert(response);
+                alert(response.json());
 
                 if (!response.ok) {
-                    throw new Error('Network response was not ok ' + response.statusText);
                     alert('error')
+                    throw new Error('Network response was not ok ' + response.statusText);
                 }
                 return response.json();
             })
