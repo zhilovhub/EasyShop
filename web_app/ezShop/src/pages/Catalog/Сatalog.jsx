@@ -13,6 +13,7 @@ import { setProductList } from '../../shared/redux/action/ProductListAction';
 import { useNavigate } from "react-router-dom";
 import { useRef } from 'react';
 import { initBackButton } from '@telegram-apps/sdk';
+import { setBotId } from '../../shared/redux/action/BotIdAction';
 
 
 function Catalog() {
@@ -22,6 +23,7 @@ function Catalog() {
     const {t, i18n} = useTranslation();
     const dispatch = useDispatch();
     const productList = useSelector(state => state.productList.productList);
+    const botId = useSelector(state => state.botId.botId);
     const navigate = useNavigate();
     const [searchValue, setSearchValue] = useState('');
     const [products, setProducts] = useState([]);
@@ -35,10 +37,10 @@ function Catalog() {
 
         const currentUrl = window.location.href;
         const myUrl = new URL(currentUrl);
-        let botId = myUrl.searchParams.get('bot_id');
+        let newBotId = myUrl.searchParams.get('bot_id');
 
         if(!botId){
-            botId = 110;
+            dispatch(setBotId(newBotId))
         }
 
 
