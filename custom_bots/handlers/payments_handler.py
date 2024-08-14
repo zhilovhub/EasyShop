@@ -37,7 +37,7 @@ class PreCheckHandler(PreCheckoutQueryHandler):
                 f"and extra data : data=[{extra_data}]",
                 extra=extra_params(user_id=from_user.id, bot_id=bot_id),
             )
-            if "TEST" != payload['order_id']:
+            if "TEST" != payload["order_id"]:
                 order = await order_db.get_order(payload["order_id"])
                 order.status = OrderStatusValues.PROCESSING
                 msg_id_data = PREV_ORDER_MSGS.get_data()

@@ -46,21 +46,23 @@ async def process_successfully_payment(message: Message):
     payment = message.successful_payment
     payload = json.loads(payment.invoice_payload)
     order_info = payment.order_info
-    logger.debug(f"new success payment with payload: {payload} and order_info: [{order_info}]",
-                 extra=extra_params(user_id=payload['user_id'], bot_id=payload["bot_id"]))
+    logger.debug(
+        f"new success payment with payload: {payload} and order_info: [{order_info}]",
+        extra=extra_params(user_id=payload["user_id"], bot_id=payload["bot_id"]),
+    )
     txt = Text("Введенные данные при тестовой оплате:")
     if order_info:
         if order_info.name:
-            txt += Text(f"\n\nИмя: ", Bold(order_info.name))
+            txt += Text("\n\nИмя: ", Bold(order_info.name))
         if order_info.phone_number:
-            txt += Text(f"\n\nТелефон: ", Bold(order_info.phone_number))
+            txt += Text("\n\nТелефон: ", Bold(order_info.phone_number))
         if order_info.email:
-            txt += Text(f"\n\nПочта: ", Bold(order_info.email))
+            txt += Text("\n\nПочта: ", Bold(order_info.email))
         if order_info.shipping_address:
-            txt += Text(f"\n\nАдрес доставки: ", Bold(order_info.shipping_address))
+            txt += Text("\n\nАдрес доставки: ", Bold(order_info.shipping_address))
     else:
         txt += Text("\n\nДанные пустые, но если Вы хотите ")
-    if "TEST" == payload['order_id']:
+    if "TEST" == payload["order_id"]:
         pay_id = "TEST"
         await message.answer(**txt.as_kwargs())
     else:

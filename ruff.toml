@@ -1,6 +1,10 @@
+target-version = "py310"
+
 line-length = 120
 exclude = [
-    "webapp"
+    "webapp",
+    "web_app",
+    "webapp_legacy"
 ]
 
 [lint]
