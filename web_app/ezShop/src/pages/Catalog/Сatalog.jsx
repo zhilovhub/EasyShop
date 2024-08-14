@@ -12,6 +12,7 @@ import { setLanguage } from '../../shared/redux/action/LangAction';
 import { setProductList } from '../../shared/redux/action/ProductListAction';
 import { useNavigate } from "react-router-dom";
 import { useRef } from 'react';
+import { initBackButton } from '@telegram-apps/sdk';
 
 
 function Catalog() {
@@ -26,6 +27,9 @@ function Catalog() {
     const [products, setProducts] = useState([]);
     const inputRef = useRef(null);
     const filter = useSelector(state => state.filter);
+
+    const [backButton] = initBackButton();
+    backButton.hide();
 
     useEffect(() => {
 
