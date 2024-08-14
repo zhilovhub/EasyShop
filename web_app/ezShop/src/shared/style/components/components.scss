@@ -64,34 +64,33 @@
     }
 }
 
-@mixin search_input{
-    border: none;        /* Убираем рамку */
-    outline: none;      /* Убираем обводку при фокусе */
+@mixin search_input {
+    border: none;        
+    outline: none;      
     background-color: $white-color;
     border-radius: 17px;
-    padding: 10;
+    padding: 10px;
     padding-right: 14px;
     padding-left: 40px;
     padding-block: 9px;
-    margin: 0;          /* Убираем внешние отступы */
-    box-shadow: none;   /* Убираем тень */
+    margin: 0;          
+    box-shadow: none;   
     font-family: $montserrat-semi-bold;
     font-size: $font-size-3;
     color: $black-color;
 
-    &::placeholder{
+    &::placeholder {
         color: $gray-color-3;
     }
 
-        /* Дополнительные стили для браузеров */
     &::-webkit-outer-spin-button,
     &::-webkit-inner-spin-button {
-        -webkit-appearance: none; /* Убираем стрелки у числового ввода */
-        margin: 0; /* Убираем отступы */
+        -webkit-appearance: none; 
+        margin: 0; 
     }
 
     &[type="number"] {
-        -moz-appearance: textfield; /* Для Firefox, убираем стрелки */
+        -moz-appearance: textfield; 
     }
 }
 
