@@ -11,6 +11,7 @@ import TextOption from '../../components/ProductPageOption/TextOption/TextOption
 import BlockOption from '../../components/ProductPageOption/BlockOption/BlockOption';
 import PricedBlockOption from '../../components/ProductPageOption/PricedBlockOption/PricedBlockOption';
 import Slider from '../../components/Slider/Slider';
+import { initBackButton } from '@telegram-apps/sdk';
 
 
 function ProductPage(){
@@ -26,6 +27,12 @@ function ProductPage(){
     const [extraOptions, setExtraOptions] = useState([])
     const [productImages, setProductImages] = useState([])
     const [isImageLoad, setIsImageLoad] = useState(false)
+
+    const [backButton] = initBackButton();
+    backButton.show();
+    backButton.on('click', () => {
+        navigate("/app/catalog");
+    });
 
     if(!isImageLoad){
         getImages();
