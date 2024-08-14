@@ -125,7 +125,6 @@ function OrderPage(){
 
             alert("Отправка данных пошла");
 
-
             const data = {
                 bot_id: botId,
                 raw_items: {},
@@ -135,7 +134,8 @@ function OrderPage(){
                 address: "temp",
                 time: "temp",
                 comment: "temp",
-                delivery_method: "temp"
+                delivery_method: "temp",
+                ordered_at: "temp"
             }
 
             const url = `https://ezbots.ru:1537/api/orders/send_order_data_to_bot`;
