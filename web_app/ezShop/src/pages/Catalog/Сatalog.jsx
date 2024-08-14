@@ -29,9 +29,18 @@ function Catalog() {
 
     useEffect(() => {
 
+        const currentUrl = window.location.href;
+        const myUrl = new URL(currentUrl);
+        let botId = myUrl.searchParams.get('bot_id');
+
+        if(!botId){
+            botId = 110;
+        }
+
+
         if (productList.length == 0){
 
-        const url = `https://ezbots.ru:2024/api/products/get_all_products?bot_id=110`;
+        const url = `https://ezbots.ru:2024/api/products/get_all_products?bot_id=${botId}`;
         const body = JSON.stringify([]);
         fetch(url, {
             method: 'POST',
