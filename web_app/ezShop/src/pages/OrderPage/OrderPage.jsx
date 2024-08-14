@@ -115,6 +115,8 @@ function OrderPage(){
             alert(isCorrect);
         }
 
+        dispatch(setIsCorrect(null))
+
     }
 
     return (
