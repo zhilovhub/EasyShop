@@ -14,6 +14,8 @@ function TextInput({isCheck, data}) {
         if(isCorrect == null || isCorrect == true){
             if(inputValue != ''){
                 dispatch(setIsCorrect(true))
+            }else{
+                dispatch(setIsCorrect(false))
             }
         }
         
