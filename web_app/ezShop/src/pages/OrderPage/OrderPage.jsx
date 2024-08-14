@@ -6,6 +6,7 @@ import order_img from "../../shared/images/order-img.svg"
 import { useEffect, useState } from 'react';
 import { use } from 'i18next';
 import drop_down_icon from '../../shared/icon/drop-down-icon.svg'
+import { initBackButton } from '@telegram-apps/sdk';
 
 
 function OrderPage(){
@@ -15,6 +16,12 @@ function OrderPage(){
     const productList = useSelector(state => state.productList.productList);
     const navigate = useNavigate();
     const [orderOptions, setOrderOptions] = useState([]);
+
+    const [backButton] = initBackButton();
+    backButton.show();
+    backButton.on('click', () => {
+        navigate("/app/basket");
+    });
 
 
     useEffect(() => {

@@ -5,6 +5,7 @@ import { useNavigate } from "react-router-dom";
 import cross_icon from "../../shared/icon/cross-icon.svg"
 import { useEffect, useState } from 'react';
 import { setFilter } from '../../shared/redux/action/FilterAction';
+import { initBackButton } from '@telegram-apps/sdk';
 
 
 function FilterPage(){
@@ -15,6 +16,12 @@ function FilterPage(){
     const navigate = useNavigate();
     const sortFilter = [t('filters__sort_2'), t('filters__sort_3')]
     const [shopCategories, setShopCategories] = useState([])
+
+    const [backButton] = initBackButton();
+    backButton.show();
+    backButton.on('click', () => {
+        navigate("/app/catalog");
+    });
 
 
     useEffect(() => {
