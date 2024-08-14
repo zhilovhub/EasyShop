@@ -66,8 +66,9 @@
     background-color: $accent-color;
     text-align: center;
     align-content: center;
-    min-width: 25px;
-    min-height: 25px;
+    width: 25px;
+    height: 25px;
+    line-height: 25px;
     border-radius: 50%;
     font-family: $montserrat-semi-bold;
     font-size: $font-size-4;
