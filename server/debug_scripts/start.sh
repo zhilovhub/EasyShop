@@ -30,4 +30,4 @@ echo "[DEBUG] Building webapp frontend... [Step 4/4]"
 
 cd web_app/ezShop
 npm install
-npm build
+npm run build
