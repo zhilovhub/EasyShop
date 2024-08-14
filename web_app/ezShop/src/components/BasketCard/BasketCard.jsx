@@ -5,7 +5,7 @@ import search_icon from '../../shared/icon/search-icon.svg';
 import snikers from '../../shared/images/temp/snikers.png'
 import { useDispatch, useSelector } from 'react-redux';
 import { setProductList } from '../../shared/redux/action/ProductListAction';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 
 function BasketCard(props) {
@@ -16,6 +16,7 @@ function BasketCard(props) {
     const [imgUrl, setImgUrl] = useState('')
 
 
+    useEffect(() => {
     const url = `https://ezbots.ru:1537/api/files/get_file/${props.product.pictures[0]}`;
         fetch(url, {
             method: 'GET',
@@ -39,6 +40,7 @@ function BasketCard(props) {
             console.error('Error:', error);
         });
 
+    }, [])
 
 
     function updateBuyCount(type) {

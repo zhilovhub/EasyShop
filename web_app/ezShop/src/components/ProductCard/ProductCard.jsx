@@ -6,7 +6,7 @@ import snikers from '../../shared/images/temp/snikers.png'
 import { useDispatch, useSelector } from 'react-redux';
 import { setProductList } from '../../shared/redux/action/ProductListAction';
 import { useNavigate } from "react-router-dom";
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 function ProductCard(props) {
 
@@ -15,6 +15,10 @@ function ProductCard(props) {
     const productList = useSelector(state => state.productList.productList);
     const navigate = useNavigate();
     const [imgUrl, setImgUrl] = useState('')
+
+
+    
+    useEffect(() => {
 
     const url = `https://ezbots.ru:1537/api/files/get_file/${props.product.pictures[0]}`;
         fetch(url, {
@@ -38,6 +42,8 @@ function ProductCard(props) {
         .catch(error => {
             console.error('Error:', error);
         });
+
+    }, [])
 
 
 

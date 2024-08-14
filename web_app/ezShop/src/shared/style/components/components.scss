@@ -69,12 +69,11 @@
     outline: none;      /* Убираем обводку при фокусе */
     background-color: $white-color;
     border-radius: 17px;
-    padding: 10;         /* Убираем отступы */
+    padding: 10;
     padding-right: 14px;
     padding-left: 40px;
     padding-block: 9px;
     margin: 0;          /* Убираем внешние отступы */
-    font: inherit;      /* Наследуем шрифт от родительского элемента */
     box-shadow: none;   /* Убираем тень */
     font-family: $montserrat-semi-bold;
     font-size: $font-size-3;
