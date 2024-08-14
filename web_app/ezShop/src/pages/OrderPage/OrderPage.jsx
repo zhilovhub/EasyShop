@@ -16,6 +16,7 @@ function OrderPage(){
     const {t, i18n} = useTranslation();
     const dispatch = useDispatch();
     const productList = useSelector(state => state.productList.productList);
+    const botId = useSelector(state => state.botId.botId);
     const navigate = useNavigate();
     const [orderOptions, setOrderOptions] = useState([]);
     const [isCheck, setIsCheck] = useState(false)
@@ -29,6 +30,8 @@ function OrderPage(){
 
 
     useEffect(() => {
+
+        alert(botId)
 
 
         const url = `https://ezbots.ru:1537/api/settings/get_order_options/110`;
