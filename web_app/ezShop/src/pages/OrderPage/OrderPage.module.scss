@@ -94,11 +94,13 @@
 .input{
     @include input;
     margin-top: 8px;
+    border: 2px solid rgb(0, 0, 0, 0)
 }
 
 .textarea{
     @include textarea;
     margin-top: 8px;
+    border: 2px solid rgb(0, 0, 0, 0)
 }
 
 .bottom_btn{
