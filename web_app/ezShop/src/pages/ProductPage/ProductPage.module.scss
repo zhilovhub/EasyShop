@@ -60,6 +60,7 @@
     font-size: $font-size-2;
     color: $black-color;
     flex-grow: 6;
+    line-height: 62px;
 }
 
 .bottom_btn_container{
@@ -68,6 +69,7 @@
     right: 0;
     left: 0;
     height: 62px;
+    line-height: 62px;
     display: flex;
     flex-direction: row;
 }
@@ -80,6 +82,7 @@
     font-size: $font-size-2;
     color: $black-color;
     flex-grow: 2;
+    line-height: 62px;
 }
 
 .bottom_count_value {
@@ -90,4 +93,5 @@
     font-size: $font-size-2;
     color: $black-color;
     width: 30px;
+    line-height: 62px;
 }
