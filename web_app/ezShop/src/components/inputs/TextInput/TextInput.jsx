@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import styles from './TextInput.module.scss';
 import { setIsCorrect } from '../../../shared/redux/action/ValidateAction';
+import { useDispatch, useSelector } from 'react-redux';
 
 function TextInput({isCheck, data}) {
 
