@@ -11,13 +11,13 @@ function TextInput({isCheck, data}) {
 
     useEffect(() => {
 
-        if(isCorrect == null || isCorrect == true){
             if(inputValue != ''){
+                if(isCorrect == null || isCorrect == true){
                 dispatch(setIsCorrect(true))
+                }
             }else{
                 dispatch(setIsCorrect(false))
             }
-        }
         
     }, [inputValue])
 
