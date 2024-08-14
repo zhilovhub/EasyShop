@@ -18,6 +18,7 @@ function OrderPage(){
     const navigate = useNavigate();
     const [orderOptions, setOrderOptions] = useState([]);
     const [isCheck, setIsCheck] = useState(false)
+    const isCorrect = useSelector(state => state.validate.isCorrect);
 
     const [backButton] = initBackButton();
     backButton.show();
@@ -106,8 +107,11 @@ function OrderPage(){
 
     function sendOrder(){
 
-        setIsCheck(true)
-        
+        setIsCheck(true);
+
+        if(isCorrect){
+            alert('isCorrect');
+        }
 
     }
 
