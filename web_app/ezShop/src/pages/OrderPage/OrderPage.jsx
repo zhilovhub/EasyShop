@@ -10,8 +10,6 @@ import { initBackButton } from '@telegram-apps/sdk';
 import TextInput from '../../components/inputs/TextInput/TextInput';
 import { setIsCorrect } from '../../shared/redux/action/ValidateAction';
 import { retrieveLaunchParams } from '@telegram-apps/sdk';
-import { validate, parse } from '@telegram-apps/init-data-node';
-import { SDK } from '@telegram-apps/sdk';
 
 
 
