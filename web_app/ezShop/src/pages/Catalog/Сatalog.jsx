@@ -40,11 +40,14 @@ function Catalog() {
 
     const [mainButton] = initMainButton();
     mainButton.setText("Корзина")
-    mainButton.show();
 
     mainButton.on('click', () => {
+        alert('click')
         navigate("/app/basket");
     });
+
+    mainButton.show();
+
 
     // TG API --END--
 
