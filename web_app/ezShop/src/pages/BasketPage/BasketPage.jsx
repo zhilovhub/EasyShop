@@ -8,6 +8,7 @@ import empty_basket_img from '../../shared/images/empty-basket-img.png';
 import { useNavigate } from "react-router-dom";
 import { initBackButton } from '@telegram-apps/sdk';
 import { useEffect } from 'react';
+import { initMainButton } from '@telegram-apps/sdk';
 
 
 function BasketPage(){
