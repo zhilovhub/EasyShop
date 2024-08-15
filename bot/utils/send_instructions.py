@@ -19,7 +19,10 @@ async def send_instructions(
     file_name = "start_instruction.png"
 
     bot_father_keyboard = InlineKeyboardMarkup(
-        inline_keyboard=[[InlineKeyboardButton(text="🔐 Получить токен", url="t.me/BotFather")]]
+        inline_keyboard=[
+            [InlineKeyboardButton(text="🔐 Получить токен", url="t.me/BotFather")],
+            InlineKeyboardButton(text="🔎 Подробнее", url="https://ezshoptg.tilda.ws/"),
+        ]
     )
 
     try:
