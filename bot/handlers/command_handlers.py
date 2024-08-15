@@ -56,6 +56,7 @@ async def handle_referral_link(query: CallbackQuery, state: FSMContext):
     await query.message.answer(
         **MessageTexts.generate_ref_system_text(ref_link),
     )
+    await query.answer()
 
 
 async def _handle_admin_invite_link(message: Message, state: FSMContext, deep_link_params: list[str]):
