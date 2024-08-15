@@ -32,13 +32,22 @@ function Catalog() {
     const inputRef = useRef(null);
     const filter = useSelector(state => state.filter);
 
+
+    // TG API --START--
+
     const [backButton] = initBackButton();
     backButton.hide();
+
+    const client = new TelegramClient();
 
     const button = new MainButton('Название кнопки', async () => {
         // Действие, которое выполнится при нажатии на кнопку
         navigate("/app/basket");
     });
+
+    client.addButton(button);
+
+    // TG API --END--
 
     useEffect(() => {
 
