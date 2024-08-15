@@ -44,7 +44,12 @@ function Catalog() {
         const [mainButton] = initMainButton();
         mainButton.setText("Корзина")
         
-        mainButton.on('click', () => navigate("/app/basket"));
+        // mainButton.on('click', as() => navigate("/app/basket"));
+
+        mainButton.onClick(() => {
+            alert('Кнопка нажата!');
+            navigate("/app/basket");
+        });
         
         mainButton.show();
         
