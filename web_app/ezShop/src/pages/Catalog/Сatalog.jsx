@@ -14,6 +14,8 @@ import { useNavigate } from "react-router-dom";
 import { useRef } from 'react';
 import { initBackButton } from '@telegram-apps/sdk';
 import { setBotId } from '../../shared/redux/action/BotIdAction';
+import { MainButton } from '@telegram-apps/sdk';
+
 
 
 function Catalog() {
@@ -32,6 +34,11 @@ function Catalog() {
 
     const [backButton] = initBackButton();
     backButton.hide();
+
+    const button = new MainButton('Название кнопки', async () => {
+        // Действие, которое выполнится при нажатии на кнопку
+        navigate("/app/basket");
+    });
 
     useEffect(() => {
 

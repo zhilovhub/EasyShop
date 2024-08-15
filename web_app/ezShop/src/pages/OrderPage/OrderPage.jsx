@@ -11,8 +11,7 @@ import TextInput from '../../components/inputs/TextInput/TextInput';
 import { setIsCorrect } from '../../shared/redux/action/ValidateAction';
 import { retrieveLaunchParams } from '@telegram-apps/sdk';
 import { initDataRaw } from '@telegram-apps/sdk';
-
-
+import { TelegramClient, Button } from '@telegram-apps/sdk';
 
 function OrderPage(){
 
@@ -39,7 +38,6 @@ function OrderPage(){
 
         alert(botId)
 
-
         const url = `https://ezbots.ru:1537/api/settings/get_order_options/110`;
         fetch(url, {
             method: 'GET',
@@ -64,6 +62,8 @@ function OrderPage(){
         });
 
 
+
+
     }, []);
 
 
@@ -80,6 +80,7 @@ function OrderPage(){
                 // style={ isCheck && data.option.required ? {border: "2px solid red"} : {}}>
                 // </input>
                 // </>
+
             case "choose":
                 return <>
                 <p className={styles.input_title}>{data.option.option_name}</p>
@@ -99,8 +100,8 @@ function OrderPage(){
                 <textarea 
                 className={styles.textarea}
                 placeholder={data.option.hint}
-                style={ isCheck && data.option.required ? {border: "2px solid red"} : {}}
-                ></textarea>
+                style={ isCheck && data.option.required ? {border: "2px solid red"} : {}}>
+                </textarea>
                 </>
             default:
                 <></>
@@ -206,7 +207,6 @@ function OrderPage(){
         {orderOptions.map(option => 
             getOption(option.option.option_type, option)
         )}
-
 
         </div>
 
