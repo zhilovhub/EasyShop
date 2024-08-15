@@ -33,22 +33,23 @@ function Catalog() {
     const filter = useSelector(state => state.filter);
 
 
-    // TG API --START--
-
-    const [backButton] = initBackButton();
-    backButton.hide();
-
-    const [mainButton] = initMainButton();
-    mainButton.setText("Корзина")
-
-    mainButton.on('click', () => navigate("/app/basket"));
-
-    mainButton.show();
-
-
-    // TG API --END--
 
     useEffect(() => {
+
+        // TG API --START--
+
+        const [backButton] = initBackButton();
+        backButton.hide();
+        
+        const [mainButton] = initMainButton();
+        mainButton.setText("Корзина")
+        
+        mainButton.on('click', () => navigate("/app/basket"));
+        
+        mainButton.show();
+        
+        
+        // TG API --END--
 
         const currentUrl = window.location.href;
         const myUrl = new URL(currentUrl);
