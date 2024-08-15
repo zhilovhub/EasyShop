@@ -12,6 +12,7 @@ import { setIsCorrect } from '../../shared/redux/action/ValidateAction';
 import { retrieveLaunchParams } from '@telegram-apps/sdk';
 import { initDataRaw } from '@telegram-apps/sdk';
 import { TelegramClient, Button } from '@telegram-apps/sdk';
+import { initMiniApp } from '@telegram-apps/sdk';
 
 function OrderPage(){
 
@@ -26,6 +27,9 @@ function OrderPage(){
 
     const {initData} = retrieveLaunchParams().initDataRaw;
     const { initDataRaw } = retrieveLaunchParams();
+
+    const [miniApp] = initMiniApp();
+    
 
     const [backButton] = initBackButton();
     backButton.show();
@@ -155,8 +159,6 @@ function OrderPage(){
             })
             .then(response => {
 
-                alert('1')
-
                 if (!response.ok) {
                     alert('error')
                     throw new Error('Network response was not ok ' + response.statusText);
@@ -165,13 +167,16 @@ function OrderPage(){
             })
             .then(data => {
 
-                alert('2')
-                alert(data.invoice_url)
-                
+                const invoiceUrl = data.invoice_url
+
+                if (invoiceUrl){
+
+                }else{
+                    miniApp.close();
+                }
 
             })
             .catch(error => {
-                alert('3')
                 console.error('Error:', error);
             });
 
