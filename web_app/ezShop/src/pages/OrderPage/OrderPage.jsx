@@ -165,7 +165,7 @@ function OrderPage(){
             })
             .then(data => {
 
-                alert(data)
+                alert(data.invoice_url)
                 
 
             })
