@@ -14,7 +14,7 @@ import { useNavigate } from "react-router-dom";
 import { useRef } from 'react';
 import { initBackButton } from '@telegram-apps/sdk';
 import { setBotId } from '../../shared/redux/action/BotIdAction';
-import { MainButton } from '@telegram-apps/sdk';
+import { TelegramClient, MainButton } from '@telegram-apps/sdk';
 
 
 
