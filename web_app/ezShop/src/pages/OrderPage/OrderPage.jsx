@@ -10,7 +10,7 @@ import { initBackButton } from '@telegram-apps/sdk';
 import TextInput from '../../components/inputs/TextInput/TextInput';
 import { setIsCorrect } from '../../shared/redux/action/ValidateAction';
 import { retrieveLaunchParams } from '@telegram-apps/sdk';
-// import { initDataRaw } from '@telegram-apps/sdk';
+import { initDataRaw } from '@telegram-apps/sdk';
 
 
 
@@ -26,6 +26,7 @@ function OrderPage(){
     const isCorrect = useSelector(state => state.validate.isCorrect);
 
     const {initData} = retrieveLaunchParams().initDataRaw;
+    const { initDataRaw } = retrieveLaunchParams();
 
     const [backButton] = initBackButton();
     backButton.show();
@@ -119,8 +120,7 @@ function OrderPage(){
         alert("click");
 
         setIsCheck(true);
-
-
+        
         if(isCorrect == false){
             alert("Вы заполнили не все поля");
         }else if (isCorrect == true){
@@ -147,7 +147,7 @@ function OrderPage(){
                 headers: {
                     'Content-Type': 'application/json',
                     'Accept': 'application/json',
-                    'authorization-data': initData
+                    'authorization-data': initDataRaw
                 },
                 body: body
             })
