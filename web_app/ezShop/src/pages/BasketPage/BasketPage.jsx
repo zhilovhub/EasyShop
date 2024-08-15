@@ -29,14 +29,17 @@ function BasketPage(){
 
         const [mainButton] = initMainButton();
 
-        mainButton.setText("Заказ")
-        
-        mainButton.on('click', () => {
+        mainButton
+        .setText("Начать оформление")
+        .setBgColor('#59C0F9')
+        .setTextColor('#0C0C0C')
+        .on('click', () => {
             alert('click')
             navigate("/app/catalog");
         });
-        
+
         mainButton.show();
+        mainButton.enable();
 
     }, [])
 
@@ -50,9 +53,39 @@ function BasketPage(){
 
     function getBottomButton(){
         if (sumBuyCount() == 0){
-            return <div className={styles.bottom_btn} onClick={() => navigate("/app/catalog")}>К каталогу</div>
+
+            const [mainButton] = initMainButton();
+
+            mainButton
+            .setText("К каталогу")
+            .setBgColor('#59C0F9')
+            .setTextColor('#0C0C0C')
+            .on('click', () => {
+                alert('click')
+                navigate("/app/catalog");
+            });
+
+            mainButton.show();
+            mainButton.enable();
+
+            // return <div className={styles.bottom_btn} onClick={() => navigate("/app/catalog")}>К каталогу</div>
         }else{
-            return <div className={styles.bottom_btn} onClick={() => navigate("/app/order")}>Начать оформление</div>
+
+            const [mainButton] = initMainButton();
+
+            mainButton
+            .setText("Начать оформление")
+            .setBgColor('#59C0F9')
+            .setTextColor('#0C0C0C')
+            .on('click', () => {
+                alert('click')
+                navigate("/app/order");
+            });
+
+            mainButton.show();
+            mainButton.enable();
+
+            // return <div className={styles.bottom_btn} onClick={() => navigate("/app/order")}>Начать оформление</div>
         }
     }
 
