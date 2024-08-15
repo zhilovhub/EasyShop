@@ -156,7 +156,6 @@ function OrderPage(){
             .then(response => {
 
                 alert('1')
-                alert(response.json());
 
                 if (!response.ok) {
                     alert('error')
