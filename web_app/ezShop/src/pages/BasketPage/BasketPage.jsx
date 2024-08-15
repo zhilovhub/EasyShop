@@ -7,6 +7,7 @@ import BasketCard from '../../components/BasketCard/BasketCard';
 import empty_basket_img from '../../shared/images/empty-basket-img.png';
 import { useNavigate } from "react-router-dom";
 import { initBackButton } from '@telegram-apps/sdk';
+import { useEffect } from 'react';
 
 
 function BasketPage(){
@@ -16,11 +17,27 @@ function BasketPage(){
     const productList = useSelector(state => state.productList.productList);
     const navigate = useNavigate();
 
-    const [backButton] = initBackButton();
-    backButton.show();
-    backButton.on('click', () => {
-        navigate("/app/catalog");
-    });
+
+    useEffect(() => {
+
+        const [backButton] = initBackButton();
+        backButton.show();
+        backButton.on('click', () => {
+            navigate("/app/catalog");
+        });
+
+        const [mainButton] = initMainButton();
+
+        mainButton.setText("Заказ")
+        
+        mainButton.on('click', () => {
+            alert('click')
+            navigate("/app/catalog");
+        });
+        
+        mainButton.show();
+
+    }, [])
 
     function filterByBuyCount() {
         return productList.filter(product => product.buyCount !== 0);
