@@ -155,6 +155,7 @@ function OrderPage(){
             })
             .then(response => {
 
+                alert('1')
                 alert(response.json());
 
                 if (!response.ok) {
@@ -165,11 +166,13 @@ function OrderPage(){
             })
             .then(data => {
 
+                alert('2')
                 alert(data.invoice_url)
                 
 
             })
             .catch(error => {
+                alert('3')
                 console.error('Error:', error);
             });
 
