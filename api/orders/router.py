@@ -118,7 +118,7 @@ class OrderData(BaseModel):
     time: str | None
     comment: str | None
     query_id: str | None = None
-    from_user: int | None = (None,)
+    from_user: int | None = None
     order_type: OrderType | None = None
 
 
