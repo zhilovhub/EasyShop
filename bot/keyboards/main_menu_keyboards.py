@@ -131,3 +131,44 @@ class InlineAcceptPublishProductKeyboard:
                 ]
             ]
         )
+
+
+class InlineBackFromRefKeyboard:
+    class Callback(BaseModel):
+        class ActionEnum(Enum):
+            BACK = "backfromref"
+
+        model_config = ConfigDict(from_attributes=True, populate_by_name=True)
+
+        n: str = Field(default="bot__backfromref", frozen=True)
+        a: ActionEnum
+
+        bot_id: int
+
+    @staticmethod
+    @callback_json_validator
+    def callback_json(action: Callback.ActionEnum, bot_id: int) -> str:
+        return InlineBackFromRefKeyboard.Callback(a=action, bot_id=bot_id).model_dump_json(by_alias=True)
+
+    @staticmethod
+    def callback_validator(json_string: str) -> bool:
+        try:
+            InlineBackFromRefKeyboard.Callback.model_validate_json(json_string)
+            return True
+        except ValidationError:
+            return False
+
+    @staticmethod
+    def get_keyboard(bot_id: int) -> InlineKeyboardMarkup:
+        actions = InlineBackFromRefKeyboard.Callback.ActionEnum
+
+        return InlineKeyboardMarkup(
+            inline_keyboard=[
+                [
+                    InlineKeyboardButton(
+                        text="🔙 Назад",
+                        callback_data=InlineBackFromRefKeyboard.callback_json(actions.BACK, bot_id),
+                    ),
+                ]
+            ]
+        )

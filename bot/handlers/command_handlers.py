@@ -22,10 +22,11 @@ from common_utils.subscription.subscription import UserHasAlreadyStartedTrial
 from common_utils.exceptions.bot_exceptions import UnknownDeepLinkArgument
 from common_utils.broadcasting.broadcasting import send_event, EventTypes
 
-from database.config import user_db, bot_db, user_role_db
+from database.config import user_db, bot_db, user_role_db, referral_invite_db
 from database.models.bot_model import BotNotFoundError
 from database.models.user_model import UserSchema, UserStatusValues, UserNotFoundError
 from database.models.user_role_model import UserRoleSchema, UserRoleValues, UserRoleNotFoundError
+from database.models.referral_invite_model import ReferralInviteSchemaWithoutId
 
 from logs.config import logger
 
@@ -106,7 +107,7 @@ async def remove_bot_admin(user_id: int, user_state: FSMContext):
 @commands_router.message(CommandStart(deep_link=True))
 async def deep_link_start_command_handler(message: Message, state: FSMContext, command: CommandObject):
     """
-    Проверяет команду /start с параметрами: restart, admin, kostya_seller
+    Проверяет команду /start с параметрами: restart, admin, kostya_seller, ref
 
     :raises UnknownDeepLinkArgument:
     """
@@ -127,12 +128,23 @@ async def deep_link_start_command_handler(message: Message, state: FSMContext, c
         await _check_if_new_user(
             message, state, config.BIG_TRIAL_DURATION_IN_DAYS
         )  # Проверяем, новый ли пользователь и задаем пробный период на 30 дней
+    elif deep_link_params[0].startswith("ref_"):
+        await _check_if_new_user(
+            message,
+            state,
+            is_ref=True,
+            came_from=int(deep_link_params[0].split("_")[1]),
+        )  # Проверяем, новый ли пользователь
     else:
         raise UnknownDeepLinkArgument(arg=deep_link_params)
 
 
 async def _check_if_new_user(
-    message: Message, state: FSMContext, trial_duration: int = config.TRIAL_DURATION_IN_DAYS
+    message: Message,
+    state: FSMContext,
+    trial_duration: int = config.TRIAL_DURATION_IN_DAYS,
+    is_ref: bool = False,
+    came_from: int = None,
 ) -> None:
     user_id = message.from_user.id
 
@@ -140,7 +152,6 @@ async def _check_if_new_user(
         await user_db.get_user(user_id)
     except UserNotFoundError:
         logger.info(f"user {user_id} not found in db, creating new instance...")
-
         await send_event(message.from_user, EventTypes.NEW_USER)
         await user_db.add_user(
             UserSchema(
@@ -152,6 +163,10 @@ async def _check_if_new_user(
                 subscribed_until=None,
             )
         )
+        if is_ref:
+            logger.info(f"adding user {user_id} to referral system...")
+            await referral_invite_db.add_invite(ReferralInviteSchemaWithoutId(user_id=user_id, came_from=came_from))
+
         await _start_trial(message, state, trial_duration)  # Задаём новому пользователю пробный период (статус TRIAL)
 
     user_bots = await user_role_db.get_user_bots(user_id)

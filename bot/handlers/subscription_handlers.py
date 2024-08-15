@@ -1,4 +1,5 @@
 from datetime import timedelta, datetime
+from typing import List
 
 from aiogram import Bot
 from aiogram.enums import ContentType
@@ -21,8 +22,9 @@ from common_utils.config import common_settings, main_telegram_bot_settings
 from common_utils.keyboards.keyboards import InlineBotMenuKeyboard
 from common_utils.broadcasting.broadcasting import send_event, EventTypes
 
-from database.config import user_db, bot_db
+from database.config import user_db, bot_db, referral_invite_db
 from database.models.user_model import UserSchema, UserStatusValues
+from database.models.referral_invite_model import ReferralInviteNotFoundError, ReferralInviteSchema
 
 from logs.config import logger, extra_params
 
@@ -210,6 +212,69 @@ async def subscribe_ended_handler(message: Message) -> None:
     )
 
 
+async def handle_paid_sub_for_ref_system(user_id: int):
+    """
+    Handles paid subscription for referral system.
+
+    This function processes paid subscriptions in the referral system.
+
+    Args:
+        user_id (int): The ID of the user who made the payment.
+
+    Returns:
+        None
+
+    Process:
+        1. Check if the user has already been processed.
+        2. Retrieve the invitation associated with the user's ID.
+        3. Update the invitation to mark it as paid.
+        4. Retrieve the referral chain for the user.
+        5. Process the referral chain and send notifications.
+    """
+    try:
+        invite = await referral_invite_db.get_invite_by_user_id(user_id)
+        if invite.paid is True:
+            return
+        invite.paid = True
+        await referral_invite_db.update_invite(invite)
+        ref_chain_users: List[ReferralInviteSchema] = []
+        for i in range(4):  # Maximum 4 referrals in chain (3 layers)
+            ref_chain_users.append(invite)
+            if invite.came_from is None:
+                break
+            invite = await referral_invite_db.get_invite_by_user_id(invite.came_from)
+        if len(ref_chain_users) == 1:  # If chain contains only the user itself, don't send notifications
+            return
+        ref_chain_users = ref_chain_users[::-1]  # Reverse the list, for convienience
+        for index, invite in enumerate(ref_chain_users):
+            if (
+                len(ref_chain_users[index:]) < 2
+            ):  # Don't send notifications for the last user (user itself) in the chain
+                break
+            # Send notifications about all users in the chain, who recieve the referral bonus
+            await bot.send_message(
+                chat_id=int(common_settings.ADMIN_GROUP_ID),
+                **MessageTexts.generate_ref_payment_text(
+                    user_id=ref_chain_users[index].user_id,
+                    username=(await bot.get_chat(ref_chain_users[index].user_id)).username,
+                    referrals=[(await bot.get_chat(ref_user.user_id)).username for ref_user in ref_chain_users[index:]],
+                    for_admin=True,
+                ),
+            )
+            await bot.send_message(
+                chat_id=ref_chain_users[index].user_id,
+                **MessageTexts.generate_ref_payment_text(
+                    user_id=ref_chain_users[index].user_id,
+                    username=(await bot.get_chat(ref_chain_users[index].user_id)).username,
+                    referrals=[(await bot.get_chat(ref_user.user_id)).username for ref_user in ref_chain_users[index:]],
+                    for_admin=False,
+                ),
+            )
+
+    except ReferralInviteNotFoundError:
+        return
+
+
 @subscribe_router.callback_query(lambda q: q.data.startswith("approve_pay"))
 async def approve_pay_callback(query: CallbackQuery):
     """Обрабатывает подтверждение подписки админом и делает пользователя подписчиком"""
@@ -223,6 +288,8 @@ async def approve_pay_callback(query: CallbackQuery):
     await send_event(user_to_approve, EventTypes.SUBSCRIBED_PROCESS)
 
     payment_id, subscribed_until = await subscription.approve_payment(user_id)
+
+    await handle_paid_sub_for_ref_system(user_id)
 
     user = await user_db.get_user(user_id)
 
@@ -256,6 +323,7 @@ async def approve_pay_callback(query: CallbackQuery):
         await user_state.set_data({"bot_id": bot_id})
     else:
         await user_state.set_state(States.WAITING_FOR_TOKEN)
+        await user_state.set_data({"bot_id": -1})
         await bot.send_message(user_id, "Оплата подписки подтверждена ✅")
         await send_instructions(bot, None, user_id, cache_resources_file_id_store)
         await bot.send_message(

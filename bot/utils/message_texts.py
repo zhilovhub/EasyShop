@@ -1,11 +1,13 @@
 from typing import List
 from datetime import datetime
 from enum import Enum
-from aiogram.utils.formatting import Text, Bold
+from aiogram.utils.formatting import Text, Bold, TextLink
 
 from database.models.product_model import ProductSchema
 from database.models.order_option_model import OrderOptionSchema
 from database.models.post_message_model import PostMessageType
+
+from common_utils.subscription.config import FIRST_REFERRAL_LAYER, SECOND_REFERRAL_LAYER, THIRD_REFERRAL_LAYER
 
 
 class MessageTexts(Enum):
@@ -259,4 +261,38 @@ class MessageTexts(Enum):
             " дней",
             "\nЧтобы получить бота с магазином, воспользуйтесь инструкцией ниже 👇",
         )
+        return result.as_kwargs()
+
+    @staticmethod
+    def generate_ref_system_text(link: str) -> dict:
+        return Text(
+            Bold("🎉 Ваша реферальная ссылка.\n"),
+            link,
+            "\n\n💶 За каждого человека, перешедшего по ней и оформившего "
+            "платную подписку, Вы получите 1000 рублей сразу в течение 2 дней",
+            "\n\n🌸 Для красивого оформления сообщения, эту ссылку можно вшивать в текст сообщения, например ",
+            TextLink("вот так", url=link),
+        ).as_kwargs()
+
+    @staticmethod
+    def generate_ref_payment_text(user_id: int, username: str, referrals: List[str], for_admin: bool):
+        """
+        :raises Exception: when there is a strange length of amount
+        """
+        match len(referrals):
+            case 2:
+                amount = FIRST_REFERRAL_LAYER
+            case 3:
+                amount = SECOND_REFERRAL_LAYER
+            case 4:
+                amount = THIRD_REFERRAL_LAYER
+            case _:
+                raise Exception(f"Unexpected length of referals {len(referrals)}")
+        if for_admin:
+            result = Text(f"Пользователь {user_id}, @{username} получает {amount} рублей за следующую цепочку:\n\n")
+        else:
+            result = Text(f"Вы получаете {amount} рублей за следующую цепочку:\n\n")
+        for ref in referrals:
+            result += Text(f"@{ref}")
+            result += Text(" -> ") if ref != referrals[-1] else Text("!")
         return result.as_kwargs()

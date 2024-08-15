@@ -18,6 +18,7 @@ from database.models.channel_user_model import ChannelUserDao
 from database.models.order_option_model import OrderOptionDao
 from database.models.product_review_model import ProductReviewDao
 from database.models.custom_bot_user_model import CustomBotUserDao
+from database.models.referral_invite_model import ReferralInviteDao
 from database.models.post_message_media_files import PostMessageMediaFileDao
 from database.models.order_choose_option_model import OrderChooseOptionDao
 from database.models import Base  # should be the last import from database.models
@@ -51,6 +52,7 @@ class Database:
         self.custom_bot_user_dao = CustomBotUserDao(self.engine, self.logger)
         self.order_choose_option_dao = OrderChooseOptionDao(self.engine, self.logger)
         self.post_message_media_file_dao = PostMessageMediaFileDao(self.engine, self.logger)
+        self.referral_invite_dao = ReferralInviteDao(self.engine, self.logger)
 
         self.logger.debug("Database class is initialized")
 
@@ -82,6 +84,9 @@ class Database:
     def get_mailing_dao(self) -> MailingDao:
         return self.mailing_dao
 
+    def get_option_dao(self) -> OptionDao:
+        return self.option_dao
+
     def get_contest_dao(self) -> ContestDao:
         return self.contest_dao
 
@@ -93,6 +98,9 @@ class Database:
 
     def get_partnership_dao(self) -> PartnershipDao:
         return self.partnership_dao
+
+    def get_order_option_dao(self) -> OrderOptionDao:
+        return self.order_option_dao
 
     def get_post_message_dao(self) -> PostMessageDao:
         return self.post_message_dao
@@ -109,14 +117,11 @@ class Database:
     def get_product_review_dao(self) -> ProductReviewDao:
         return self.product_review_dao
 
-    def get_post_message_media_file_dao(self) -> PostMessageMediaFileDao:
-        return self.post_message_media_file_dao
-
-    def get_option_dao(self) -> OptionDao:
-        return self.option_dao
-
-    def get_order_option_dao(self) -> OrderOptionDao:
-        return self.order_option_dao
+    def get_referral_invite_dao(self) -> ReferralInviteDao:
+        return self.referral_invite_dao
 
     def get_order_choose_option_dao(self) -> OrderChooseOptionDao:
         return self.order_choose_option_dao
+
+    def get_post_message_media_file_dao(self) -> PostMessageMediaFileDao:
+        return self.post_message_media_file_dao

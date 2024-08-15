@@ -21,6 +21,7 @@ from database.models.product_review_model import ProductReviewDao
 from database.models.custom_bot_user_model import CustomBotUserDao
 from database.models.post_message_media_files import PostMessageMediaFileDao
 from database.models.order_choose_option_model import OrderChooseOptionDao
+from database.models.referral_invite_model import ReferralInviteDao
 
 from logs.config import db_logger
 
@@ -44,5 +45,6 @@ channel_user_db: ChannelUserDao = db_engine.get_channel_user_dao()
 channel_post_db: ChannelPostDao = db_engine.get_channel_post_dao()
 product_review_db: ProductReviewDao = db_engine.get_product_review_dao()
 custom_bot_user_db: CustomBotUserDao = db_engine.get_custom_bot_user_db()
-post_message_media_file_db: PostMessageMediaFileDao = db_engine.get_post_message_media_file_dao()
+referral_invite_db: ReferralInviteDao = db_engine.get_referral_invite_dao()
 order_choose_option_db: OrderChooseOptionDao = db_engine.get_order_choose_option_dao()
+post_message_media_file_db: PostMessageMediaFileDao = db_engine.get_post_message_media_file_dao()
