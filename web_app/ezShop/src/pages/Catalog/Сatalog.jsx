@@ -32,6 +32,8 @@ function Catalog() {
     const inputRef = useRef(null);
     const filter = useSelector(state => state.filter);
 
+    const [mainButton] = initMainButton();
+
 
 
     useEffect(() => {
@@ -63,7 +65,7 @@ function Catalog() {
         if(newBotId){
             dispatch(setBotId(newBotId))
         }
-        alert(botId)
+        // alert(botId)
 
 
         if (productList.length == 0){
@@ -181,9 +183,39 @@ function Catalog() {
 
     function getBottomButton(){
         if (sumBuyCount() == 0){
-            return <div className={styles.bottom_name}>@ezshop</div>
+
+            // const [mainButton] = initMainButton();
+
+            // mainButton
+            // .setText("Начать оформление")
+            // .setBgColor('#59C0F9')
+            // .setTextColor('#0C0C0C')
+            // .on('click', () => {
+            //     navigate("/app/order");
+            // });
+
+            // mainButton.show();
+            // mainButton.enable();
+
+            mainButton.hide();
+
+            // return <div className={styles.bottom_name}>@ezshop</div>
         }else{
-            return <div className={styles.bottom_basket} onClick={() => navigate("/app/basket")}>Корзина ({sumBuyCount()})</div>
+
+            const [mainButton] = initMainButton();
+
+            mainButton
+            .setText("Корзина" + "(" + sumBuyCount() + ")")
+            .setBgColor('#59C0F9')
+            .setTextColor('#0C0C0C')
+            .on('click', () => {
+                navigate("/app/order");
+            });
+
+            mainButton.show();
+            mainButton.enable();
+
+            // return <div className={styles.bottom_basket} onClick={() => navigate("/app/basket")}>Корзина ({sumBuyCount()})</div>
         }
     }
 
