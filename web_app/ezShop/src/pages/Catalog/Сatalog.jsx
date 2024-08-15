@@ -42,16 +42,16 @@ function Catalog() {
         backButton.hide();
         
         const [mainButton] = initMainButton();
+
         mainButton.setText("Корзина")
         
-        // mainButton.on('click', as() => navigate("/app/basket"));
-
-        mainButton.onClick(() => {
-            alert('Кнопка нажата!');
+        mainButton.on('click', () => {
+            alert('click')
             navigate("/app/basket");
         });
         
         mainButton.show();
+        mainButton.enable();
         
         
         // TG API --END--
