@@ -69,7 +69,7 @@ function BasketPage({mainButton}){
             .setBgColor("#9edcff")
             .setTextColor('#0C0C0C')
             .enable()
-            .show();
+            .show()
             .on('click', mainButtonToCatalogListener, true)
 
             // return <div className={styles.bottom_btn} onClick={() => navigate("/app/catalog")}>К каталогу</div>
