@@ -225,7 +225,7 @@ class BotDao(Dao):
 
         async with self.engine.begin() as conn:
             # raw_res = await conn.execute(select(Bot).where(Bot.bot_token == bot_token))
-            raw_res = await conn.execute(select(Bot).where(Bot.bot_token == bot_token))
+            raw_res = await conn.execute(select(Bot))
         await self.engine.dispose()
 
         # res = raw_res.fetchone()
