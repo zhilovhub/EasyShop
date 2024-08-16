@@ -16,6 +16,7 @@ function BasketPage(){
     const {t, i18n} = useTranslation();
     const dispatch = useDispatch();
     const productList = useSelector(state => state.productList.productList);
+    const botId = useSelector(state => state.botId.botId);
     const navigate = useNavigate();
 
     const [mainButton] = initMainButton();
@@ -26,7 +27,7 @@ function BasketPage(){
         const [backButton] = initBackButton();
         backButton.show();
         backButton.on('click', () => {
-            navigate("/app/catalog");
+            navigate(`/app/catalog?bot_id=${botId}`);
         });
 
         mainButton
