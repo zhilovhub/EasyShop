@@ -142,7 +142,7 @@ function OrderPage(){
                 time: "temp",
                 comment: "temp",
                 delivery_method: "temp",
-                ordered_at: "2024-07-16T10:38:42.329Z",
+                ordered_at: new Date().toISOString(),
                 from_user: 6456011436
             }
 
@@ -172,7 +172,8 @@ function OrderPage(){
                 if (invoiceUrl){
 
                 }else{
-                    miniApp.close();
+                    window.Telegram.WebApp.close();
+                    // miniApp.close();
                 }
 
             })

@@ -46,6 +46,8 @@ function Catalog() {
         const [mainButton] = initMainButton();
 
         mainButton.setText("Корзина")
+
+        mainButton.off('click');
         
         mainButton.on('click', () => {
             alert('click')
