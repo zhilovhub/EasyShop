@@ -22,6 +22,8 @@ const root = ReactDOM.createRoot(document.getElementById('root'));
 
 const [mainButton] = initMainButton();
 
+mainButton.
+
 root.render(
   <SDKProvider acceptCustomStyles debug>
   <Provider store={store}>
