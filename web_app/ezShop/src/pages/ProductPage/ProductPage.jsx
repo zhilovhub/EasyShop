@@ -72,10 +72,14 @@ function ProductPage({mainButton}){
 
     useEffect(() => {
 
+        mainButton.
+
         mainButton
         .setBgColor("#9edcff")
         .setTextColor('#0C0C0C')
         .enable();
+
+        
 
         mainButton
         .setText("В корзину")
