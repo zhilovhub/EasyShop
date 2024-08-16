@@ -205,7 +205,7 @@ function Catalog() {
 
             // })
 
-            // mainButton.disable();
+            mainButton.disable();
             mainButton.hide();
 
             // return <div className={styles.bottom_name}>@ezshop</div>

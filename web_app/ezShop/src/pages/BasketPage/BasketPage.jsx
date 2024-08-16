@@ -36,7 +36,7 @@ function BasketPage(){
         .setTextColor('#0C0C0C')
         .enable()
         .on('click', () => {
-                navigate("/app/basket");
+                navigate("/app/order");
         });
 
     }, [])
