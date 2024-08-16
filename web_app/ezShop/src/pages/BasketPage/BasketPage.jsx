@@ -23,25 +23,35 @@ function BasketPage({mainButton}){
     useEffect(() => {
 
         const [backButton] = initBackButton();
+        backButton.on('click', backButtonListener, true);
         backButton.show();
-        backButton.on('click', () => {
-            navigate(`/app/catalog?bot_id=${botId}`);
-        }, true);
 
         mainButton
-        .show()
         .setText("Начать оформление")
         .setBgColor("#9edcff")
         .setTextColor('#0C0C0C')
         .enable()
-        .on('click', () => {
-                navigate("/app/order");
-        }, true);
+        .show()
+        .on('click', mainButtonToOrderListener, true);
 
+    return () => {
+        mainButton.off('click', mainButtonToOrderListener);
+        mainButton.off('click', mainButtonToCatalogListener);
+        backButton.off('click', backButtonListener);
+    }
     }, [])
 
-    // useEffect(() => {
-    // }, [productList])
+    function mainButtonToOrderListener() {
+        navigate("/app/order");
+    }
+
+    function mainButtonToCatalogListener() {
+        navigate("/app/catalog");
+    }
+
+    function backButtonListener() {
+        navigate(`/app/catalog?bot_id=${botId}`);
+    }
 
     function filterByBuyCount() {
         return productList.filter(product => product.buyCount !== 0);
@@ -59,10 +69,8 @@ function BasketPage({mainButton}){
             .setBgColor("#9edcff")
             .setTextColor('#0C0C0C')
             .enable()
-            .on('click', () => {
-                    navigate("/app/catalog");
-            }, true)
             .show();
+            .on('click', mainButtonToCatalogListener, true)
 
             // return <div className={styles.bottom_btn} onClick={() => navigate("/app/catalog")}>К каталогу</div>
         }else{
