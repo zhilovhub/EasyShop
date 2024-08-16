@@ -21,7 +21,7 @@ import { on } from '@telegram-apps/sdk';
 
 function Catalog() {
 
-    console.log("useEffect");
+    console.log("cataLog");
 
     const {t, i18n} = useTranslation();
     const dispatch = useDispatch();
@@ -45,6 +45,12 @@ function Catalog() {
     .enable()
 
     useEffect(() => {
+        console.log("useEffect getBottomButton");
+        getBottomButton();
+    }, [productList]);
+
+    useEffect(() => {
+        console.log("useEffect Main");
         const currentUrl = window.location.href;
         const myUrl = new URL(currentUrl);
         let newBotId = myUrl.searchParams.get('bot_id');
@@ -192,7 +198,7 @@ function Catalog() {
         }else{
 
             mainButton
-            .setText("Корзина " + "(" + sumBuyCount() + ")")
+            .setText("Корзина " + "(" + currentCount + ")")
             .show()  // show делаем после всех конфигураций кнопки
             .on('click', () => {
                     navigate("/app/basket");
@@ -236,7 +242,7 @@ function Catalog() {
         </div>
 
 
-        {getBottomButton()}
+//         {getBottomButton()}
 
         </div>
     );
