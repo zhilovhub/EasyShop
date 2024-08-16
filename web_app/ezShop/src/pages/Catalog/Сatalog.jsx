@@ -170,7 +170,8 @@ function Catalog() {
     }
 
     function getBottomButton(){
-        if (sumBuyCount() == 0){
+        const currentCount = sumBuyCount();
+        if (currentCount == 0 || currentCount == null){
             // mainButton
             // .setText("Начать оформление")
             // .setBgColor('#59C0F9')
