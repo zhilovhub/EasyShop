@@ -36,8 +36,8 @@ function Catalog() {
     const [mainButton] = initMainButton();
     const [backButton] = initBackButton();
 
-//     mainButton.hide()  // сначала всегда прячем кнопку
-//     backButton.hide()  // сначала всегда прячем кнопку (опционально)
+    mainButton.hide()  // сначала всегда прячем кнопку
+    backButton.hide()  // сначала всегда прячем кнопку (опционально)
 
     mainButton
     .setBgColor("#9edcff")
