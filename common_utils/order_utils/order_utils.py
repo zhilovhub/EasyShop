@@ -91,7 +91,7 @@ async def _handle_zero_products(event: Message, bot_owner: int, zero_products: l
 
 
 async def _form_order(data: dict, order_type: OrderType) -> OrderSchema:
-    order_options_data = data["order_options"]
+    order_options_data = data["raw_order_options"]
 
     order_options_from_db = await order_option_db.get_all_order_options(data["bot_id"])
     order_options = {}
@@ -105,6 +105,7 @@ async def _form_order(data: dict, order_type: OrderType) -> OrderSchema:
             order_options[option.id] = order_options_data[option.id]
 
     order = OrderSchema(**data, order_options=order_options)
+
     match order_type:
         case OrderType.MAIN_BOT_TEST_ORDER:
             pass
