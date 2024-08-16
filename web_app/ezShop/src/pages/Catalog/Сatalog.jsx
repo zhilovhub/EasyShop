@@ -47,18 +47,17 @@ function Catalog() {
 
         // window.Telegram.WebApp.onEvent('mainButtonClicked', )
         
-        // mainButton
-        // .setText("Корзина")
-        // .setBgColor("#9edcff")
-        // .setTextColor('#0C0C0C')
-        // .on('click', () => {
-        //         alert("click")
-        //         navigate("/app/basket");
-        //         cleanupMainButton();
-        // });
-        
-        // mainButton.show();
-        // mainButton.enable();
+        if (sumBuyCount != 0){
+            mainButton
+            .show()
+            .setText("Корзина " + "(" + sumBuyCount() + ")")
+            .setBgColor("#9edcff")
+            .setTextColor('#0C0C0C')
+            .enable()
+            .on('click', () => {
+                    navigate("/app/catalog");
+            });
+        }
         
         
         // TG API --END--

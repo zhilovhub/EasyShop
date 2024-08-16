@@ -29,18 +29,15 @@ function BasketPage(){
             navigate("/app/catalog");
         });
 
-        const [mainButton] = initMainButton();
-
         mainButton
+        .show()
         .setText("Начать оформление")
-        .setBgColor('#59C0F9')
+        .setBgColor("#9edcff")
         .setTextColor('#0C0C0C')
+        .enable()
         .on('click', () => {
-            navigate("/app/catalog");
+                navigate("/app/basket");
         });
-
-        mainButton.show();
-        mainButton.enable();
 
     }, [])
 
@@ -55,19 +52,15 @@ function BasketPage(){
     function getBottomButton(){
         if (sumBuyCount() == 0){
 
-            const [mainButton] = initMainButton();
-
             mainButton
+            .show()
             .setText("К каталогу")
-            .setBgColor('#59C0F9')
+            .setBgColor("#9edcff")
             .setTextColor('#0C0C0C')
+            .enable()
             .on('click', () => {
-                alert('click')
-                navigate("/app/catalog");
+                    navigate("/app/catalog");
             });
-
-            mainButton.show();
-            mainButton.enable();
 
             // return <div className={styles.bottom_btn} onClick={() => navigate("/app/catalog")}>К каталогу</div>
         }else{
