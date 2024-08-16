@@ -41,20 +41,19 @@ function Catalog() {
         // TG API --START--
 
         const [backButton] = initBackButton();
+
         backButton.hide();
-        
+
+        // window.Telegram.WebApp.onEvent('mainButtonClicked', )
         const [mainButton] = initMainButton();
-
-
-        mainButton.off('click');
         
         mainButton
         .setText("Корзина")
-        .setBgColor('#59C0F9')
+        .setBgColor("#9edcff")
         .setTextColor('#0C0C0C')
         .on('click', () => {
                 navigate("/app/basket");
-        });
+        }, true);
         
         mainButton.show();
         mainButton.enable();

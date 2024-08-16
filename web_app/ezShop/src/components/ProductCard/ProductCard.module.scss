@@ -51,6 +51,10 @@
     overflow: visible;
 }
 
+.btn_icon{
+    line-height: 37px;
+}
+
 .plus_btn{
     @include accent-button;
     flex-grow: 1;
