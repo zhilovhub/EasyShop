@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import styles from './TextInput.module.scss';
 import { setIsCorrect } from '../../../shared/redux/action/ValidateAction';
 import { useDispatch, useSelector } from 'react-redux';
+import { setOrderItem } from '../../../shared/redux/action/OrderDataAction';
 
 function TextInput({isCheck, data}) {
 
