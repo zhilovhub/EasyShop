@@ -175,6 +175,10 @@ function Catalog({mainButton}) {
         return productList.reduce((total, item) => total + (item.buyCount || 0), 0);
     }
 
+    function customListener() {
+        navigate("/app/basket");
+    }
+
     function getBottomButton(){
         const currentCount = sumBuyCount();
         if (currentCount == 0 || currentCount == null){
@@ -201,9 +205,7 @@ function Catalog({mainButton}) {
             mainButton
             .setText("Корзина " + "(" + currentCount + ")")
             .show()  // show делаем после всех конфигураций кнопки
-            .on('click', () => {
-                    navigate("/app/basket");
-            }, true);
+            .on('click', customListener, true);
 
             // return <div className={styles.bottom_basket} onClick={() => navigate("/app/basket")}>Корзина ({sumBuyCount()})</div>
         }
