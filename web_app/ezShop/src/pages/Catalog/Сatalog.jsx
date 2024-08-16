@@ -32,7 +32,7 @@ function Catalog() {
     const inputRef = useRef(null);
     const filter = useSelector(state => state.filter);
 
-    const [mainButton, cleanupMainButton] = null;
+    let [mainButton, cleanupMainButton] = null;
 
 
     useEffect(() => {
