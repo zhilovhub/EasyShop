@@ -148,11 +148,13 @@ function OrderPage({mainButton}){
 
     function sendOrder(){
 
+        alert("sendOrder");
+
         setIsCheck(true);
         
         if(isCorrect == false){
             alert("Вы заполнили не все поля");
-        }else if (isCorrect == true){
+        }else if (true){
 
             alert("Отправка данных пошла");
 
