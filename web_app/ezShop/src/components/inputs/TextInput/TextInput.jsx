@@ -22,7 +22,7 @@ function TextInput({isCheck, data}) {
             //     dispatch(setIsCorrect(false))
             // }
 
-            alert(data)
+            alert(data.option_name)
             console.log(data)
 
             dispatch(setOrderItem(data.option_name, inputValue))
