@@ -17,7 +17,7 @@
 
 .item{
     display: flex;
-    font-family: $montserrat-regular;
+    font-family: $montserrat-black;
     color: $black-color;
     background-color: $gray-color-2;
     border-radius: $font-size-4;
@@ -27,7 +27,6 @@
     justify-content: center;
     align-items: center;
     border: 2px solid rgb(0, 0, 0, 0);
-    font-weight: 450;
 }
 
 .item:hover{

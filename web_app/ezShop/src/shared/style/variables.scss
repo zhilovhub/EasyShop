@@ -41,6 +41,12 @@ $montserrat-medium: 'MontserratMedium';
 	src: url(../fonts/Montserrat/Montserrat-Medium.ttf) format('truetype'); 
 }
 
+$montserrat-black: 'MontserratBlack';
+@font-face {
+	font-family: 'MontserratBlack'; 
+	src: url(../fonts/Montserrat/Montserrat-Black.ttf) format('truetype'); 
+}
+
 // размер шрифтов
 
 $font-size-1: 14px;
