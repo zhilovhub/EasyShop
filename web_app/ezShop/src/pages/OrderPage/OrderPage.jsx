@@ -15,7 +15,7 @@ import { TelegramClient, Button } from '@telegram-apps/sdk';
 import { initMiniApp } from '@telegram-apps/sdk';
 import { initMainButton } from '@telegram-apps/sdk';
 
-function OrderPage(){
+function OrderPage({mainButton}){
 
     const {t, i18n} = useTranslation();
     const dispatch = useDispatch();
@@ -30,8 +30,6 @@ function OrderPage(){
     const { initDataRaw } = retrieveLaunchParams();
 
     const [miniApp] = initMiniApp();
-
-    const [mainButton] = initMainButton();
     
 
 
