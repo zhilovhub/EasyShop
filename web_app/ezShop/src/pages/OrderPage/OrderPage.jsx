@@ -166,8 +166,11 @@ function OrderPage({mainButton}){
                 from_user: initData.user.id
             }
 
-
+            console.log("---------")
+            console.log(orderData)
             orderData.map(orderItem => {
+                console.log("+++++++++++")
+                console.log(orderItem)
                 data.raw_order_options[orderItem.option.id] = orderItem.value
             })
 
