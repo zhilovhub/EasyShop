@@ -58,8 +58,10 @@ function ProductCard(props) {
         }else{
             return (
             <div className={styles.button_container}>
-                <div className={styles.minus_btn} onClick={(event) => {event.stopPropagation(); event.preventDefault(); updateBuyCount("minus");}}>{minus_icon}</div>
-                <div className={styles.plus_btn} onClick={(event) => {event.stopPropagation(); event.preventDefault(); updateBuyCount("plus");}}>{plus_icon}</div>
+                <div className={styles.minus_btn} onClick={(event) => {event.stopPropagation(); event.preventDefault(); updateBuyCount("minus");}}>
+                    <img src={minus_icon}></img>
+                    </div>
+                <div className={styles.plus_btn} src={plus_icon} onClick={(event) => {event.stopPropagation(); event.preventDefault(); updateBuyCount("plus");}}></div>
             </div>
             )
         }

@@ -206,6 +206,8 @@ function Catalog() {
             // return <div className={styles.bottom_name}>@ezshop</div>
         }else{
 
+            mainButton.show();
+
             mainButton
             .setText("Корзина " + "(" + sumBuyCount() + ")")
 
