@@ -36,7 +36,7 @@ function BasketPage({mainButton}){
         .enable()
         .on('click', () => {
                 navigate("/app/order");
-        });
+        }, true);
 
     }, [])
 
@@ -61,7 +61,7 @@ function BasketPage({mainButton}){
             .enable()
             .on('click', () => {
                     navigate("/app/catalog");
-            })
+            }, true)
             .show();
 
             // return <div className={styles.bottom_btn} onClick={() => navigate("/app/catalog")}>К каталогу</div>

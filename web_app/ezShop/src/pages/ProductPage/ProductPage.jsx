@@ -83,7 +83,7 @@ function ProductPage({mainButton}){
         .on('click', () => {
             updateBuyCount("plus");
             navigate("/app/catalog")
-        });
+        }, true);
 
     }, [])
 
