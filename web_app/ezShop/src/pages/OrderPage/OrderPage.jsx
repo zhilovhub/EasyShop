@@ -167,9 +167,9 @@ function OrderPage({mainButton}){
             }
 
 
-            // orderData.map(orderItem => {
-            //     data.order_options[orderItem.option.id] = orderItem.value
-            // })
+            orderData.map(orderItem => {
+                data.order_options[orderItem.option.id] = orderItem.value
+            })
 
             const url = `https://ezbots.ru:1537/api/orders/send_order_data_to_bot`;
             const body = JSON.stringify(data);
