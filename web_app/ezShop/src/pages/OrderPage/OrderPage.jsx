@@ -29,16 +29,18 @@ function OrderPage(){
     const { initDataRaw } = retrieveLaunchParams();
 
     const [miniApp] = initMiniApp();
-    
 
-    const [backButton] = initBackButton();
-    backButton.show();
-    backButton.on('click', () => {
-        navigate("/app/basket");
-    });
+    const [mainButton] = initMainButton();
+    
 
 
     useEffect(() => {
+
+        const [backButton] = initBackButton();
+        backButton.show();
+        backButton.on('click', () => {
+            navigate("/app/basket");
+        });
 
         alert(botId)
 
