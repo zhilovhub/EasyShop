@@ -16,11 +16,13 @@ function ProductCard(props) {
     const productList = useSelector(state => state.productList.productList);
     const navigate = useNavigate();
     const [imgUrl, setImgUrl] = useState('')
+    const [imgUrlIsLoad, setImgUrlIsLoad] = useState(false)
 
 
     
     useEffect(() => {
 
+    if(!imgUrlIsLoad){
     const url = `https://ezbots.ru:1537/api/files/get_file/${props.product.pictures[0]}`;
         fetch(url, {
             method: 'GET',
@@ -43,6 +45,8 @@ function ProductCard(props) {
         .catch(error => {
             console.error('Error:', error);
         });
+        setImgUrlIsLoad(true)
+    }
 
     }, [imgUrl])
 
