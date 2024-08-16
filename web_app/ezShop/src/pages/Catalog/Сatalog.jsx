@@ -213,17 +213,10 @@ function Catalog() {
             .setText("Корзина " + "(" + sumBuyCount() + ")")
             .setBgColor("#9edcff")
             .setTextColor('#0C0C0C')
-            // .on('click', () => {
-            //         alert("click")
-            //         navigate("/app/basket");
-            //         cleanupMainButton();
-            // });
-            mainButton.enable();
-
-            mainButton.on('mainButtonClicked', () => {
-                alert("click")
-                navigate("/app/basket");
+            .on('click', () => {
+                    navigate("/app/basket");
             });
+            mainButton.enable();
 
             // return <div className={styles.bottom_basket} onClick={() => navigate("/app/basket")}>Корзина ({sumBuyCount()})</div>
         }
