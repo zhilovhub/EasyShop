@@ -56,6 +56,7 @@ function Catalog({mainButton}) {
         .setBgColor("#9edcff")
         .setTextColor('#0C0C0C')
         .enable()
+        .on('click', mainButtonListener, true);
 
         if(newBotId){
             dispatch(setBotId(newBotId))
@@ -93,7 +94,6 @@ function Catalog({mainButton}) {
         });
     }
     return () => {
-        console.log("unmounted")
         mainButton.off('click', mainButtonListener);
     }
     }, []);
@@ -205,11 +205,9 @@ function Catalog({mainButton}) {
 
             // return <div className={styles.bottom_name}>@ezshop</div>
         }else{
-            mainButton.off('click', mainButtonListener);
             mainButton
             .setText("Корзина " + "(" + currentCount + ")")
             .show()  // show делаем после всех конфигураций кнопки
-            .on('click', mainButtonListener, true);
 
             // return <div className={styles.bottom_basket} onClick={() => navigate("/app/basket")}>Корзина ({sumBuyCount()})</div>
         }
