@@ -74,7 +74,7 @@ function Catalog() {
         alert(productList)
 
 
-        if (productList.length == 0 || !productList.length){
+        if (productList.length == 0 || !productList || productList == null){
 
         const url = `https://ezbots.ru:1537/api/products/get_all_products?bot_id=${botId}`;
         const body = JSON.stringify([]);
