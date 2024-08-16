@@ -10,7 +10,6 @@ const initialState = {
           orderData: action.payload
         };
       case 'SET_ORDER_ITEM':
-        alert(action.payload.fieldName + " | " + action.payload.value)
         return {
           ...state,
           orderData: state.orderData.map(orderItem => {

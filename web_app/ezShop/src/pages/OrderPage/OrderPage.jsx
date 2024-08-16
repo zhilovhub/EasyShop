@@ -164,6 +164,7 @@ function OrderPage({mainButton}){
                 from_user: 933526311
             }
 
+
             orderData.map(orderItem => {
                 data.order_options[orderItem.option.id] = orderItem.value
             })
@@ -185,11 +186,15 @@ function OrderPage({mainButton}){
                     alert('error')
                     throw new Error('Network response was not ok ' + response.statusText);
                 }
+                alert("3")
                 return response.json();
             })
             .then(data => {
 
+
                 const invoiceUrl = data.invoice_url
+
+                alert("invoiceUrl " + invoiceUrl)
 
                 if (invoiceUrl){
 
