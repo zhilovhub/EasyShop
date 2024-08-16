@@ -19,9 +19,7 @@ import { on } from '@telegram-apps/sdk';
 
 
 
-function Catalog() {
-
-    console.log("cataLog");
+function Catalog({mainButton}) {
 
     const {t, i18n} = useTranslation();
     const dispatch = useDispatch();
@@ -33,15 +31,15 @@ function Catalog() {
     const inputRef = useRef(null);
     const filter = useSelector(state => state.filter);
 
-    const [mainButton] = initMainButton();
-    const [backButton] = initBackButton();
+    // const [mainButton] = initMainButton();
+    // const [backButton] = initBackButton();
 
-    console.log("FIRST", mainButton.isVisible);
+    // console.log("FIRST", mainButton.isVisible);
 
     alert("long wait");
 
-    mainButton.hide()  // сначала всегда прячем кнопку
-    backButton.hide()  // сначала всегда прячем кнопку (опционально)
+    // mainButton.hide()  // сначала всегда прячем кнопку
+    // backButton.hide()  // сначала всегда прячем кнопку (опционально)
 
     mainButton
     .setBgColor("#9edcff")
