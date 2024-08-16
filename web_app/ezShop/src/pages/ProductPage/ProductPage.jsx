@@ -27,7 +27,6 @@ function ProductPage({mainButton}){
     const [extraOptions, setExtraOptions] = useState([])
     const [productImages, setProductImages] = useState([])
     const [isImageLoad, setIsImageLoad] = useState(false)
-    const [removeListener, setRemoveListner] = useState(() => {})
 
     const [backButton] = initBackButton();
     backButton.show();
@@ -73,29 +72,21 @@ function ProductPage({mainButton}){
 
     useEffect(() => {
 
-        mainButton.
-
         mainButton
         .setBgColor("#9edcff")
         .setTextColor('#0C0C0C')
         .enable();
 
 
-        console.log("before removeListener", removeListener)
-        if (removeListener) {
-            console.log("removeListener", removeListener)
-            removeListener()
-        }
-        setRemoveListner(mainButton
+        mainButton
         .setText("В корзину")
         .show()
-        .on('click', () => {
-            alert('add product')
-            updateBuyCount("plus");
-            navigate("/app/catalog")
-        }, true))
+        .on('click', mainButtonListener, true);
 
-
+        return () => {
+            console.log("unmounted ProductPage")
+            mainButton.off('click', mainButtonListener);
+        }
     }, [])
 
 
@@ -135,6 +126,13 @@ function ProductPage({mainButton}){
     });
         
     }, [productList]);
+
+
+    function mainButtonListener() {
+        alert('add product')
+        updateBuyCount("plus");
+        navigate("/app/catalog")
+    }
 
     
     function updateBuyCount(type) {
