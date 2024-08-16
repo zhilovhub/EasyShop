@@ -14,7 +14,7 @@ import Slider from '../../components/Slider/Slider';
 import { initBackButton } from '@telegram-apps/sdk';
 
 
-function ProductPage(){
+function ProductPage({mainButton}){
 
     const {t, i18n} = useTranslation();
     const dispatch = useDispatch();
