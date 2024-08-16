@@ -32,20 +32,14 @@ function Catalog() {
     const inputRef = useRef(null);
     const filter = useSelector(state => state.filter);
 
-    let mainButton = null;
-    let cleanupMainButton = null;
 
-
+    const [mainButton, cleanupMainButton] = initMainButton();
 
     useEffect(() => {
 
         // TG API --START--
 
         const [backButton] = initBackButton();
-
-        const [mainButtonTemp, cleanupMainButtonTemp] = initMainButton();
-        mainButton = mainButtonTemp;
-        cleanupMainButton = cleanupMainButtonTemp;
 
         backButton.hide();
 
