@@ -27,7 +27,6 @@ function ProductPage({mainButton}){
     const [extraOptions, setExtraOptions] = useState([])
     const [productImages, setProductImages] = useState([])
     const [isImageLoad, setIsImageLoad] = useState(false)
-    const [removeListener, setRemoveListner] = useState(() => {})
 
     const [backButton] = initBackButton();
     backButton.show();
@@ -79,19 +78,14 @@ function ProductPage({mainButton}){
         .enable();
 
 
-        console.log("before removeListener", removeListener)
-        if (removeListener) {
-            console.log("removeListener", removeListener)
-            removeListener()
-        }
-        setRemoveListner(mainButton
+        mainButton
         .setText("В корзину")
         .show()
         .on('click', () => {
             alert('add product')
             updateBuyCount("plus");
             navigate("/app/catalog")
-        }, true))
+        }, true);
 
 
     }, [])
