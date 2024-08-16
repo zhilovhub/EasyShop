@@ -33,25 +33,27 @@ function OrderPage({mainButton}){
 
     const [miniApp] = initMiniApp();
     
-
+    function mainButtonListener() {
+        sendOrder();
+    }
+    
+    function backButtonListener() {
+        navigate("/app/basket");
+    }
 
     useEffect(() => {
 
         const [backButton] = initBackButton();
         backButton.show();
-        backButton.on('click', () => {
-            navigate("/app/basket");
-        }, true);
+        backButton.on('click', backButtonListener, true);
 
         mainButton
-            .show()
             .setText("Отправить")
             .setBgColor("#9edcff")
             .setTextColor('#0C0C0C')
             .enable()
-            .on('click', () => {
-                sendOrder();
-            }, true);
+            .show()
+            .on('click', mainButtonListener, true);
 
         const url = `https://ezbots.ru:1537/api/settings/get_order_options/110`;
         fetch(url, {
@@ -77,8 +79,11 @@ function OrderPage({mainButton}){
             console.error('Error:', error);
         });
 
-
-
+    
+        return () => {
+            mainButton.off('click', mainButtonListener)
+            backButton.off('click', backButtonListener)
+        }
 
     }, []);
 

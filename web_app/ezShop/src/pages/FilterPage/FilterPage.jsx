@@ -24,22 +24,18 @@ function FilterPage({mainButton}){
 
         const [backButton] = initBackButton();
         backButton.show();
-        backButton.on('click', () => {
-           navigate("/app/catalog")
-        }, true);
+        backButton.on('click', backButtonListener, true);
 
         console.log("filter.categories")
         console.log(filter.categories)
 
         mainButton
-            .show()
             .setText("Применить")
             .setBgColor("#9edcff")
             .setTextColor('#0C0C0C')
             .enable()
-            .on('click', () => {
-                navigate("/app/catalog")
-            }, true);
+            .show()
+            .on('click', mainButtonListener, true);
 
         const url = `https://ezbots.ru:1537/api/categories/get_all_categories/110`;
         fetch(url, {
@@ -65,8 +61,19 @@ function FilterPage({mainButton}){
             console.error('Error:', error);
         });
 
-
+        return () => {
+            mainButton.off('click', mainButtonListener)
+            backButton.off('click', backButtonListener)
+        }
     }, []);
+
+    function mainButtonListener() {
+        navigate("/app/catalog");
+    }
+
+    function backButtonListener() {
+       navigate("/app/catalog")
+    }
 
     
     function isEqual(obj1, obj2) {

@@ -94,7 +94,7 @@ function Catalog({mainButton}) {
     }
     return () => {
         console.log("unmounted")
-        mainButton.off('click', customListener);
+        mainButton.off('click', mainButtonListener);
     }
     }, []);
 
@@ -178,7 +178,7 @@ function Catalog({mainButton}) {
         return productList.reduce((total, item) => total + (item.buyCount || 0), 0);
     }
 
-    function customListener() {
+    function mainButtonListener() {
         navigate("/app/basket");
     }
 
@@ -208,7 +208,7 @@ function Catalog({mainButton}) {
             mainButton
             .setText("Корзина " + "(" + currentCount + ")")
             .show()  // show делаем после всех конфигураций кнопки
-            .on('click', customListener, true);
+            .on('click', mainButtonListener, true);
 
             // return <div className={styles.bottom_basket} onClick={() => navigate("/app/basket")}>Корзина ({sumBuyCount()})</div>
         }

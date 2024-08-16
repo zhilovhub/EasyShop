@@ -30,9 +30,7 @@ function ProductPage({mainButton}){
 
     const [backButton] = initBackButton();
     backButton.show();
-    backButton.on('click', () => {
-        navigate("/app/catalog");
-    }, true);
+    backButton.on('click', backButtonListener, true);
 
     if(!isImageLoad){
         getImages();
@@ -76,16 +74,13 @@ function ProductPage({mainButton}){
         .setBgColor("#9edcff")
         .setTextColor('#0C0C0C')
         .enable();
-
-
-        mainButton
         .setText("В корзину")
         .show()
         .on('click', mainButtonListener, true);
 
         return () => {
-            console.log("unmounted ProductPage")
             mainButton.off('click', mainButtonListener);
+            backButton.off('click', backButtonListener);
         }
     }, [])
 
@@ -129,9 +124,12 @@ function ProductPage({mainButton}){
 
 
     function mainButtonListener() {
-        alert('add product')
         updateBuyCount("plus");
-        navigate("/app/catalog")
+        navigate("/app/catalog");
+    }
+
+    function backButtonListener() {
+        navigate("/app/catalog");
     }
 
     
