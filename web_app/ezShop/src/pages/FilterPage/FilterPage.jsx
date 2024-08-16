@@ -6,6 +6,7 @@ import cross_icon from "../../shared/icon/cross-icon.svg"
 import { useEffect, useState } from 'react';
 import { setFilter } from '../../shared/redux/action/FilterAction';
 import { initBackButton } from '@telegram-apps/sdk';
+import { initMainButton } from '@telegram-apps/sdk';
 
 
 function FilterPage(){
@@ -20,7 +21,7 @@ function FilterPage(){
     const [backButton] = initBackButton();
     backButton.show();
     backButton.on('click', () => {
-        navigate("/app/catalog");
+       navigate("/app/catalog")
     });
 
 
@@ -28,6 +29,16 @@ function FilterPage(){
 
         console.log("filter.categories")
         console.log(filter.categories)
+
+        mainButton
+            .show()
+            .setText("Применить")
+            .setBgColor("#9edcff")
+            .setTextColor('#0C0C0C')
+            .enable()
+            .on('click', () => {
+                navigate("/app/catalog")
+            });
 
         const url = `https://ezbots.ru:1537/api/categories/get_all_categories/110`;
         fetch(url, {
@@ -104,9 +115,9 @@ function FilterPage(){
 
     function getBottomButton(){
         if (filter.priceBefore == null && filter.priceFrom == null && filter.sortType == 'none' && filter.categories.length == 0){
-            return <div className={styles.bottom_name}>@ezshop</div>
+            // return <div className={styles.bottom_name}>@ezshop</div>
         }else{
-            return <div className={styles.bottom_btn} onClick={() => navigate("/app/catalog")}>Применить</div>
+            // return <div className={styles.bottom_btn} onClick={() => navigate("/app/catalog")}>Применить</div>
         }
     }
 
