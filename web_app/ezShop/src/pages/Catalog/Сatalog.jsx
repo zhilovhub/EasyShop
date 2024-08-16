@@ -200,10 +200,10 @@ function Catalog() {
             .setBgColor("#9edcff")
             .setTextColor('#0C0C0C')
             .enable()
+            .show()  // show делаем после всех конфигураций кнопки
             .on('click', () => {
                     navigate("/app/basket");
-            }, true)
-            .show();  // show делаем после всех конфигураций кнопки
+            }, true);
             alert("show")
             console.log(currentCount)
 
