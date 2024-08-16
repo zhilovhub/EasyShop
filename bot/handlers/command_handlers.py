@@ -5,7 +5,6 @@ from aiogram.fsm.context import FSMContext
 from aiogram.fsm.storage.base import StorageKey
 from aiogram.filters import CommandStart, Command, CommandObject, StateFilter
 from aiogram.types import Message, ReplyKeyboardRemove, CallbackQuery
-from aiogram.utils.deep_linking import create_start_link
 
 from bot.main import bot, cache_resources_file_id_store, subscription, dp
 from bot.utils import MessageTexts
@@ -17,6 +16,7 @@ from bot.handlers.subscription_handlers import send_subscription_expire_notify, 
 from bot.keyboards.subscription_keyboards import InlineSubscriptionContinueKeyboard
 from bot.middlewaries.subscription_middleware import CheckSubscriptionMiddleware
 
+from common_utils.ref_utils import _handle_ref_user
 from common_utils.subscription import config
 from common_utils.keyboards.keyboards import InlineBotMenuKeyboard
 from common_utils.subscription.subscription import UserHasAlreadyStartedTrial
@@ -27,7 +27,7 @@ from database.config import user_db, bot_db, user_role_db, referral_invite_db
 from database.models.bot_model import BotNotFoundError
 from database.models.user_model import UserSchema, UserStatusValues, UserNotFoundError
 from database.models.user_role_model import UserRoleSchema, UserRoleValues, UserRoleNotFoundError
-from database.models.referral_invite_model import ReferralInviteNotFoundError, ReferralInviteSchemaWithoutId
+from database.models.referral_invite_model import ReferralInviteSchemaWithoutId
 
 from logs.config import logger
 
@@ -35,24 +35,7 @@ from logs.config import logger
 @commands_router.callback_query(lambda query: query.data.startswith("ref_start"))
 async def handle_referral_link(query: CallbackQuery):
     user_id = query.from_user.id
-    ref_link = await create_start_link(bot, f"ref_{user_id}")
-    try:
-        invite = await referral_invite_db.get_invite_by_user_id(user_id)
-        if invite.referral_deep_link is None:
-            invite.referral_deep_link = ref_link
-            await referral_invite_db.update_invite(invite)
-        else:
-            ref_link = invite.referral_deep_link
-
-    except ReferralInviteNotFoundError:
-        user = await user_db.get_user(user_id=user_id)
-        await referral_invite_db.add_invite(
-            ReferralInviteSchemaWithoutId(
-                user_id=user_id,
-                referral_deep_link=ref_link,
-                paid=user.status == UserStatusValues.SUBSCRIBED,
-            )
-        )
+    ref_link = await _handle_ref_user(user_id, bot)
     await query.message.answer(
         **MessageTexts.generate_ref_system_text(ref_link),
     )

@@ -12,7 +12,6 @@ from aiogram.fsm.context import FSMContext
 from aiogram.utils.token import validate_token, TokenValidationError
 from aiogram.fsm.storage.base import StorageKey
 from aiogram.utils.formatting import Text, Bold, Italic
-from aiogram.utils.deep_linking import create_start_link
 
 from bot.main import bot, QUESTION_MESSAGES, cache_resources_file_id_store
 from bot.utils import MessageTexts
@@ -53,6 +52,7 @@ from common_utils.keyboards.keyboards import (
     InlineBotMainWebAppButton,
 )
 from common_utils.broadcasting.broadcasting import send_event, EventTypes
+from common_utils.ref_utils import _handle_ref_user
 from common_utils.storage.custom_bot_storage import custom_bot_storage
 from common_utils.keyboards.order_manage_keyboards import (
     InlineOrderCancelKeyboard,
@@ -74,18 +74,15 @@ from database.config import (
     option_db,
     order_option_db,
     channel_db,
-    referral_invite_db,
 )
 from database.models.bot_model import BotIntegrityError, BotNotFoundError
 from database.models.order_model import OrderSchema, OrderNotFoundError, OrderStatusValues
 from database.models.option_model import OptionNotFoundError
 from database.models.mailing_model import MailingNotFoundError
 from database.models.product_model import ProductWithoutId, ProductNotFoundError
-from database.models.user_model import UserStatusValues
 from database.models.user_role_model import UserRoleSchema, UserRoleValues
 from database.models.post_message_model import PostMessageType
 from database.models.product_review_model import ProductReviewNotFoundError
-from database.models.referral_invite_model import ReferralInviteNotFoundError, ReferralInviteSchemaWithoutId
 
 from logs.config import logger, extra_params
 
@@ -653,24 +650,7 @@ async def bot_menu_callback_handler(query: CallbackQuery, state: FSMContext):
             await query.answer("Ваш бот приостановлен ❌", show_alert=True)
 
         case callback_data.ActionEnum.REFERRAL_SYSTEM:
-            ref_link = await create_start_link(bot, f"ref_{user_id}")
-            try:
-                invite = await referral_invite_db.get_invite_by_user_id(user_id)
-                if invite.referral_deep_link is None:
-                    invite.referral_deep_link = ref_link
-                    await referral_invite_db.update_invite(invite)
-                else:
-                    ref_link = invite.referral_deep_link
-
-            except ReferralInviteNotFoundError:
-                user = await user_db.get_user(user_id=user_id)
-                await referral_invite_db.add_invite(
-                    ReferralInviteSchemaWithoutId(
-                        user_id=user_id,
-                        referral_deep_link=ref_link,
-                        paid=user.status == UserStatusValues.SUBSCRIBED,
-                    )
-                )
+            ref_link = await _handle_ref_user(user_id, bot)
             await query.message.edit_text(
                 **MessageTexts.generate_ref_system_text(ref_link),
                 reply_markup=InlineBackFromRefKeyboard.get_keyboard(bot_id),
