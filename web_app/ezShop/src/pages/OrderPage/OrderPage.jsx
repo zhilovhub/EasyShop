@@ -124,7 +124,7 @@ function OrderPage({mainButton}){
                 <img className={styles.choose_icon} src={drop_down_icon}></img>
                 </div>
                 </>
-            case "textarea":
+            case "text_area":
                 return <>
                 <p className={styles.input_title}>{data.option.option_name}</p>
                 <textarea 
