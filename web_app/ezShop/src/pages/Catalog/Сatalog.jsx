@@ -52,6 +52,7 @@ function Catalog() {
         .setBgColor("#9edcff")
         .setTextColor('#0C0C0C')
         .on('click', () => {
+                alert("click")
                 navigate("/app/basket");
         }, true);
         
