@@ -54,10 +54,10 @@ class PostMessageTypeModel(TypeDecorator):  # noqa
     impl = Unicode
     cache_ok = True
 
-    def process_bind_param(self, value: Optional[PostMessageType], dialect: Dialect) -> String:
+    def process_bind_param(self, value: Optional[PostMessageType], dialect: Dialect) -> String:  # noqa
         return value.value
 
-    def process_result_value(self, value: Optional[String], dialect: Dialect) -> Optional[PostMessageType]:
+    def process_result_value(self, value: Optional[String], dialect: Dialect) -> Optional[PostMessageType]:  # noqa
         match value:
             case PostMessageType.MAILING.value:
                 return PostMessageType.MAILING

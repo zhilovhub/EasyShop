@@ -49,10 +49,10 @@ class OrderOptionType(TypeDecorator):  # noqa
     impl = Unicode
     cache_ok = True
 
-    def process_bind_param(self, value: Optional[OrderOptionTypeValues], dialect: Dialect) -> String:
+    def process_bind_param(self, value: Optional[OrderOptionTypeValues], dialect: Dialect) -> String:  # noqa
         return value.value
 
-    def process_result_value(self, value: Optional[String], dialect: Dialect) -> Optional[OrderOptionTypeValues]:
+    def process_result_value(self, value: Optional[String], dialect: Dialect) -> Optional[OrderOptionTypeValues]:  # noqa
         match value:
             case OrderOptionTypeValues.TEXT.value:
                 return OrderOptionTypeValues.TEXT
