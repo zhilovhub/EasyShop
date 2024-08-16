@@ -75,6 +75,10 @@ function OrderPage({mainButton}){
             dispatch(setOrderData(
                 data.map(orderItem => {
                     orderItem.value = ""
+                    console.log("--------")
+                    console.log(orderItem.option_name)
+                    console.log("+++++++++")
+                    console.log(orderItem)
                     return orderItem
                 })
             ))
