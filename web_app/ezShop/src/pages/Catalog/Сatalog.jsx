@@ -47,7 +47,7 @@ function Catalog() {
 
         // window.Telegram.WebApp.onEvent('mainButtonClicked', )
         
-        if (sumBuyCount != 0){
+        if (sumBuyCount != 0 && sumBuyCount != null){
             mainButton
             .show()
             .setText("Корзина " + "(" + sumBuyCount() + ")")
@@ -200,6 +200,10 @@ function Catalog() {
 
             // mainButton.show();
             // mainButton.enable();
+
+            // mainButton.on('isVisible', () => {
+
+            // })
 
             mainButton.disable();
             mainButton.hide();

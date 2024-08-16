@@ -65,19 +65,7 @@ function BasketPage(){
             // return <div className={styles.bottom_btn} onClick={() => navigate("/app/catalog")}>К каталогу</div>
         }else{
 
-            const [mainButton] = initMainButton();
 
-            mainButton
-            .setText("Начать оформление")
-            .setBgColor('#59C0F9')
-            .setTextColor('#0C0C0C')
-            .on('click', () => {
-                alert('click')
-                navigate("/app/order");
-            });
-
-            mainButton.show();
-            mainButton.enable();
 
             // return <div className={styles.bottom_btn} onClick={() => navigate("/app/order")}>Начать оформление</div>
         }
