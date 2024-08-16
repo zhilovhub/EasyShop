@@ -220,7 +220,7 @@ function Catalog() {
             // });
             mainButton.enable();
 
-            on('mainButtonClicked', () => {
+            mainButton.on('mainButtonClicked', () => {
                 alert("click")
                 navigate("/app/basket");
             });
