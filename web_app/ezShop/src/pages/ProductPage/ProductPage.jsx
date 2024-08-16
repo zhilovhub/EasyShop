@@ -81,13 +81,12 @@ function ProductPage({mainButton}){
         mainButton
         .setText("В корзину")
         .show()
-        .on('click', () => {
-            alert('add product')
-            updateBuyCount("plus");
-            navigate("/app/catalog")
-        }, true);
+        .on('click', mainButtonListener, true);
 
-
+        return () => {
+            console.log("unmounted ProductPage")
+            mainButton.off('click', mainButtonListener);
+        }
     }, [])
 
 
@@ -127,6 +126,13 @@ function ProductPage({mainButton}){
     });
         
     }, [productList]);
+
+
+    function mainButtonListener() {
+        alert('add product')
+        updateBuyCount("plus");
+        navigate("/app/catalog")
+    }
 
     
     function updateBuyCount(type) {
