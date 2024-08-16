@@ -190,6 +190,7 @@ function Catalog() {
             // mainButton.disable();
             mainButton.hide();
             alert("hide")
+            console.log(currentCount)
 
             // return <div className={styles.bottom_name}>@ezshop</div>
         }else{
@@ -204,6 +205,8 @@ function Catalog() {
             }, true)
             .show();  // show делаем после всех конфигураций кнопки
             alert("show")
+            console.log(currentCount)
+
 
             // return <div className={styles.bottom_basket} onClick={() => navigate("/app/basket")}>Корзина ({sumBuyCount()})</div>
         }
