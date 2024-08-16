@@ -22,6 +22,8 @@ function TextInput({isCheck, data}) {
             //     dispatch(setIsCorrect(false))
             // }
 
+            alert(data)
+
             dispatch(setOrderItem(data.option_name, inputValue))
         
     }, [inputValue])
