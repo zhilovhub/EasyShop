@@ -29,8 +29,8 @@ function TextInput({isCheck, data}) {
             dispatch(setOrderData(
 
                 orderData.map(orderItem => {
-                  if (action.payload.fieldName == orderItem.option_name){
-                    orderItem.value = action.payload.value
+                  if (data.option.id == orderItem.id){
+                    orderItem.value = data.value
                   }
                   return orderItem
                 })
