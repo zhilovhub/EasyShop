@@ -44,7 +44,7 @@ function ProductCard(props) {
             console.error('Error:', error);
         });
 
-    }, [])
+    }, [imgUrl])
 
 
 
