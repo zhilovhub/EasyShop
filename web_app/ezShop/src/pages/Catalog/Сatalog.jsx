@@ -92,7 +92,10 @@ function Catalog({mainButton}) {
             console.error('Error:', error);
         });
     }
-
+    return () => {
+        console.log("unmounted")
+        mainButton.off('click', customListener);
+    }
     }, []);
 
 
