@@ -15,6 +15,7 @@ import { useRef } from 'react';
 import { initBackButton } from '@telegram-apps/sdk';
 import { setBotId } from '../../shared/redux/action/BotIdAction';
 import { initMainButton } from '@telegram-apps/sdk';
+import { on } from '@telegram-apps/sdk';
 
 
 
@@ -200,6 +201,7 @@ function Catalog() {
             // mainButton.show();
             // mainButton.enable();
 
+            mainButton.disable();
             mainButton.hide();
 
             // return <div className={styles.bottom_name}>@ezshop</div>
@@ -211,12 +213,17 @@ function Catalog() {
             .setText("Корзина " + "(" + sumBuyCount() + ")")
             .setBgColor("#9edcff")
             .setTextColor('#0C0C0C')
-            .on('click', () => {
-                    alert("click")
-                    navigate("/app/basket");
-                    cleanupMainButton();
-            });
+            // .on('click', () => {
+            //         alert("click")
+            //         navigate("/app/basket");
+            //         cleanupMainButton();
+            // });
             mainButton.enable();
+
+            on('mainButtonClicked', () => {
+                alert("click")
+                navigate("/app/basket");
+            });
 
             // return <div className={styles.bottom_basket} onClick={() => navigate("/app/basket")}>Корзина ({sumBuyCount()})</div>
         }
