@@ -40,6 +40,10 @@ function BasketPage({mainButton}){
 
     }, [])
 
+    useEffect(() => {
+        getBottomButton()
+    }, [productList])
+
     function filterByBuyCount() {
         return productList.filter(product => product.buyCount !== 0);
     }
@@ -63,6 +67,16 @@ function BasketPage({mainButton}){
 
             // return <div className={styles.bottom_btn} onClick={() => navigate("/app/catalog")}>К каталогу</div>
         }else{
+
+            mainButton
+            .show()
+            .setText("Начать оформление")
+            .setBgColor("#9edcff")
+            .setTextColor('#0C0C0C')
+            .enable()
+            .on('click', () => {
+                    navigate("/app/order");
+            });
 
 
 
@@ -98,7 +112,7 @@ function BasketPage({mainButton}){
         </div>
         }
 
-        {getBottomButton()}
+        {/* {getBottomButton()} */}
 
         </div>
     )
