@@ -27,7 +27,7 @@ function ProductPage({mainButton}){
     const [extraOptions, setExtraOptions] = useState([])
     const [productImages, setProductImages] = useState([])
     const [isImageLoad, setIsImageLoad] = useState(false)
-    const [removeListener, setRemoveListner] = useState({})
+    const [removeListener, setRemoveListner] = useState(() => {})
 
     const [backButton] = initBackButton();
     backButton.show();
