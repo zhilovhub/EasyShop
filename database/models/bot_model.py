@@ -68,7 +68,9 @@ class DatabaseBotTokenEncryptor(TypeDecorator):  # noqa
     impl = Unicode
     cache_ok = True
 
-    _encryptor: TokenEncryptor = TokenEncryptor(secret_key=cryptography_settings.DATABASE_TOKEN_SECRET_KEY)
+    _encryptor: TokenEncryptor = TokenEncryptor(
+        secret_key=cryptography_settings.DATABASE_TOKEN_SECRET_KEY, unique_id="database"
+    )
 
     def process_bind_param(self, value: str, dialect: Dialect) -> str:  # noqa
         """
@@ -211,7 +213,7 @@ class BotDao(Dao):
         return res
 
     @validate_call(validate_return=True)
-    async def get_bot_by_token(self, bot_token: str) -> BotSchema:
+    async def get_bot_by_token(self, bot_token: str) -> BotSchema:  # TODO hot fix. Change crypto
         """
         :param bot_token: telegram token of the Bot
         :return: BotSchema
@@ -222,14 +224,23 @@ class BotDao(Dao):
         validate_token(bot_token)
 
         async with self.engine.begin() as conn:
+            # raw_res = await conn.execute(select(Bot).where(Bot.bot_token == bot_token))
             raw_res = await conn.execute(select(Bot).where(Bot.bot_token == bot_token))
         await self.engine.dispose()
 
-        res = raw_res.fetchone()
-        if res is None:
+        # res = raw_res.fetchone()
+        results = raw_res.fetchall()
+        for bot_res in results:
+            res: BotSchema = BotSchema.model_validate(bot_res)
+            if res.token == bot_token:
+                break
+        else:
             raise BotNotFoundError(bot_token=bot_token)
 
-        res = BotSchema.model_validate(res)
+        # if res is None:
+        #     raise BotNotFoundError(bot_token=bot_token)
+
+        # res = BotSchema.model_validate(res)
 
         self.logger.debug(
             f"bot_id={res.bot_id}: bot with bot_token={bot_token} is found",
