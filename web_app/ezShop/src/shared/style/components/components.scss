@@ -14,6 +14,12 @@
     -webkit-box-shadow: 0px 4px 5px -5px rgba(0, 0, 0, 0.75); 
     -moz-box-shadow: 0px 4px 5px -5px rgba(0, 0, 0, 0.75); 
     box-shadow: 0px 4px 5px -5px rgba(0, 0, 0, 0.75);
+
+    user-select: none; /* Для современных браузеров */
+    -moz-user-select: none; /* Для Firefox */
+    -webkit-user-select: none; /* Для Safari */
+    -ms-user-select: none; /* Для Internet Explorer/Edge */
+    transition: none;
 }
 
 
@@ -30,6 +36,12 @@
     -webkit-box-shadow: 0px 4px 5px -5px rgba(0, 0, 0, 0.75); 
     -moz-box-shadow: 0px 4px 5px -5px rgba(0, 0, 0, 0.75); 
     box-shadow: 0px 4px 5px -5px rgba(0, 0, 0, 0.75);
+
+    user-select: none; /* Для современных браузеров */
+    -moz-user-select: none; /* Для Firefox */
+    -webkit-user-select: none; /* Для Safari */
+    -ms-user-select: none; /* Для Internet Explorer/Edge */
+    transition: none;
 
     &:hover {
         // background-color: rgba($blue-color-1, 0.8);
