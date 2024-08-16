@@ -15,7 +15,7 @@
 
 .top_item{
     display: flex;
-    font-family: $montserrat-regular;
+    font-family: $montserrat-medium;
     color: $black-color;
     background-color: $gray-color-2;
     border-radius: $font-size-4;
@@ -25,12 +25,11 @@
     justify-content: center;
     align-items: center;
     border: 2px solid rgb(0, 0, 0, 0);
-    font-weight: 350;
 }
 
 .bottom_item{
     display: flex;
-    font-family: $montserrat-regular;
+    font-family: $montserrat-medium;
     color: $black-color;
     background-color: $gray-color-2;
     border-radius: $font-size-4;
@@ -40,7 +39,6 @@
     justify-content: center;
     align-items: center;
     border: 2px solid rgb(0, 0, 0, 0);
-    font-weight: 400;
 }
 
 .item:hover{
