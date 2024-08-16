@@ -236,7 +236,7 @@
    - *Документация АPI*: https://ezbots.ru:1531/docs
    - *Веб-Аппа*: https://ezbots.ru:1530/
    - *МультиБоты*: https://ezbots.ru:88/<label>/webhook/bot/ (redirect to `4445`)
-   - *База данных*: `postgres:oe_233@92.118.114.106:7001/dev_ezshop`
+   - *База данных*: `postgres:oe_233@92.118.114.106:7002/dev_ezshop`
    - ***Лейбл***: `debug` 
 6. **Бот Кирилла**
    - *Бот*: [@karfogent_GG_bot](https://t.me/https://t.me/karfogent_GG_bot)
