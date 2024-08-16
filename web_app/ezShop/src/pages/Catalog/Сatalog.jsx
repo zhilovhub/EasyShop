@@ -71,8 +71,6 @@ function Catalog() {
         }
         // alert(botId)
 
-        alert(productList)
-
 
         if (productList.length == 0 || !productList || productList == null){
 
