@@ -36,8 +36,6 @@ function Catalog({mainButton}) {
 
     // console.log("FIRST", mainButton.isVisible);
 
-    alert("long wait");
-
     // mainButton.hide()  // сначала всегда прячем кнопку
     // backButton.hide()  // сначала всегда прячем кнопку (опционально)
 
