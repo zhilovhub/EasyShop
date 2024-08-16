@@ -47,7 +47,7 @@ function Catalog() {
 
         // window.Telegram.WebApp.onEvent('mainButtonClicked', )
         
-        if (sumBuyCount != 0 && sumBuyCount != null){
+        if (sumBuyCount != 0 && sumBuyCount != null && !productList){
             mainButton
             .show()
             .setText("Корзина " + "(" + sumBuyCount() + ")")
@@ -205,7 +205,7 @@ function Catalog() {
 
             // })
 
-            mainButton.disable();
+            // mainButton.disable();
             mainButton.hide();
 
             // return <div className={styles.bottom_name}>@ezshop</div>
