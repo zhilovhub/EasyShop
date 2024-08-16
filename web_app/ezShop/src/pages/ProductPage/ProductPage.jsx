@@ -14,7 +14,7 @@ import Slider from '../../components/Slider/Slider';
 import { initBackButton } from '@telegram-apps/sdk';
 
 
-function ProductPage({mainButton}){
+function ProductPage(){
 
     const {t, i18n} = useTranslation();
     const dispatch = useDispatch();
@@ -77,28 +77,12 @@ function ProductPage({mainButton}){
         .setTextColor('#0C0C0C')
         .enable();
 
-        if(!currentProduct.buyCount){
-
-            mainButton
-            .setText("В корзину")
-            .show()  // show делаем после всех конфигураций кнопки
-            .on('click', () => {
-                 updateBuyCount("plus");
-                //  navigate("/app/catalog");
-            }, true);
-
-        }else{
-
-            mainButton
-            .setText("В корзину")
-            .show()  // show делаем после всех конфигураций кнопки
-            .on('click', () => {
-                 updateBuyCount("plus")
-                //  navigate("/app/catalog");
-            }, true);
-
-        }
-
+        mainButton
+        .setText("В корзину")
+        .show()
+        .on('click', () => {
+             updateBuyCount("plus")
+        });
 
     }, [])
 
