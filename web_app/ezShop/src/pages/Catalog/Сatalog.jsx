@@ -35,31 +35,16 @@ function Catalog() {
 
 
     const [mainButton] = initMainButton();
-    mainButton.hide()
+    const [backButton] = initBackButton();
 
     useEffect(() => {
 
         // TG API --START--
-
-        const [backButton] = initBackButton();
-
-        backButton.hide();
-
         // window.Telegram.WebApp.onEvent('mainButtonClicked', )
-        
-        if (sumBuyCount != 0 || sumBuyCount != null || !productList){
-            mainButton
-            .show()
-            .setText("Корзина " + "(" + sumBuyCount() + ")")
-            .setBgColor("#9edcff")
-            .setTextColor('#0C0C0C')
-            .enable()
-            .on('click', () => {
-                    navigate("/app/catalog");
-            });
-        }
-        
-        
+
+        mainButton.hide()  // сначала всегда прячем кнопку
+        backButton.hide()  // сначала всегда прячем кнопку
+
         // TG API --END--
 
         const currentUrl = window.location.href;
@@ -186,9 +171,6 @@ function Catalog() {
 
     function getBottomButton(){
         if (sumBuyCount() == 0){
-
-            const [mainButton] = initMainButton();
-
             // mainButton
             // .setText("Начать оформление")
             // .setBgColor('#59C0F9')
@@ -210,17 +192,15 @@ function Catalog() {
             // return <div className={styles.bottom_name}>@ezshop</div>
         }else{
 
-            // mainButton.show();
-
             mainButton
-            .show()
             .setText("Корзина " + "(" + sumBuyCount() + ")")
             .setBgColor("#9edcff")
             .setTextColor('#0C0C0C')
             .enable()
             .on('click', () => {
                     navigate("/app/basket");
-            });
+            }, true)
+            .show();  // show делаем после всех конфигураций кнопки
 
             // return <div className={styles.bottom_basket} onClick={() => navigate("/app/basket")}>Корзина ({sumBuyCount()})</div>
         }
