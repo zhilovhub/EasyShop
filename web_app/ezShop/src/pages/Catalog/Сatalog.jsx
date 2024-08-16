@@ -196,7 +196,7 @@ function Catalog() {
 
             // return <div className={styles.bottom_name}>@ezshop</div>
         }else{
-
+            console.log("currentCount:", currentCount)
             mainButton
             .setText("Корзина " + "(" + currentCount + ")")
             .show()  // show делаем после всех конфигураций кнопки
