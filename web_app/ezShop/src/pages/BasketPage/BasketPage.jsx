@@ -34,7 +34,6 @@ function BasketPage(){
         .setBgColor('#59C0F9')
         .setTextColor('#0C0C0C')
         .on('click', () => {
-            alert('click')
             navigate("/app/catalog");
         });
 

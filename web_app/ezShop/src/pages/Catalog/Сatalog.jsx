@@ -35,6 +35,7 @@ function Catalog() {
 
 
     const [mainButton, cleanupMainButton] = initMainButton();
+    mainButton.hide()
 
     useEffect(() => {
 
