@@ -32,7 +32,7 @@ function Catalog() {
     const inputRef = useRef(null);
     const filter = useSelector(state => state.filter);
 
-    const mainButton = null;
+    const [mainButton, cleanupMainButton] = null;
 
 
     useEffect(() => {
@@ -41,7 +41,7 @@ function Catalog() {
 
         const [backButton] = initBackButton();
 
-        mainButton = initMainButton();
+        [mainButton, cleanupMainButton] = initMainButton();
 
         backButton.hide();
 
