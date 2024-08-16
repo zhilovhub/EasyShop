@@ -88,7 +88,7 @@ function ProductPage({mainButton}){
             alert('add product')
             updateBuyCount("plus");
             navigate("/app/catalog")
-        }, true));
+        }, true))
 
     }, [])
 
