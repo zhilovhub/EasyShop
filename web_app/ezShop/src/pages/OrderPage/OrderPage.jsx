@@ -51,7 +51,7 @@ function OrderPage({mainButton}){
             .enable()
             .on('click', () => {
                 sendOrder();
-            });
+            }, true);
 
         const url = `https://ezbots.ru:1537/api/settings/get_order_options/110`;
         fetch(url, {

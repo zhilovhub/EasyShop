@@ -39,7 +39,7 @@ function FilterPage({mainButton}){
             .enable()
             .on('click', () => {
                 navigate("/app/catalog")
-            });
+            }, true);
 
         const url = `https://ezbots.ru:1537/api/categories/get_all_categories/110`;
         fetch(url, {
