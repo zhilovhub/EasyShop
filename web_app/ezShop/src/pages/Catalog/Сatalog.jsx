@@ -242,7 +242,7 @@ function Catalog() {
         </div>
 
 
-//         {getBottomButton()}
+         {/* {getBottomButton()} */}
 
         </div>
     );
