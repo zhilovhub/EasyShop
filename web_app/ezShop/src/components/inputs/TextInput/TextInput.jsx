@@ -11,15 +11,17 @@ function TextInput({isCheck, data}) {
 
     useEffect(() => {
 
-            if(inputValue != ''){
-                if(isCorrect == null){
-                    dispatch(setIsCorrect(true))
-                }else if(isCorrect == true){
-                    dispatch(setIsCorrect(true))
-                }
-            }else if(inputValue == ''){
-                dispatch(setIsCorrect(false))
-            }
+            // if(inputValue != ''){
+            //     if(isCorrect == null){
+            //         dispatch(setIsCorrect(true))
+            //     }else if(isCorrect == true){
+            //         dispatch(setIsCorrect(true))
+            //     }
+            // }else if(inputValue == ''){
+            //     dispatch(setIsCorrect(false))
+            // }
+
+            dispatch(setOrderItem(data.option_name, inputValue))
         
     }, [inputValue])
 
