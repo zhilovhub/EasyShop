@@ -20,7 +20,10 @@ async def send_instructions(
 
     bot_father_keyboard = InlineKeyboardMarkup(
         inline_keyboard=[
-            [InlineKeyboardButton(text="🔐 Получить токен", url="t.me/BotFather"), InlineKeyboardButton(text="🔎 Подробнее", url="https://ezshoptg.tilda.ws/")],
+            [
+                InlineKeyboardButton(text="🔐 Получить токен", url="t.me/BotFather"),
+                InlineKeyboardButton(text="🔎 Подробнее", url="https://ezshoptg.tilda.ws/"),
+            ],
             # [InlineKeyboardButton(text="🤝 Реферальная система", callback_data="ref_start")],
             [InlineKeyboardButton(text="🔮 Подписаться на канал", url="t.me/EzShopOfficial")],
         ]

@@ -33,7 +33,7 @@ from logs.config import logger
 
 
 @commands_router.callback_query(lambda query: query.data.startswith("ref_start"))
-async def handle_referral_link(query: CallbackQuery, state: FSMContext):
+async def handle_referral_link(query: CallbackQuery):
     user_id = query.from_user.id
     ref_link = await create_start_link(bot, f"ref_{user_id}")
     try:
