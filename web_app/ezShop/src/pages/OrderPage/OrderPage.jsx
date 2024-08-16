@@ -72,7 +72,12 @@ function OrderPage({mainButton}){
         })
         .then(data => {
             // setOrderOptions(data)
-            dispatch(setOrderData(data))
+            dispatch(setOrderData(
+                data.map(orderItem => {
+                    orderItem.value = ""
+                    return orderItem
+                })
+            ))
             console.log(data)
         })
         .catch(error => {
