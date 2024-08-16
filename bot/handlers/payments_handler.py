@@ -1,8 +1,10 @@
+import json
 from datetime import datetime
 
 from aiogram import F
 from aiogram.types import Message
 from aiogram.handlers import PreCheckoutQueryHandler
+from aiogram.utils.formatting import Text, Bold
 
 from database.config import pay_db
 from database.models.payment_model import PaymentSchemaWithoutId
@@ -42,17 +44,29 @@ class PreCheckHandler(PreCheckoutQueryHandler):
 @payment_router.message(F.successful_payment)
 async def process_successfully_payment(message: Message):
     payment = message.successful_payment
-    payload = payment.invoice_payload
-    if "TEST" in payload:
-        logger.debug("new test success payment, skipping payment database object creation")
-        pay_id = "TEST"
-        await message.answer(
-            "Введенные данные при тестовой оплате:"
-            f"\n\nИмя: {payment.order_info.name}"
-            f"\n\nТелефон: {payment.order_info.phone_number}"
-            f"\n\nПочта: {payment.order_info.email}"
-            f"\n\nАдрес доставки: {payment.order_info.shipping_address}"
+    payload = json.loads(payment.invoice_payload)
+    order_info = payment.order_info
+    logger.debug(
+        f"new success payment with payload: {payload} and order_info: [{order_info}]",
+        extra=extra_params(user_id=payload["user_id"], bot_id=payload["bot_id"]),
+    )
+    txt = Text("Введенные данные при тестовой оплате:")
+    if order_info:
+        if order_info.name:
+            txt += Text("\n\nИмя: ", Bold(order_info.name))
+        if order_info.phone_number:
+            txt += Text("\n\nТелефон: ", Bold(order_info.phone_number))
+        if order_info.email:
+            txt += Text("\n\nПочта: ", Bold(order_info.email))
+        if order_info.shipping_address:
+            txt += Text("\n\nАдрес доставки: ", Bold(order_info.shipping_address))
+    else:
+        txt += Text(
+            "\n\nДанные пустые, но если Вы хотите их запрашивать, ", "выберите нужные вам параметры на клавиатуре выше"
         )
+    if "TEST" == payload["order_id"]:
+        pay_id = "TEST"
+        await message.answer(**txt.as_kwargs())
     else:
         # For future payment for our subscription in main bot
         now = datetime.now()

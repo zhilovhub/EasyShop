@@ -40,7 +40,7 @@ class InlineBotMenuKeyboard:
             BOT_STATISTICS = "statistic"
             BOT_GOODS_OPEN = "goods"
 
-            PARTNERSHIP = "partnership"
+            REFERRAL_SYSTEM = "referral_system"
 
             LEAVE_ADMINISTRATING = "leave_admin"
 
@@ -151,12 +151,12 @@ class InlineBotMenuKeyboard:
                 [
                     mailing_inline_button,
                 ],
-                [
-                    InlineKeyboardButton(
-                        text="🤝 Партнерство",
-                        callback_data=InlineBotMenuKeyboard.callback_json(actions.PARTNERSHIP, bot_id),
-                    )
-                ],
+                # [
+                #     InlineKeyboardButton(
+                #         text="🤝 Реферальная система",
+                #         callback_data=InlineBotMenuKeyboard.callback_json(actions.REFERRAL_SYSTEM, bot_id),
+                #     )
+                # ],  TODO move it out of the bot
                 [
                     leave_admin_or_delete_bot_button,
                 ],

@@ -30,16 +30,15 @@ class PreCheckHandler(PreCheckoutQueryHandler):
         try:
             custom_bot = await bot_db.get_bot_by_token(self.bot.token)
             bot_id = custom_bot.bot_id
-            payload = self.event.invoice_payload
+            payload = json.loads(self.event.invoice_payload)
             extra_data = self.event.order_info
             custom_bot_logger.info(
                 f"new custom bot payment pre checkout with payload : payload={payload} "
                 f"and extra data : data=[{extra_data}]",
                 extra=extra_params(user_id=from_user.id, bot_id=bot_id),
             )
-            if "TEST" not in payload:
-                payload_params = json.loads(payload)
-                order = await order_db.get_order(payload_params["order_id"])
+            if "TEST" != payload["order_id"]:
+                order = await order_db.get_order(payload["order_id"])
                 order.status = OrderStatusValues.PROCESSING
                 msg_id_data = PREV_ORDER_MSGS.get_data()
 
@@ -109,9 +108,9 @@ class PreCheckHandler(PreCheckoutQueryHandler):
 @payment_router.message(F.successful_payment)
 async def process_successfully_payment(message: Message):
     payment = message.successful_payment
-    payload = payment.invoice_payload
+    payload = json.loads(payment.invoice_payload)
     custom_bot = await bot_db.get_bot_by_token(message.bot.token)
-    if "TEST" in payload:
+    if "TEST" == payload["order_id"]:
         custom_bot_logger.debug("new test success payment, skipping payment database object creation")
         pay_id = "TEST"
     else:

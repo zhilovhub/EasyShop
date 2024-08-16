@@ -807,7 +807,7 @@ async def send_post_message(
                     media_group[0],
                     caption=post_message_schema.description,
                     reply_markup=keyboard,
-                    disable_notification=not (post_message_schema.enable_notification_sound),
+                    disable_notification=not post_message_schema.enable_notification_sound,
                 )
             )
 
@@ -837,7 +837,7 @@ async def send_post_message(
         if post_action_type == PostActionType.DEMO:  # только при демо с главного бота срабатывает
             await message.edit_text(
                 text=post_message_schema.description,
-                link_preview_options=LinkPreviewOptions(is_disabled=not (post_message_schema.enable_link_preview)),
+                link_preview_options=LinkPreviewOptions(is_disabled=not post_message_schema.enable_link_preview),
                 reply_markup=keyboard,
             )
         elif post_action_type == PostActionType.AFTER_REDACTING:
@@ -845,16 +845,16 @@ async def send_post_message(
                 chat_id=to_chat_id,
                 text=post_message_schema.description,
                 reply_markup=keyboard,
-                disable_notification=not (post_message_schema.enable_notification_sound),
-                link_preview_options=LinkPreviewOptions(is_disabled=not (post_message_schema.enable_link_preview)),
+                disable_notification=not post_message_schema.enable_notification_sound,
+                link_preview_options=LinkPreviewOptions(is_disabled=not post_message_schema.enable_link_preview),
             )
         else:
             await bot_from_send.send_message(
                 chat_id=to_chat_id,
                 text=post_message_schema.description,
                 reply_markup=keyboard,
-                disable_notification=not (post_message_schema.enable_notification_sound),
-                link_preview_options=LinkPreviewOptions(is_disabled=not (post_message_schema.enable_link_preview)),
+                disable_notification=not post_message_schema.enable_notification_sound,
+                link_preview_options=LinkPreviewOptions(is_disabled=not post_message_schema.enable_link_preview),
             )
             if is_delayed:
                 await post_message_db.delete_post_message(post_message_schema.post_message_id)

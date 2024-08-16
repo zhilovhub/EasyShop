@@ -54,10 +54,10 @@ class CurrencyCodes(TypeDecorator):  # noqa
     impl = Unicode
     cache_ok = True
 
-    def process_bind_param(self, value: Optional[CurrencyCodesValues], dialect: Dialect) -> String:
+    def process_bind_param(self, value: Optional[CurrencyCodesValues], dialect: Dialect) -> String:  # noqa
         return value.value
 
-    def process_result_value(self, value: Optional[String], dialect: Dialect) -> Optional[CurrencyCodesValues]:
+    def process_result_value(self, value: Optional[String], dialect: Dialect) -> Optional[CurrencyCodesValues]:  # noqa
         match value:
             case CurrencyCodesValues.RUSSIAN_RUBLE.value:
                 return CurrencyCodesValues.RUSSIAN_RUBLE
@@ -77,10 +77,10 @@ class CurrencySymbols(TypeDecorator):  # noqa
     impl = Unicode
     cache_ok = True
 
-    def process_bind_param(self, value: Optional[CurrencySymbolsValues], dialect: Dialect) -> String:
+    def process_bind_param(self, value: Optional[CurrencySymbolsValues], dialect: Dialect) -> String:  # noqa
         return value.value
 
-    def process_result_value(self, value: Optional[String], dialect: Dialect) -> Optional[CurrencySymbolsValues]:
+    def process_result_value(self, value: Optional[String], dialect: Dialect) -> Optional[CurrencySymbolsValues]:  # noqa
         match value:
             case CurrencySymbolsValues.RUSSIAN_RUBLE.value:
                 return CurrencySymbolsValues.RUSSIAN_RUBLE

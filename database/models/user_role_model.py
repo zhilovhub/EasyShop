@@ -32,10 +32,10 @@ class UserRoleEnum(TypeDecorator):  # noqa
     impl = Unicode
     cache_ok = True
 
-    def process_bind_param(self, value: Optional[UserRoleValues], dialect: Dialect) -> String:
+    def process_bind_param(self, value: Optional[UserRoleValues], dialect: Dialect) -> String:  # noqa
         return value.value
 
-    def process_result_value(self, value: Optional[String], dialect: Dialect) -> Optional[UserRoleValues]:
+    def process_result_value(self, value: Optional[String], dialect: Dialect) -> Optional[UserRoleValues]:  # noqa
         match value:
             case UserRoleValues.OWNER.value:
                 return UserRoleValues.OWNER

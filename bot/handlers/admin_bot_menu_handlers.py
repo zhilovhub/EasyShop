@@ -12,6 +12,7 @@ from aiogram.fsm.context import FSMContext
 from aiogram.utils.token import validate_token, TokenValidationError
 from aiogram.fsm.storage.base import StorageKey
 from aiogram.utils.formatting import Text, Bold, Italic
+from aiogram.utils.deep_linking import create_start_link
 
 from bot.main import bot, QUESTION_MESSAGES, cache_resources_file_id_store
 from bot.utils import MessageTexts
@@ -27,6 +28,7 @@ from bot.keyboards.channel_keyboards import (
 )
 from bot.keyboards.main_menu_keyboards import (
     InlineAcceptPublishProductKeyboard,
+    InlineBackFromRefKeyboard,
     ReplyBotMenuKeyboard,
     ReplyBackBotMenuKeyboard,
     SelectHexColorWebAppInlineKeyboard,
@@ -72,15 +74,18 @@ from database.config import (
     option_db,
     order_option_db,
     channel_db,
+    referral_invite_db,
 )
 from database.models.bot_model import BotIntegrityError, BotNotFoundError
 from database.models.order_model import OrderSchema, OrderNotFoundError, OrderStatusValues
 from database.models.option_model import OptionNotFoundError
 from database.models.mailing_model import MailingNotFoundError
 from database.models.product_model import ProductWithoutId, ProductNotFoundError
+from database.models.user_model import UserStatusValues
 from database.models.user_role_model import UserRoleSchema, UserRoleValues
 from database.models.post_message_model import PostMessageType
 from database.models.product_review_model import ProductReviewNotFoundError
+from database.models.referral_invite_model import ReferralInviteNotFoundError, ReferralInviteSchemaWithoutId
 
 from logs.config import logger, extra_params
 
@@ -596,9 +601,11 @@ async def bot_menu_callback_handler(query: CallbackQuery, state: FSMContext):
     state_data = await state.get_data()
     callback_data = InlineBotMenuKeyboard.Callback.model_validate_json(query.data)
 
+    user_id = query.from_user.id
     bot_id = callback_data.bot_id
     db_bot_data = await bot_db.get_bot(bot_id)
-    custom_bot_data = await Bot(token=db_bot_data.token).get_me()
+    custom_tg_bot = Bot(token=db_bot_data.token)
+    custom_bot_data = await custom_tg_bot.get_me()
 
     try:
         options = await option_db.get_option(db_bot_data.options_id)
@@ -616,7 +623,7 @@ async def bot_menu_callback_handler(query: CallbackQuery, state: FSMContext):
                 reply_markup=await InlineAdministratorsManageKeyboard.get_keyboard(bot_id)
             )
         case callback_data.ActionEnum.LEAVE_ADMINISTRATING:
-            await user_role_db.del_user_role(query.from_user.id, bot_id)
+            await user_role_db.del_user_role(user_id, bot_id)
             await query.message.edit_text(
                 "Вы больше не администратор этого бота. " "Пропишите /start для рестарта бота", reply_markup=None
             )
@@ -633,7 +640,7 @@ async def bot_menu_callback_handler(query: CallbackQuery, state: FSMContext):
             await query.message.edit_text(
                 query.message.text,
                 parse_mode=ParseMode.HTML,
-                reply_markup=await InlineBotMenuKeyboard.get_keyboard(bot_id, query.from_user.id),
+                reply_markup=await InlineBotMenuKeyboard.get_keyboard(bot_id, user_id),
             )
             await query.answer("Ваш бот запущен ✅", show_alert=True)
         case callback_data.ActionEnum.BOT_STOP:
@@ -641,11 +648,34 @@ async def bot_menu_callback_handler(query: CallbackQuery, state: FSMContext):
             await query.message.edit_text(
                 query.message.text,
                 parse_mode=ParseMode.HTML,
-                reply_markup=await InlineBotMenuKeyboard.get_keyboard(bot_id, query.from_user.id),
+                reply_markup=await InlineBotMenuKeyboard.get_keyboard(bot_id, user_id),
             )
             await query.answer("Ваш бот приостановлен ❌", show_alert=True)
-        case callback_data.ActionEnum.PARTNERSHIP:
-            await query.answer("⚒ В разработке.")
+
+        case callback_data.ActionEnum.REFERRAL_SYSTEM:
+            ref_link = await create_start_link(bot, f"ref_{user_id}")
+            try:
+                invite = await referral_invite_db.get_invite_by_user_id(user_id)
+                if invite.referral_deep_link is None:
+                    invite.referral_deep_link = ref_link
+                    await referral_invite_db.update_invite(invite)
+                else:
+                    ref_link = invite.referral_deep_link
+
+            except ReferralInviteNotFoundError:
+                user = await user_db.get_user(user_id=user_id)
+                await referral_invite_db.add_invite(
+                    ReferralInviteSchemaWithoutId(
+                        user_id=user_id,
+                        referral_deep_link=ref_link,
+                        paid=user.status == UserStatusValues.SUBSCRIBED,
+                    )
+                )
+            await query.message.edit_text(
+                **MessageTexts.generate_ref_system_text(ref_link),
+                reply_markup=InlineBackFromRefKeyboard.get_keyboard(bot_id),
+            )
+
         case callback_data.ActionEnum.BOT_DELETE:
             await query.message.answer(
                 "Бот удалится вместе со всей базой продуктов безвозвратно.\n"
@@ -691,6 +721,18 @@ async def bot_menu_callback_handler(query: CallbackQuery, state: FSMContext):
                 MessageTexts.BOT_CHANNELS_LIST_MESSAGE.value.format((await Bot(custom_bot.token).get_me()).username),
                 reply_markup=await InlineChannelsListKeyboard.get_keyboard(custom_bot.bot_id),
             )
+
+
+@admin_bot_menu_router.callback_query(lambda query: InlineBackFromRefKeyboard.callback_validator(query.data))
+async def back_to_main_menu(query: CallbackQuery):
+    callback_data = InlineBackFromRefKeyboard.Callback.model_validate_json(query.data)
+    bot_id = callback_data.bot_id
+    user_bot = await bot_db.get_bot(bot_id)
+    custom_bot_data = await Bot(token=user_bot.token).get_me()
+    await query.message.edit_text(
+        text=MessageTexts.BOT_MENU_MESSAGE.value.format(custom_bot_data.username),
+        reply_markup=await InlineBotMenuKeyboard.get_keyboard(callback_data.bot_id, query.from_user.id),
+    )
 
 
 @admin_bot_menu_router.callback_query(lambda query: InlineBotSettingsMenuKeyboard.callback_validator(query.data))

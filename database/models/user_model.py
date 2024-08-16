@@ -37,10 +37,10 @@ class UserStatus(TypeDecorator):  # noqa
     impl = Unicode
     cache_ok = True
 
-    def process_bind_param(self, value: Optional[UserStatusValues], dialect: Dialect) -> String:
+    def process_bind_param(self, value: Optional[UserStatusValues], dialect: Dialect) -> String:  # noqa
         return value.value
 
-    def process_result_value(self, value: Optional[String], dialect: Dialect) -> Optional[UserStatusValues]:
+    def process_result_value(self, value: Optional[String], dialect: Dialect) -> Optional[UserStatusValues]:  # noqa
         match value:
             case UserStatusValues.BANNED.value:
                 return UserStatusValues.BANNED

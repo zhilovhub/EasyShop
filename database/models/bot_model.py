@@ -13,6 +13,9 @@ from sqlalchemy.ext.asyncio import AsyncEngine
 
 from pydantic import BaseModel, Field, ConfigDict, validate_call
 
+from common_utils.config import cryptography_settings
+from common_utils.token_encryptor import TokenEncryptor
+
 from database.models import Base
 from database.models.dao import Dao
 from database.models.user_model import User
@@ -28,8 +31,6 @@ class BotNotFoundError(KwargsException):
 
 class BotIntegrityError(KwargsException):
     """Raised when there is an IntegrityError with provided bot and hides the token"""
-
-    # TODO hide bot_token
 
 
 class UnknownBotPaymentType(KwargsException):
@@ -48,10 +49,10 @@ class BotPaymentType(TypeDecorator):  # noqa
     impl = Unicode
     cache_ok = True
 
-    def process_bind_param(self, value: Optional[BotPaymentTypeValues], dialect: Dialect) -> String:
+    def process_bind_param(self, value: Optional[BotPaymentTypeValues], dialect: Dialect) -> String:  # noqa
         return value.value
 
-    def process_result_value(self, value: Optional[String], dialect: Dialect) -> Optional[BotPaymentTypeValues]:
+    def process_result_value(self, value: Optional[String], dialect: Dialect) -> Optional[BotPaymentTypeValues]:  # noqa
         match value:
             case BotPaymentTypeValues.MANUAL.value:
                 return BotPaymentTypeValues.MANUAL
@@ -61,11 +62,38 @@ class BotPaymentType(TypeDecorator):  # noqa
                 return BotPaymentTypeValues.TG_PROVIDER
 
 
+class DatabaseBotTokenEncryptor(TypeDecorator):  # noqa
+    """Class to convert encrypt and decrypt bot tokens in database"""
+
+    impl = Unicode
+    cache_ok = True
+
+    _encryptor: TokenEncryptor = TokenEncryptor(
+        secret_key=cryptography_settings.DATABASE_TOKEN_SECRET_KEY, unique_id="database"
+    )
+
+    def process_bind_param(self, value: str, dialect: Dialect) -> str:  # noqa
+        """
+        :param value: decrypted token
+        :param dialect: don't pay attention to this value
+        :return: encrypted token
+        """
+        return self._encryptor.encrypt_token(bot_token=value)
+
+    def process_result_value(self, value: str, dialect: Dialect) -> str:  # noqa
+        """
+        :param value: encrypted token
+        :param dialect: don't pay attention to this value
+        :return: decrypted token
+        """
+        return self._encryptor.decrypt_token(bot_token=value)
+
+
 class Bot(Base):
     __tablename__ = "bots"
 
     bot_id = Column(BigInteger, primary_key=True, autoincrement=True)
-    bot_token = Column(String(46), unique=True)
+    bot_token = Column(DatabaseBotTokenEncryptor, unique=True)
     status = Column(String(55), nullable=False)
     created_at = Column(DateTime, nullable=False)
     created_by = Column(ForeignKey(User.user_id, ondelete="CASCADE"), nullable=False)
@@ -185,7 +213,7 @@ class BotDao(Dao):
         return res
 
     @validate_call(validate_return=True)
-    async def get_bot_by_token(self, bot_token: str) -> BotSchema:
+    async def get_bot_by_token(self, bot_token: str) -> BotSchema:  # TODO hot fix. Change crypto
         """
         :param bot_token: telegram token of the Bot
         :return: BotSchema
@@ -196,14 +224,23 @@ class BotDao(Dao):
         validate_token(bot_token)
 
         async with self.engine.begin() as conn:
-            raw_res = await conn.execute(select(Bot).where(Bot.bot_token == bot_token))
+            # raw_res = await conn.execute(select(Bot).where(Bot.bot_token == bot_token))
+            raw_res = await conn.execute(select(Bot))
         await self.engine.dispose()
 
-        res = raw_res.fetchone()
-        if res is None:
+        # res = raw_res.fetchone()
+        results = raw_res.fetchall()
+        for bot_res in results:
+            res: BotSchema = BotSchema.model_validate(bot_res)
+            if res.token == bot_token:
+                break
+        else:
             raise BotNotFoundError(bot_token=bot_token)
 
-        res = BotSchema.model_validate(res)
+        # if res is None:
+        #     raise BotNotFoundError(bot_token=bot_token)
+
+        # res = BotSchema.model_validate(res)
 
         self.logger.debug(
             f"bot_id={res.bot_id}: bot with bot_token={bot_token} is found",
