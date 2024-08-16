@@ -12,12 +12,13 @@ const initialState = {
       case 'SET_ORDER_ITEM':
         return {
           ...state,
-          orderData: state.orderData.map(orderItem => {
-            if (action.payload.fieldName == orderItem.option_name){
-              orderItem.value = action.payload.value
-            }
-            return orderItem
-          })
+          orderData: state.orderData
+          // state.orderData.map(orderItem => {
+          //   if (action.payload.fieldName == orderItem.option_name){
+          //     orderItem.value = action.payload.value
+          //   }
+          //   return orderItem
+          // })
         };
       default:
         return state;
