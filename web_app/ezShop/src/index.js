@@ -21,7 +21,6 @@ import { initMainButton } from '@telegram-apps/sdk';
 const root = ReactDOM.createRoot(document.getElementById('root'));
 
 const [mainButton] = initMainButton();
-const [backButton] = initBackButton();
 
 root.render(
   <SDKProvider acceptCustomStyles debug>
