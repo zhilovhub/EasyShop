@@ -18,6 +18,10 @@ import { SDKProvider } from '@telegram-apps/sdk-react';
 
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
+
+const [mainButton] = initMainButton();
+const [backButton] = initBackButton();
+
 root.render(
   <SDKProvider acceptCustomStyles debug>
   <Provider store={store}>
@@ -25,7 +29,7 @@ root.render(
     <BrowserRouter>
       <Routes>
         <Route path="app" element={<App/>}>
-          <Route path="catalog" element={<Catalog/>}></Route>
+          <Route path="catalog" element={<Catalog mainButton={mainButton}/>}></Route>
           <Route path="basket" element={<BasketPage/>}></Route>
           <Route path="order" element={<OrderPage/>}></Route>
           <Route path="filter" element={<FilterPage/>}></Route>
