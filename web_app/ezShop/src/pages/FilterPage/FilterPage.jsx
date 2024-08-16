@@ -26,7 +26,7 @@ function FilterPage({mainButton}){
         backButton.show();
         backButton.on('click', () => {
            navigate("/app/catalog")
-        });
+        }, true);
 
         console.log("filter.categories")
         console.log(filter.categories)

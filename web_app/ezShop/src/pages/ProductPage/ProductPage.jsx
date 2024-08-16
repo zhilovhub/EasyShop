@@ -32,7 +32,7 @@ function ProductPage({mainButton}){
     backButton.show();
     backButton.on('click', () => {
         navigate("/app/catalog");
-    });
+    }, true);
 
     if(!isImageLoad){
         getImages();
@@ -81,6 +81,7 @@ function ProductPage({mainButton}){
         .setText("В корзину")
         .show()
         .on('click', () => {
+            alert('add product')
             updateBuyCount("plus");
             navigate("/app/catalog")
         }, true);
