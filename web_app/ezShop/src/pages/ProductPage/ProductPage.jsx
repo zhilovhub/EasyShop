@@ -84,7 +84,7 @@ function ProductPage({mainButton}){
             .show()  // show делаем после всех конфигураций кнопки
             .on('click', () => {
                  updateBuyCount("plus");
-                 navigate("/app/catalog");
+                //  navigate("/app/catalog");
             }, true);
 
         }else{
@@ -94,7 +94,7 @@ function ProductPage({mainButton}){
             .show()  // show делаем после всех конфигураций кнопки
             .on('click', () => {
                  updateBuyCount("plus")
-                 navigate("/app/catalog");
+                //  navigate("/app/catalog");
             }, true);
 
         }
