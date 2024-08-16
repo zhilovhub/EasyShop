@@ -42,6 +42,16 @@ function OrderPage(){
             navigate("/app/basket");
         });
 
+        mainButton
+            .show()
+            .setText("Отправить")
+            .setBgColor("#9edcff")
+            .setTextColor('#0C0C0C')
+            .enable()
+            .on('click', () => {
+                sendOrder();
+            });
+
         alert(botId)
 
         const url = `https://ezbots.ru:1537/api/settings/get_order_options/110`;
