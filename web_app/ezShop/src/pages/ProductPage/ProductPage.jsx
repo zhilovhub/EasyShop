@@ -81,7 +81,8 @@ function ProductPage({mainButton}){
         .setText("В корзину")
         .show()
         .on('click', () => {
-             updateBuyCount("plus")
+            updateBuyCount("plus");
+            navigate("/app/catalog")
         });
 
     }, [])
@@ -199,7 +200,7 @@ function ProductPage({mainButton}){
         </div>
 
         <div className={styles.bottom_btn_container}>
-            {currentProduct.buyCount != 0 ?
+            {/* {currentProduct.buyCount != 0 ?
                 <>
                     <div className={styles.bottom_btn} onClick={() => navigate("/app/basket")}>В корзине</div>
                     <p className={styles.bottom_count_minus} onClick={() => updateBuyCount("minus")}>-</p>
@@ -208,7 +209,7 @@ function ProductPage({mainButton}){
                 </>
             : 
             <div className={styles.bottom_btn} onClick={() => updateBuyCount("plus")}>В корзину</div>
-            }
+            } */}
         </div>
 
         </div>
