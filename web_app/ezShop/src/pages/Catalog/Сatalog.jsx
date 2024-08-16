@@ -49,7 +49,7 @@ function Catalog() {
         mainButton.off('click');
         
         mainButton
-        .setText("Корзина" + "(" + sumBuyCount() + ")")
+        .setText("Корзина")
         .setBgColor('#59C0F9')
         .setTextColor('#0C0C0C')
         .on('click', () => {
@@ -206,18 +206,8 @@ function Catalog() {
             // return <div className={styles.bottom_name}>@ezshop</div>
         }else{
 
-            const [mainButton] = initMainButton();
-
             mainButton
-            .setText("Корзина" + "(" + sumBuyCount() + ")")
-            .setBgColor('#59C0F9')
-            .setTextColor('#0C0C0C')
-            .on('click', () => {
-                navigate("/app/order");
-            });
-
-            mainButton.show();
-            mainButton.enable();
+            .setText("Корзина " + "(" + sumBuyCount() + ")")
 
             // return <div className={styles.bottom_basket} onClick={() => navigate("/app/basket")}>Корзина ({sumBuyCount()})</div>
         }
