@@ -52,14 +52,14 @@ function BasketPage({mainButton}){
         if (sumBuyCount() == 0){
 
             mainButton
-            .show()
             .setText("К каталогу")
             .setBgColor("#9edcff")
             .setTextColor('#0C0C0C')
             .enable()
             .on('click', () => {
                     navigate("/app/catalog");
-            });
+            })
+            .show();
 
             // return <div className={styles.bottom_btn} onClick={() => navigate("/app/catalog")}>К каталогу</div>
         }else{
