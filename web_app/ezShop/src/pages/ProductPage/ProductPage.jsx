@@ -128,9 +128,9 @@ function ProductPage({mainButton}){
     
     function updateBuyCount(type) {
         let newProductList = productList.map(productItem => {
-            console.log(currentProduct.id == productItem.id)
+            console.log(product.id == productItem.id)
 
-            if (currentProduct.id == productItem.id) {
+            if (product.id == productItem.id) {
                 if(type == "plus"){
                 return {
                     ...currentProduct,
