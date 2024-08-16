@@ -187,10 +187,9 @@ function Catalog() {
     }
 
     function getBottomButton(){
-        alert(sumBuyCount())
         if (sumBuyCount() == 0){
 
-            // const [mainButton] = initMainButton();
+            const [mainButton] = initMainButton();
 
             // mainButton
             // .setText("Начать оформление")
