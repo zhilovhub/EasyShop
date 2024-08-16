@@ -14,12 +14,14 @@ import { initDataRaw } from '@telegram-apps/sdk';
 import { TelegramClient, Button } from '@telegram-apps/sdk';
 import { initMiniApp } from '@telegram-apps/sdk';
 import { initMainButton } from '@telegram-apps/sdk';
+import { setOrderData } from '../../shared/redux/action/OrderDataAction';
 
 function OrderPage({mainButton}){
 
     const {t, i18n} = useTranslation();
     const dispatch = useDispatch();
     const productList = useSelector(state => state.productList.productList);
+    const orderData = useSelector(state => state.orderData.orderData);
     const botId = useSelector(state => state.botId.botId);
     const navigate = useNavigate();
     const [orderOptions, setOrderOptions] = useState([]);
@@ -67,7 +69,8 @@ function OrderPage({mainButton}){
             return response.json();
         })
         .then(data => {
-            setOrderOptions(data)
+            // setOrderOptions(data)
+            dispatch(setOrderData(data))
             console.log(data)
         })
         .catch(error => {
@@ -219,7 +222,7 @@ function OrderPage({mainButton}){
 
         <div className={styles.separator}></div>
 
-        {orderOptions.map(option => 
+        {orderData.map(option => 
             getOption(option.option.option_type, option)
         )}
 
