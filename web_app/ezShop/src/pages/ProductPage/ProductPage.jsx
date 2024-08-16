@@ -77,12 +77,25 @@ function ProductPage({mainButton}){
         .setTextColor('#0C0C0C')
         .enable();
 
-        mainButton
-        .setText("В корзину " + "(" + currentProduct.buyCount + ")")
-        .show()  // show делаем после всех конфигураций кнопки
-        .on('click', () => {
-             updateBuyCount("plus")
-        }, true);
+        if(!currentProduct.buyCount){
+
+            mainButton
+            .setText("В корзину")
+            .show()  // show делаем после всех конфигураций кнопки
+            .on('click', () => {
+                 updateBuyCount("plus")
+            }, true);
+
+        }else{
+
+            mainButton
+            .setText("В корзину " + "(" + currentProduct.buyCount + ")")
+            .show()  // show делаем после всех конфигураций кнопки
+            .on('click', () => {
+                 updateBuyCount("plus")
+            }, true);
+
+        }
 
 
     }, [])
@@ -148,6 +161,13 @@ function ProductPage({mainButton}){
         });
 
         dispatch(setProductList(newProductList))
+
+        mainButton
+            .setText("В корзину " + "(" + currentProduct.buyCount + ")")
+            .show()  // show делаем после всех конфигураций кнопки
+            .on('click', () => {
+                 updateBuyCount("plus")
+            }, true);
     }
 
     // function getCurrentProduct() {
