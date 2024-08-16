@@ -78,7 +78,8 @@ function ProductPage({mainButton}){
         .setTextColor('#0C0C0C')
         .enable();
 
-        if (removeListener != {}) {
+        console.log("before removeListener", removeListener)
+        if (removeListener) {
             console.log("removeListener", removeListener)
             removeListener()
         }
