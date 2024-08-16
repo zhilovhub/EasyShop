@@ -3,7 +3,7 @@ import random
 import string
 import aiohttp
 
-from pydantic import ValidationError, BaseModel
+from pydantic import ValidationError, BaseModel, Extra
 
 from fastapi import APIRouter, Depends, Header
 
@@ -109,14 +109,8 @@ async def add_order_api(new_order: OrderSchema = Depends(), authorization_data: 
 class OrderData(BaseModel):
     bot_id: int
     raw_items: dict
+    order_options: dict
     ordered_at: datetime
-    name: str
-    phone_number: str
-    town: str
-    address: str
-    delivery_method: str
-    time: str | None
-    comment: str | None
     query_id: str | None = None
     from_user: int | None = None
     order_type: OrderType | None = None

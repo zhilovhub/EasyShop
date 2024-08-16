@@ -10,7 +10,7 @@ from common_utils.config import main_telegram_bot_settings
 from common_utils.bot_settings_config import BOT_PROPERTIES
 from common_utils.order_utils.order_type import OrderType, UnknownOrderType
 
-from database.config import product_db
+from database.config import product_db, order_option_db
 from database.models.order_model import OrderSchema, OrderItem, OrderItemExtraOption
 
 from logs.config import logger, custom_bot_logger, extra_params
@@ -91,25 +91,18 @@ async def _handle_zero_products(event: Message, bot_owner: int, zero_products: l
 
 
 async def _form_order(data: dict, order_type: OrderType) -> OrderSchema:
-    order_options = {
-        0: data["name"],
-        1: data["phone_number"],
-        2: data["town"],
-        3: data["address"],
-        4: data["time"],
-        5: data["comment"],
-        6: data["delivery_method"],
-    }
-    # order_options_from_db = await order_option_db.get_all_order_options(data["bot_id"])
-    # order_options = {}
-    # for option in order_options_from_db:
-    #     if option.id not in data:
-    #         if option.required:
-    #             logger.warning(f"option from order option db not provided in order data from web app "
-    #                            f"(option_id: {option.id})")
-    #         order_options[option.id] = None
-    #     else:
-    #         order_options[option.id] = data[option.id]
+    order_options_data = data["order_options"]
+
+    order_options_from_db = await order_option_db.get_all_order_options(data["bot_id"])
+    order_options = {}
+    for option in order_options_from_db:
+        if option.id not in order_options_data:
+            if option.required:
+                logger.warning(f"option from order option db not provided in order data from web app "
+                               f"(option_id: {option.id})")
+            order_options[option.id] = None
+        else:
+            order_options[option.id] = order_options_data[option.id]
 
     order = OrderSchema(**data, order_options=order_options)
     match order_type:
