@@ -18,6 +18,8 @@ function BasketPage(){
     const productList = useSelector(state => state.productList.productList);
     const navigate = useNavigate();
 
+    const [mainButton] = initMainButton();
+
 
     useEffect(() => {
 

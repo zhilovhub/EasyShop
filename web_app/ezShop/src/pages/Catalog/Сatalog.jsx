@@ -34,7 +34,7 @@ function Catalog() {
     const filter = useSelector(state => state.filter);
 
 
-    const [mainButton, cleanupMainButton] = initMainButton();
+    const [mainButton] = initMainButton();
     mainButton.hide()
 
     useEffect(() => {
@@ -208,16 +208,17 @@ function Catalog() {
             // return <div className={styles.bottom_name}>@ezshop</div>
         }else{
 
-            mainButton.show();
+            // mainButton.show();
 
             mainButton
+            .show()
             .setText("Корзина " + "(" + sumBuyCount() + ")")
             .setBgColor("#9edcff")
             .setTextColor('#0C0C0C')
+            .enable()
             .on('click', () => {
                     navigate("/app/basket");
             });
-            mainButton.enable();
 
             // return <div className={styles.bottom_basket} onClick={() => navigate("/app/basket")}>Корзина ({sumBuyCount()})</div>
         }
