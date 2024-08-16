@@ -73,7 +73,7 @@ function ProductPage({mainButton}){
         mainButton
         .setBgColor("#9edcff")
         .setTextColor('#0C0C0C')
-        .enable();
+        .enable()
         .setText("В корзину")
         .show()
         .on('click', mainButtonListener, true);
