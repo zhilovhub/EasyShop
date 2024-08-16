@@ -36,6 +36,8 @@ function Catalog() {
     const [mainButton] = initMainButton();
     const [backButton] = initBackButton();
 
+    alert("long wait");
+
     mainButton.hide()  // сначала всегда прячем кнопку
     backButton.hide()  // сначала всегда прячем кнопку (опционально)
 
