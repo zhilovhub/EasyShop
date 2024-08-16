@@ -33,20 +33,18 @@ function Catalog() {
     const inputRef = useRef(null);
     const filter = useSelector(state => state.filter);
 
-
     const [mainButton] = initMainButton();
     const [backButton] = initBackButton();
 
+//     mainButton.hide()  // сначала всегда прячем кнопку
+//     backButton.hide()  // сначала всегда прячем кнопку (опционально)
+
+    mainButton
+    .setBgColor("#9edcff")
+    .setTextColor('#0C0C0C')
+    .enable()
+
     useEffect(() => {
-
-        // TG API --START--
-        // window.Telegram.WebApp.onEvent('mainButtonClicked', )
-
-        mainButton.hide()  // сначала всегда прячем кнопку
-        backButton.hide()  // сначала всегда прячем кнопку
-
-        // TG API --END--
-
         const currentUrl = window.location.href;
         const myUrl = new URL(currentUrl);
         let newBotId = myUrl.searchParams.get('bot_id');
@@ -189,24 +187,16 @@ function Catalog() {
 
             // mainButton.disable();
             mainButton.hide();
-            alert("hide")
-            console.log(currentCount)
 
             // return <div className={styles.bottom_name}>@ezshop</div>
         }else{
 
             mainButton
             .setText("Корзина " + "(" + sumBuyCount() + ")")
-            .setBgColor("#9edcff")
-            .setTextColor('#0C0C0C')
-            .enable()
             .show()  // show делаем после всех конфигураций кнопки
             .on('click', () => {
                     navigate("/app/basket");
             }, true);
-            alert("show")
-            console.log(currentCount)
-
 
             // return <div className={styles.bottom_basket} onClick={() => navigate("/app/basket")}>Корзина ({sumBuyCount()})</div>
         }
