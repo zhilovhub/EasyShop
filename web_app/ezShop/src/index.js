@@ -15,6 +15,7 @@ import OrderPage from './pages/OrderPage/OrderPage.jsx';
 import FilterPage from './pages/FilterPage/FilterPage.jsx';
 import ProductPage from './pages/ProductPage/ProductPage.jsx';
 import { SDKProvider } from '@telegram-apps/sdk-react';
+import { initMainButton } from '@telegram-apps/sdk';
 
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
