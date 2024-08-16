@@ -28,7 +28,7 @@ function OrderPage({mainButton}){
     const [isCheck, setIsCheck] = useState(false)
     const isCorrect = useSelector(state => state.validate.isCorrect);
 
-    const {initData} = retrieveLaunchParams().initDataRaw;
+    const {initData} = retrieveLaunchParams();
     const { initDataRaw } = retrieveLaunchParams();
 
     const [miniApp] = initMiniApp();
@@ -163,7 +163,7 @@ function OrderPage({mainButton}){
                 raw_items: {},
                 raw_order_options: {},
                 ordered_at: new Date().toISOString(),
-                from_user: 933526311
+                from_user: initData.user.id
             }
 
 
