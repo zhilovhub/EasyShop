@@ -151,12 +151,12 @@ class InlineBotMenuKeyboard:
                 [
                     mailing_inline_button,
                 ],
-                # [
-                #     InlineKeyboardButton(
-                #         text="🤝 Реферальная система",
-                #         callback_data=InlineBotMenuKeyboard.callback_json(actions.REFERRAL_SYSTEM, bot_id),
-                #     )
-                # ],  TODO move it out of the bot
+                [
+                    InlineKeyboardButton(
+                        text="🤝 Реферальная система",
+                        callback_data=InlineBotMenuKeyboard.callback_json(actions.REFERRAL_SYSTEM, bot_id),
+                    )
+                ],
                 [
                     leave_admin_or_delete_bot_button,
                 ],
