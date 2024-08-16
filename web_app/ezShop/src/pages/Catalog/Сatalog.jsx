@@ -57,9 +57,9 @@ function Catalog() {
         // alert(botId)
 
 
-        if (productList.length == 0 || !productList || productList == null){
+        if (productList.length == 0){
 
-        const url = `https://ezbots.ru:1537/api/products/get_all_products?bot_id=${botId}`;
+        const url = `https://ezbots.ru:1537/api/products/get_all_products?bot_id=${newBotId}`;
         const body = JSON.stringify([]);
         fetch(url, {
             method: 'POST',
