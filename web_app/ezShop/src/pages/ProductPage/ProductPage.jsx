@@ -79,6 +79,7 @@ function ProductPage({mainButton}){
         .enable();
 
         if (removeListener != {}) {
+            console.log("removeListener", removeListener)
             removeListener()
         }
         setRemoveListner(mainButton
@@ -89,6 +90,7 @@ function ProductPage({mainButton}){
             updateBuyCount("plus");
             navigate("/app/catalog")
         }, true))
+
 
     }, [])
 
