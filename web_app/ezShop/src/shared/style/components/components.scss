@@ -20,6 +20,7 @@
     -webkit-user-select: none; /* Для Safari */
     -ms-user-select: none; /* Для Internet Explorer/Edge */
     transition: none;
+    touch-action: manipulation;
 }
 
 
@@ -42,6 +43,7 @@
     -webkit-user-select: none; /* Для Safari */
     -ms-user-select: none; /* Для Internet Explorer/Edge */
     transition: none;
+    touch-action: manipulation;
 
     &:hover {
         // background-color: rgba($blue-color-1, 0.8);
