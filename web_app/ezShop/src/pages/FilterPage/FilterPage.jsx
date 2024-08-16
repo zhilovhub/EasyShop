@@ -18,6 +18,8 @@ function FilterPage(){
     const sortFilter = [t('filters__sort_2'), t('filters__sort_3')]
     const [shopCategories, setShopCategories] = useState([])
 
+    const [mainButton] = initMainButton();
+
     const [backButton] = initBackButton();
     backButton.show();
     backButton.on('click', () => {
