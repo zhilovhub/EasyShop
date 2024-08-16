@@ -53,8 +53,6 @@ function OrderPage(){
                 sendOrder();
             });
 
-        alert(botId)
-
         const url = `https://ezbots.ru:1537/api/settings/get_order_options/110`;
         fetch(url, {
             method: 'GET',
@@ -134,8 +132,6 @@ function OrderPage(){
     }
 
     function sendOrder(){
-
-        alert("click");
 
         setIsCheck(true);
         
@@ -231,7 +227,7 @@ function OrderPage(){
 
         </div>
 
-        <div className={styles.bottom_btn} onClick={() => sendOrder()}>Отправить</div>
+        {/* <div className={styles.bottom_btn} onClick={() => sendOrder()}>Отправить</div> */}
         </div>
     )
 
