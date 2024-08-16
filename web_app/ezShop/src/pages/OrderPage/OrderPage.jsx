@@ -168,7 +168,7 @@ function OrderPage({mainButton}){
 
 
             orderData.map(orderItem => {
-                data.order_options[orderItem.option.id] = orderItem.value
+                data.raw_order_options[orderItem.option.id] = orderItem.value
             })
 
             console.log(data)
