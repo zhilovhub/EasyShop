@@ -148,6 +148,8 @@ function OrderPage({mainButton}){
 
     function sendOrder(){
 
+        alert("sendOrder");
+
         setIsCheck(true);
         
         if(isCorrect == false){
