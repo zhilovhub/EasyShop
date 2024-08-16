@@ -32,8 +32,7 @@ function Catalog() {
     const inputRef = useRef(null);
     const filter = useSelector(state => state.filter);
 
-    const [mainButton] = initMainButton();
-
+    const mainButton = null;
 
 
     useEffect(() => {
@@ -42,22 +41,24 @@ function Catalog() {
 
         const [backButton] = initBackButton();
 
+        mainButton = initMainButton();
+
         backButton.hide();
 
         // window.Telegram.WebApp.onEvent('mainButtonClicked', )
-        const [mainButton] = initMainButton();
         
-        mainButton
-        .setText("Корзина")
-        .setBgColor("#9edcff")
-        .setTextColor('#0C0C0C')
-        .on('click', () => {
-                alert("click")
-                navigate("/app/basket");
-        }, true);
+        // mainButton
+        // .setText("Корзина")
+        // .setBgColor("#9edcff")
+        // .setTextColor('#0C0C0C')
+        // .on('click', () => {
+        //         alert("click")
+        //         navigate("/app/basket");
+        //         cleanupMainButton();
+        // });
         
-        mainButton.show();
-        mainButton.enable();
+        // mainButton.show();
+        // mainButton.enable();
         
         
         // TG API --END--
@@ -215,7 +216,8 @@ function Catalog() {
             .on('click', () => {
                     alert("click")
                     navigate("/app/basket");
-            }, true);
+                    cleanupMainButton();
+            });
             mainButton.enable();
 
             // return <div className={styles.bottom_basket} onClick={() => navigate("/app/basket")}>Корзина ({sumBuyCount()})</div>
