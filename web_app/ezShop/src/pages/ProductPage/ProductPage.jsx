@@ -163,14 +163,6 @@ function ProductPage({mainButton}){
         });
 
         dispatch(setProductList(newProductList))
-
-        mainButton
-            .setText("В корзину")
-            .show()  // show делаем после всех конфигураций кнопки
-            .on('click', () => {
-                 updateBuyCount("plus");
-                 navigate("/app/catalog");
-            }, true);
     }
 
     // function getCurrentProduct() {
