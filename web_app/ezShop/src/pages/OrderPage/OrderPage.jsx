@@ -13,6 +13,7 @@ import { retrieveLaunchParams } from '@telegram-apps/sdk';
 import { initDataRaw } from '@telegram-apps/sdk';
 import { TelegramClient, Button } from '@telegram-apps/sdk';
 import { initMiniApp } from '@telegram-apps/sdk';
+import { initMainButton } from '@telegram-apps/sdk';
 
 function OrderPage(){
 
