@@ -45,13 +45,15 @@ function Catalog() {
         
         const [mainButton] = initMainButton();
 
-        mainButton.setText("Корзина")
 
         mainButton.off('click');
         
-        mainButton.on('click', () => {
-            alert('click')
-            navigate("/app/basket");
+        mainButton
+        .setText("Корзина" + "(" + sumBuyCount() + ")")
+        .setBgColor('#59C0F9')
+        .setTextColor('#0C0C0C')
+        .on('click', () => {
+                navigate("/app/basket");
         });
         
         mainButton.show();
