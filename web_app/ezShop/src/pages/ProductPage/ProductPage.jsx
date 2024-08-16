@@ -78,12 +78,7 @@ function ProductPage({mainButton}){
         .setTextColor('#0C0C0C')
         .enable();
 
-        console.log("before removeListener", removeListener)
-        if (removeListener) {
-            console.log("removeListener", removeListener)
-            removeListener()
-        }
-        setRemoveListner(mainButton
+        mainButton
         .setText("В корзину")
         .show()
         .on('click', () => {
