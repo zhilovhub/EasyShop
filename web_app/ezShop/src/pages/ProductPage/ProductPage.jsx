@@ -70,6 +70,23 @@ function ProductPage(){
 
     }
 
+    useEffect(() => {
+
+        mainButton
+        .setBgColor("#9edcff")
+        .setTextColor('#0C0C0C')
+        .enable();
+
+        mainButton
+        .setText("В корзину " + "(" + currentProduct.buyCount + ")")
+        .show()  // show делаем после всех конфигураций кнопки
+        .on('click', () => {
+             updateBuyCount("plus")
+        }, true);
+
+        
+    }, [])
+
 
     useEffect(() => {
 
@@ -183,7 +200,7 @@ function ProductPage(){
         </div>
 
         <div className={styles.bottom_btn_container}>
-            {currentProduct.buyCount != 0 ?
+            {/* {currentProduct.buyCount != 0 ?
                 <>
                     <div className={styles.bottom_btn} onClick={() => navigate("/app/basket")}>В корзине</div>
                     <p className={styles.bottom_count_minus} onClick={() => updateBuyCount("minus")}>-</p>
@@ -192,7 +209,7 @@ function ProductPage(){
                 </>
             : 
             <div className={styles.bottom_btn} onClick={() => updateBuyCount("plus")}>В корзину</div>
-            }
+            } */}
         </div>
 
         </div>

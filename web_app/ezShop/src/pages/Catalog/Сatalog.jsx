@@ -32,17 +32,11 @@ function Catalog({mainButton}) {
     const filter = useSelector(state => state.filter);
 
     // const [mainButton] = initMainButton();
-    // const [backButton] = initBackButton();
 
     // console.log("FIRST", mainButton.isVisible);
 
     // mainButton.hide()  // сначала всегда прячем кнопку
     // backButton.hide()  // сначала всегда прячем кнопку (опционально)
-
-    mainButton
-    .setBgColor("#9edcff")
-    .setTextColor('#0C0C0C')
-    .enable()
 
     useEffect(() => {
         console.log("useEffect getBottomButton");
@@ -54,6 +48,14 @@ function Catalog({mainButton}) {
         const currentUrl = window.location.href;
         const myUrl = new URL(currentUrl);
         let newBotId = myUrl.searchParams.get('bot_id');
+
+        const [backButton] = initBackButton();
+        backButton.hide();
+
+        mainButton
+        .setBgColor("#9edcff")
+        .setTextColor('#0C0C0C')
+        .enable()
 
         if(newBotId){
             dispatch(setBotId(newBotId))
@@ -196,7 +198,6 @@ function Catalog({mainButton}) {
 
             // return <div className={styles.bottom_name}>@ezshop</div>
         }else{
-            console.log("currentCount:", currentCount)
             mainButton
             .setText("Корзина " + "(" + currentCount + ")")
             .show()  // show делаем после всех конфигураций кнопки

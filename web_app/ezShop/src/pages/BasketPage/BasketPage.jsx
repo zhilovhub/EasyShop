@@ -11,15 +11,13 @@ import { useEffect } from 'react';
 import { initMainButton } from '@telegram-apps/sdk';
 
 
-function BasketPage(){
+function BasketPage({mainButton}){
 
     const {t, i18n} = useTranslation();
     const dispatch = useDispatch();
     const productList = useSelector(state => state.productList.productList);
     const botId = useSelector(state => state.botId.botId);
     const navigate = useNavigate();
-
-    const [mainButton] = initMainButton();
 
 
     useEffect(() => {

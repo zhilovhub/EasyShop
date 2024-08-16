@@ -30,10 +30,10 @@ root.render(
       <Routes>
         <Route path="app" element={<App/>}>
           <Route path="catalog" element={<Catalog mainButton={mainButton}/>}></Route>
-          <Route path="basket" element={<BasketPage/>}></Route>
-          <Route path="order" element={<OrderPage/>}></Route>
-          <Route path="filter" element={<FilterPage/>}></Route>
-          <Route path="product" element={<ProductPage/>}></Route>
+          <Route path="basket" element={<BasketPage mainButton={mainButton}/>}></Route>
+          <Route path="order" element={<OrderPage mainButton={mainButton}/>}></Route>
+          <Route path="filter" element={<FilterPage mainButton={mainButton}/>}></Route>
+          <Route path="product" element={<ProductPage mainButton={mainButton}/>}></Route>
         </Route>
         <Route path="/" element={<Navigate to="/app/catalog" replace={true}/>}></Route>
       </Routes>

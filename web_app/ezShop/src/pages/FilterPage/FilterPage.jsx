@@ -9,7 +9,7 @@ import { initBackButton } from '@telegram-apps/sdk';
 import { initMainButton } from '@telegram-apps/sdk';
 
 
-function FilterPage(){
+function FilterPage({mainButton}){
 
     const {t, i18n} = useTranslation();
     const dispatch = useDispatch();
@@ -18,16 +18,15 @@ function FilterPage(){
     const sortFilter = [t('filters__sort_2'), t('filters__sort_3')]
     const [shopCategories, setShopCategories] = useState([])
 
-    const [mainButton] = initMainButton();
-
-    const [backButton] = initBackButton();
-    backButton.show();
-    backButton.on('click', () => {
-       navigate("/app/catalog")
-    });
 
 
     useEffect(() => {
+
+        const [backButton] = initBackButton();
+        backButton.show();
+        backButton.on('click', () => {
+           navigate("/app/catalog")
+        });
 
         console.log("filter.categories")
         console.log(filter.categories)
