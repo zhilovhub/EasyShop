@@ -90,7 +90,7 @@ function ProductPage({mainButton}){
         }else{
 
             mainButton
-            .setText("В корзину " + "(" + currentProduct.buyCount + ")")
+            .setText("В корзину")
             .show()  // show делаем после всех конфигураций кнопки
             .on('click', () => {
                  updateBuyCount("plus")
@@ -165,7 +165,7 @@ function ProductPage({mainButton}){
         dispatch(setProductList(newProductList))
 
         mainButton
-            .setText("В корзину " + "(" + currentProduct.buyCount + ")")
+            .setText("В корзину")
             .show()  // show делаем после всех конфигураций кнопки
             .on('click', () => {
                  updateBuyCount("plus");
