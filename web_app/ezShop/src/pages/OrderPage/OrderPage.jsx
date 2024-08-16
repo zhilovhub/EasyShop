@@ -41,7 +41,7 @@ function OrderPage({mainButton}){
         backButton.show();
         backButton.on('click', () => {
             navigate("/app/basket");
-        });
+        }, true);
 
         mainButton
             .show()

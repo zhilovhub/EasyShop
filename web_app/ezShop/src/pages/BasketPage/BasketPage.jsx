@@ -26,7 +26,7 @@ function BasketPage({mainButton}){
         backButton.show();
         backButton.on('click', () => {
             navigate(`/app/catalog?bot_id=${botId}`);
-        });
+        }, true);
 
         mainButton
         .show()
