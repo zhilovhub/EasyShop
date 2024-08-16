@@ -4,7 +4,6 @@
 @mixin gray-button{
     background-color: $gray-color;
     text-align: center;
-    padding-block: 12px;
     border-radius: $block-radius-1;
     color: $black-color;
     font-family: $montserrat-medium;
@@ -20,6 +19,7 @@
     -moz-user-select: none; /* Для Firefox */
     -webkit-user-select: none; /* Для Safari */
     -ms-user-select: none; /* Для Internet Explorer/Edge */
+    -webkit-tap-highlight-color: rgba(0, 0, 0, 0);
     transition: none;
     touch-action: manipulation;
 
@@ -32,7 +32,6 @@
 @mixin accent-button{
     background-color: $accent-color;
     text-align: center;
-    padding-block: 12px;
     border-radius: $block-radius-1;
     color: $black-color;
     font-family: $montserrat-medium;
@@ -48,6 +47,7 @@
     -moz-user-select: none; /* Для Firefox */
     -webkit-user-select: none; /* Для Safari */
     -ms-user-select: none; /* Для Internet Explorer/Edge */
+    -webkit-tap-highlight-color: rgba(0, 0, 0, 0);
     transition: none;
     touch-action: manipulation;
     outline: none;
