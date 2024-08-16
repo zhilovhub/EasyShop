@@ -2,13 +2,14 @@ import { useEffect, useState } from 'react';
 import styles from './TextInput.module.scss';
 import { setIsCorrect } from '../../../shared/redux/action/ValidateAction';
 import { useDispatch, useSelector } from 'react-redux';
-import { setOrderItem } from '../../../shared/redux/action/OrderDataAction';
+import { setOrderData, setOrderItem } from '../../../shared/redux/action/OrderDataAction';
 
 function TextInput({isCheck, data}) {
 
     const [inputValue, setInputValue] = useState('');
     const dispatch = useDispatch();
     const isCorrect = useSelector(state => state.validate.isCorrect);
+    const orderData = useSelector(state => state.orderData.orderData);
 
     useEffect(() => {
 
@@ -25,7 +26,16 @@ function TextInput({isCheck, data}) {
             // alert(data.option.option_name)
             console.log(data)
 
-            dispatch(setOrderItem(data.option.option_name, inputValue))
+            dispatch(setOrderData(
+
+                orderData.map(orderItem => {
+                  if (action.payload.fieldName == orderItem.option_name){
+                    orderItem.value = action.payload.value
+                  }
+                  return orderItem
+                })
+
+            ))
         
     }, [inputValue])
 
