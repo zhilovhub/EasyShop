@@ -133,12 +133,12 @@ function ProductPage({mainButton}){
             if (product.id == productItem.id) {
                 if(type == "plus"){
                 return {
-                    ...currentProduct,
+                    ...product,
                     buyCount: productItem.buyCount == currentProduct.count ? productItem.buyCount : productItem.buyCount + 1
                 };
             }else{
                 return {
-                    ...currentProduct,
+                    ...product,
                     buyCount: productItem.buyCount == 0 ? 0 : productItem.buyCount - 1
                 };
             }
@@ -190,7 +190,7 @@ function ProductPage({mainButton}){
 
                 <div className={styles.product_blocks}>
 
-                    {currentProduct.description != "" ? <TextOption data={{name: "Описание", variants: [currentProduct.description], variants_prices: [currentProduct.variants_prices]}}></TextOption> : <></>}
+                    {product.description != "" ? <TextOption data={{name: "Описание", variants: [product.description], variants_prices: [product.variants_prices]}}></TextOption> : <></>}
 
                     {extraOptions.map(option => getOption(option.type, option))}
 
