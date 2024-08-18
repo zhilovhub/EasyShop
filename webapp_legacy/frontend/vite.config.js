@@ -3,7 +3,7 @@ import { defineConfig, loadEnv } from 'vite'
 import vue from '@vitejs/plugin-vue'
 import vueJsx from '@vitejs/plugin-vue-jsx'
 import fs from 'fs';
-import path from 'path'
+// import path from 'path'
 
 const env = loadEnv(
   'all',
@@ -59,4 +59,5 @@ export default defineConfig({
       cert: fs.readFileSync(env.VITE_SSL_CERT_PATH)
     }
   },
+
 })

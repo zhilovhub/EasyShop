@@ -44,7 +44,7 @@ OTHER_BOTS_URL = f"{BASE_URL}{OTHER_BOTS_PATH}"
 
 FULL_WEB_APP_URL = (
     f"{custom_telegram_bot_settings.WEB_APP_URL}:"
-    f"{custom_telegram_bot_settings.WEB_APP_PORT}/products-page/?bot_id=[bot_id]"
+    f"{custom_telegram_bot_settings.WEB_APP_PORT}/app/catalog/?bot_id=[bot_id]"
 )
 
 API_URL = f"https://ezbots.ru:{api_settings.API_PORT}/api"

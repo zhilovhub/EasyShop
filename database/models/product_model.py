@@ -129,7 +129,7 @@ class ProductSchema(ProductWithoutId):
                         option_price_text = f"+{option_price}"
                     options_text += f" ({option_price_text}₽)"
                 options_text += "\n"
-            return Text(Bold(f"{self.name} {self.price}₽ x {count}шт"), f" {options_text}")
+            return Text(Bold(f"{self.name} {self.price}₽ x {count}шт"), options_text)
         return Bold(f"{self.name} {self.price}₽ x {count}шт")
 
     def convert_to_product_page_text(self) -> Text:

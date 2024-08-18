@@ -42,8 +42,9 @@ from logs.config import logger
 
 def _is_valid_hex_code(string: str) -> bool:
     """Проверяет, валидный ли цвет передал пользователь"""
+    string = string.lower()
 
-    regex = "^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$"
+    regex = r"#[a-f\d]{3}(?:[a-f\d]?|(?:[a-f\d]{3}(?:[a-f\d]{2})?)?)\b"
 
     p = re.compile(regex)
 

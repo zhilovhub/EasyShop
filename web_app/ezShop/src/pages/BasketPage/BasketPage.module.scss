@@ -1,0 +1,101 @@
+@import "../../shared/style/unification/unification.scss";
+
+.main_content{
+    margin-inline: 14px;
+    overflow: visible;
+}
+
+.header{
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    margin-block: 17px;
+}
+
+.title{
+    font-family: $montserrat-bold;
+    font-size: $font-size-2;
+    color: $black-color;
+}
+
+.product_list_scroll{
+    display: flex;
+    overflow-y: scroll;
+    // background-color: aqua;
+    height: 100vh;
+    margin-top: 15px;
+    padding-bottom: 400px;
+    margin-inline: -14px;
+    padding-inline: 14px;
+    flex-grow: 1;
+}
+
+.product_list{
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    height: max-content;
+    margin-bottom: 118px;
+    flex-grow: 1;
+    // overflow: visible;
+}
+
+.empty_basket{
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    text-align: center;
+    align-items: center;
+    align-content: center;
+    justify-items: center;
+    height: 75vh;
+}
+
+.bottom_btn{
+    position: absolute;
+    bottom: 0;
+    right: 0;
+    left: 0;
+    height: 62px;
+    line-height: 62px;
+    background-color: var(--accent-color);
+    text-align: center;
+    align-content: center;
+    font-family: $montserrat-bold;
+    font-size: $font-size-2;
+    color: $black-color;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+.empty_basket_img{
+    width: 117px;
+    padding-right: 22px;
+}
+
+.msg_emty{
+    max-width: 227px;
+    margin-top: 38px;
+    font-family: $montserrat-semi-bold;
+    color: $black-color;
+    font-size: $font-size-2;
+}
+
+.hint_emty{
+    max-width: 263px;
+    margin-top: 10px;
+    font-family: $montserrat-regular;
+    color: $gray-color-4;
+    font-size: $font-size-1;
+}

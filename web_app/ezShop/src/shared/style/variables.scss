@@ -1,0 +1,80 @@
+// цвета
+
+$base-color: rgba(255, 255, 255);
+
+:root {
+	--accent-color: rgb(158, 220, 255);
+	--bg-color: rgb(231, 231, 231);
+	--text-color: rgb(0, 0, 0);
+}
+
+
+$accent-color: #9edcff;
+
+$white-color: rgb(255, 255, 255);
+$black-color: var(--text-color);
+
+$gray-color: rgb(231, 231, 231);
+$gray-color-2: rgb(240, 240, 240);
+$gray-color-3: rgb(107, 107, 107);
+$gray-color-4: rgb(89, 89, 89);
+$gray-color-5: rgb(217, 217, 217);
+$gray-color-6: rgb(130, 130, 130);
+$gray-color-7: rgb(245, 245, 245);
+
+// шрифты
+
+$montserrat-semi-bold: 'MontserratSemiBold';
+@font-face {
+	font-family: 'MontserratSemiBold'; 
+	src: url(../fonts/Montserrat/Montserrat-Medium.ttf) format('truetype'); 
+}
+
+$montserrat-bold: 'MontserratBold';
+@font-face {
+	font-family: 'MontserratBold'; 
+	src: url(../fonts/Montserrat/Montserrat-Bold.ttf) format('truetype'); 
+}
+
+$montserrat-regular: 'MontserratRegular';
+@font-face {
+	font-family: 'MontserratRegular'; 
+	src: url(../fonts/Montserrat/Montserrat-Light.ttf) format('truetype'); 
+}
+
+$montserrat-medium: 'MontserratMedium';
+@font-face {
+	font-family: 'MontserratMedium'; 
+	src: url(../fonts/Montserrat/Montserrat-Medium.ttf) format('truetype'); 
+}
+
+$montserrat-black: 'MontserratBlack';
+@font-face {
+	font-family: 'MontserratBlack'; 
+	src: url(../fonts/Montserrat/Montserrat-Black.ttf) format('truetype'); 
+}
+
+// размер шрифтов
+
+$font-size-1: 14px;
+$font-size-2: 20px;
+$font-size-3: 13px;
+$font-size-4: 15px;
+$font-size-5: 20px;
+$font-size-6: 30px;
+$font-size-7: 24px;
+$font-size-8: 32px;
+
+
+//радиусы
+
+$block-radius-1: 15px;
+$block-radius-2: 20px;
+
+
+//отступы
+
+$margin-inline-1: 20px;
+
+
+

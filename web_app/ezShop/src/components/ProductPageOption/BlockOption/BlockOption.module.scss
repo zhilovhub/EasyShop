@@ -1,0 +1,61 @@
+@import "../../../shared/style//unification/unification.scss";
+
+.text{
+    font-family: $montserrat-regular;
+    font-size: $font-size-4;
+    color: $black-color;
+}
+
+.variant_container{
+    display: flex;
+    flex-direction: row;
+    gap: 9px;
+    width: max-content;
+    margin-inline: -10px;
+    overflow: visible;
+}
+
+.item{
+    display: flex;
+    font-family: $montserrat-medium;
+    color: $black-color;
+    background-color: $gray-color-2;
+    border-radius: $font-size-4;
+    width: 75px;
+    height: 64px;
+    text-align: center;
+    justify-content: center;
+    align-items: center;
+    border: 2px solid rgb(0, 0, 0, 0);
+}
+
+.item_active{
+    display: flex;
+    font-family: $montserrat-medium;
+    color: $black-color;
+    background-color: $gray-color-2;
+    border-radius: $font-size-4;
+    width: 75px;
+    height: 64px;
+    text-align: center;
+    justify-content: center;
+    align-items: center;
+    border: 2px solid var(--accent-color);
+}
+
+.variant_container_scroll{
+    overflow: visible;
+    overflow-x: scroll;
+    margin-inline: -16px;
+    padding-inline: 26px;
+    scrollbar-width: none;
+}
+
+
+
+
+
+
+
+
+

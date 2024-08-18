@@ -1,6 +1,8 @@
 from datetime import datetime
 import random
 import string
+from typing import Any
+
 import aiohttp
 
 from pydantic import ValidationError, BaseModel
@@ -109,14 +111,8 @@ async def add_order_api(new_order: OrderSchema = Depends(), authorization_data: 
 class OrderData(BaseModel):
     bot_id: int
     raw_items: dict
+    raw_order_options: dict[int, Any]
     ordered_at: datetime
-    name: str
-    phone_number: str
-    town: str
-    address: str
-    delivery_method: str
-    time: str | None
-    comment: str | None
     query_id: str | None = None
     from_user: int | None = None
     order_type: OrderType | None = None

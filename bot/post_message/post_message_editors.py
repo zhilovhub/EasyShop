@@ -724,7 +724,7 @@ async def send_post_message(
         if (
             post_message_schema.button_url == f"{custom_telegram_bot_settings.WEB_APP_URL}:"
             f"{custom_telegram_bot_settings.WEB_APP_PORT}"
-            f"/products-page/?bot_id={post_message_schema.bot_id}"
+            f"/app/catalog/?bot_id={post_message_schema.bot_id}"
         ):
             button = InlineKeyboardButton(
                 text=post_message_schema.button_text, web_app=make_webapp_info(bot_id=post_message_schema.bot_id)

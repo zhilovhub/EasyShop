@@ -1,0 +1,97 @@
+@import "../../shared/style/unification/unification.scss";
+
+.main_content{
+    overflow: visible;
+}
+
+.img{
+    background-color: white;
+    height: 250px;
+    object-fit: cover;
+}
+
+.content_scroll{
+    display: flex;
+    overflow-y: scroll;
+    height: 100vh;
+    padding-bottom: 400px;
+    margin-inline: -14px;
+    padding-inline: 14px;
+}
+
+.product_blocks{
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.content{
+    display: flex;
+    height: max-content;
+    flex-direction: column;
+    margin-bottom: 142px;
+    flex-grow: 1;
+}
+
+.name{
+    background-color: $white-color;
+    padding-left: 16px;
+    padding-block: 14px;
+    font-family: $montserrat-bold;
+    font-size: $font-size-7;
+    color: $black-color;
+    border-radius: 0 0 $block-radius-1 $block-radius-1;
+}
+
+.price{
+    font-family: $montserrat-bold;
+    font-size: $font-size-8;
+    color: $black-color;
+    margin-left: 16px;
+    margin-block: 15px;
+
+}
+
+.bottom_btn{
+    background-color: var(--accent-color);
+    text-align: center;
+    align-content: center;
+    font-family: $montserrat-bold;
+    font-size: $font-size-2;
+    color: $black-color;
+    flex-grow: 6;
+    line-height: 62px;
+}
+
+.bottom_btn_container{
+    position: absolute;
+    bottom: 0;
+    right: 0;
+    left: 0;
+    height: 62px;
+    line-height: 62px;
+    display: flex;
+    flex-direction: row;
+}
+
+.bottom_count_minus, .bottom_count_plus {
+    background-color: $base-color;
+    text-align: center;
+    align-content: center;
+    font-family: $montserrat-medium;
+    font-size: $font-size-2;
+    color: $black-color;
+    flex-grow: 2;
+    line-height: 62px;
+}
+
+.bottom_count_value {
+    background-color: $base-color;
+    text-align: center;
+    align-content: center;
+    font-family: $montserrat-medium;
+    font-size: $font-size-2;
+    color: $black-color;
+    width: 30px;
+    line-height: 62px;
+}

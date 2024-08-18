@@ -164,7 +164,7 @@ async def _button_add(
                 post_message.button_url = (
                     f"{custom_telegram_bot_settings.WEB_APP_URL}:"
                     f"{custom_telegram_bot_settings.WEB_APP_PORT}"
-                    f"/products-page/?bot_id={post_message.bot_id}"
+                    f"/app/catalog/?bot_id={post_message.bot_id}"
                 )
             case PostMessageType.CHANNEL_POST:
                 post_message.button_url = f"t.me/{(await custom_bot.get_me()).username}/?start=web_app"

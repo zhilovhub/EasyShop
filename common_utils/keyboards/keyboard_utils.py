@@ -24,14 +24,14 @@ from logs.config import logger, extra_params
 
 def make_select_hex_web_app_info() -> WebAppInfo:
     return WebAppInfo(
-        url=f"{custom_telegram_bot_settings.WEB_APP_URL}:{custom_telegram_bot_settings.WEB_APP_PORT}/hex-selector"
+        url=f"{custom_telegram_bot_settings.WEB_APP_URL}:{custom_telegram_bot_settings.WEB_APP_PORT}{str(custom_telegram_bot_settings.WEB_APP_PORT)[-1]}/hex-selector"
     )
 
 
 def make_webapp_info(bot_id: int) -> WebAppInfo:
     return WebAppInfo(
         url=f"{custom_telegram_bot_settings.WEB_APP_URL}:{custom_telegram_bot_settings.WEB_APP_PORT}"
-        f"/products-page/?bot_id={bot_id}"
+        f"/app/catalog/?bot_id={bot_id}"
     )
 
 
@@ -42,7 +42,7 @@ def make_product_deep_link_url(product_id: int, bot_username: str) -> str:
 def make_product_webapp_info(product_id: int, bot_id: int) -> WebAppInfo:
     return WebAppInfo(
         url=f"{custom_telegram_bot_settings.WEB_APP_URL}:{custom_telegram_bot_settings.WEB_APP_PORT}"
-        f"/products-page/{product_id}/?bot_id={bot_id}"
+        f"/app/product/{product_id}/?bot_id={bot_id}"
     )
 
 

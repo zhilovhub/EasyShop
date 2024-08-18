@@ -1,63 +1,11 @@
 from enum import Enum
 from typing import Any
 
+from database.config import order_option_db
 from database.models.order_model import OrderSchema, OrderItemExtraOption
 from database.models.product_model import ProductSchema
-from database.models.order_option_model import OrderOptionSchemaWithoutId
 
 from aiogram.utils.formatting import Text, Bold
-
-TEMP_order_options = {  # TODO удалить, когда фронт будет возвращать кастомные опции
-    0: OrderOptionSchemaWithoutId(
-        bot_id=0,
-        option_name="Имя клиента",
-        required=True,
-        emoji="👤",
-        position_index=1,
-    ),
-    1: OrderOptionSchemaWithoutId(
-        bot_id=0,
-        option_name="Номер телефона",
-        required=True,
-        emoji="📱",
-        position_index=2,
-    ),
-    2: OrderOptionSchemaWithoutId(
-        bot_id=0,
-        option_name="Город",
-        required=True,
-        emoji="🌇",
-        position_index=3,
-    ),
-    3: OrderOptionSchemaWithoutId(
-        bot_id=0,
-        option_name="Адрес доставки",
-        required=True,
-        emoji="🛤",
-        position_index=4,
-    ),
-    4: OrderOptionSchemaWithoutId(
-        bot_id=0,
-        option_name="Время доставки",
-        required=True,
-        emoji="⏰",
-        position_index=5,
-    ),
-    5: OrderOptionSchemaWithoutId(
-        bot_id=0,
-        option_name="Комментарий",
-        required=True,
-        emoji="💌",
-        position_index=6,
-    ),
-    6: OrderOptionSchemaWithoutId(
-        bot_id=0,
-        option_name="Способ доставки",
-        required=True,
-        emoji="🚐",
-        position_index=7,
-    ),
-}
 
 
 class MessageTexts(Enum):
@@ -111,8 +59,7 @@ class MessageTexts(Enum):
         order_options = order.order_options
         order_options_text = Text()
         for order_option_id, value in order_options.items():
-            # order_option = await order_option_db.get_order_option(order_option_id)
-            order_option = TEMP_order_options[int(order_option_id)]  # TODO вернуть прошлую строку
+            order_option = await order_option_db.get_order_option(order_option_id)
             order_options_text += Text(
                 f"{order_option.emoji} {order_option.option_name}: ", Bold(value if value else "Не указано"), "\n"
             )
@@ -126,7 +73,9 @@ class MessageTexts(Enum):
                 "\n\n",
                 "Итого: ",
                 Bold(f"{total_price}₽\n\n"),
-                order_options_text,
+            )
+            result += order_options_text
+            result += Text(
                 "\n\n " "Статус: ",
                 Bold(order.translate_order_status()),
             )
@@ -142,7 +91,9 @@ class MessageTexts(Enum):
                 "\n\n",
                 "Итого: ",
                 Bold(f"{total_price}₽\n\n"),
-                order_options_text,
+            )
+            result += order_options_text
+            result += Text(
                 "\n\n" "Статус: ",
                 Bold(order.translate_order_status()),
             )

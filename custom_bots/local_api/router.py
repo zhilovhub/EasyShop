@@ -18,7 +18,7 @@ from database.config import bot_db
 from database.models.bot_model import BotNotFoundError
 from database.models.product_model import NotEnoughProductsInStockToReduce
 
-from logs.config import custom_bot_logger, extra_params, logger
+from logs.config import custom_bot_logger, extra_params, api_logger
 
 routes = web.RouteTableDef()
 
@@ -88,22 +88,22 @@ async def stop_bot_handler(request):
 
 @routes.post("/send_web_app_data_to_bot/{bot_id}")
 async def send_web_app_data_to_bot(request):
-    custom_bot_logger.debug(f"new request to send_web_app_data_to_bot : {request}")
+    api_logger.debug(f"new request to send_web_app_data_to_bot : {request}")
 
     bot_id = request.match_info["bot_id"]
-    custom_bot_logger.debug(f"new request to with bot_id : {bot_id}")
+    api_logger.debug(f"new request to with bot_id : {bot_id}")
     try:
         bot = await bot_db.get_bot(int(bot_id))
-        custom_bot_logger.debug(f"new request to with bot : {bot}")
+        api_logger.debug(f"new request to with bot : {bot}")
     except BotNotFoundError:
         return web.Response(status=404, text=f"Bot with provided id not found (id: {bot_id}).")
     if not is_bot_token(bot.token):
         return web.Response(status=400, text="Incorrect bot token format.")
 
     custom_bot_tg = Bot(bot.token)
-    custom_bot_logger.debug(f"new request to with tg_bot : {custom_bot_tg}")
+    api_logger.debug(f"new request to with tg_bot : {custom_bot_tg}")
     sent_data = await request.json()
-    custom_bot_logger.debug(f"new request to with sent_data : {sent_data}")
+    api_logger.debug(f"new request to with sent_data : {sent_data}")
 
     user_id = sent_data["from_user"]
     order_type = sent_data["order_type"]
@@ -115,20 +115,20 @@ async def send_web_app_data_to_bot(request):
             try:
                 order = await create_order(user_id, sent_data, OrderType.MAIN_BOT_TEST_ORDER, _json=False)
 
-                logger.info(f"order with id #{order.id} created")
+                api_logger.info(f"order with id #{order.id} created")
             except NotEnoughProductsInStockToReduce as e:
-                logger.info("not enough items for order creation")
+                api_logger.info("not enough items for order creation")
                 return await main_bot.send_message(
                     chat_id=user_id,
                     text=f"К сожалению на складе недостаточно <b>{e.product.name}</b> для выполнения Вашего заказа.",
                 )
             except Exception as e:
-                logger.error("error while creating order", exc_info=e)
+                api_logger.error("error while creating order", exc_info=e)
                 raise e
             try:
                 await send_new_order_notify(order, user_id)
             except Exception as e:
-                logger.error("error while sending test order notification", exc_info=e)
+                api_logger.error("error while sending test order notification", exc_info=e)
                 raise e
         case OrderType.CUSTOM_BOT_ORDER.value:
             try:
@@ -150,13 +150,13 @@ async def send_web_app_data_to_bot(request):
                     bot_id = data["bot_id"]
                 except Exception as another_e:
                     bot_id = -1
-                    custom_bot_logger.error(
+                    api_logger.error(
                         f"user_id={user_id}: Unable to find bot_id from event.web_app_data.data",
                         extra=extra_params(user_id=user_id),
                         exc_info=another_e,
                     )
 
-                custom_bot_logger.error(
+                api_logger.error(
                     f"user_id={user_id}: Unable to create an order in bot_id={bot_id}",
                     extra=extra_params(user_id=user_id, bot_id=bot_id),
                     exc_info=e,
@@ -166,12 +166,12 @@ async def send_web_app_data_to_bot(request):
     try:
         return web.Response(status=200, body=json.dumps({"invoice_url": invoice_link}), content_type="application/json")
     except Exception as e:
-        custom_bot_logger.error("error while sending response from local Api", exc_info=e)
+        api_logger.error("error while sending response from local Api", exc_info=e)
 
 
 @routes.post("/send_hex_color_to_bot")
 async def send_hex_data_to_bot(request):
-    custom_bot_logger.debug(f"new request to send_hex_color_to_bot : {request}")
+    api_logger.debug(f"new request to send_hex_color_to_bot : {request}")
     try:
         data = await request.json()
 
@@ -184,7 +184,7 @@ async def send_hex_data_to_bot(request):
             ),
         )
     except Exception as ex:
-        custom_bot_logger.error("error on processing local api send hex request", exc_info=True)
+        api_logger.error("error on processing local api send hex request", exc_info=True)
         raise ex
 
     return web.Response(status=200, text="Data was sent to bot successfully")
