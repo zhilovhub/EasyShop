@@ -60,7 +60,7 @@ class MainStartKeyboard:
 class MoreInfoOnProductBeforeRefKeyboard:
     class Callback(BaseModel):
         class ActionEnum(Enum):
-            MORE_INFO = "product_info"
+            MORE_INFO = "product_info_in_ref"
             BACK = "back_to_start_menu"
 
         model_config = ConfigDict(from_attributes=True, populate_by_name=True)
