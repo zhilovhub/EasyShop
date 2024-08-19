@@ -16,6 +16,7 @@ from bot.utils.check_subscription import check_subscription
 from bot.handlers.subscription_handlers import send_subscription_expire_notify, send_subscription_end_notify
 from bot.keyboards.subscription_keyboards import InlineSubscriptionContinueKeyboard
 from bot.keyboards.start_keyboards import (
+    BackToStartMenuKeyboard,
     GetLinkAndKPKeyboard,
     MainStartKeyboard,
     MoreInfoOnProductBeforeRefKeyboard,
@@ -124,11 +125,23 @@ async def handle_get_link_and_kp(query: CallbackQuery):
                 file_ids[file_name] = kp_message.document.file_id
                 cache_resources_file_id_store.update_data(file_ids)
             await query.message.answer(
-                **MessageTexts.generate_ref_system_text(ref_link),
+                **MessageTexts.generate_ref_system_text(ref_link), reply_markup=BackToStartMenuKeyboard.get_keyboard()
             )
         case callback_data.ActionEnum.BACK:
             await query.message.edit_text(
                 text=MessageTexts.ABOUT_REF_SYSTEM, reply_markup=MoreInfoOnProductBeforeRefKeyboard.get_keyboard()
+            )
+
+
+@commands_router.callback_query(lambda query: BackToStartMenuKeyboard.callback_validator(query.data))
+async def handle_back_to_start_menu(query: CallbackQuery):
+    callback_data = BackToStartMenuKeyboard.Callback.model_validate_json(query.data)
+    user_id = query.from_user.id
+    match callback_data.a:
+        case callback_data.ActionEnum.BACK_TO_START_MENU:
+            user_bots = await user_role_db.get_user_bots(user_id)
+            await send_instructions(
+                bot, user_bots[0].bot_id if user_bots else None, user_id, cache_resources_file_id_store
             )
 
 
