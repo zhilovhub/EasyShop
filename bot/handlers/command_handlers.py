@@ -14,7 +14,12 @@ from bot.utils.send_instructions import send_instructions
 from bot.utils.check_subscription import check_subscription
 from bot.handlers.subscription_handlers import send_subscription_expire_notify, send_subscription_end_notify
 from bot.keyboards.subscription_keyboards import InlineSubscriptionContinueKeyboard
-from bot.keyboards.start_keyboards import MainStartKeyboard, MoreInfoOnProductBeforeRefKeyboard, AboutProductKeyboard
+from bot.keyboards.start_keyboards import (
+    GetLinkAndKPKeyboard,
+    MainStartKeyboard,
+    MoreInfoOnProductBeforeRefKeyboard,
+    AboutProductKeyboard,
+)
 from bot.middlewaries.subscription_middleware import CheckSubscriptionMiddleware
 
 from common_utils.subscription import config
@@ -73,6 +78,22 @@ async def handle_about_product(query: CallbackQuery):
                 bot, user_bots[0].bot_id if user_bots else None, user_id, cache_resources_file_id_store
             )
 
+@commands_router.callback_query(lambda query: MoreInfoOnProductBeforeRefKeyboard.callback_validator(query.data))
+async def handle_more_info_on_product_before_ref(query: CallbackQuery):
+    callback_data = MoreInfoOnProductBeforeRefKeyboard.Callback.model_validate_json(query.data)
+    user_id = query.from_user.id
+    match callback_data.a:
+        case callback_data.ActionEnum.BACK:
+            await query.message.delete()
+            user_bots = await user_role_db.get_user_bots(user_id)
+            await send_instructions(
+                bot, user_bots[0].bot_id if user_bots else None, user_id, cache_resources_file_id_store
+            )
+        case callback_data.ActionEnum.MORE_INFO:
+            await query.message.edit_text(
+                text=MessageTexts.ABOUT_PRODUCT,
+                reply_markup=GetLinkAndKPKeyboard.get_keyboard(),
+            )
 
 async def _handle_admin_invite_link(message: Message, state: FSMContext, deep_link_params: list[str]):
     """Проверяет пригласительную ссылку и добавляет пользователя в администраторы"""

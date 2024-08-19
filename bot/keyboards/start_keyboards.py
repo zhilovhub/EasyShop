@@ -141,3 +141,47 @@ class AboutProductKeyboard:
                 ],
             ],
         )
+
+
+class GetLinkAndKPKeyboard:
+    class Callback(BaseModel):
+        class ActionEnum(Enum):
+            GET_LINK = "get_link"
+            BACK = "back_to_ref_start"
+
+        model_config = ConfigDict(from_attributes=True, populate_by_name=True)
+
+        n: str = Field(default="get_link_and_kp", frozen=True)
+        a: ActionEnum
+
+    @staticmethod
+    @callback_json_validator
+    def callback_json(action: Callback.ActionEnum) -> str:
+        return GetLinkAndKPKeyboard.Callback(a=action).model_dump_json(by_alias=True)
+
+    @staticmethod
+    def callback_validator(json_string: str) -> bool:
+        try:
+            GetLinkAndKPKeyboard.Callback.model_validate_json(json_string)
+            return True
+        except ValidationError:
+            return False
+
+    @staticmethod
+    def get_keyboard() -> InlineKeyboardMarkup:
+        actions = GetLinkAndKPKeyboard.Callback.ActionEnum
+
+        return InlineKeyboardMarkup(
+            inline_keyboard=[
+                [
+                    InlineKeyboardButton(
+                        text="🔗 Получить ссылку", callback_data=GetLinkAndKPKeyboard.callback_json(actions.GET_LINK)
+                    ),
+                ],
+                [
+                    InlineKeyboardButton(
+                        text="⬅️ Назад", callback_data=GetLinkAndKPKeyboard.callback_json(actions.BACK)
+                    ),
+                ],
+            ]
+        )
