@@ -95,6 +95,18 @@ async def handle_more_info_on_product_before_ref(query: CallbackQuery):
                 reply_markup=GetLinkAndKPKeyboard.get_keyboard(),
             )
 
+@commands_router.callback_query(lambda query: GetLinkAndKPKeyboard.callback_validator(query.data))
+async def handle_get_link_and_kp(query: CallbackQuery):
+    callback_data = GetLinkAndKPKeyboard.Callback.model_validate_json(query.data)
+    match callback_data.a:
+        case callback_data.ActionEnum.GET_LINK:
+            pass
+        case callback_data.ActionEnum.BACK:
+            await query.message.edit_text(
+                text=MessageTexts.ABOUT_REF_SYSTEM, reply_markup=MoreInfoOnProductBeforeRefKeyboard.get_keyboard()
+            )
+
+
 async def _handle_admin_invite_link(message: Message, state: FSMContext, deep_link_params: list[str]):
     """Проверяет пригласительную ссылку и добавляет пользователя в администраторы"""
 
