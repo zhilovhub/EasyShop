@@ -190,11 +190,11 @@ class GetLinkAndKPKeyboard:
 class BackToStartMenuKeyboard:
     class Callback(BaseModel):
         class ActionEnum(Enum):
-            BACK_TO_START_MENU = "back_to_start_menu"
+            BACK_TO_START_MENU = "back_to_start_menu_final"
 
         model_config = ConfigDict(from_attributes=True, populate_by_name=True)
 
-        n: str = Field(default="back_to_start_menu", frozen=True)
+        n: str = Field(default="back_to_start_menu_f", frozen=True)
         a: ActionEnum
 
     @staticmethod

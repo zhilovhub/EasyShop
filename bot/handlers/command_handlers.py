@@ -71,7 +71,6 @@ async def handle_about_product(query: CallbackQuery):
 @commands_router.callback_query(lambda query: MoreInfoOnProductBeforeRefKeyboard.callback_validator(query.data))
 async def handle_more_info_on_product_before_ref(query: CallbackQuery):
     callback_data = MoreInfoOnProductBeforeRefKeyboard.Callback.model_validate_json(query.data)
-    user_id = query.from_user.id
     match callback_data.a:
         case callback_data.ActionEnum.BACK:
             await query.message.edit_caption(
@@ -79,7 +78,7 @@ async def handle_more_info_on_product_before_ref(query: CallbackQuery):
             )
         case callback_data.ActionEnum.MORE_INFO:
             await query.message.edit_caption(
-                text=MessageTexts.ABOUT_PRODUCT,
+                caption=MessageTexts.ABOUT_PRODUCT,
                 reply_markup=GetLinkAndKPKeyboard.get_keyboard(),
             )
 
@@ -112,7 +111,7 @@ async def handle_get_link_and_kp(query: CallbackQuery):
             )
         case callback_data.ActionEnum.BACK:
             await query.message.edit_caption(
-                text=MessageTexts.ABOUT_REF_SYSTEM, reply_markup=MoreInfoOnProductBeforeRefKeyboard.get_keyboard()
+                caption=MessageTexts.ABOUT_REF_SYSTEM, reply_markup=MoreInfoOnProductBeforeRefKeyboard.get_keyboard()
             )
 
 
