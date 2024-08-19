@@ -1,10 +1,11 @@
 from datetime import datetime
 
 from aiogram import F, Bot
+from aiogram.exceptions import TelegramBadRequest
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.storage.base import StorageKey
 from aiogram.filters import CommandStart, Command, CommandObject, StateFilter
-from aiogram.types import Message, ReplyKeyboardRemove, CallbackQuery
+from aiogram.types import Message, ReplyKeyboardRemove, CallbackQuery, FSInputFile
 
 from bot.main import bot, cache_resources_file_id_store, subscription, dp
 from bot.utils import MessageTexts
@@ -22,6 +23,8 @@ from bot.keyboards.start_keyboards import (
 )
 from bot.middlewaries.subscription_middleware import CheckSubscriptionMiddleware
 
+from common_utils.config import common_settings
+from common_utils.ref_utils import _handle_ref_user
 from common_utils.subscription import config
 from common_utils.keyboards.keyboards import InlineBotMenuKeyboard
 from common_utils.subscription.subscription import UserHasAlreadyStartedTrial
@@ -78,6 +81,7 @@ async def handle_about_product(query: CallbackQuery):
                 bot, user_bots[0].bot_id if user_bots else None, user_id, cache_resources_file_id_store
             )
 
+
 @commands_router.callback_query(lambda query: MoreInfoOnProductBeforeRefKeyboard.callback_validator(query.data))
 async def handle_more_info_on_product_before_ref(query: CallbackQuery):
     callback_data = MoreInfoOnProductBeforeRefKeyboard.Callback.model_validate_json(query.data)
@@ -95,12 +99,30 @@ async def handle_more_info_on_product_before_ref(query: CallbackQuery):
                 reply_markup=GetLinkAndKPKeyboard.get_keyboard(),
             )
 
+
 @commands_router.callback_query(lambda query: GetLinkAndKPKeyboard.callback_validator(query.data))
 async def handle_get_link_and_kp(query: CallbackQuery):
     callback_data = GetLinkAndKPKeyboard.Callback.model_validate_json(query.data)
     match callback_data.a:
         case callback_data.ActionEnum.GET_LINK:
-            pass
+            file_ids = cache_resources_file_id_store.get_data()
+            file_name = "ezshop_kp.pdf"
+            user_id = query.from_user.id
+            ref_link = await _handle_ref_user(user_id, bot)
+            try:
+                await query.message.delete()
+                await query.message.answer_document(
+                    document=file_ids[file_name],
+                    **MessageTexts.generate_ref_system_text(ref_link),
+                )
+            except (TelegramBadRequest, KeyError) as e:
+                logger.info(f"error while sending KP file.... cache is empty, sending raw files {e}")
+                kp_message = await query.message.answer_document(
+                    document=FSInputFile(common_settings.RESOURCES_PATH.format(file_name)),
+                    **MessageTexts.generate_ref_system_text(ref_link),
+                )
+                file_ids[file_name] = kp_message.document[-1].file_id
+                cache_resources_file_id_store.update_data(file_ids)
         case callback_data.ActionEnum.BACK:
             await query.message.edit_text(
                 text=MessageTexts.ABOUT_REF_SYSTEM, reply_markup=MoreInfoOnProductBeforeRefKeyboard.get_keyboard()
