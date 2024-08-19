@@ -10,15 +10,15 @@ function PricedBlockOption({data}) {
     const productList = useSelector(state => state.productList.productList);
 
 
-    function onPriceClick(newPrice, status){
+    function onPriceClick(newVariant, status){
 
         const newProducts = productList.map((product, index) => {
             if (product.id == data.productId){
                 product.extra_options = product.extra_options.map(extraOption => {
                     if (extraOption.name == data.name){
                         extraOption.variantsIsSelected = extraOption.variants_prices.map(item => {return false})
-                        extraOption.variants_prices.map((variantPrice, index) => {
-                            if(variantPrice == newPrice){
+                        extraOption.variants.map((variant, index) => {
+                            if(variant == newVariant){
                                 extraOption.variantsIsSelected[index] = status;
                             }else{
                                 extraOption.variantsIsSelected[index] = false;
@@ -40,7 +40,7 @@ function PricedBlockOption({data}) {
                 <div className={styles.variant_container}>
                 {data.variants.map((item, index) => {
                     return(
-                    <div className={data.variantsIsSelected[index] ? styles.variant_block_active : styles.variant_block} onClick={() => onPriceClick(data.variants_prices[index], !data.variantsIsSelected[index])}>
+                    <div className={data.variantsIsSelected[index] ? styles.variant_block_active : styles.variant_block} onClick={() => onPriceClick(data.variants[index], !data.variantsIsSelected[index])}>
                         <p className={styles.top_item}>{item}</p>
                         <p className={styles.bottom_item}>{data.variants_prices[index]} ₽</p>
                     </div>
