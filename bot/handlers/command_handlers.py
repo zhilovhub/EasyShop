@@ -48,12 +48,14 @@ async def handle_product_info(query: CallbackQuery):
 
     match callback_data.a:
         case callback_data.ActionEnum.START_REF:
-            await query.message.edit_caption(
+            await query.message.delete()
+            await query.message.answer(
                 text=MessageTexts.ABOUT_REF_SYSTEM, reply_markup=MoreInfoOnProductBeforeRefKeyboard.get_keyboard()
             )
 
         case callback_data.ActionEnum.ABOUT_PRODUCT:
-            await query.message.edit_caption(
+            await query.message.delete()
+            await query.message.answer(
                 text=MessageTexts.ABOUT_PRODUCT,
                 reply_markup=AboutProductKeyboard.get_keyboard(),
             )
