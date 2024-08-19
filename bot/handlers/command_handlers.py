@@ -121,8 +121,11 @@ async def handle_get_link_and_kp(query: CallbackQuery):
                     document=FSInputFile(common_settings.RESOURCES_PATH.format(file_name)),
                     **MessageTexts.generate_ref_system_text(ref_link),
                 )
-                file_ids[file_name] = kp_message.document[-1].file_id
+                file_ids[file_name] = kp_message.document.file_id
                 cache_resources_file_id_store.update_data(file_ids)
+            await query.message.answer(
+                **MessageTexts.generate_ref_system_text(ref_link),
+            )
         case callback_data.ActionEnum.BACK:
             await query.message.edit_text(
                 text=MessageTexts.ABOUT_REF_SYSTEM, reply_markup=MoreInfoOnProductBeforeRefKeyboard.get_keyboard()
