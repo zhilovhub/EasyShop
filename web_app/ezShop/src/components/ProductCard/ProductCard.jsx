@@ -48,7 +48,7 @@ function ProductCard(props) {
         setImgUrlIsLoad(true)
     // }
 
-    }, [])
+    }, [props.product])
 
 
 
