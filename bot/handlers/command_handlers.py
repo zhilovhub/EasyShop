@@ -41,31 +41,19 @@ from database.models.referral_invite_model import ReferralInviteSchemaWithoutId
 from logs.config import logger
 
 
-# @commands_router.callback_query(lambda query: query.data.startswith("ref_start"))
-# async def handle_referral_link(query: CallbackQuery):
-#     user_id = query.from_user.id
-#     ref_link = await _handle_ref_user(user_id, bot)
-#     await query.message.answer(
-#         **MessageTexts.generate_ref_system_text(ref_link),
-#     )
-#     await query.answer()
-
-
 @commands_router.callback_query(lambda query: MainStartKeyboard.callback_validator(query.data))
 async def handle_product_info(query: CallbackQuery):
     callback_data = MainStartKeyboard.Callback.model_validate_json(query.data)
 
     match callback_data.a:
         case callback_data.ActionEnum.START_REF:
-            await query.message.delete()
-            await query.message.answer(
-                text=MessageTexts.ABOUT_REF_SYSTEM, reply_markup=MoreInfoOnProductBeforeRefKeyboard.get_keyboard()
+            await query.message.edit_caption(
+                caption=MessageTexts.ABOUT_REF_SYSTEM, reply_markup=MoreInfoOnProductBeforeRefKeyboard.get_keyboard()
             )
 
         case callback_data.ActionEnum.ABOUT_PRODUCT:
-            await query.message.delete()
-            await query.message.answer(
-                text=MessageTexts.ABOUT_PRODUCT,
+            await query.message.edit_caption(
+                caption=MessageTexts.ABOUT_PRODUCT,
                 reply_markup=AboutProductKeyboard.get_keyboard(),
             )
 
@@ -73,13 +61,10 @@ async def handle_product_info(query: CallbackQuery):
 @commands_router.callback_query(lambda query: AboutProductKeyboard.callback_validator(query.data))
 async def handle_about_product(query: CallbackQuery):
     callback_data = AboutProductKeyboard.Callback.model_validate_json(query.data)
-    user_id = query.from_user.id
     match callback_data.a:
         case callback_data.ActionEnum.BACK:
-            await query.message.delete()
-            user_bots = await user_role_db.get_user_bots(user_id)
-            await send_instructions(
-                bot, user_bots[0].bot_id if user_bots else None, user_id, cache_resources_file_id_store
+            await query.message.edit_caption(
+                caption=MessageTexts.INSTRUCTION_MESSAGE.value, reply_markup=MainStartKeyboard.get_keyboard()
             )
 
 
@@ -89,13 +74,11 @@ async def handle_more_info_on_product_before_ref(query: CallbackQuery):
     user_id = query.from_user.id
     match callback_data.a:
         case callback_data.ActionEnum.BACK:
-            await query.message.delete()
-            user_bots = await user_role_db.get_user_bots(user_id)
-            await send_instructions(
-                bot, user_bots[0].bot_id if user_bots else None, user_id, cache_resources_file_id_store
+            await query.message.edit_caption(
+                caption=MessageTexts.INSTRUCTION_MESSAGE.value, reply_markup=MainStartKeyboard.get_keyboard()
             )
         case callback_data.ActionEnum.MORE_INFO:
-            await query.message.edit_text(
+            await query.message.edit_caption(
                 text=MessageTexts.ABOUT_PRODUCT,
                 reply_markup=GetLinkAndKPKeyboard.get_keyboard(),
             )
@@ -128,7 +111,7 @@ async def handle_get_link_and_kp(query: CallbackQuery):
                 **MessageTexts.generate_ref_system_text(ref_link), reply_markup=BackToStartMenuKeyboard.get_keyboard()
             )
         case callback_data.ActionEnum.BACK:
-            await query.message.edit_text(
+            await query.message.edit_caption(
                 text=MessageTexts.ABOUT_REF_SYSTEM, reply_markup=MoreInfoOnProductBeforeRefKeyboard.get_keyboard()
             )
 
