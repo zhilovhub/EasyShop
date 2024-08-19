@@ -19,20 +19,6 @@ async def send_instructions(
     file_ids = cache_resources_file_id_store.get_data()
     file_name = "start_instruction.png"
 
-    # bot_father_keyboard = InlineKeyboardMarkup(
-    #     inline_keyboard=[
-    #         [
-    #             InlineKeyboardButton(text="🔎 Инструкция", url="https://ezshoptg.tilda.ws/"),
-    #             InlineKeyboardButton(text="ℹ️ О продукте", callback_data="product_info"),
-    #         ],
-    #         [InlineKeyboardButton(text="🤝 Реферальная система", callback_data="ref_start")],
-    #         [InlineKeyboardButton(text="🔮 Подписаться на канал", url="t.me/EzShopOfficial")],
-    #         [
-    #             InlineKeyboardButton(text="🔐 Получить токен", url="t.me/BotFather"),
-    #         ],
-    #     ]
-    # )
-
     bot_father_keyboard = MainStartKeyboard.get_keyboard()
 
     try:

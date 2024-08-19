@@ -100,3 +100,44 @@ class MoreInfoOnProductBeforeRefKeyboard:
                 ],
             ],
         )
+
+
+class AboutProductKeyboard:
+    class Callback(BaseModel):
+        class ActionEnum(Enum):
+            BACK = "back_to_start_menu"
+
+        model_config = ConfigDict(from_attributes=True, populate_by_name=True)
+
+        n: str = Field(default="about_product", frozen=True)
+        a: ActionEnum
+
+    @staticmethod
+    @callback_json_validator
+    def callback_json(action: Callback.ActionEnum) -> str:
+        return AboutProductKeyboard.Callback(a=action).model_dump_json(by_alias=True)
+
+    @staticmethod
+    def callback_validator(json_string: str) -> bool:
+        try:
+            AboutProductKeyboard.Callback.model_validate_json(json_string)
+            return True
+        except ValidationError:
+            return False
+
+    @staticmethod
+    def get_keyboard() -> InlineKeyboardMarkup:
+        actions = AboutProductKeyboard.Callback.ActionEnum
+
+        return InlineKeyboardMarkup(
+            inline_keyboard=[
+                [
+                    InlineKeyboardButton(text="🔐 Получить токен", url="t.me/BotFather"),
+                ],
+                [
+                    InlineKeyboardButton(
+                        text="⬅️ Назад", callback_data=AboutProductKeyboard.callback_json(actions.BACK)
+                    ),
+                ],
+            ],
+        )
