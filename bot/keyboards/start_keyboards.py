@@ -32,7 +32,7 @@ class MainStartKeyboard:
             return False
 
     @staticmethod
-    async def get_keyboard() -> InlineKeyboardMarkup:
+    def get_keyboard() -> InlineKeyboardMarkup:
         actions = MainStartKeyboard.Callback.ActionEnum
 
         return InlineKeyboardMarkup(
