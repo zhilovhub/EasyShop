@@ -14,10 +14,9 @@ from bot.utils.send_instructions import send_instructions
 from bot.utils.check_subscription import check_subscription
 from bot.handlers.subscription_handlers import send_subscription_expire_notify, send_subscription_end_notify
 from bot.keyboards.subscription_keyboards import InlineSubscriptionContinueKeyboard
-from bot.keyboards.start_keyboards import MainStartKeyboard
+from bot.keyboards.start_keyboards import MainStartKeyboard, MoreInfoOnProductBeforeRefKeyboard
 from bot.middlewaries.subscription_middleware import CheckSubscriptionMiddleware
 
-from common_utils.ref_utils import _handle_ref_user
 from common_utils.subscription import config
 from common_utils.keyboards.keyboards import InlineBotMenuKeyboard
 from common_utils.subscription.subscription import UserHasAlreadyStartedTrial
@@ -49,7 +48,9 @@ async def handle_product_info(query: CallbackQuery):
 
     match callback_data.a:
         case callback_data.ActionEnum.START_REF:
-            pass
+            await query.message.answer(
+                MessageTexts.ABOUT_REF_SYSTEM, reply_markup=MoreInfoOnProductBeforeRefKeyboard.get_keyboard()
+            )
 
         case callback_data.ActionEnum.ABOUT_PRODUCT:
             await query.message.answer(

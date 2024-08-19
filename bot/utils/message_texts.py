@@ -148,6 +148,8 @@ class MessageTexts(Enum):
 
     ABOUT_PRODUCT = "🔎 Информация о продукте (...)"
 
+    ABOUT_REF_SYSTEM = "🤝 С помощью реферальной системы, вы сможете (...)"
+
     @staticmethod
     def bot_post_message_menu_message(post_message_type: PostMessageType) -> str:
         match post_message_type:
