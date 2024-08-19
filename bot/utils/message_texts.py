@@ -146,6 +146,8 @@ class MessageTexts(Enum):
 
     SELECT_CONTEST_TYPE = "Выберите тип конкурса:"
 
+    ABOUT_PRODUCT = "🔎 Информация о продукте (...)"
+
     @staticmethod
     def bot_post_message_menu_message(post_message_type: PostMessageType) -> str:
         match post_message_type:

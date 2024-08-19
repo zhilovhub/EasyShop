@@ -1,7 +1,8 @@
 from aiogram import Bot
-from aiogram.types import FSInputFile, InlineKeyboardMarkup, InlineKeyboardButton, ReplyKeyboardRemove
+from aiogram.types import FSInputFile, ReplyKeyboardRemove
 from aiogram.exceptions import TelegramBadRequest
 
+from bot.keyboards.start_keyboards import MainStartKeyboard
 from bot.utils import MessageTexts
 from bot.keyboards.main_menu_keyboards import ReplyBotMenuKeyboard
 
@@ -18,16 +19,21 @@ async def send_instructions(
     file_ids = cache_resources_file_id_store.get_data()
     file_name = "start_instruction.png"
 
-    bot_father_keyboard = InlineKeyboardMarkup(
-        inline_keyboard=[
-            [
-                InlineKeyboardButton(text="🔐 Получить токен", url="t.me/BotFather"),
-                InlineKeyboardButton(text="🔎 Инструкция", url="https://ezshoptg.tilda.ws/"),
-            ],
-            [InlineKeyboardButton(text="🤝 Реферальная система", callback_data="ref_start")],
-            [InlineKeyboardButton(text="🔮 Подписаться на канал", url="t.me/EzShopOfficial")],
-        ]
-    )
+    # bot_father_keyboard = InlineKeyboardMarkup(
+    #     inline_keyboard=[
+    #         [
+    #             InlineKeyboardButton(text="🔎 Инструкция", url="https://ezshoptg.tilda.ws/"),
+    #             InlineKeyboardButton(text="ℹ️ О продукте", callback_data="product_info"),
+    #         ],
+    #         [InlineKeyboardButton(text="🤝 Реферальная система", callback_data="ref_start")],
+    #         [InlineKeyboardButton(text="🔮 Подписаться на канал", url="t.me/EzShopOfficial")],
+    #         [
+    #             InlineKeyboardButton(text="🔐 Получить токен", url="t.me/BotFather"),
+    #         ],
+    #     ]
+    # )
+
+    bot_father_keyboard = MainStartKeyboard.get_keyboard()
 
     try:
         await bot.send_photo(

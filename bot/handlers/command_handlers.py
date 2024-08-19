@@ -14,6 +14,7 @@ from bot.utils.send_instructions import send_instructions
 from bot.utils.check_subscription import check_subscription
 from bot.handlers.subscription_handlers import send_subscription_expire_notify, send_subscription_end_notify
 from bot.keyboards.subscription_keyboards import InlineSubscriptionContinueKeyboard
+from bot.keyboards.start_keyboards import MainStartKeyboard
 from bot.middlewaries.subscription_middleware import CheckSubscriptionMiddleware
 
 from common_utils.ref_utils import _handle_ref_user
@@ -32,14 +33,29 @@ from database.models.referral_invite_model import ReferralInviteSchemaWithoutId
 from logs.config import logger
 
 
-@commands_router.callback_query(lambda query: query.data.startswith("ref_start"))
-async def handle_referral_link(query: CallbackQuery):
-    user_id = query.from_user.id
-    ref_link = await _handle_ref_user(user_id, bot)
-    await query.message.answer(
-        **MessageTexts.generate_ref_system_text(ref_link),
-    )
-    await query.answer()
+# @commands_router.callback_query(lambda query: query.data.startswith("ref_start"))
+# async def handle_referral_link(query: CallbackQuery):
+#     user_id = query.from_user.id
+#     ref_link = await _handle_ref_user(user_id, bot)
+#     await query.message.answer(
+#         **MessageTexts.generate_ref_system_text(ref_link),
+#     )
+#     await query.answer()
+
+
+@commands_router.callback_query(lambda query: MainStartKeyboard.callback_validator(query.data))
+async def handle_product_info(query: CallbackQuery):
+    callback_data = MainStartKeyboard.Callback.model_validate_json(query.data)
+
+    match callback_data.a:
+        case callback_data.ActionEnum.START_REF:
+            pass
+
+        case callback_data.ActionEnum.ABOUT_PRODUCT:
+            await query.message.answer(
+                MessageTexts.ABOUT_PRODUCT,
+            )
+            await query.answer()
 
 
 async def _handle_admin_invite_link(message: Message, state: FSMContext, deep_link_params: list[str]):
@@ -181,6 +197,8 @@ async def _check_if_new_user(
         await _start_trial(message, state, trial_duration)  # Задаём новому пользователю пробный период (статус TRIAL)
 
     user_bots = await user_role_db.get_user_bots(user_id)
+
+    await message.answer("Добро пожаловать")
 
     # Отправляем инструкцию. Если у человека есть бот, к инструкции добавится клавиатурное (не inline) меню бота.
     # Если ботов нет, то клавиатура удаляется с помощью ReplyKeyboardRemove
