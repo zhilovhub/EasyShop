@@ -25,7 +25,10 @@ async def check_subscription(event: Message | CallbackQuery, state: FSMContext =
     user_status = await subscription.get_user_status(user_id)
     match user_status:
         case UserStatusValues.SUBSCRIPTION_ENDED:
-            message_text = "Твоя подписка закончилась, чтобы продлить её на месяц нажми на кнопку ниже."
+            message_text = (
+                "Твоя подписка закончилась, чтобы продлить её на месяц нажми на кнопку ниже.\n"
+                "\nЕсли Вы реферал, то проигнорируйте это сообщение"
+            )
             if isinstance(event, Message):
                 await event.answer(
                     message_text, reply_markup=InlineSubscriptionContinueKeyboard.get_keyboard(bot_id=bot_id)

@@ -12,15 +12,14 @@ from aiogram.fsm.context import FSMContext
 from aiogram.utils.token import validate_token, TokenValidationError
 from aiogram.fsm.storage.base import StorageKey
 from aiogram.utils.formatting import Text, Bold, Italic
-from aiogram.utils.deep_linking import create_start_link
 
-from bot.main import bot, QUESTION_MESSAGES, cache_resources_file_id_store
+from bot.main import bot, QUESTION_MESSAGES
 from bot.utils import MessageTexts
 from bot.states.states import States
 from bot.handlers.routers import admin_bot_menu_router
 from bot.utils.product_utils import generate_article
 from bot.utils.custom_bot_api import start_custom_bot, stop_custom_bot
-from bot.utils.send_instructions import send_instructions
+from bot.utils.send_instructions import greetings_message
 from bot.keyboards.channel_keyboards import (
     InlineChannelPublishAcceptKeyboard,
     InlineChannelsListKeyboard,
@@ -53,6 +52,7 @@ from common_utils.keyboards.keyboards import (
     InlineBotMainWebAppButton,
 )
 from common_utils.broadcasting.broadcasting import send_event, EventTypes
+from common_utils.ref_utils import handle_ref_user
 from common_utils.storage.custom_bot_storage import custom_bot_storage
 from common_utils.keyboards.order_manage_keyboards import (
     InlineOrderCancelKeyboard,
@@ -74,18 +74,15 @@ from database.config import (
     option_db,
     order_option_db,
     channel_db,
-    referral_invite_db,
 )
 from database.models.bot_model import BotIntegrityError, BotNotFoundError
 from database.models.order_model import OrderSchema, OrderNotFoundError, OrderStatusValues
 from database.models.option_model import OptionNotFoundError
 from database.models.mailing_model import MailingNotFoundError
 from database.models.product_model import ProductWithoutId, ProductNotFoundError
-from database.models.user_model import UserStatusValues
 from database.models.user_role_model import UserRoleSchema, UserRoleValues
 from database.models.post_message_model import PostMessageType
 from database.models.product_review_model import ProductReviewNotFoundError
-from database.models.referral_invite_model import ReferralInviteNotFoundError, ReferralInviteSchemaWithoutId
 
 from logs.config import logger, extra_params
 
@@ -653,24 +650,7 @@ async def bot_menu_callback_handler(query: CallbackQuery, state: FSMContext):
             await query.answer("Ваш бот приостановлен ❌", show_alert=True)
 
         case callback_data.ActionEnum.REFERRAL_SYSTEM:
-            ref_link = await create_start_link(bot, f"ref_{user_id}")
-            try:
-                invite = await referral_invite_db.get_invite_by_user_id(user_id)
-                if invite.referral_deep_link is None:
-                    invite.referral_deep_link = ref_link
-                    await referral_invite_db.update_invite(invite)
-                else:
-                    ref_link = invite.referral_deep_link
-
-            except ReferralInviteNotFoundError:
-                user = await user_db.get_user(user_id=user_id)
-                await referral_invite_db.add_invite(
-                    ReferralInviteSchemaWithoutId(
-                        user_id=user_id,
-                        referral_deep_link=ref_link,
-                        paid=user.status == UserStatusValues.SUBSCRIBED,
-                    )
-                )
+            ref_link = await handle_ref_user(user_id, bot)
             await query.message.edit_text(
                 **MessageTexts.generate_ref_system_text(ref_link),
                 reply_markup=InlineBackFromRefKeyboard.get_keyboard(bot_id),
@@ -873,7 +853,7 @@ async def bot_menu_handler(message: Message, state: FSMContext):
     state_data = await state.get_data()
     if "bot_id" in state_data and state_data["bot_id"] == -1:
         await state.set_state(States.WAITING_FOR_TOKEN)
-        await send_instructions(bot, None, message.from_user.id, cache_resources_file_id_store)
+        await greetings_message(bot, None, message)
         return await message.answer("Ваш список ботов пуст, используйте инструкцию выше 👆")
     custom_bot = await bot_db.get_bot(state_data["bot_id"])
 

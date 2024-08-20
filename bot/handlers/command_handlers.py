@@ -1,21 +1,31 @@
 from datetime import datetime
 
 from aiogram import F, Bot
+from aiogram.exceptions import TelegramBadRequest
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.storage.base import StorageKey
 from aiogram.filters import CommandStart, Command, CommandObject, StateFilter
-from aiogram.types import Message, ReplyKeyboardRemove
+from aiogram.types import Message, ReplyKeyboardRemove, CallbackQuery, FSInputFile
 
 from bot.main import bot, cache_resources_file_id_store, subscription, dp
 from bot.utils import MessageTexts
 from bot.states.states import States
 from bot.handlers.routers import commands_router
-from bot.utils.send_instructions import send_instructions
+from bot.utils.send_instructions import greetings_message
 from bot.utils.check_subscription import check_subscription
 from bot.handlers.subscription_handlers import send_subscription_expire_notify, send_subscription_end_notify
 from bot.keyboards.subscription_keyboards import InlineSubscriptionContinueKeyboard
+from bot.keyboards.start_keyboards import (
+    InstructionKeyboard,
+    ShortDescriptionKeyboard,
+    RefShortDescriptionKeyboard,
+    RefFullDescriptionKeyboard,
+    RefLinkKeyboard,
+)
 from bot.middlewaries.subscription_middleware import CheckSubscriptionMiddleware
 
+from common_utils.config import common_settings
+from common_utils.ref_utils import handle_ref_user
 from common_utils.subscription import config
 from common_utils.keyboards.keyboards import InlineBotMenuKeyboard
 from common_utils.subscription.subscription import UserHasAlreadyStartedTrial
@@ -29,6 +39,135 @@ from database.models.user_role_model import UserRoleSchema, UserRoleValues, User
 from database.models.referral_invite_model import ReferralInviteSchemaWithoutId
 
 from logs.config import logger
+
+
+@commands_router.callback_query(lambda query: ShortDescriptionKeyboard.callback_validator(query.data))
+async def short_description_handler(query: CallbackQuery):
+    callback_data = ShortDescriptionKeyboard.Callback.model_validate_json(query.data)
+
+    chat_id = query.from_user.id
+    from_chat_id = -1002218211760
+
+    match callback_data.a:
+        case callback_data.ActionEnum.START_USING:
+            await query.message.delete()
+            await bot.forward_message(chat_id=chat_id, from_chat_id=from_chat_id, message_id=8)
+            await query.message.answer(
+                **MessageTexts.generate_menu_start_text(), reply_markup=InstructionKeyboard.get_keyboard()
+            )
+
+        case callback_data.ActionEnum.REF_DESCRIPTION:
+            await query.message.delete()
+            await bot.forward_message(chat_id=chat_id, from_chat_id=from_chat_id, message_id=18)
+            await query.message.answer(
+                **MessageTexts.generate_menu_start_text(), reply_markup=RefShortDescriptionKeyboard.get_keyboard()
+            )
+
+
+@commands_router.callback_query(lambda query: InstructionKeyboard.callback_validator(query.data))
+async def instructions_handler(query: CallbackQuery):
+    callback_data = InstructionKeyboard.Callback.model_validate_json(query.data)
+
+    chat_id = query.from_user.id
+    from_chat_id = -1002218211760
+
+    match callback_data.a:
+        case callback_data.ActionEnum.BACK:
+            await query.message.delete()
+            await bot.forward_message(chat_id=chat_id, from_chat_id=from_chat_id, message_id=6)
+            await query.message.answer(
+                **MessageTexts.generate_menu_start_text(), reply_markup=ShortDescriptionKeyboard.get_keyboard()
+            )
+
+
+@commands_router.callback_query(lambda query: RefShortDescriptionKeyboard.callback_validator(query.data))
+async def ref_short_description_handler(query: CallbackQuery):
+    callback_data = RefShortDescriptionKeyboard.Callback.model_validate_json(query.data)
+
+    chat_id = query.from_user.id
+    from_chat_id = -1002218211760
+
+    match callback_data.a:
+        case callback_data.ActionEnum.REWARDS:
+            await query.message.delete()
+            await bot.forward_messages(chat_id=chat_id, from_chat_id=from_chat_id, message_ids=[10, 11, 12, 13])
+            await query.message.answer(
+                **MessageTexts.generate_menu_start_text(), reply_markup=RefFullDescriptionKeyboard.get_keyboard()
+            )
+        case callback_data.ActionEnum.BACK:
+            await query.message.delete()
+            await bot.forward_message(chat_id=chat_id, from_chat_id=from_chat_id, message_id=6)
+            await query.message.answer(
+                **MessageTexts.generate_menu_start_text(), reply_markup=ShortDescriptionKeyboard.get_keyboard()
+            )
+
+
+@commands_router.callback_query(lambda query: RefFullDescriptionKeyboard.callback_validator(query.data))
+async def ref_full_description_handler(query: CallbackQuery):
+    callback_data = RefFullDescriptionKeyboard.Callback.model_validate_json(query.data)
+
+    chat_id = query.from_user.id
+    from_chat_id = -1002218211760
+
+    match callback_data.a:
+        case callback_data.ActionEnum.CONTINUE:
+            file_ids = cache_resources_file_id_store.get_data()
+            file_name = "ezshop_kp.pdf"
+            user_id = query.from_user.id
+            ref_link = await handle_ref_user(user_id, bot)
+
+            await query.message.answer(
+                **MessageTexts.generate_ref_system_text(ref_link), reply_markup=RefLinkKeyboard.get_keyboard()
+            )
+
+            try:
+                await query.message.delete()
+                await query.message.answer_document(
+                    document=file_ids[file_name],
+                    **MessageTexts.generate_ref_system_text(ref_link),
+                )
+            except (TelegramBadRequest, KeyError) as e:
+                logger.info(f"error while sending KP file.... cache is empty, sending raw files {e}")
+                kp_message = await query.message.answer_document(
+                    document=FSInputFile(common_settings.RESOURCES_PATH.format(file_name)),
+                    **MessageTexts.generate_ref_system_text(ref_link),
+                )
+                file_ids[file_name] = kp_message.document.file_id
+                cache_resources_file_id_store.update_data(file_ids)
+        case callback_data.ActionEnum.BACK:
+            await query.message.delete()
+            await bot.forward_message(chat_id=chat_id, from_chat_id=from_chat_id, message_id=18)
+            await query.message.answer(
+                **MessageTexts.generate_menu_start_text(), reply_markup=RefShortDescriptionKeyboard.get_keyboard()
+            )
+        case callback_data.ActionEnum.MENU:
+            await query.message.delete()
+            await bot.forward_message(chat_id=chat_id, from_chat_id=from_chat_id, message_id=6)
+            await query.message.answer(
+                **MessageTexts.generate_menu_start_text(), reply_markup=ShortDescriptionKeyboard.get_keyboard()
+            )
+
+
+@commands_router.callback_query(lambda query: RefLinkKeyboard.callback_validator(query.data))
+async def ref_link_handler(query: CallbackQuery):
+    callback_data = RefLinkKeyboard.Callback.model_validate_json(query.data)
+
+    chat_id = query.from_user.id
+    from_chat_id = -1002218211760
+
+    match callback_data.a:
+        case callback_data.ActionEnum.BACK:
+            await query.message.delete()
+            await bot.forward_messages(chat_id=chat_id, from_chat_id=from_chat_id, message_ids=[10, 11, 12, 13])
+            await query.message.answer(
+                **MessageTexts.generate_menu_start_text(), reply_markup=RefFullDescriptionKeyboard.get_keyboard()
+            )
+        case callback_data.ActionEnum.MENU:
+            await query.message.delete()
+            await bot.forward_message(chat_id=chat_id, from_chat_id=from_chat_id, message_id=6)
+            await query.message.answer(
+                **MessageTexts.generate_menu_start_text(), reply_markup=ShortDescriptionKeyboard.get_keyboard()
+            )
 
 
 async def _handle_admin_invite_link(message: Message, state: FSMContext, deep_link_params: list[str]):
@@ -93,11 +232,11 @@ async def _send_bot_menu(user_id: int, state: FSMContext, user_bots: list | None
         await state.set_data({"bot_id": bot_id})
 
 
-async def remove_bot_admin(user_id: int, user_state: FSMContext):
+async def remove_bot_admin(user_id: int, message: Message, user_state: FSMContext):
     user_bots = await user_role_db.get_user_bots(user_id)
 
     if not user_bots:
-        await send_instructions(bot, user_bots[0].bot_id if user_bots else None, user_id, cache_resources_file_id_store)
+        await greetings_message(bot, user_bots[0].bot_id if user_bots else None, message)
         await user_state.set_state(States.WAITING_FOR_TOKEN)
         await user_state.set_data({"bot_id": -1})
     else:
@@ -163,6 +302,7 @@ async def _check_if_new_user(
                 subscribed_until=None,
             )
         )
+
         if is_ref:
             logger.info(f"adding user {user_id} to referral system...")
             await referral_invite_db.add_invite(ReferralInviteSchemaWithoutId(user_id=user_id, came_from=came_from))
@@ -172,13 +312,7 @@ async def _check_if_new_user(
     user_bots = await user_role_db.get_user_bots(user_id)
 
     # Отправляем инструкцию. Если у человека есть бот, к инструкции добавится клавиатурное (не inline) меню бота.
-    # Если ботов нет, то клавиатура удаляется с помощью ReplyKeyboardRemove
-    await send_instructions(
-        bot=bot,
-        custom_bot_id=user_bots[0].bot_id if user_bots else None,
-        chat_id=user_id,
-        cache_resources_file_id_store=cache_resources_file_id_store,
-    )
+    await greetings_message(bot, user_bots[0].bot_id if user_bots else None, message)
 
     if not user_bots:
         await state.set_state(States.WAITING_FOR_TOKEN)  # Просто ожидаем токен, так как ботов у человека нет
@@ -236,7 +370,7 @@ async def rm_admin_command_handler(message: Message, state: FSMContext, command:
 
     await bot.send_message(user_id, "Вы больше не администратор этого бота.", reply_markup=ReplyKeyboardRemove())
 
-    await remove_bot_admin(user_id, user_state)
+    await remove_bot_admin(user_id, message, user_state)
 
 
 @commands_router.message(F.text == "/clear")
@@ -288,5 +422,4 @@ async def _start_trial(message: Message, state: FSMContext, trial_duration: int)
 
     await state.set_state(States.WAITING_FOR_TOKEN)
 
-    await message.answer(**MessageTexts.generate_trial_message(trial_duration), reply_markup=ReplyKeyboardRemove())
     await send_event(message.from_user, EventTypes.STARTED_TRIAL_SUCCESS)

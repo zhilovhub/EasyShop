@@ -47,6 +47,9 @@ class InlineSubscriptionContinueKeyboard:
                         ),
                     ),
                 ],
+                [
+                    InlineKeyboardButton(text="🤝 Реферальная система", callback_data="ref_start"),
+                ],
             ],
         )
 

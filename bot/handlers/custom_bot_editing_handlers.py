@@ -5,11 +5,11 @@ from aiogram.types import Message, CallbackQuery, ReplyKeyboardRemove, InputMedi
 from aiogram.exceptions import TelegramBadRequest
 from aiogram.fsm.context import FSMContext
 
-from bot.main import bot, cache_resources_file_id_store
+from bot.main import bot
 from bot.utils import MessageTexts
 from bot.states.states import States
 from bot.handlers.routers import custom_bot_editing_router
-from bot.utils.send_instructions import send_instructions
+from bot.utils.send_instructions import greetings_message
 from bot.keyboards.main_menu_keyboards import ReplyBotMenuKeyboard, ReplyBackBotMenuKeyboard
 
 from common_utils.config import common_settings
@@ -1210,7 +1210,7 @@ async def delete_bot_handler(message: Message, state: FSMContext):
             await bot_db.del_bot(custom_bot.bot_id)
 
             await message.answer("Бот удален", reply_markup=ReplyKeyboardRemove())
-            await send_instructions(bot, None, message.from_user.id, cache_resources_file_id_store)
+            await greetings_message(bot, None, message)
             await state.set_state(States.WAITING_FOR_TOKEN)
             await state.set_data({"bot_id": -1})
 

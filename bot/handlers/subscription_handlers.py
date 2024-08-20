@@ -9,12 +9,12 @@ from aiogram.fsm.context import FSMContext
 from aiogram.fsm.storage.base import StorageKey
 from aiogram.utils.formatting import Text, Bold, Italic
 
-from bot.main import subscription, bot, dp, cache_resources_file_id_store, SENT_SUBSCRIPTION_NOTIFICATIONS
+from bot.main import subscription, bot, dp, SENT_SUBSCRIPTION_NOTIFICATIONS
 from bot.utils import MessageTexts
 from bot.states import States
 from bot.handlers.routers import subscribe_router
 from bot.utils.custom_bot_api import stop_custom_bot
-from bot.utils.send_instructions import send_instructions
+from bot.utils.send_instructions import greetings_message
 from bot.keyboards.main_menu_keyboards import ReplyBotMenuKeyboard, ReplyBackBotMenuKeyboard
 from bot.keyboards.subscription_keyboards import InlineSubscriptionContinueKeyboard, InlineAdminRefundKeyboard
 
@@ -113,7 +113,7 @@ async def waiting_payment_pay_handler(message: Message, state: FSMContext):
             )
         else:
             await state.set_state(States.WAITING_FOR_TOKEN)
-            await send_instructions(bot, None, user_id, cache_resources_file_id_store)
+            await greetings_message(bot, None, message)
             await message.answer("Ваш список ботов пуст, используйте инструкцию выше 👆")
         return
     elif message.content_type not in (ContentType.PHOTO, ContentType.DOCUMENT):
@@ -196,7 +196,7 @@ async def waiting_payment_approve_handler(message: Message, state: FSMContext):
             )
         else:
             await state.set_state(States.WAITING_FOR_TOKEN)
-            await send_instructions(bot, None, user_id, cache_resources_file_id_store)
+            await greetings_message(bot, None, message)
             await message.answer("Ваш список ботов пуст, используйте инструкцию выше 👆")
     else:
         await message.answer("Ваши данные отправлены на модерацию, ожидайте изменения статуса оплаты")
@@ -325,7 +325,7 @@ async def approve_pay_callback(query: CallbackQuery):
         await user_state.set_state(States.WAITING_FOR_TOKEN)
         await user_state.set_data({"bot_id": -1})
         await bot.send_message(user_id, "Оплата подписки подтверждена ✅")
-        await send_instructions(bot, None, user_id, cache_resources_file_id_store)
+        await greetings_message(bot, None, query.message)
         await bot.send_message(
             user_id,
             "Чтобы получить бота с магазином, воспользуйтесь инструкцией выше 👆",

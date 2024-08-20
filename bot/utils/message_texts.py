@@ -1,7 +1,7 @@
 from typing import List
 from datetime import datetime
 from enum import Enum
-from aiogram.utils.formatting import Text, Bold, TextLink
+from aiogram.utils.formatting import Text, Bold
 
 from database.models.product_model import ProductSchema
 from database.models.order_option_model import OrderOptionSchema
@@ -28,7 +28,6 @@ class MessageTexts(Enum):
 
 📌 Наш канал: @EzShopOfficial
 📌 По всем вопросам: @maxzim398
-📌 <b>Подробная инструкция:</b> https://ezshoptg.tilda.ws/
 """
     PROVIDER_TOKEN_INSTRUCTION_MESSAGE = """
 Чтобы подключить оплату через телеграм в Вашем боте, необходимо получить у @BotFather <b>Provider Token</b> платежной системы и отправить его в чат.
@@ -56,7 +55,6 @@ class MessageTexts(Enum):
 
 📌 Наш канал: @EzShopOfficial
 📌 По всем вопросам: @maxzim398
-📌 <b>Подробная инструкция:</b> https://ezshoptg.tilda.ws/
     """  # noqa
 
     SUBSCRIPTION_EXPIRE_NOTIFY = """
@@ -147,6 +145,10 @@ class MessageTexts(Enum):
     CONFIRM_STOCK_IMPORT = "Подтвердите импорт:"
 
     SELECT_CONTEST_TYPE = "Выберите тип конкурса:"
+
+    ABOUT_PRODUCT = "🔎 Информация о продукте (...)"
+
+    ABOUT_REF_SYSTEM = "🤝 С помощью реферальной системы, вы сможете (...)"
 
     @staticmethod
     def bot_post_message_menu_message(post_message_type: PostMessageType) -> str:
@@ -254,25 +256,22 @@ class MessageTexts(Enum):
         return result
 
     @staticmethod
-    def generate_trial_message(trial_duration: int):
-        result = Text(
-            "Пробная подписка активирована на ",
-            Bold(trial_duration),
-            " дней",
-            "\nЧтобы получить бота с магазином, воспользуйтесь инструкцией ниже 👇",
-        )
-        return result.as_kwargs()
-
-    @staticmethod
     def generate_ref_system_text(link: str) -> dict:
         return Text(
-            Bold("🎉 Ваша реферальная ссылка.\n"),
+            Bold("🎉 Ваша реферальная ссылка готова:\n"),
             link,
-            "\n\n💶 За каждого человека, перешедшего по ней и оформившего "
-            "платную подписку, Вы получите 1000 рублей сразу в течение 2 дней",
-            "\n\n🌸 Для красивого оформления сообщения, эту ссылку можно вшивать в текст сообщения, например ",
-            TextLink("вот так", url=link),
+            "\n\n🌸 Для красивого оформления сообщения, эту ссылку можно вшивать в текст сообщения: ",
+            "выделяете текст => ctrl+K\n\n",
+            "Мы понимаем, что не всегда легко найти нужного человека\n\n",
+            "🙏 Однако возможно ваши знакомые смогут нам помочь в поисках, поэтому просим вас: отправьте сообщение ",
+            Bold("всем"),
+            " своим знакомым\n\n",
+            "💙 Все вместе мы сможем запустить продукт, а вы также получите награду!",
         ).as_kwargs()
+
+    @staticmethod
+    def generate_menu_start_text() -> dict:
+        return Bold("Используйте одну из кнопок ниже 👇").as_kwargs()
 
     @staticmethod
     def generate_ref_payment_text(user_id: int, username: str, referrals: List[str], for_admin: bool):
