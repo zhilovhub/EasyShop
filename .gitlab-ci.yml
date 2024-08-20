@@ -1,36 +1,21 @@
 stages:
-#  - build
   - test
   - deploy
 
-.standard-rules:
+variables:
+#  GIT_CLEAN_FLAGS: -ffdx -e venv/
+  GIT_DEPTH: "3"
+
+workflow:
+  auto_cancel:
+    on_new_commit:
   rules:
     - if: '$CI_COMMIT_BRANCH != "master_release" && $CI_PIPELINE_SOURCE == "push"'
-      when: on_success
 
-#build-job:
-#  extends:
-#    - .standard-rules
-#  stage: build
-#  script:
-#    - ls -ltra  # TODO install .env variables
+.interruptable_job:
+  interruptible: true
 
-test-pep8-job:
-  image: python
-  extends:
-    - .standard-rules
-  allow_failure: true
-  stage: test
-  script:
-    - python -m venv venv
-    - pip install ruff
-    - ruff format --check
-    - ruff check
-
-deploy-job:
-  extends:
-    - .standard-rules
-  stage: deploy
+.set_ssh_script:
   before_script:
     - command -v ssh-agent >/dev/null || ( apt-get update -y && apt-get install openssh-client -y )
     - mkdir -p ~/.ssh
@@ -40,6 +25,12 @@ deploy-job:
     - eval $(ssh-agent -s)
     - ssh-add ~/.ssh/id_rsa
     - '[[ -f /.dockerenv ]] && echo -e "Host *\n\tStrictHostKeyChecking no\n\n" >> ~/.ssh/config'
+
+.autopull_script:
+  extends:
+    - .interruptable_job
+  variables:
+    GIT_STRATEGY: none
   script:
     - AUTHOR=$GITLAB_USER_LOGIN
     - echo $CI_PIPELINE_SOURCE
@@ -58,4 +49,52 @@ deploy-job:
       else LABEL=null;
       fi
     - if [ $LABEL == null ]; then exit 10; else echo Current label is $LABEL; fi
-    - ssh $USER@$IP "bash autopull.sh $LABEL $CI_COMMIT_BRANCH"
+    - ssh $USER@$IP "bash $SCRIPT_FILE $LABEL $CI_COMMIT_BRANCH"
+  needs: []
+
+test-pep8-job:
+  image: 
+    name: python:3.10.0-alpine
+    pull_policy: if-not-present
+  extends:
+    - .interruptable_job
+  allow_failure: true
+  stage: test
+  script:
+    - pip install ruff
+    - ruff format --check
+    - ruff check
+#  cache:  # TODO wanted to cache venv
+#    key: python-venv
+#    paths:
+#      - venv/*
+
+deploy_front_job:
+  stage: deploy
+  variables:
+    SCRIPT_FILE: front_autopull.sh
+  extends:
+    - .set_ssh_script
+    - .autopull_script
+  rules:
+    - changes:
+        paths:
+          - web_app/**/*
+
+deploy_backend_job:
+  stage: deploy
+  variables:
+    SCRIPT_FILE: autopull.sh
+  extends:
+    - .set_ssh_script
+    - .autopull_script
+  rules:
+    - changes:
+        paths:
+          - administration/**/*
+          - api/**/*
+          - bot/**/*
+          - common_utils/**/*
+          - database/**/*
+          - logs/**/*
+          - server/**/*
