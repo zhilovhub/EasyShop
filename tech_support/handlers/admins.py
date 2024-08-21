@@ -57,3 +57,4 @@ async def handle_answer_to_user(message: Message, state: FSMContext):
         reply_markup=AnswerUserButton.get_keyboard(lang),
     )
     await message.reply("Сообщение отправлено клиенту", reply_markup=ReplyKeyboardRemove())
+    await state.clear()

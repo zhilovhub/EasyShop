@@ -83,7 +83,7 @@ async def _output_faq(user: User, lang: str, state: FSMContext):
         await state.clear()
     await bot.send_message(
         chat_id=user.id,
-        **TechMessageTexts.get_start_message_text(lang).as_kwargs(),
+        **TechMessageTexts.get_faq_message_text(lang).as_kwargs(),
         reply_markup=FAQKeyboard.get_keyboard(lang),
     )
 
