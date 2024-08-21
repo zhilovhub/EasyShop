@@ -45,6 +45,11 @@ SENT_SUBSCRIPTION_NOTIFICATIONS = JsonStore(
     json_store_name="SENT_SUB_NOTIFICATIONS",
 )
 
+START_MESSAGE_ANALYTICS = JsonStore(
+    file_path=common_settings.RESOURCES_PATH.format("start_message_analytics.json"),
+    json_store_name="START_MESSAGE_ANALYTICS",
+)
+
 
 async def on_start():
     logger.info("onStart called")

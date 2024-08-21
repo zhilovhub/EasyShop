@@ -7,7 +7,11 @@ from aiogram.exceptions import TelegramBadRequest
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.storage.base import StorageKey
 
-from bot.main import bot, cache_resources_file_id_store, subscription, dp
+from bot.main import bot, cache_resources_file_id_store, subscription, dp, START_MESSAGE_ANALYTICS
+from bot.start_message_analytics.start_message_analytics_cache import (
+    StartMessageAnalyticSchema,
+    UserStartMessageActionSchema,
+)
 from bot.utils import MessageTexts
 from bot.states.states import States
 from bot.handlers.routers import commands_router
@@ -21,6 +25,7 @@ from bot.keyboards.start_keyboards import (
     RefShortDescriptionKeyboard,
     RefFullDescriptionKeyboard,
     RefLinkKeyboard,
+    CALLBACK_TO_STRING_NAME,
 )
 from bot.middlewaries.subscription_middleware import CheckSubscriptionMiddleware
 
@@ -38,7 +43,7 @@ from database.models.user_model import UserSchema, UserStatusValues, UserNotFoun
 from database.models.user_role_model import UserRoleSchema, UserRoleValues, UserRoleNotFoundError
 from database.models.referral_invite_model import ReferralInviteSchemaWithoutId
 
-from logs.config import logger
+from logs.config import logger, extra_params
 
 
 @commands_router.callback_query(lambda query: ShortDescriptionKeyboard.callback_validator(query.data))
@@ -48,6 +53,7 @@ async def short_description_handler(query: CallbackQuery):
     chat_id = query.from_user.id
     from_chat_id = -1002218211760
 
+    _update_analytics(callback_data.a, chat_id, query.from_user.username)
     match callback_data.a:
         case callback_data.ActionEnum.START_USING:
             await query.message.delete()
@@ -71,6 +77,7 @@ async def instructions_handler(query: CallbackQuery):
     chat_id = query.from_user.id
     from_chat_id = -1002218211760
 
+    _update_analytics(callback_data.a, chat_id, query.from_user.username)
     match callback_data.a:
         case callback_data.ActionEnum.BACK:
             await query.message.delete()
@@ -87,6 +94,7 @@ async def ref_short_description_handler(query: CallbackQuery):
     chat_id = query.from_user.id
     from_chat_id = -1002218211760
 
+    _update_analytics(callback_data.a, chat_id, query.from_user.username)
     match callback_data.a:
         case callback_data.ActionEnum.REWARDS:
             await query.message.delete()
@@ -109,6 +117,7 @@ async def ref_full_description_handler(query: CallbackQuery):
     chat_id = query.from_user.id
     from_chat_id = -1002218211760
 
+    _update_analytics(callback_data.a, chat_id, query.from_user.username)
     match callback_data.a:
         case callback_data.ActionEnum.CONTINUE:
             file_ids = cache_resources_file_id_store.get_data()
@@ -155,6 +164,7 @@ async def ref_link_handler(query: CallbackQuery):
     chat_id = query.from_user.id
     from_chat_id = -1002218211760
 
+    _update_analytics(callback_data.a, chat_id, query.from_user.username)
     match callback_data.a:
         case callback_data.ActionEnum.BACK:
             await query.message.delete()
@@ -423,3 +433,30 @@ async def _start_trial(message: Message, state: FSMContext, trial_duration: int)
     await state.set_state(States.WAITING_FOR_TOKEN)
 
     await send_event(message.from_user, EventTypes.STARTED_TRIAL_SUCCESS)
+
+
+def _update_analytics(action, user_id: int, username: str) -> None:
+    """
+    Method to add new user action to json analytics
+
+    See bot/start_message_analytics/start_message_analytics_cache.py
+    See bot/keyboards/start_keyboards.py
+    """
+    logger.info(f"user_id={user_id}: new start_message action: {action}", extra=extra_params(user_id=user_id))
+
+    current_data = StartMessageAnalyticSchema(**START_MESSAGE_ANALYTICS.get_data())
+
+    action_value_raw = CALLBACK_TO_STRING_NAME[action]
+    action_value = action_value_raw if isinstance(action_value_raw, str) else " ".join(action_value_raw)
+    current_data.actions.append(
+        UserStartMessageActionSchema(
+            user_id=user_id,
+            username=username,
+            action=action_value,
+            date=datetime.now(tz=None).strftime("%m_%d_%Y, %H:%M:%S"),
+        )
+    )
+    current_data_dict = current_data.model_dump()
+    current_data_dict[action_value] += 1
+
+    START_MESSAGE_ANALYTICS.update_data(StartMessageAnalyticSchema(**current_data_dict).model_dump())
