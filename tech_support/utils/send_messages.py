@@ -30,8 +30,8 @@ async def send_message_to_admins(
                 chat_id=admin,
                 reply_markup=AnswerKeyboard.get_keyboard(message.from_user.id, message.message_id),
             )
-            await message.reply(
-                **TechMessageTexts.get_sended_message_text(lang).as_kwargs(), reply_markup=ReplyKeyboardRemove()
-            )
         except Exception as e:
             tech_support_logger.warning("cant copy message to tech support admin", exc_info=e)
+    await message.reply(
+        **TechMessageTexts.get_sended_message_text(lang).as_kwargs(), reply_markup=ReplyKeyboardRemove()
+    )
