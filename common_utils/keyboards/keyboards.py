@@ -369,6 +369,7 @@ class InlinePresetsForThemesMenuKeyboard:
 class InlineEditThemeColorMenuKeyboard:
     class Callback(BaseModel):
         class ActionEnum(Enum):
+            SECONDARY_BG = "sbg"
             BG_COLOR = "bg"
             TEXT_COLOR = "text"
             BUTTON_COLOR = "button"
@@ -405,6 +406,12 @@ class InlineEditThemeColorMenuKeyboard:
                 [
                     InlineKeyboardButton(
                         text="🔳 Изменить цвет фона",
+                        callback_data=InlineEditThemeColorMenuKeyboard.callback_json(actions.SECONDARY_BG, bot_id),
+                    )
+                ],
+                [
+                    InlineKeyboardButton(
+                        text="🏷 Изменить цвет карточек",
                         callback_data=InlineEditThemeColorMenuKeyboard.callback_json(actions.BG_COLOR, bot_id),
                     )
                 ],

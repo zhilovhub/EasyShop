@@ -36,7 +36,7 @@ from common_utils.keyboards.keyboards import (
 from common_utils.themes import (
     THEME_EXAMPLE_PRESET_DARK,
     THEME_EXAMPLE_PRESET_LIGHT,
-    ThemeParamsSchema,
+    ThemeParamsSchema, is_valid_hex_code,
 )
 
 from database.config import bot_db, option_db, order_option_db, order_choose_option_db
@@ -163,7 +163,7 @@ async def colors_edit_callback_handler(query: CallbackQuery, state: FSMContext):
     match callback_data.a:
         case callback_data.ActionEnum.BG_COLOR:
             await query.message.answer(
-                "Введите цвет фона в формате #FFFFFF "
+                "Введите цвет карточек в формате #FFFFFF "
                 "(напишите telegram - для использования дефолтных цветов телеграма), "
                 "который будет отображаться у пользователей Вашего бота на странице магазина: ",
                 reply_markup=ReplyBackBotMenuKeyboard.get_keyboard(),
@@ -171,6 +171,17 @@ async def colors_edit_callback_handler(query: CallbackQuery, state: FSMContext):
             await query.answer()
             await state.set_state(States.EDITING_CUSTOM_COLOR)
             state_data["color_param"] = "bg_color"
+            await state.set_data(state_data)
+        case callback_data.ActionEnum.SECONDARY_BG:
+            await query.message.answer(
+                "Введите цвет фона в формате #FFFFFF "
+                "(напишите telegram - для использования дефолтных цветов телеграма), "
+                "который будет отображаться у пользователей Вашего бота на странице магазина: ",
+                reply_markup=ReplyBackBotMenuKeyboard.get_keyboard(),
+            )
+            await query.answer()
+            await state.set_state(States.EDITING_CUSTOM_COLOR)
+            state_data["color_param"] = "secondary_bg_color"
             await state.set_data(state_data)
         case callback_data.ActionEnum.TEXT_COLOR:
             await query.message.answer(
@@ -1214,52 +1225,76 @@ async def editing_default_message_handler(message: Message, state: FSMContext):
         await message.answer("Сообщение-затычка должна содержать текст")
 
 
-# @custom_bot_editing_router.message(States.EDITING_BG_COLOR)
-# async def editing_bg_color_handler(message: Message, state: FSMContext):
-#     """Настраивает bg_color веб приложения магазина"""
-#
-#     message_text = message.text.strip()
-#     if message_text:
-#         state_data = await state.get_data()
-#         custom_bot = await bot_db.get_bot(state_data['bot_id'])
-#
-#         match message_text:
-#             case ReplyBackBotMenuKeyboard.Callback.ActionEnum.BACK_TO_BOT_MENU.value:
-#                 await message.answer(
-#                     "Возвращаемся в меню настроек...",
-#                     reply_markup=ReplyBotMenuKeyboard.get_keyboard()
-#                 )
-#                 await message.answer(
-#                     MessageTexts.BOT_MENU_MESSAGE.value.format((await Bot(custom_bot.token).get_me()).username),
-#                     reply_markup=await InlineBotSettingsMenuKeyboard.get_keyboard(custom_bot.bot_id)
-#                 )
-#                 await state.set_state(States.BOT_MENU)
-#                 await state.set_data(state_data)
-#             case _:
-#                 if not is_valid_hex_code(message_text) and message_text != "telegram":
-#                     return await message.answer("Не получилось распознать ввод. Введите еще раз цвет в формате "
-#                                                 "<i>#FFFFFF</i> или напишите <i>telegram</i> для дефолтных цветов.")
-#
-#                 bg_color = None if message_text == "telegram" else message_text
-#
-#                 if custom_bot.settings:
-#                     custom_bot.settings["bg_color"] = bg_color
-#                 else:
-#                     custom_bot.settings = {"bg_color": bg_color}
-#                 await bot_db.update_bot(custom_bot)
-#
-#                 await message.answer(
-#                     "Цвет фона изменен!",
-#                     reply_markup=ReplyBotMenuKeyboard.get_keyboard()
-#                 )
-#                 await message.answer(
-#                     MessageTexts.BOT_MENU_MESSAGE.value.format((await Bot(custom_bot.token).get_me()).username),
-#                     reply_markup=await InlineBotSettingsMenuKeyboard.get_keyboard(custom_bot.bot_id)
-#                 )
-#                 await state.set_state(States.BOT_MENU)
-#                 await state.set_data(state_data)
-#     else:
-#         await message.answer("Цвет должен быть указан в тексте сообщения.")
+@custom_bot_editing_router.message(States.EDITING_CUSTOM_COLOR)
+async def editing_custom_color_handler(message: Message, state: FSMContext):
+    """Настраивает цвет параметра веб приложения магазина"""
+
+    message_text = message.text.strip()
+    if message_text:
+        state_data = await state.get_data()
+        custom_bot = await bot_db.get_bot(state_data['bot_id'])
+
+        match message_text:
+            case ReplyBackBotMenuKeyboard.Callback.ActionEnum.BACK_TO_BOT_MENU.value:
+                await message.answer(
+                    "Возвращаемся в меню настроек...",
+                    reply_markup=ReplyBotMenuKeyboard.get_keyboard()
+                )
+                await message.answer(
+                    MessageTexts.BOT_MENU_MESSAGE.value.format((await Bot(custom_bot.token).get_me()).username),
+                    reply_markup=await InlineBotSettingsMenuKeyboard.get_keyboard(custom_bot.bot_id)
+                )
+                await state.set_state(States.BOT_MENU)
+                await state.set_data(state_data)
+            case _:
+                if not is_valid_hex_code(message_text) and message_text != "telegram":
+                    return await message.answer("Не получилось распознать ввод. Введите еще раз цвет в формате "
+                                                "<i>#FFFFFF</i> или напишите <i>telegram</i> для дефолтных цветов.")
+
+                new_color = None if message_text == "telegram" else message_text
+
+                try:
+                    options = await option_db.get_option(custom_bot.options_id)
+                except OptionNotFoundError:
+                    new_options_id = await create_bot_options()
+                    custom_bot.options_id = new_options_id
+                    await bot_db.update_bot(custom_bot)
+                    options = await option_db.get_option(new_options_id)
+                match state_data['color_param']:
+                    case "secondary_bg_color":
+                        param_name = "фона"
+                        options.theme_params.secondary_bg_color = new_color
+                    case "bg_color":
+                        param_name = "карточек"
+                        options.theme_params.bg_color = new_color
+                    case "text_color":
+                        param_name = "текста"
+                        options.theme_params.text_color = new_color
+                    case "button_color":
+                        param_name = "кнопок"
+                        options.theme_params.button_color = new_color
+                    case "button_text_color":
+                        param_name = "текста кнопок"
+                        options.theme_params.button_text_color = new_color
+                    case _:
+                        return await message.answer(
+                            "Неизвестный параметр цвета. Попробуйте вернуться назад и выбрать еще раз."
+                        )
+
+                await option_db.update_option(options)
+
+                await message.answer(
+                    f"Цвет {param_name} изменен!",
+                    reply_markup=ReplyBotMenuKeyboard.get_keyboard()
+                )
+                await message.answer(
+                    MessageTexts.BOT_MENU_MESSAGE.value.format((await Bot(custom_bot.token).get_me()).username),
+                    reply_markup=await InlineBotSettingsMenuKeyboard.get_keyboard(custom_bot.bot_id)
+                )
+                await state.set_state(States.BOT_MENU)
+                await state.set_data(state_data)
+    else:
+        await message.answer("Цвет должен быть указан в тексте сообщения.")
 
 
 @custom_bot_editing_router.message(States.EDITING_POST_ORDER_MESSAGE)
