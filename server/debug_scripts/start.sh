@@ -8,20 +8,26 @@ label=$1
 
 echo "[DEBUG] Starting Project..."
 
-echo "[DEBUG] Starting API service... [Step 1/3]"
+echo "[DEBUG] Starting API service... [Step 1/4]"
 systemctl --user enable dev_api@${label}.service
 systemctl --user restart dev_api@${label}.service & sleep 3
 systemctl --user status --no-pager dev_api@${label}.service | grep Loaded
 systemctl --user status --no-pager dev_api@${label}.service | grep Active
 
-echo "[DEBUG] Starting Telegram bot service... [Step 2/3]"
+echo "[DEBUG] Starting Telegram bot service... [Step 2/4]"
 systemctl --user enable dev_bot@${label}.service
 systemctl --user restart dev_bot@${label}.service & sleep 3
 systemctl --user status --no-pager dev_bot@${label}.service | grep Loaded
 systemctl --user status --no-pager dev_bot@${label}.service | grep Active
 
-echo "[DEBUG] Starting MultiBot service... [Step 3/3]"
+echo "[DEBUG] Starting MultiBot service... [Step 3/4]"
 systemctl --user enable dev_multibot@${label}.service
 systemctl --user restart dev_multibot@${label}.service & sleep 3
 systemctl --user status --no-pager dev_multibot@${label}.service | grep Loaded
 systemctl --user status --no-pager dev_multibot@${label}.service | grep Active
+
+echo "[DEBUG] Starting SupportBot service... [Step 4/4]"
+systemctl --user enable dev_supportbot@${label}.service
+systemctl --user restart dev_supportbot@${label}.service & sleep 3
+systemctl --user status --no-pager dev_supportbot@${label}.service | grep Loaded
+systemctl --user status --no-pager dev_supportbot@${label}.service | grep Active

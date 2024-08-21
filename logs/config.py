@@ -172,6 +172,10 @@ logger_configuration = {
             "level": "DEBUG",
             "handlers": ["console_handler", "file_handler", "file_error_warning_handler", "loki_handler"],
         },
+        "tech_support_logger": {
+            "level": "DEBUG",
+            "handlers": ["console_handler", "file_handler", "file_error_warning_handler", "loki_handler"],
+        },
     },
 }
 
@@ -180,3 +184,4 @@ logger = logging.getLogger("general_logger")
 db_logger = logging.getLogger("db_logger")
 api_logger = logging.getLogger("api_logger")
 custom_bot_logger = logging.getLogger("custom_bot_logger")
+tech_support_logger = logging.getLogger("tech_support_logger")

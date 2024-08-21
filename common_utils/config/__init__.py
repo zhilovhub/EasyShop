@@ -7,6 +7,7 @@ from .env_config import (
     CryptographySettings,
     MainTelegramBotSettings,
     CustomTelegramBotSettings,
+    TechSupportBotSettings,
 )
 
 settings = Settings()
@@ -17,3 +18,4 @@ database_settings = DatabaseSettings()
 cryptography_settings = CryptographySettings()
 main_telegram_bot_settings = MainTelegramBotSettings()
 custom_telegram_bot_settings = CustomTelegramBotSettings()
+tech_support_settings = TechSupportBotSettings()

@@ -70,6 +70,9 @@ class DatabaseSettings(Settings):
     CUSTOM_BOT_STORAGE_DB_URL: str
     CUSTOM_BOT_STORAGE_TABLE_NAME: str
 
+    SUPPORT_BOT_STORAGE_DB_URL: str
+    SUPPORT_BOT_STORAGE_TABLE_NAME: str
+
 
 class MainTelegramBotSettings(Settings):
     """MainTelegramBot settings"""
@@ -116,6 +119,13 @@ class CryptographySettings(Settings):
     DATABASE_TOKEN_SECRET_KEY: str
 
 
+class TechSupportBotSettings(Settings):
+    """Cryptography settings"""
+
+    TECH_SUPPORT_BOT_TOKEN: str
+    TECH_SUPPORT_ADMINS: list[int]
+
+
 if __name__ == "__main__":  # You can run this file to ensure in existing of vars
     Settings()
     APISettings()
@@ -124,4 +134,5 @@ if __name__ == "__main__":  # You can run this file to ensure in existing of var
     CryptographySettings()
     MainTelegramBotSettings()
     CustomTelegramBotSettings()
+    TechSupportBotSettings()
     print(APISettings().model_dump())

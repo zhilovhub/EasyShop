@@ -98,3 +98,4 @@ deploy_backend_job:
           - database/**/*
           - logs/**/*
           - server/**/*
+          - tech_support/**/*

@@ -23,6 +23,7 @@ echo "Creating systemd services..."
 cp ${services_path}/dev_api@.service ~/.config/systemd/user/dev_api@.service
 cp ${services_path}/dev_bot@.service ~/.config/systemd/user/dev_bot@.service
 cp ${services_path}/dev_multibot@.service ~/.config/systemd/user/dev_multibot@.service
+cp ${services_path}/dev_supportbot@.service ~/.config/systemd/user/dev_supportbot@.service
 echo "Restarting systemd daemon..."
 
 systemctl --user daemon-reload

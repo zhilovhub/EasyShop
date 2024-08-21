@@ -13,16 +13,18 @@ from common_utils.broadcasting.broadcasting import EventTypes, send_event
 from logs.config import logger
 
 
-async def notify_about_error(event: CallbackQuery | Message | ChatMemberUpdated, error_message: str):
-    await Bot(main_telegram_bot_settings.TELEGRAM_TOKEN, default=BOT_PROPERTIES).send_message(
-        event.from_user.id, MessageTexts.UNKNOWN_ERROR_MESSAGE.value
-    )
+async def notify_about_error(
+    event: CallbackQuery | Message | ChatMemberUpdated,
+    error_message: str,
+    bot: Bot = Bot(main_telegram_bot_settings.TELEGRAM_TOKEN, default=BOT_PROPERTIES),
+):
+    await bot.send_message(event.from_user.id, MessageTexts.UNKNOWN_ERROR_MESSAGE.value)
     await send_event(event.from_user, EventTypes.UNKNOWN_ERROR, event.bot, err_msg=error_message)
 
 
 class ErrorMiddleware(BaseMiddleware):
-    def __init__(self) -> None:
-        pass
+    def __init__(self, bot: Bot = Bot(main_telegram_bot_settings.TELEGRAM_TOKEN, default=BOT_PROPERTIES)) -> None:
+        self.bot = bot
 
     async def __call__(
         self,
@@ -43,7 +45,7 @@ class ErrorMiddleware(BaseMiddleware):
                 if isinstance(event, CallbackQuery):
                     return await event.answer("Эта кнопка уже нажата.")
             logger.error("Telegram API error while handling event", exc_info=ex)
-            await notify_about_error(event, str(ex))
+            await notify_about_error(event, str(ex), self.bot)
         except Exception as ex:
             logger.error("Error while handling event", exc_info=ex)
-            await notify_about_error(event, str(ex))
+            await notify_about_error(event, str(ex), self.bot)
