@@ -2,7 +2,7 @@ import styles from './FilterPage.module.scss';
 import { useTranslation } from 'react-i18next';
 import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate } from "react-router-dom";
-import cross_icon from "../../shared/icon/cross-icon.svg"
+import {ReactComponent as CrossIcon} from "../../shared/icon/cross-icon.svg";
 import { useEffect, useState } from 'react';
 import { setFilter } from '../../shared/redux/action/FilterAction';
 import { initBackButton } from '@telegram-apps/sdk';
@@ -135,7 +135,7 @@ function FilterPage({mainButton}){
 
         <div className={styles.header}>
             <p className={styles.title}>{t('filters__filters')}</p>
-            <img className={styles.search_icon} src={cross_icon} onClick={() => navigate("/app/catalog")}></img>
+            <CrossIcon className={styles.search_icon} onClick={() => navigate("/app/catalog")}></CrossIcon>
         </div>
 
         <p className={styles.input_title}>{t('filters__price')}</p>

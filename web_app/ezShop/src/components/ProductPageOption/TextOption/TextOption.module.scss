@@ -3,8 +3,8 @@
 .text{
     font-family: $montserrat-medium;
     font-size: $font-size-4;
-    color: $black-color;
     white-space: pre-line;
+    color: var(--text_color);
 }
 
 

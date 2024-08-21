@@ -15,8 +15,11 @@ from sqlalchemy import (
     TypeDecorator,
     Unicode,
     Dialect,
+    JSON,
 )
 from sqlalchemy.ext.asyncio import AsyncEngine
+
+from common_utils.themes import ThemeParamsSchema
 
 from database.models import Base
 from database.models.dao import Dao
@@ -102,7 +105,8 @@ class Option(Base):
     default_msg = Column(String, nullable=False)
     post_order_msg = Column(String, nullable=True)
     auto_reduce = Column(Boolean, nullable=False, default=False)
-    bg_color = Column(String, nullable=True)
+
+    theme_params = Column(JSON)
     web_app_button = Column(String, nullable=False)
 
     currency_code = Column(CurrencyCodes, nullable=False)
@@ -122,8 +126,10 @@ class OptionSchemaWithoutId(BaseModel):
     default_msg: str
     post_order_msg: str | None = None
     auto_reduce: bool = False
-    bg_color: str | None = None
+
+    theme_params: ThemeParamsSchema = ThemeParamsSchema()
     web_app_button: str
+
     currency_code: CurrencyCodesValues = CurrencyCodesValues.RUSSIAN_RUBLE
     currency_symbol: CurrencySymbolsValues = CurrencySymbolsValues.RUSSIAN_RUBLE
     request_name_in_payment: bool = False
@@ -177,6 +183,8 @@ class OptionDao(Dao):  # TODO write tests
             raise OptionNotFoundError(option_id=option_id)
 
         res = OptionSchema.model_validate(res)
+        if isinstance(res.theme_params, dict):
+            res.theme_params = ThemeParamsSchema(**res.theme_params)
         self.logger.debug(f"option_id={option_id}: found option {res}", extra=extra_params(option_id=option_id))
 
         return res

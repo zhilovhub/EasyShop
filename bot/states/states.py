@@ -13,7 +13,7 @@ class States(StatesGroup):
     EDITING_START_MESSAGE = State()
     EDITING_DEFAULT_MESSAGE = State()
     EDITING_POST_ORDER_MESSAGE = State()
-    EDITING_BG_COLOR = State()
+    EDITING_CUSTOM_COLOR = State()
     DELETE_BOT = State()
 
     EDITING_POST_TEXT = State()

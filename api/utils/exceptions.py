@@ -2,13 +2,13 @@ from fastapi import HTTPException
 
 
 RESPONSES_DICT = {  # keep it sorted by keys
-    400: {"description": "Bad request (incorrect input data)."},
-    404: {"description": "Item not found."},
-    406: {"description": "Custom bot is offline."},
-    409: {"description": "Conflict."},
-    415: {"description": "Unaccepted File Type."},
-    401: {"description": "Unauthorized."},
-    500: {"description": "Internal server error."},
+    400: {"description": "Bad request (incorrect input data)"},
+    401: {"description": "Unauthorized"},
+    404: {"description": "Item not found"},
+    406: {"description": "Custom bot is offline"},
+    409: {"description": "Conflict"},
+    415: {"description": "Unaccepted File Type"},
+    500: {"description": "Internal server error"},
 }
 
 
@@ -36,7 +36,7 @@ class HTTPBadRequestError(HTTPException):
 
 
 class HTTPUnauthorizedError(HTTPException):
-    """Raised when Bad request error occurred: status 400"""
+    """Raised when Bad request error occurred: status 401"""
 
     def __init__(self, detail_message: str = RESPONSES_DICT[401]["description"], **extra_params):
         self.status_code = 401

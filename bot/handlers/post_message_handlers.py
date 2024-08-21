@@ -354,7 +354,8 @@ async def _delete_post_message(
                 parse_mode=ParseMode.HTML,
             )
             await query.message.answer(
-                text="Рассылочное сообщение удалено", reply_markup=ReplyBotMenuKeyboard.get_keyboard()
+                text="Рассылочное сообщение удалено",
+                reply_markup=ReplyBotMenuKeyboard.get_keyboard(),
             )
             await query.message.answer(
                 text=MessageTexts.BOT_MENU_MESSAGE.value.format(custom_bot_username),

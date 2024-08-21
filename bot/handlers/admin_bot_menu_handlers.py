@@ -30,12 +30,10 @@ from bot.keyboards.main_menu_keyboards import (
     InlineBackFromRefKeyboard,
     ReplyBotMenuKeyboard,
     ReplyBackBotMenuKeyboard,
-    SelectHexColorWebAppInlineKeyboard,
 )
 from bot.keyboards.stock_menu_keyboards import InlineStockMenuKeyboard, InlineWebStockKeyboard
 from bot.keyboards.post_message_keyboards import InlinePostMessageMenuKeyboard
 from bot.post_message.post_message_create import post_message_create
-
 
 from common_utils import generate_admin_invite_link
 from common_utils.config import common_settings
@@ -47,6 +45,7 @@ from common_utils.keyboards.keyboards import (
     InlineBotMenuKeyboard,
     InlineBotSettingsMenuKeyboard,
     InlineAdministratorsManageKeyboard,
+    InlineThemeSettingsMenuKeyboard,
     InlineModeProductKeyboardButton,
     InlinePaymentSettingsKeyboard,
     InlineBotMainWebAppButton,
@@ -61,7 +60,6 @@ from common_utils.keyboards.order_manage_keyboards import (
     InlineOrderCustomBotKeyboard,
     InlineCreateReviewKeyboard,
 )
-
 from database.config import (
     bot_db,
     product_db,
@@ -752,23 +750,28 @@ async def bot_settings_callback_handler(query: CallbackQuery, state: FSMContext)
             await query.answer()
             await state.set_state(States.EDITING_DEFAULT_MESSAGE)
             await state.set_data(state_data)
-        case callback_data.ActionEnum.EDIT_BG_COLOR:
-            await query.message.answer(
-                "Введите цвет фона в формате (#FFFFFF или telegram - для использования дефолтных цветов телеграма), "
-                "который будет отображаться у пользователей Вашего бота на странице магазина: ",
-                reply_markup=ReplyBackBotMenuKeyboard.get_keyboard(),
-            )
-            await query.message.answer(
-                "Или воспользуйтесь выбором цвета на палитре.",
-                reply_markup=SelectHexColorWebAppInlineKeyboard.get_keyboard(),
-            )
-            await query.answer()
-            await state.set_state(States.EDITING_BG_COLOR)
-            await state.set_data(state_data)
+        # case callback_data.ActionEnum.EDIT_BG_COLOR:
+        #     await query.message.answer(
+        #         "Введите цвет фона в формате (#FFFFFF или telegram - для использования дефолтных цветов телеграма), "
+        #         "который будет отображаться у пользователей Вашего бота на странице магазина: ",
+        #         reply_markup=ReplyBackBotMenuKeyboard.get_keyboard(),
+        #     )
+        #     await query.message.answer(
+        #         "Или воспользуйтесь выбором цвета на палитре.",
+        #         reply_markup=SelectHexColorWebAppInlineKeyboard.get_keyboard(),
+        #     )
+        #     await query.answer()
+        #     await state.set_state(States.EDITING_BG_COLOR)
+        #     await state.set_data(state_data)
         case callback_data.ActionEnum.PAYMENT_METHOD:
             await query.message.edit_text(
                 MessageTexts.PAYMENT_METHOD_SETTINGS.value.format(custom_bot_data.username),
                 reply_markup=await InlinePaymentSettingsKeyboard.get_keyboard(user_bot.bot_id, user_bot.payment_type),
+            )
+        case callback_data.ActionEnum.EDIT_THEME:
+            await query.message.edit_text(
+                f"🎨 Кастомизация для бота @{custom_bot_data.username}.",
+                reply_markup=InlineThemeSettingsMenuKeyboard.get_keyboard(bot_id),
             )
         case callback_data.ActionEnum.BACK_TO_BOT_MENU:
             await query.message.edit_text(

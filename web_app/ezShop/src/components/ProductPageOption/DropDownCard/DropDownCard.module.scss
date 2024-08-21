@@ -1,7 +1,7 @@
 @import "../../../shared/style//unification/unification.scss";
 
 .drop_down_card{
-    background-color: $white-color;
+    background-color: var(--bg_color);
     border-radius: $block-radius-1;
     display: flex;
     flex-direction: column;
@@ -19,6 +19,14 @@
     right: 16px;
     top: 23px;
     transition: 0.4s;
+}
+
+.icon *{
+    fill: var(--text_color);
+}
+
+.icon_active *{
+    fill: var(--text_color);
 }
 
 .icon_active{
@@ -39,7 +47,7 @@
     margin-block: 14px;
     font-family: $montserrat-bold;
     font-size: $font-size-2;
-    color: $black-color;
+    color: var(--text_color);;
     white-space: pre-line;
 }
 

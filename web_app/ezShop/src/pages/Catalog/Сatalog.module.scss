@@ -21,10 +21,22 @@
     gap: 10px;
 }
 
+.search_icon{
+    fill: var(--text_color);
+}
+
+.search_icon *{
+    fill: var(--text_color);
+}
+
+.filter_icon *{
+    fill: var(--text_color);
+}
+
 .title{
     font-family: $montserrat-bold;
     font-size: $font-size-2;
-    color: $black-color;
+    color: var(--text_color);
 }
 
 .product_list_scroll{
@@ -76,7 +88,7 @@
     left: 0;
     height: 62px;
     line-height: 62px;
-    background-color: var(--accent-color);
+    background-color: var(--button_color);
     text-align: center;
     align-content: center;
     align-items: center;
@@ -120,7 +132,7 @@
 .empty_msg_text{
     font-family: $montserrat-semi-bold;
     font-size: $font-size-2;
-    color: $black-color;
+    color: var(--text_color);
     text-align: center;
     margin-bottom: 30px;
     max-width: 210px;

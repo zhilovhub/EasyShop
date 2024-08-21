@@ -1,6 +1,7 @@
 import styles from './BasketPage.module.scss';
 import { useTranslation } from 'react-i18next';
 import layer_plus_icon from '../../shared/icon/layer-plus-icon.svg';
+import {ReactComponent as LayerPlusIcon} from '../../shared/icon/layer-plus-icon.svg';
 import { useDispatch, useSelector } from 'react-redux';
 import ProductCard from '../../components/ProductCard/ProductCard';
 import BasketCard from '../../components/BasketCard/BasketCard';
@@ -89,7 +90,7 @@ function BasketPage({mainButton}){
 
         <div className={styles.header}>
             <p className={styles.title}>{t('basket__basket')}</p>
-            <img className={styles.layer_plus_icon} src={layer_plus_icon} onClick={() => navigate("/app/catalog")}></img>
+            <LayerPlusIcon className={styles.layer_plus_icon} onClick={() => navigate("/app/catalog")}></LayerPlusIcon>
         </div>
 
         { filterByBuyCount().length != 0 ?

@@ -3,9 +3,26 @@
 $base-color: rgba(255, 255, 255);
 
 :root {
-	--accent-color: rgb(158, 220, 255);
-	--bg-color: rgb(231, 231, 231);
-	--text-color: rgb(0, 0, 0);
+	--accent_color: rgb(158, 220, 255);
+
+	--bg_color: rgb(0, 0, 0, 0);
+	--text_color: rgb(0, 0, 0, 0);
+	--hint_color: rgb(0, 0, 0, 0);
+	--link_color: rgb(0, 0, 0, 0);
+	--button_color: rgb(158, 220, 255);
+	--button_text_color: rgb(0, 0, 0, 0);
+	--secondary_bg_color: rgb(0, 0, 0, 0);
+	--header_bg_color: rgb(0, 0, 0);
+	--accent_text_color: rgb(0, 0, 0);
+	--section_bg_color: rgb(0, 0, 0, 0);
+	--section_header_text_color: rgb(0, 0, 0);
+	--section_separator_color: rgb(0, 0, 0, 0);
+	--subtitle_text_color: rgb(0, 0, 0);
+	--destructive_text_color: rgb(0, 0, 0);
+
+	.icon{
+        fill: var(--text_color);
+    }
 }
 
 

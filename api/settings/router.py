@@ -1,22 +1,23 @@
 import aiohttp
 
-from logs.config import api_logger, extra_params
 
 from fastapi import APIRouter
 
 from pydantic import BaseModel
 
 from database.config import bot_db, option_db, order_option_db, order_choose_option_db
-
 from database.models.bot_model import BotNotFoundError
-from database.models.order_choose_option_model import OrderChooseOptionSchema
+from database.models.option_model import OptionSchema, OptionNotFoundError
 from database.models.order_option_model import OrderOptionSchema, OrderOptionTypeValues
+from database.models.order_choose_option_model import OrderChooseOptionSchema
 
 from api.utils import HTTPBotNotFoundError, HTTPInternalError, RESPONSES_DICT
 
+from common_utils.themes import ThemeParamsSchema
 from common_utils.config import custom_telegram_bot_settings
 from common_utils.exceptions.local_api_exceptions import LocalAPIException
 
+from logs.config import api_logger, extra_params
 
 PATH = "/settings"
 router = APIRouter(
@@ -26,12 +27,8 @@ router = APIRouter(
 )
 
 
-class WebAppOptions(BaseModel):  # TODO remove after Arsen has finished his task with Custom Bot Options
-    bg_color: str | None
-
-
 @router.get("/get_web_app_options/{bot_id}/")
-async def get_web_app_options_api(bot_id: int) -> WebAppOptions:
+async def get_web_app_options_api(bot_id: int) -> OptionSchema:
     """
     :returns: Pydantic WebAppOptions Model with options
 
@@ -42,13 +39,27 @@ async def get_web_app_options_api(bot_id: int) -> WebAppOptions:
         bot = await bot_db.get_bot(bot_id)
         options = await option_db.get_option(bot.options_id)
 
-        return WebAppOptions(bg_color=options.bg_color)
-
+        return options
     except BotNotFoundError as e:
         api_logger.error(
             f"bot_id={bot_id}: bot_id={bot_id} is not found in database", extra=extra_params(bot_id=bot_id), exc_info=e
         )
         raise HTTPBotNotFoundError(bot_id=bot_id)
+    except OptionNotFoundError as e:
+        api_logger.error(
+            f"bot_id={bot_id}: options is not found in database returning default options",
+            extra=extra_params(bot_id=bot_id),
+            exc_info=e,
+        )
+        return OptionSchema(
+            id=-1,
+            start_msg="None",
+            default_msg="None",
+            post_order_msg=None,
+            auto_reduce=False,
+            theme_params=ThemeParamsSchema(),
+            web_app_button="None",
+        )
 
     except Exception as e:
         api_logger.error(
@@ -92,14 +103,6 @@ async def get_order_options_api(bot_id: int) -> list[APIOrderOption]:
             f"bot_id={bot_id}: bot_id={bot_id} is not found in database", extra=extra_params(bot_id=bot_id), exc_info=e
         )
         raise HTTPBotNotFoundError(bot_id=bot_id)
-
-    except Exception as e:
-        api_logger.error(
-            f"bot_id={bot_id}: Error while execute get_bot db_method with bot_id={bot_id}",
-            extra=extra_params(bot_id=bot_id),
-            exc_info=e,
-        )
-        raise HTTPInternalError
 
 
 class HexColorData(BaseModel):

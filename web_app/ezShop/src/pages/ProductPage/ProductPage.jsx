@@ -230,7 +230,6 @@ function ProductPage({mainButton}){
                 <div className={styles.product_blocks}>
 
                     {product.description != "" ? <TextOption data={{name: "Описание", variants: [product.description], variants_prices: [product.variants_prices]}}></TextOption> : <></>}
-
                     {extraOptions.map(option => getOption(option.type, option))}
 
                 </div>

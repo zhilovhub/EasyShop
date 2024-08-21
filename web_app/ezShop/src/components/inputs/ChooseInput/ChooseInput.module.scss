@@ -4,7 +4,7 @@
 .input_title{
     font-family: $montserrat-semi-bold;
     font-size: $font-size-4;
-    color: $black-color;
+    color: var(--text_color);
     margin-top: 20px;
     margin-left: 7px;
 }
@@ -21,6 +21,10 @@
     top: 50%;
     transform: rotate(180deg) translateY(-10%) scale(0.7);
     right: 15px;
+}
+
+.choose_icon *{
+    color: var(--text_color);
 }
 
 .input{

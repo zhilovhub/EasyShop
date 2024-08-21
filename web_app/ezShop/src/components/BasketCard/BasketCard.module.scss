@@ -29,20 +29,20 @@
 .name{
     font-family: $montserrat-medium;
     font-size: $font-size-4;
-    color: $black-color;
+    color: var(--text_color);
 }
 
 .price{
     font-family: $montserrat-bold;
     font-size: $font-size-5;
-    color: $black-color;
+    color: var(--text_color);
 }
 
 .counter{
     display: flex;
     flex-direction: row;
     justify-content: space-between;
-    background-color: $white-color;
+    background-color: var(--bg_color);;
     height: 41px;
     border-radius: $block-radius-2;
     text-align: center;
@@ -61,7 +61,7 @@
 .plus_btn{
     font-family: $montserrat-semi-bold;
     font-size: $font-size-6;
-    color: $black-color;
+    color: var(--text_color);
     text-align: center;
     display: flex;
     align-items: center;
@@ -70,7 +70,7 @@
 .count{
     font-family: $montserrat-semi-bold;
     font-size: $font-size-5;
-    color: $black-color;
+    color: var(--text_color);
     text-align: center;
     display: flex;
     align-items: center;
@@ -79,7 +79,7 @@
 .minus_btn{
     font-family: $montserrat-semi-bold;
     font-size: $font-size-6;
-    color: $black-color;
+    color: var(--text_color);
     text-align: center;
     display: flex;
     align-items: center;

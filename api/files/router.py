@@ -15,11 +15,11 @@ from api.utils import (
 )
 
 from common_utils.config import common_settings
+
 from database.config import product_db
 from database.models.product_model import ProductNotFoundError
 
 from logs.config import api_logger
-
 
 PATH = "/files"
 router = APIRouter(

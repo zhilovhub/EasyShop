@@ -30,14 +30,14 @@ async def handle_answer_question(query: CallbackQuery, state: FSMContext):
                     await bot.edit_message_text(
                         chat_id=admin,
                         message_id=msg_id,
-                        text=query.message.reply_to_message.text +
-                             f"\n\n[{datetime.now().strftime('%d.%m.%y %H:%M:%S')}] "
-                             f"@{query.from_user.username} начал отвечать клиенту."
+                        text=query.message.reply_to_message.text
+                        + f"\n\n[{datetime.now().strftime('%d.%m.%y %H:%M:%S')}] "
+                        f"@{query.from_user.username} начал отвечать клиенту.",
                     )
             else:
                 await query.message.reply_to_message.edit_text(
                     query.message.reply_to_message.text + f"\n\n[{datetime.now().strftime('%d.%m.%y %H:%M:%S')}] "
-                                                          f"@{query.from_user.username} начал отвечать клиенту."
+                    f"@{query.from_user.username} начал отвечать клиенту."
                 )
             await query.answer()
 
@@ -48,8 +48,8 @@ async def handle_answer_to_user(message: Message, state: FSMContext):
     if message.text:
         match message.text:
             case (
-            ReplyCancelKeyboard.Callback.ActionEnum.CANCEL.value
-            | ReplyCancelKeyboard.Callback.ActionEnum.CANCEL_ENG.value
+                ReplyCancelKeyboard.Callback.ActionEnum.CANCEL.value
+                | ReplyCancelKeyboard.Callback.ActionEnum.CANCEL_ENG.value
             ):
                 await message.answer(
                     **TechMessageTexts.get_canceled_sending_message_text(lang).as_kwargs(),

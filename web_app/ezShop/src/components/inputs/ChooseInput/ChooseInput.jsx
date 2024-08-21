@@ -3,7 +3,8 @@ import styles from './ChooseInput.module.scss';
 import { setIsCorrect } from '../../../shared/redux/action/ValidateAction';
 import { useDispatch, useSelector } from 'react-redux';
 import { setOrderData, setOrderItem } from '../../../shared/redux/action/OrderDataAction';
-import drop_down_icon from '../../../shared/icon/drop-down-icon.svg'
+// import drop_down_icon from '../../../shared/icon/drop-down-icon.svg';
+import {ReactComponent as DropDownIcon} from '../../../shared/icon/drop-down-icon.svg';
 
 
 function ChooseInput({isCheck, data}) {
@@ -20,20 +21,17 @@ function ChooseInput({isCheck, data}) {
     }, [])
 
     useEffect(() => {
-
-
             const newOrderData = orderData.map(orderItem => {
-                if (data.option.id == orderItem.option.id){
-                  orderItem.value = inputValue
-                }
-                return orderItem
-              })
+              if (data.option.id == orderItem.option.id){
+                orderItem.value = inputValue
+              }
+              return orderItem
+            })
 
-              console.log(newOrderData)
+            console.log(newOrderData)
 
             dispatch(setOrderData(newOrderData))
             console.log(orderData)
-        
     }, [inputValue])
 
 
@@ -48,7 +46,8 @@ function ChooseInput({isCheck, data}) {
           <option value="СДЭК">СДЭК</option>
           <option value="Boxberry">Boxberry</option>
       </select>
-      <img className={styles.choose_icon} src={drop_down_icon}></img>
+      <DropDownIcon className={styles.choose_icon}></DropDownIcon>
+      {/* <img className={styles.choose_icon} src={drop_down_icon}></img> */}
       </div>
       </>
     );

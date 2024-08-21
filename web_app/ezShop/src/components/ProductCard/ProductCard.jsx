@@ -17,8 +17,6 @@ function ProductCard(props) {
     const navigate = useNavigate();
     const [imgUrl, setImgUrl] = useState('')
     const [imgUrlIsLoad, setImgUrlIsLoad] = useState(false)
-
-
     
     useEffect(() => {
 

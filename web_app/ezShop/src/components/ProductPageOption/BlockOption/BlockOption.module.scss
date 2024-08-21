@@ -18,8 +18,8 @@
 .item{
     display: flex;
     font-family: $montserrat-medium;
-    color: $black-color;
-    background-color: $gray-color-2;
+    color: var(--text_color);
+    background-color: var(--secondary_bg_color);
     border-radius: $font-size-4;
     width: 75px;
     height: 64px;
@@ -32,15 +32,15 @@
 .item_active{
     display: flex;
     font-family: $montserrat-medium;
-    color: $black-color;
-    background-color: $gray-color-2;
+    color: var(--text_color);
+    background-color: var(--secondary_bg_color);
     border-radius: $font-size-4;
     width: 75px;
     height: 64px;
     text-align: center;
     justify-content: center;
     align-items: center;
-    border: 2px solid var(--accent-color);
+    border: 2px solid var(--button_color);
 }
 
 .variant_container_scroll{

@@ -28,7 +28,7 @@
 .title{
     font-family: $montserrat-bold;
     font-size: $font-size-2;
-    color: $black-color;
+    color: var(--text_color);
 }
 
 .order_info{
@@ -45,20 +45,20 @@
 .your_order_title{
     font-family: $montserrat-semi-bold;
     font-size: $font-size-2;
-    color: $black-color;
+    color: var(--text_color);
     margin-bottom: 10px;
 }
 
 .product_name{
     font-family: $montserrat-regular;
     font-size: $font-size-1;
-    color: $black-color;
+    color: var(--text_color);
 }
 
 .sum{
     font-family: $montserrat-bold;
     font-size: $font-size-2;
-    color: $black-color;
+    color: var(--text_color);
     margin-top: 30px;
 }
 
@@ -110,7 +110,7 @@
     left: 0;
     height: 62px;
     line-height: 62px;
-    background-color: var(--accent-color);
+    background-color: var(--button_color);
     text-align: center;
     align-content: center;
     font-family: $montserrat-bold;

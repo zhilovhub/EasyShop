@@ -6,7 +6,7 @@
 }
 
 body{
-  background-color: var(--bg-color);
+  background-color: var(--secondary_bg_color);
   overflow: hidden;
 }
 

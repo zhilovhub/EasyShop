@@ -13,7 +13,7 @@ function BasketCard(props) {
     const {t, i18n} = useTranslation();
     const dispatch = useDispatch();
     const productList = useSelector(state => state.productList.productList);
-    const [imgUrl, setImgUrl] = useState('')
+    const [imgUrl, setImgUrl] = useState('');
 
 
     useEffect(() => {

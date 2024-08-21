@@ -1,11 +1,11 @@
 from enum import Enum
 from typing import Any
 
+from aiogram.utils.formatting import Bold, Text
+
 from database.config import order_option_db
 from database.models.order_model import OrderSchema, OrderItemExtraOption
 from database.models.product_model import ProductSchema
-
-from aiogram.utils.formatting import Text, Bold
 
 
 class MessageTexts(Enum):

@@ -11,8 +11,8 @@
     cursor: pointer;
     outline: none;
 
-    -webkit-box-shadow: 0px 4px 5px -5px rgba(0, 0, 0, 0.75); 
-    -moz-box-shadow: 0px 4px 5px -5px rgba(0, 0, 0, 0.75); 
+    -webkit-box-shadow: 0px 4px 5px -5px rgba(0, 0, 0, 0.75);
+    -moz-box-shadow: 0px 4px 5px -5px rgba(0, 0, 0, 0.75);
     box-shadow: 0px 4px 5px -5px rgba(0, 0, 0, 0.75);
 
     user-select: none; /* Для современных браузеров */
@@ -30,17 +30,17 @@
 
 
 @mixin accent-button{
-    background-color: var(--accent-color);
+    background-color: var(--button_color);
     text-align: center;
     border-radius: $block-radius-1;
-    color: $black-color;
+    color: var(--text_color);
     font-family: $montserrat-medium;
     font-size: $font-size-4;
     cursor: pointer;
     outline: none;
 
-    -webkit-box-shadow: 0px 4px 5px -5px rgba(0, 0, 0, 0.75); 
-    -moz-box-shadow: 0px 4px 5px -5px rgba(0, 0, 0, 0.75); 
+    -webkit-box-shadow: 0px 4px 5px -5px rgba(0, 0, 0, 0.75);
+    -moz-box-shadow: 0px 4px 5px -5px rgba(0, 0, 0, 0.75);
     box-shadow: 0px 4px 5px -5px rgba(0, 0, 0, 0.75);
 
     user-select: none; /* Для современных браузеров */
@@ -60,7 +60,7 @@
 @mixin input{
     border: none;        /* Убираем рамку */
     outline: none;      /* Убираем обводку при фокусе */
-    background-color: $white-color;
+    background-color: var(--bg_color);
     border-radius: 15px;
     padding: 10;         /* Убираем отступы */
     padding-inline: 14px;
@@ -70,7 +70,7 @@
     box-shadow: none;   /* Убираем тень */
     font-family: $montserrat-semi-bold;
     font-size: $font-size-3;
-    color: $black-color;
+    color: var(--text_color);
 
     -webkit-appearance: none; /* удаляем стандартный стиль на Safari */
     -moz-appearance: none; /* удаляем стандартный стиль на Firefox */
@@ -93,19 +93,19 @@
 }
 
 @mixin search_input {
-    border: none;        
-    outline: none;      
-    background-color: $white-color;
+    border: none;
+    outline: none;
+    background-color: var(--bg_color);
     border-radius: 17px;
     padding: 10px;
     padding-right: 14px;
     padding-left: 40px;
     padding-block: 9px;
-    margin: 0;          
-    box-shadow: none;   
+    margin: 0;
+    box-shadow: none;
     font-family: $montserrat-semi-bold;
     font-size: $font-size-3;
-    color: $black-color;
+    color: var(--text_color);
 
     &::placeholder {
         color: $gray-color-3;
@@ -113,19 +113,19 @@
 
     &::-webkit-outer-spin-button,
     &::-webkit-inner-spin-button {
-        -webkit-appearance: none; 
-        margin: 0; 
+        -webkit-appearance: none;
+        margin: 0;
     }
 
     &[type="number"] {
-        -moz-appearance: textfield; 
+        -moz-appearance: textfield;
     }
 }
 
 @mixin gray_input{
     border: none;        /* Убираем рамку */
     outline: none;      /* Убираем обводку при фокусе */
-    background-color: $gray-color-5;
+    background-color: var(--bg_color);
     border-radius: 15px;
     padding: 10;         /* Убираем отступы */
     padding-inline: 14px;
@@ -135,7 +135,7 @@
     box-shadow: none;   /* Убираем тень */
     font-family: $montserrat-regular;
     font-size: $font-size-3;
-    color: $black-color;
+    color: var(--text_color);
 
     &::placeholder{
         color: $gray-color-6;
@@ -167,7 +167,7 @@
     box-shadow: none;   /* Убираем тень */
     font-family: $montserrat-semi-bold;
     font-size: $font-size-3;
-    color: $black-color;
+    color: var(--text_color);
     resize: vertical;
     max-height: 40px;
     min-height: 20px;

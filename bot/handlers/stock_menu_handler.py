@@ -19,9 +19,9 @@ from bot.keyboards.stock_menu_keyboards import (
     ReplyBackStockMenuKeyboard,
     InlineStockImportMenuKeyboard,
 )
+from common_utils.bot_utils import create_bot_options
 
 from common_utils.config import common_settings
-from common_utils.bot_utils import create_bot_options
 from common_utils.keyboards.keyboards import InlineBotMenuKeyboard
 
 from database.config import product_db, bot_db, option_db

@@ -1,7 +1,7 @@
 import styles from './Сatalog.module.scss';
 import { useTranslation } from 'react-i18next';
-import filter_icon from '../../shared/icon/filter-icon.svg';
-import search_icon from '../../shared/icon/search-icon.svg';
+import {ReactComponent as SearchIcon} from '../../shared/icon/search-icon.svg';
+import {ReactComponent as FilterIcon} from '../../shared/icon/filter-icon.svg';
 import empty_catalog_img from '../../shared/images/empty-catalog-img.svg';
 import search_2_icon from '../../shared/icon/search-2-icon.svg';
 import ProductCard from '../../components/ProductCard/ProductCard';
@@ -51,9 +51,10 @@ function Catalog({mainButton}) {
     // backButton.hide()  // сначала всегда прячем кнопку (опционально)
 
     useEffect(() => {
-        if (!botId) {
-            return
-        }
+
+        // if (!botId) {
+        //     return
+        // }
 
         const url = `https://ezbots.ru:${process.env.REACT_APP_API_PORT}/api/settings/get_web_app_options/${botId}`;
             fetch(url, {
@@ -71,20 +72,51 @@ function Catalog({mainButton}) {
                 return response.json();
             })
             .then(data => {
-              const bg_color = data.bg_color;
-              if (bg_color) {
-                //   console.error('--tg-theme-bg-color should be', bg_color);
-                  document.documentElement.style.setProperty('--bg-color', bg_color);
-              } else {
-                //   document.documentElement.style.setProperty('--bg-color', themeParams.get('bgColor'));
-              }
-            //   document.documentElement.style.setProperty('--text-color', themeParams.get('textColor'));
+
+              const bg_color = data.theme_params.bg_color;
+              const text_color = data.theme_params.text_color;
+              const secondary_bg_color = data.theme_params.secondary_bg_color;
+              const button_text_color = data.theme_params.button_text_color;
+            //   const button_color = data.theme_params.button_color;
+
+              document.documentElement.style.setProperty('--bg_color', bg_color == "telegram" ? (themeParams.get('bgColor') == themeParams.get('secondaryBgColor') ? lightenHexColor(themeParams.get('bgColor'), 0.15) : themeParams.get('bgColor')) : bg_color);
+              document.documentElement.style.setProperty('--text_color', text_color == "telegram" ? themeParams.get('textColor') : text_color);
+              document.documentElement.style.setProperty('--secondary_bg_color', secondary_bg_color == "telegram" ? themeParams.get('secondaryBgColor') : secondary_bg_color);
+              document.documentElement.style.setProperty('--button_text_color', button_text_color == "telegram" ? themeParams.get('buttonTextColor') : button_text_color);
+            //   document.documentElement.style.setProperty('--button_color', button_color == "telegram" ? themeParams.get('buttonColor') : button_color);
+
+              console.log('bgColor');
+              console.log(bg_color == "telegram" ? themeParams.get('bgColor') : bg_color);
+              console.log('textColor');
+              console.log(text_color == "telegram" ? themeParams.get('textColor') : text_color);
+              console.log('secondaryBgColor');
+              console.log(secondary_bg_color == "telegram" ? themeParams.get('headerBgColor') : secondary_bg_color);
+
             })
             .catch(error => {
                 console.error('Error:', error);
             });
 
   }, [botId])
+
+
+  function lightenHexColor(hex, percent) {
+    hex = hex.replace(/^#/, '');
+
+    // Парсим цвет в RGB
+    let r = parseInt(hex.substring(0, 2), 16);
+    let g = parseInt(hex.substring(2, 4), 16);
+    let b = parseInt(hex.substring(4, 6), 16);
+
+    // Увеличиваем цветовые компоненты
+    r = Math.min(255, Math.round(r + (255 - r) * percent));
+    g = Math.min(255, Math.round(g + (255 - g) * percent));
+    b = Math.min(255, Math.round(b + (255 - b) * percent));
+
+    // Преобразуем обратно в hex
+    const newHex = '#' + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1).toUpperCase();
+    return newHex;
+    }
 
     useEffect(() => {
         console.log("useEffect getBottomButton");
@@ -113,6 +145,7 @@ function Catalog({mainButton}) {
         if (productList.length == 0){
 
         const url = `https://ezbots.ru:${process.env.REACT_APP_API_PORT}/api/products/get_all_products?bot_id=${botId}`;
+        console.log("URL: " + url)
         const body = JSON.stringify([]);
         fetch(url, {
             method: 'POST',
@@ -266,8 +299,8 @@ function Catalog({mainButton}) {
         <div className={styles.header}>
             <p className={styles.title}>{t('catalog__catalog')}</p>
             <div className={styles.icon_container}>
-                <img className={styles.search_icon} src={search_icon} onClick={focusInput}></img>
-                <img className={styles.filter_icon} src={filter_icon} onClick={() => navigate("/app/filter")}></img>
+                <SearchIcon className={styles.search_icon} onClick={focusInput}></SearchIcon>
+                <FilterIcon className={styles.filter_icon} onClick={() => navigate("/app/filter")}></FilterIcon>
             </div>
         </div>
 
@@ -281,7 +314,6 @@ function Catalog({mainButton}) {
                 <div className={styles.empty_msg}>
                     <p className={styles.empty_msg_text}>Товары по данным параметрам отсутствуют</p>
                     <img className={styles.empty_msg_img} src={empty_catalog_img}></img>
-
                 </div>
             : 
             <div className={styles.product_list}>
