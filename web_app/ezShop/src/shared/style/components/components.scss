@@ -2,10 +2,10 @@
 
 
 @mixin gray-button{
-    background-color: $gray-color;
+    background-color: var(--secondary_bg_color);
     text-align: center;
     border-radius: $block-radius-1;
-    color: $black-color;
+    color: var(--text_color);
     font-family: $montserrat-medium;
     font-size: $font-size-4;
     cursor: pointer;
@@ -22,6 +22,8 @@
     -webkit-tap-highlight-color: rgba(0, 0, 0, 0);
     transition: none;
     touch-action: manipulation;
+    outline: none;
+    cursor: pointer;
 
     &:focus {
         outline: none;
@@ -157,7 +159,7 @@
 @mixin textarea{
     border: none;        /* Убираем рамку */
     outline: none;      /* Убираем обводку при фокусе */
-    background-color: $white-color;
+    background-color: var(--bg_color);
     border-radius: 15px;
     padding: 10;         /* Убираем отступы */
     padding-inline: 14px;

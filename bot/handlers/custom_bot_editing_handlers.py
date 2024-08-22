@@ -36,7 +36,8 @@ from common_utils.keyboards.keyboards import (
 from common_utils.themes import (
     THEME_EXAMPLE_PRESET_DARK,
     THEME_EXAMPLE_PRESET_LIGHT,
-    ThemeParamsSchema, is_valid_hex_code,
+    ThemeParamsSchema,
+    is_valid_hex_code,
 )
 
 from database.config import bot_db, option_db, order_option_db, order_choose_option_db
@@ -1232,24 +1233,25 @@ async def editing_custom_color_handler(message: Message, state: FSMContext):
     message_text = message.text.strip()
     if message_text:
         state_data = await state.get_data()
-        custom_bot = await bot_db.get_bot(state_data['bot_id'])
+        custom_bot = await bot_db.get_bot(state_data["bot_id"])
 
         match message_text:
             case ReplyBackBotMenuKeyboard.Callback.ActionEnum.BACK_TO_BOT_MENU.value:
                 await message.answer(
-                    "Возвращаемся в меню настроек...",
-                    reply_markup=ReplyBotMenuKeyboard.get_keyboard()
+                    "Возвращаемся в меню настроек...", reply_markup=ReplyBotMenuKeyboard.get_keyboard()
                 )
                 await message.answer(
                     MessageTexts.BOT_MENU_MESSAGE.value.format((await Bot(custom_bot.token).get_me()).username),
-                    reply_markup=await InlineBotSettingsMenuKeyboard.get_keyboard(custom_bot.bot_id)
+                    reply_markup=await InlineBotSettingsMenuKeyboard.get_keyboard(custom_bot.bot_id),
                 )
                 await state.set_state(States.BOT_MENU)
                 await state.set_data(state_data)
             case _:
                 if not is_valid_hex_code(message_text) and message_text != "telegram":
-                    return await message.answer("Не получилось распознать ввод. Введите еще раз цвет в формате "
-                                                "<i>#FFFFFF</i> или напишите <i>telegram</i> для дефолтных цветов.")
+                    return await message.answer(
+                        "Не получилось распознать ввод. Введите еще раз цвет в формате "
+                        "<i>#FFFFFF</i> или напишите <i>telegram</i> для дефолтных цветов."
+                    )
 
                 new_color = None if message_text == "telegram" else message_text
 
@@ -1260,7 +1262,7 @@ async def editing_custom_color_handler(message: Message, state: FSMContext):
                     custom_bot.options_id = new_options_id
                     await bot_db.update_bot(custom_bot)
                     options = await option_db.get_option(new_options_id)
-                match state_data['color_param']:
+                match state_data["color_param"]:
                     case "secondary_bg_color":
                         param_name = "фона"
                         options.theme_params.secondary_bg_color = new_color
@@ -1283,13 +1285,10 @@ async def editing_custom_color_handler(message: Message, state: FSMContext):
 
                 await option_db.update_option(options)
 
-                await message.answer(
-                    f"Цвет {param_name} изменен!",
-                    reply_markup=ReplyBotMenuKeyboard.get_keyboard()
-                )
+                await message.answer(f"Цвет {param_name} изменен!", reply_markup=ReplyBotMenuKeyboard.get_keyboard())
                 await message.answer(
                     MessageTexts.BOT_MENU_MESSAGE.value.format((await Bot(custom_bot.token).get_me()).username),
-                    reply_markup=await InlineBotSettingsMenuKeyboard.get_keyboard(custom_bot.bot_id)
+                    reply_markup=await InlineBotSettingsMenuKeyboard.get_keyboard(custom_bot.bot_id),
                 )
                 await state.set_state(States.BOT_MENU)
                 await state.set_data(state_data)

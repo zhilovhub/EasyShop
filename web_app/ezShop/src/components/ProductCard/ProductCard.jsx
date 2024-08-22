@@ -2,8 +2,13 @@ import styles from './ProductCard.module.scss';
 import { useTranslation } from 'react-i18next';
 import filter_icon from '../../shared/icon/filter-icon.svg';
 import search_icon from '../../shared/icon/search-icon.svg';
-import minus_icon from '../../shared/icon/minus-icon.svg';
-import plus_icon from '../../shared/icon/plus-icon.svg';
+
+// import minus_icon from '../../shared/icon/minus-icon.svg';
+// import plus_icon from '../../shared/icon/plus-icon.svg';
+
+import {ReactComponent as MinusIcon} from '../../shared/icon/minus-icon.svg';
+import {ReactComponent as PlusIcon} from '../../shared/icon/plus-icon.svg';
+
 import { useDispatch, useSelector } from 'react-redux';
 import { setProductList } from '../../shared/redux/action/ProductListAction';
 import { useNavigate } from "react-router-dom";
@@ -58,10 +63,12 @@ function ProductCard(props) {
             return (
             <div className={styles.button_container}>
                 <div className={styles.minus_btn} onClick={(event) => {event.stopPropagation(); event.preventDefault(); updateBuyCount("minus");}}>
-                    <img className={styles.btn_icon} src={minus_icon}></img>
+                    {/* <img className={styles.btn_icon} src={minus_icon}></img> */}
+                    <MinusIcon className={styles.btn_icon}></MinusIcon>
                 </div>
-                <div className={styles.plus_btn} src={plus_icon} onClick={(event) => {event.stopPropagation(); event.preventDefault(); updateBuyCount("plus");}}>
-                    <img className={styles.btn_icon} src={plus_icon}></img>
+                <div className={styles.plus_btn} onClick={(event) => {event.stopPropagation(); event.preventDefault(); updateBuyCount("plus");}}>
+                    {/* <img className={styles.btn_icon} src={plus_icon}></img> */}
+                    <PlusIcon className={styles.btn_icon}></PlusIcon>
                 </div>
             </div>
             )

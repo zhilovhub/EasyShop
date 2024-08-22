@@ -55,6 +55,11 @@
 
 .btn_icon{
     line-height: 37px;
+    z-index: 1000;
+}
+
+.btn_icon *{
+    fill: var(--text_color);
 }
 
 .plus_btn{
