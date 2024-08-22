@@ -1,7 +1,7 @@
-from aiogram.types import Message
+from aiogram.types import Message, FSInputFile
 from aiogram.filters import Command, CommandObject
 
-from bot.main import MAINTENANCE
+from bot.main import MAINTENANCE, START_MESSAGE_ANALYTICS
 from bot.handlers.routers import admin_group_commands_router
 
 from logs.config import logger
@@ -17,6 +17,14 @@ def _get_maintenance_data() -> dict:
         logger.info(f"maintenance json data is empty, setting new default data {json_data}")
         MAINTENANCE.update_data(json_data)
     return json_data["maintenance"]
+
+
+@admin_group_commands_router.message(Command("ref_analytics"))
+async def bot_ref_analytics_command_handler(message: Message) -> None:
+    """Send the json analytics on referal start messages"""
+    await message.answer_document(
+        document=FSInputFile(START_MESSAGE_ANALYTICS.file_path),
+    )
 
 
 @admin_group_commands_router.message(Command("bot_status"))

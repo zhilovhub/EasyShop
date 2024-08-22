@@ -59,6 +59,7 @@ async def on_start():
         BotCommand(command="check_subscription", description="Проверить подписку"),
     ]
     admin_commands = [
+        BotCommand(command="ref_analytics", description="Аналитика стартовой рефералки"),
         BotCommand(command="bot_status", description="Статус бота"),
         BotCommand(command="on_maintenance", description="Включить тех обсл"),
         BotCommand(command="off_maintenance", description="Выключить тех обсл"),

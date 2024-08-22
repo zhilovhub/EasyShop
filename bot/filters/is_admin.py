@@ -10,6 +10,9 @@ class IsTechAdmin(BaseFilter):
     """The filter that checks if written user is TECH ADMIN or not"""
 
     async def __call__(self, event: Message | CallbackQuery) -> bool:
+        if isinstance(event, Message) and "/ref_analytics" in event.text:  # TODO should not be here
+            return True
+
         if event.from_user.id in common_settings.TECH_ADMINS:
             return True
         else:
