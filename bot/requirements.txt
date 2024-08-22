@@ -5,6 +5,7 @@ python-dotenv
 aiojobs
 pytest
 pytest-asyncio
+pytest-dotenv
 apscheduler
 openpyxl
 psycopg2-binary

@@ -7,7 +7,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 class Mode(Enum):
     PROD = "PROD"
-    TEXT = "TEST"
+    TEST = "TEST"
 
 
 class Settings(BaseSettings):
