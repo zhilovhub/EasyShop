@@ -1,8 +1,19 @@
-from aiogram.utils.deep_linking import create_start_link
-from database.config import user_db, referral_invite_db
 from aiogram import Bot
-from database.models.referral_invite_model import ReferralInviteNotFoundError, ReferralInviteSchemaWithoutId
+from aiogram.types import Message, FSInputFile
+from aiogram.exceptions import TelegramBadRequest
+from aiogram.utils.deep_linking import create_start_link
+
+from bot.main import cache_resources_file_id_store
+from bot.utils import MessageTexts
+from bot.keyboards.start_keyboards import RefLinkKeyboard
+
+from database.config import user_db, referral_invite_db
 from database.models.user_model import UserStatusValues
+from database.models.referral_invite_model import ReferralInviteNotFoundError, ReferralInviteSchemaWithoutId
+
+from common_utils.config import common_settings
+
+from logs.config import logger
 
 
 async def handle_ref_user(user_id: int, bot: Bot) -> str:
@@ -38,3 +49,24 @@ async def handle_ref_user(user_id: int, bot: Bot) -> str:
             )
         )
     return ref_link
+
+
+async def send_ref_user_info(message: Message, user_id: int, bot: Bot) -> None:
+    file_ids = cache_resources_file_id_store.get_data()
+    file_name = "ezshop_kp.pdf"
+    ref_link = await handle_ref_user(user_id, bot)
+
+    await message.answer(**MessageTexts.generate_ref_system_text(ref_link), reply_markup=RefLinkKeyboard.get_keyboard())
+
+    try:
+        await message.delete()
+        await message.answer_document(
+            document=file_ids[file_name],
+        )
+    except (TelegramBadRequest, KeyError) as e:
+        logger.info(f"error while sending KP file.... cache is empty, sending raw files {e}")
+        kp_message = await message.answer_document(
+            document=FSInputFile(common_settings.RESOURCES_PATH.format(file_name)),
+        )
+        file_ids[file_name] = kp_message.document.file_id
+        cache_resources_file_id_store.update_data(file_ids)

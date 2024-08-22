@@ -22,7 +22,7 @@ def user():
         settings=None,
         locale="ru",
         balance=0,
-        subscription_job_ids=None
+        subscription_job_ids=None,
     )
 
 
@@ -35,7 +35,7 @@ def payments(user: UserSchema):
             amount=1990,
             status="success",
             created_at=datetime.datetime.now(),
-            last_update=datetime.datetime.now()
+            last_update=datetime.datetime.now(),
         )
     ]
 

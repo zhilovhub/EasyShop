@@ -1,13 +1,12 @@
 from datetime import datetime
 
 from aiogram import F, Bot
-from aiogram.types import Message, ReplyKeyboardRemove, CallbackQuery, FSInputFile
+from aiogram.types import Message, ReplyKeyboardRemove, CallbackQuery
 from aiogram.filters import CommandStart, Command, CommandObject, StateFilter
-from aiogram.exceptions import TelegramBadRequest
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.storage.base import StorageKey
 
-from bot.main import bot, cache_resources_file_id_store, subscription, dp, START_MESSAGE_ANALYTICS
+from bot.main import bot, subscription, dp, START_MESSAGE_ANALYTICS
 from bot.start_message_analytics.start_message_analytics_cache import (
     StartMessageAnalyticSchema,
     UserStartMessageActionSchema,
@@ -29,8 +28,7 @@ from bot.keyboards.start_keyboards import (
 )
 from bot.middlewaries.subscription_middleware import CheckSubscriptionMiddleware
 
-from common_utils.config import common_settings
-from common_utils.ref_utils import handle_ref_user
+from common_utils.ref_utils import send_ref_user_info
 from common_utils.subscription import config
 from common_utils.keyboards.keyboards import InlineBotMenuKeyboard
 from common_utils.subscription.subscription import UserHasAlreadyStartedTrial
@@ -120,29 +118,7 @@ async def ref_full_description_handler(query: CallbackQuery):
     _update_analytics(callback_data.a, chat_id, query.from_user.username)
     match callback_data.a:
         case callback_data.ActionEnum.CONTINUE:
-            file_ids = cache_resources_file_id_store.get_data()
-            file_name = "ezshop_kp.pdf"
-            user_id = query.from_user.id
-            ref_link = await handle_ref_user(user_id, bot)
-
-            await query.message.answer(
-                **MessageTexts.generate_ref_system_text(ref_link), reply_markup=RefLinkKeyboard.get_keyboard()
-            )
-
-            try:
-                await query.message.delete()
-                await query.message.answer_document(
-                    document=file_ids[file_name],
-                    **MessageTexts.generate_ref_system_text(ref_link),
-                )
-            except (TelegramBadRequest, KeyError) as e:
-                logger.info(f"error while sending KP file.... cache is empty, sending raw files {e}")
-                kp_message = await query.message.answer_document(
-                    document=FSInputFile(common_settings.RESOURCES_PATH.format(file_name)),
-                    **MessageTexts.generate_ref_system_text(ref_link),
-                )
-                file_ids[file_name] = kp_message.document.file_id
-                cache_resources_file_id_store.update_data(file_ids)
+            await send_ref_user_info(query.message, query.from_user.id, bot)
         case callback_data.ActionEnum.BACK:
             await query.message.delete()
             await bot.forward_message(chat_id=chat_id, from_chat_id=from_chat_id, message_id=18)

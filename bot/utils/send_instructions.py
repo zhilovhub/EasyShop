@@ -8,8 +8,8 @@ from bot.keyboards.main_menu_keyboards import ReplyBotMenuKeyboard
 from bot.utils import MessageTexts
 
 
-async def greetings_message(bot: Bot, custom_bot_id: int | None, message: Message) -> None:
-    chat_id = message.chat.id
+async def greetings_message(bot: Bot, custom_bot_id: int | None, message: Message, chat_id: int | None = None) -> None:
+    chat_id = message.chat.id if not chat_id else chat_id
     from_chat_id = -1002218211760
 
     await bot.forward_message(  # Добро пожаловать

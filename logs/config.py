@@ -176,13 +176,8 @@ logger_configuration = {
             "level": "DEBUG",
             "handlers": ["console_handler", "file_handler", "file_error_warning_handler", "loki_handler"],
         },
-        "test_logger": {
-            "level": "DEBUG",
-            "handlers": [
-                "console_handler"
-            ]
-        },
-    }
+        "test_logger": {"level": "DEBUG", "handlers": ["console_handler"]},
+    },
 }
 
 logging.config.dictConfig(logger_configuration)

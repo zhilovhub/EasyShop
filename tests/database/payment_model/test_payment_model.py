@@ -3,7 +3,8 @@ from database.models.payment_model import PaymentSchema, PaymentDao
 
 class TestPaymentModel:
     """Tests for PaymentDao"""
-    async def test_get_all_payments(self, payments: list[PaymentSchema], payment_db: PaymentDao, add_payments):
+
+    async def test_get_all_payments(self, payments: list[PaymentSchema], payment_db: PaymentDao, add_payments):  # noqa
         schemas = await payment_db.get_all_payments()
 
         assert schemas

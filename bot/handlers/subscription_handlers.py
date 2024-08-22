@@ -325,7 +325,7 @@ async def approve_pay_callback(query: CallbackQuery):
         await user_state.set_state(States.WAITING_FOR_TOKEN)
         await user_state.set_data({"bot_id": -1})
         await bot.send_message(user_id, "Оплата подписки подтверждена ✅")
-        await greetings_message(bot, None, query.message)
+        await greetings_message(bot, None, query.message, chat_id=user_id)
         await bot.send_message(
             user_id,
             "Чтобы получить бота с магазином, воспользуйтесь инструкцией выше 👆",

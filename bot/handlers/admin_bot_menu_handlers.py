@@ -51,7 +51,7 @@ from common_utils.keyboards.keyboards import (
     InlineBotMainWebAppButton,
 )
 from common_utils.broadcasting.broadcasting import send_event, EventTypes
-from common_utils.ref_utils import handle_ref_user
+from common_utils.ref_utils import send_ref_user_info
 from common_utils.storage.custom_bot_storage import custom_bot_storage
 from common_utils.keyboards.order_manage_keyboards import (
     InlineOrderCancelKeyboard,
@@ -648,11 +648,11 @@ async def bot_menu_callback_handler(query: CallbackQuery, state: FSMContext):
             await query.answer("Ваш бот приостановлен ❌", show_alert=True)
 
         case callback_data.ActionEnum.REFERRAL_SYSTEM:
-            ref_link = await handle_ref_user(user_id, bot)
-            await query.message.edit_text(
-                **MessageTexts.generate_ref_system_text(ref_link),
-                reply_markup=InlineBackFromRefKeyboard.get_keyboard(bot_id),
+            from_chat_id = -1002218211760
+            await bot.forward_messages(
+                chat_id=query.from_user.id, from_chat_id=from_chat_id, message_ids=[10, 11, 12, 13]
             )
+            await send_ref_user_info(query.message, query.from_user.id, bot)
 
         case callback_data.ActionEnum.BOT_DELETE:
             await query.message.answer(
