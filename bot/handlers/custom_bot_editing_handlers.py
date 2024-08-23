@@ -1253,7 +1253,7 @@ async def editing_custom_color_handler(message: Message, state: FSMContext):
                         "<i>#FFFFFF</i> или напишите <i>telegram</i> для дефолтных цветов."
                     )
 
-                new_color = None if message_text == "telegram" else message_text
+                new_color = message_text
 
                 try:
                     options = await option_db.get_option(custom_bot.options_id)
