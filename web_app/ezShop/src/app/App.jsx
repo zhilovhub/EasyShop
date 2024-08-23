@@ -15,6 +15,8 @@ function App() {
 
   useEffect(() => {
 
+    if(botId){
+
     const url = `https://ezbots.ru:${process.env.REACT_APP_API_PORT}/api/settings/get_web_app_options/${botId}`;
 
     fetch(url, {
@@ -89,6 +91,7 @@ function App() {
             console.error('Error:', error);
         });
 
+    }
 
   }, [botId])
 
