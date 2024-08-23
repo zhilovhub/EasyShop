@@ -52,7 +52,7 @@ class ShortDescriptionKeyboard:  # Краткий рассказ о продук
                 ],
                 [
                     InlineKeyboardButton(
-                        text=CALLBACK_TO_STRING_NAME[actions.CHANNEL_SUBSCRIBE], url="t.me/EzShopOfficial"
+                        text=CALLBACK_TO_STRING_NAME[actions.CHANNEL_SUBSCRIBE], url="http://t.me/EzShopOfficial"
                     ),
                 ],
             ],

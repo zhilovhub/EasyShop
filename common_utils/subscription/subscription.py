@@ -5,21 +5,11 @@ from database.models.user_model import UserStatusValues, UserSchema
 from database.models.payment_model import PaymentSchemaWithoutId
 
 from common_utils.config import main_telegram_bot_settings, database_settings
+from common_utils.singleton import singleton
 from common_utils.subscription import config
 from common_utils.scheduler.scheduler import Scheduler
 
 from logs.config import logger, extra_params
-
-
-def singleton(class_):
-    instances = {}
-
-    def get_instance(*args, **kwargs):
-        if class_ not in instances:
-            instances[class_] = class_(*args, **kwargs)
-        return instances[class_]
-
-    return get_instance
 
 
 class UserHasAlreadyStartedTrial(Exception):

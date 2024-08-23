@@ -3,29 +3,32 @@ import asyncio
 from aiogram import Bot
 from aiogram.types import Message
 
+from bot.utils import MessageTexts
 from bot.keyboards.start_keyboards import ShortDescriptionKeyboard
 from bot.keyboards.main_menu_keyboards import ReplyBotMenuKeyboard
-from bot.utils import MessageTexts
+
+from common_utils.tests_utils import messages_collector
 
 
-async def greetings_message(bot: Bot, custom_bot_id: int | None, message: Message, chat_id: int | None = None) -> None:
+@messages_collector()
+async def greetings_message(bot: Bot, custom_bot_id: int | None, message: Message, chat_id: int | None = None):
     chat_id = message.chat.id if not chat_id else chat_id
     from_chat_id = -1002218211760
 
-    await bot.forward_message(  # Добро пожаловать
+    yield await bot.forward_message(  # Добро пожаловать
         chat_id=chat_id, from_chat_id=from_chat_id, message_id=4
     )
     await asyncio.sleep(5)
 
-    await bot.forward_message(  # Краткий рассказ о продукте
+    yield await bot.forward_message(  # Краткий рассказ о продукте
         chat_id=chat_id, from_chat_id=from_chat_id, message_id=6
     )
-    await message.answer(
+    yield await message.answer(
         **MessageTexts.generate_menu_start_text(), reply_markup=ShortDescriptionKeyboard.get_keyboard()
     )
 
     if custom_bot_id:
-        await bot.send_message(
+        yield await bot.send_message(
             chat_id=chat_id, text="✅ У Вас уже есть бот", reply_markup=ReplyBotMenuKeyboard.get_keyboard()
         )
 

@@ -26,17 +26,21 @@ from database.models.order_choose_option_model import OrderChooseOptionDao
 from database.models import Base  # should be the last import from database.models
 
 from common_utils.singleton import singleton
+from common_utils.config import database_settings
+from common_utils.config.env_config import Mode
 
 
 @singleton
 class Database:
-    def __init__(self, sqlalchemy_url: str, logger, is_test_mode: bool = False) -> None:
-        if is_test_mode:
+    def __init__(self, sqlalchemy_url: str, logger) -> None:
+        self.logger = logger
+
+        if database_settings.MODE == Mode.TEST:
+            self.logger.debug("Database runs in Mode.TEST")
             self.engine = create_async_engine(sqlalchemy_url, poolclass=NullPool)
         else:
+            self.logger.debug("Database runs in Mode.PROD")
             self.engine = create_async_engine(sqlalchemy_url)
-
-        self.logger = logger
 
         self.bot_dao = BotDao(self.engine, self.logger)
         self.user_dao = UserDao(self.engine, self.logger)

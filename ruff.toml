@@ -12,3 +12,4 @@ select = ["F", "E", "W", "PLE", "PLW", "ARG"]
 
 [lint.per-file-ignores]
 "__init__.py" = ["F401", "F403"]
+"conftest.py" = ["ARG001"]

@@ -34,6 +34,7 @@ from common_utils.keyboards.keyboards import InlineBotMenuKeyboard
 from common_utils.subscription.subscription import UserHasAlreadyStartedTrial
 from common_utils.exceptions.bot_exceptions import UnknownDeepLinkArgument
 from common_utils.broadcasting.broadcasting import send_event, EventTypes
+from common_utils.tests_utils import messages_collector
 
 from database.config import user_db, bot_db, user_role_db, referral_invite_db
 from database.models.bot_model import BotNotFoundError
@@ -264,13 +265,14 @@ async def deep_link_start_command_handler(message: Message, state: FSMContext, c
         raise UnknownDeepLinkArgument(arg=deep_link_params)
 
 
+@messages_collector()
 async def _check_if_new_user(
     message: Message,
     state: FSMContext,
     trial_duration: int = config.TRIAL_DURATION_IN_DAYS,
     is_ref: bool = False,
     came_from: int = None,
-) -> None:
+):
     user_id = message.from_user.id
 
     try:  # Проверка, есть ли такой пользователь (если нет то это новый пользователь)
@@ -298,7 +300,7 @@ async def _check_if_new_user(
     user_bots = await user_role_db.get_user_bots(user_id)
 
     # Отправляем инструкцию. Если у человека есть бот, к инструкции добавится клавиатурное (не inline) меню бота.
-    await greetings_message(bot, user_bots[0].bot_id if user_bots else None, message)
+    yield await greetings_message(bot, user_bots[0].bot_id if user_bots else None, message)
 
     if not user_bots:
         await state.set_state(States.WAITING_FOR_TOKEN)  # Просто ожидаем токен, так как ботов у человека нет
@@ -308,6 +310,7 @@ async def _check_if_new_user(
 
 
 @commands_router.message(CommandStart())
+@messages_collector(expected_types=[Message, FSMContext])
 async def start_command_handler(message: Message, state: FSMContext):
     """
     1. Встречает пользователя, проверяет, есть ли он в базе данных. Если нет, то создаёт, так как видимо пользователь
@@ -318,7 +321,7 @@ async def start_command_handler(message: Message, state: FSMContext):
         3.2 Если нет ботов, то переводит в состояние WAITING_FOR_TOKEN
     """
 
-    await _check_if_new_user(message, state)  # Проверяем, новый ли пользователь
+    yield await _check_if_new_user(message, state)  # Проверяем, новый ли пользователь
 
 
 @commands_router.message(Command("rm_admin"), StateFilter(States.BOT_MENU))
