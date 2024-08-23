@@ -14,6 +14,7 @@ function BasketCard(props) {
     const dispatch = useDispatch();
     const productList = useSelector(state => state.productList.productList);
     const [imgUrl, setImgUrl] = useState('');
+    const appOptions = useSelector(state => state.appOptions.data);
 
 
     useEffect(() => {
@@ -74,7 +75,7 @@ function BasketCard(props) {
 
                 <div className={styles.top_info_container}>
                     <p className={styles.name}>{props.product.name}</p>
-                    <p className={styles.price}>{props.product.price} P</p>
+                    <p className={styles.price}>{props.product.price} {appOptions.currency_symbol}</p>
                 </div>
 
                 <div className={styles.counter}>

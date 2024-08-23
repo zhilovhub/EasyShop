@@ -18,6 +18,7 @@ function FilterPage({mainButton}){
     const sortFilter = [t('filters__sort_2'), t('filters__sort_3')]
     const [shopCategories, setShopCategories] = useState([])
     const botId = useSelector(state => state.botId.botId);
+    const categories = useSelector(state => state.categories.categories);
 
 
 
@@ -38,29 +39,29 @@ function FilterPage({mainButton}){
             .show()
             .on('click', mainButtonListener, true);
 
-        const url = `https://ezbots.ru:${process.env.REACT_APP_API_PORT}/api/categories/get_all_categories/${botId}`;
-        fetch(url, {
-            method: 'GET',
-            headers: {
-                'Content-Type': 'application/json',
-                'Accept': 'application/json',
-                'authorization-data': 'DEBUG'
-            }
-        })
-        .then(response => {
-            if (!response.ok) {
-                throw new Error('Network response was not ok ' + response.statusText);
-            }
-            return response.json();
-        })
-        .then(data => {
+        // const url = `https://ezbots.ru:${process.env.REACT_APP_API_PORT}/api/categories/get_all_categories/${botId}`;
+        // fetch(url, {
+        //     method: 'GET',
+        //     headers: {
+        //         'Content-Type': 'application/json',
+        //         'Accept': 'application/json',
+        //         'authorization-data': 'DEBUG'
+        //     }
+        // })
+        // .then(response => {
+        //     if (!response.ok) {
+        //         throw new Error('Network response was not ok ' + response.statusText);
+        //     }
+        //     return response.json();
+        // })
+        // .then(data => {
 
-            setShopCategories(data)
+        //     setShopCategories(data)
             
-        })
-        .catch(error => {
-            console.error('Error:', error);
-        });
+        // })
+        // .catch(error => {
+        //     console.error('Error:', error);
+        // });
 
         return () => {
             mainButton.off('click', mainButtonListener)
@@ -135,7 +136,7 @@ function FilterPage({mainButton}){
 
         <div className={styles.header}>
             <p className={styles.title}>{t('filters__filters')}</p>
-            <CrossIcon className={styles.search_icon} onClick={() => navigate("/app/catalog")}></CrossIcon>
+            <CrossIcon className={styles.cross_icon} onClick={() => navigate("/app/catalog")}></CrossIcon>
         </div>
 
         <p className={styles.input_title}>{t('filters__price')}</p>
@@ -166,7 +167,7 @@ function FilterPage({mainButton}){
 
         <div className={styles.categories_container}>
 
-            { shopCategories.map(category => (
+            { categories.map(category => (
                 <p className={filter.categories.map(i => i.id).includes(category.id) ? styles.category_active : styles.category} onClick={ () => {
 
                     if (filter.categories.map(i => i.id).includes(category.id)){

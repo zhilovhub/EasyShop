@@ -27,8 +27,6 @@ function BasketPage({mainButton}){
         backButton.on('click', backButtonListener, true);
         backButton.show();
 
-        console.log(productList)
-
         mainButton
         .setText("Начать оформление")
         .setBgColor("#9edcff")

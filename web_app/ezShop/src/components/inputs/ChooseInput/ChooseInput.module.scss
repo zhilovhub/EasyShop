@@ -24,11 +24,12 @@
 }
 
 .choose_icon *{
-    color: var(--text_color);
+    fill: var(--text_color);
 }
 
 .input{
     @include input;
+    cursor: pointer;
     margin-top: 8px;
     border: 2px solid rgb(0, 0, 0, 0)
 }

@@ -79,6 +79,20 @@
     gap: 3px;
     border: 2px solid rgb(0, 0, 0, 0);
     border-radius: $font-size-4 + 3px;
+
+    user-select: none; /* Для современных браузеров */
+    -moz-user-select: none; /* Для Firefox */
+    -webkit-user-select: none; /* Для Safari */
+    -ms-user-select: none; /* Для Internet Explorer/Edge */
+    -webkit-tap-highlight-color: rgba(0, 0, 0, 0);
+    transition: none;
+    touch-action: manipulation;
+    outline: none;
+    cursor: pointer;
+
+    &:focus {
+        outline: none;
+    }
 }
 
 // .variant_block:hover{
@@ -92,6 +106,20 @@
     gap: 3px;
     border: 2px solid var(--button_color);
     border-radius: $font-size-4 + 3px;
+
+    user-select: none; /* Для современных браузеров */
+    -moz-user-select: none; /* Для Firefox */
+    -webkit-user-select: none; /* Для Safari */
+    -ms-user-select: none; /* Для Internet Explorer/Edge */
+    -webkit-tap-highlight-color: rgba(0, 0, 0, 0);
+    transition: none;
+    touch-action: manipulation;
+    outline: none;
+    cursor: pointer;
+
+    &:focus {
+        outline: none;
+    }
 }
 
 .variant_container_scroll{

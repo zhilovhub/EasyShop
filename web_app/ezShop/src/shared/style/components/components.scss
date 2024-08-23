@@ -92,6 +92,20 @@
     &[type="number"] {
         -moz-appearance: textfield; /* Для Firefox, убираем стрелки */
     }
+
+    user-select: none; /* Для современных браузеров */
+    -moz-user-select: none; /* Для Firefox */
+    -webkit-user-select: none; /* Для Safari */
+    -ms-user-select: none; /* Для Internet Explorer/Edge */
+    -webkit-tap-highlight-color: rgba(0, 0, 0, 0);
+    transition: none;
+    touch-action: manipulation;
+    outline: none;
+    cursor: text;
+
+    &:focus {
+        outline: none;
+    }
 }
 
 @mixin search_input {
@@ -121,6 +135,20 @@
 
     &[type="number"] {
         -moz-appearance: textfield;
+    }
+
+    user-select: none; /* Для современных браузеров */
+    -moz-user-select: none; /* Для Firefox */
+    -webkit-user-select: none; /* Для Safari */
+    -ms-user-select: none; /* Для Internet Explorer/Edge */
+    -webkit-tap-highlight-color: rgba(0, 0, 0, 0);
+    transition: none;
+    touch-action: manipulation;
+    outline: none;
+    cursor: text;
+
+    &:focus {
+        outline: none;
     }
 }
 
@@ -187,6 +215,20 @@
 
     &[type="number"] {
         -moz-appearance: textfield; /* Для Firefox, убираем стрелки */
+    }
+
+    user-select: none; /* Для современных браузеров */
+    -moz-user-select: none; /* Для Firefox */
+    -webkit-user-select: none; /* Для Safari */
+    -ms-user-select: none; /* Для Internet Explorer/Edge */
+    -webkit-tap-highlight-color: rgba(0, 0, 0, 0);
+    transition: none;
+    touch-action: manipulation;
+    outline: none;
+    cursor: text;
+
+    &:focus {
+        outline: none;
     }
 }
 

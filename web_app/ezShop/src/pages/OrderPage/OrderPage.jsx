@@ -2,7 +2,8 @@ import styles from './OrderPage.module.scss';
 import { useTranslation } from 'react-i18next';
 import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate } from "react-router-dom";
-import order_img from "../../shared/images/order-img.svg"
+// import order_img from "../../shared/images/order-img.svg";
+import {ReactComponent as OrderImg} from "../../shared/images/order-img.svg";
 import { useEffect, useState } from 'react';
 import { use } from 'i18next';
 import drop_down_icon from '../../shared/icon/drop-down-icon.svg'
@@ -32,6 +33,7 @@ function OrderPage({mainButton}){
     const [orderOptions, setOrderOptions] = useState([]);
     const [isCheck, setIsCheck] = useState(false)
     const isCorrect = useSelector(state => state.validate.isCorrect);
+    const appOptions = useSelector(state => state.appOptions.data);
 
     const [rawOrderOptions, setRawOrderOptions] = useState({});
 
@@ -42,6 +44,7 @@ function OrderPage({mainButton}){
 
     function mainButtonListener() {
         sendOrder();
+        mainButton.off('click', mainButtonListener);
     }
     
     
@@ -61,44 +64,44 @@ function OrderPage({mainButton}){
             .enable()
             .show()
 
-        const url = `https://ezbots.ru:${process.env.REACT_APP_API_PORT}/api/settings/get_order_options/${botId}`;
-        fetch(url, {
-            method: 'GET',
-            headers: {
-                'Content-Type': 'application/json',
-                'Accept': 'application/json',
-                'authorization-data': 'DEBUG'
-            }
-        })
-        .then(response => {
-            if (!response.ok) {
-                throw new Error('Network response was not ok ' + response.statusText);
-            }
-            return response.json();
-        })
-        .then(data => {
-            // setOrderOptions(data)
+        // const url = `https://ezbots.ru:${process.env.REACT_APP_API_PORT}/api/settings/get_order_options/${botId}`;
+        // fetch(url, {
+        //     method: 'GET',
+        //     headers: {
+        //         'Content-Type': 'application/json',
+        //         'Accept': 'application/json',
+        //         'authorization-data': 'DEBUG'
+        //     }
+        // })
+        // .then(response => {
+        //     if (!response.ok) {
+        //         throw new Error('Network response was not ok ' + response.statusText);
+        //     }
+        //     return response.json();
+        // })
+        // .then(data => {
+        //     // setOrderOptions(data)
 
-            const newOrderData = data.map(orderItem => {
-                orderItem.value = ""
-                console.log("--------")
-                console.log(orderItem.option_name)
-                console.log("+++++++++")
-                console.log(orderItem)
-                return orderItem
-            })
+        //     const newOrderData = data.map(orderItem => {
+        //         orderItem.value = ""
+        //         console.log("--------")
+        //         console.log(orderItem.option_name)
+        //         console.log("+++++++++")
+        //         console.log(orderItem)
+        //         return orderItem
+        //     })
 
-            console.log("newOrderData")
-            // console.log(newOrderData)
-            dispatch(setOrderData(data))
+        //     console.log("newOrderData")
+        //     // console.log(newOrderData)
+        //     dispatch(setOrderData(data))
 
-            console.log('initOrderData')
-            console.log(data)
-            console.log(orderData)
-        })
-        .catch(error => {
-            console.error('Error:', error);
-        });
+        //     console.log('initOrderData')
+        //     console.log(data)
+        //     console.log(orderData)
+        // })
+        // .catch(error => {
+        //     console.error('Error:', error);
+        // });
 
     
         return () => {
@@ -128,41 +131,10 @@ function OrderPage({mainButton}){
         switch (type){
             case "text":
                 return <TextInput isCheck={isCheck} data={data}></TextInput>
-                
-                // <>
-                // <p className={styles.input_title}>{data.option.option_name}</p>
-                // <input 
-                // className={styles.input} 
-                // placeholder={data.option.hint} 
-                // style={ isCheck && data.option.required ? {border: "2px solid red"} : {}}>
-                // </input>
-                // </>
-
             case "choose":
                 return <ChooseInput isCheck={isCheck} data={data}></ChooseInput>
-                // <>
-                // <p className={styles.input_title}>{data.option.option_name}</p>
-                // <div className={styles.choose_container}>
-                // <select className={styles.input}>
-                //     <option value="1">На адрес</option>
-                //     <option value="2">Почта России</option>
-                //     <option value="3">СДЭК</option>
-                //     <option value="4">Boxberry</option>
-                // </select>
-                // <img className={styles.choose_icon} src={drop_down_icon}></img>
-                // </div>
-                // </>
             case "text_area":
                 return <TextAreaInput isCheck={isCheck} data={data}></TextAreaInput>
-                
-                // <>
-                // <p className={styles.input_title}>{data.option.option_name}</p>
-                // <textarea 
-                // className={styles.textarea}
-                // placeholder={data.option.hint}
-                // style={ isCheck && data.option.required ? {border: "2px solid red"} : {}}>
-                // </textarea>
-                // </>
             default:
                 <></>
         }
@@ -331,7 +303,8 @@ function OrderPage({mainButton}){
         </div>
 
         <div className={styles.order_info}>
-            <img className={styles.order_img} src={order_img}></img>
+            {/* <img className={styles.order_img} src={order_img}></img> */}
+            <OrderImg className={styles.order_img}></OrderImg>
             <div className={styles.right_container}>
                 <p className={styles.your_order_title}>{t('order__your_order')}</p>
                 
@@ -339,7 +312,7 @@ function OrderPage({mainButton}){
                     <p className={styles.product_name}>{product.name} {product.buyCount != 1 ? <>(x{product.buyCount})</> : <></>}</p>
                 ))}
 
-                <p className={styles.sum}>{orderSum()} ₽</p>
+                <p className={styles.sum}>{orderSum()} {appOptions.currency_symbol}</p>
             </div>
         </div>
 

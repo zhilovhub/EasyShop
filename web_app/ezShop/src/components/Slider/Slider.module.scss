@@ -12,12 +12,14 @@
 .arrow_left{
     color: $black-color;
     width: 25px;
+    cursor: pointer;
 }
 
 .arrow_right{
     color: $black-color;
     width: 25px;
     transform: rotate(180deg);
+    cursor: pointer;
 }
 
 .arrow_container{

@@ -27,6 +27,7 @@ function ProductPage({mainButton}){
     const [extraOptions, setExtraOptions] = useState([])
     const [productImages, setProductImages] = useState([])
     const [isImageLoad, setIsImageLoad] = useState(false)
+    const appOptions = useSelector(state => state.appOptions.data);
 
     const [backButton] = initBackButton();
     backButton.show();
@@ -225,7 +226,7 @@ function ProductPage({mainButton}){
                 {/* <img className={styles.img} src={imgUrl}></img> */}
                 <Slider urls={productImages}></Slider>
                 <p className={styles.name}>{product.name}</p>
-                <p className={styles.price}>{getPrice()} ₽</p>
+                <p className={styles.price}>{getPrice()} {appOptions.currency_symbol}</p>
 
                 <div className={styles.product_blocks}>
 
