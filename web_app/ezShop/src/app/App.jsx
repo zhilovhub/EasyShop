@@ -67,32 +67,29 @@ function App() {
 
 
 
-        fetch(`https://ezbots.ru:${process.env.REACT_APP_API_PORT}/api/categories/get_all_categories/${botId}`, {
-            method: 'GET',
-            headers: {
-                'Content-Type': 'application/json',
-                'Accept': 'application/json',
-                'authorization-data': 'DEBUG'
-            }
-        })
-        .then(response => {
-            if (!response.ok) {
-                throw new Error('Network response was not ok ' + response.statusText);
-            }
-            return response.json();
-        })
-        .then(data => {
-
-
-          dispatch(setCategories(data))
-            
-        })
-        .catch(error => {
-            console.error('Error:', error);
-        });
+    fetch(`https://ezbots.ru:${process.env.REACT_APP_API_PORT}/api/categories/get_all_categories/${botId}`, {
+        method: 'GET',
+        headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+            'authorization-data': 'DEBUG'
+        }
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error('Network response was not ok ' + response.statusText);
+        }
+        return response.json();
+    })
+    .then(data => {
+      dispatch(setCategories(data))
+        
+    })
+    .catch(error => {
+        console.error('Error:', error);
+    });
 
     }
-
   }, [botId])
 
   return (
