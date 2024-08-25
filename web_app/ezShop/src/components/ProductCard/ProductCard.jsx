@@ -108,7 +108,7 @@ function ProductCard(props) {
         <div className={styles.product_card} onClick={() => navigate("/app/product", { state: { product }, imgUrl: {imgUrl} })}>
             {props.product.buyCount != 0 ? <p className={styles.buyCount}>{props.product.buyCount}</p> : <></>}
             <img className={styles.image} src={imgUrl}></img>
-            <p className={styles.price}>{props.product.price} {appOptions.currency_symbol ? appOptions.currency_symbol : ""}</p>
+            <p className={styles.price}>{props.product.price} {appOptions ? appOptions.currency_symbol : ""}</p>
             <p className={styles.name}>{props.product.name}</p>
             {getButton()}
         </div>
