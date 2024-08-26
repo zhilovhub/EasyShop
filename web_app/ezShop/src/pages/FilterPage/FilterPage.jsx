@@ -20,8 +20,6 @@ function FilterPage({mainButton}){
     const botId = useSelector(state => state.botId.botId);
     const categories = useSelector(state => state.categories.categories);
 
-
-
     useEffect(() => {
 
         const [backButton] = initBackButton();
