@@ -52,9 +52,9 @@ function Catalog({mainButton}) {
 
     useEffect(() => {
 
-        // if (!botId) {
-        //     return
-        // }
+        if (!botId) {
+            return
+        }
 
         const url = `https://ezbots.ru:${process.env.REACT_APP_API_PORT}/api/settings/get_web_app_options/${botId}`;
             fetch(url, {

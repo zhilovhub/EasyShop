@@ -8,6 +8,7 @@ import search_icon from '../../shared/icon/search-icon.svg';
 
 import {ReactComponent as MinusIcon} from '../../shared/icon/minus-icon.svg';
 import {ReactComponent as PlusIcon} from '../../shared/icon/plus-icon.svg';
+import {ReactComponent as DefaultImg} from '../../shared/images/default-img.svg';
 
 import { useDispatch, useSelector } from 'react-redux';
 import { setProductList } from '../../shared/redux/action/ProductListAction';
@@ -26,7 +27,7 @@ function ProductCard(props) {
     
     useEffect(() => {
 
-    // if(!imgUrlIsLoad){
+    if(props.product.pictures[0]){
     const url = `https://ezbots.ru:${process.env.REACT_APP_API_PORT}/api/files/get_file/${props.product.pictures[0]}`;
         fetch(url, {
             method: 'GET',
@@ -50,7 +51,7 @@ function ProductCard(props) {
             console.error('Error:', error);
         });
         setImgUrlIsLoad(true)
-    // }
+    }
 
     }, [props.product])
 
@@ -107,12 +108,15 @@ function ProductCard(props) {
     return (
         <div className={styles.product_card} onClick={() => navigate("/app/product", { state: { product }, imgUrl: {imgUrl} })}>
             {props.product.buyCount != 0 ? <p className={styles.buyCount}>{props.product.buyCount}</p> : <></>}
-            <img className={styles.image} src={imgUrl}></img>
+            <img className={styles.image} src={imgUrl} alt={<DefaultImg></DefaultImg>}></img>
             <p className={styles.price}>{props.product.price} {appOptions ? appOptions.currency_symbol : ""}</p>
             <p className={styles.name}>{props.product.name}</p>
             {getButton()}
         </div>
     );
+
+
+
 
 }
 
