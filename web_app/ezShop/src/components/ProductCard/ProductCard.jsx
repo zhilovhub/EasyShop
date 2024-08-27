@@ -27,7 +27,7 @@ function ProductCard(props) {
     
     useEffect(() => {
 
-    if(props.product.pictures[0]){
+    if(props.product.pictures){
     const url = `https://ezbots.ru:${process.env.REACT_APP_API_PORT}/api/files/get_file/${props.product.pictures[0]}`;
         fetch(url, {
             method: 'GET',
