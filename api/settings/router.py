@@ -5,13 +5,17 @@ from fastapi import APIRouter
 
 from pydantic import BaseModel
 
-from database.config import bot_db, option_db, order_option_db, order_choose_option_db
+from database.config import bot_db, option_db, order_option_db, order_choose_option_db, custom_bot_user_db
+
 from database.models.bot_model import BotNotFoundError
 from database.models.option_model import OptionSchema, OptionNotFoundError
 from database.models.order_option_model import OrderOptionSchema, OrderOptionTypeValues
 from database.models.order_choose_option_model import OrderChooseOptionSchema
+from database.models.custom_bot_user_model import CustomBotUserNotFoundError, UserLanguageValues
 
-from api.utils import HTTPBotNotFoundError, HTTPInternalError, RESPONSES_DICT
+from database.enums import UserLanguageValues
+
+from api.utils import HTTPBotNotFoundError, HTTPInternalError, RESPONSES_DICT, HTTPBotUserNotFoundError
 
 from common_utils.themes import ThemeParamsSchema
 from common_utils.config import custom_telegram_bot_settings
@@ -70,6 +74,34 @@ async def get_web_app_options_api(bot_id: int) -> OptionSchema:
         raise HTTPInternalError
 
 
+@router.get("/get_user_language/{bot_id}/{user_id}")
+async def get_user_language_api(bot_id: int, user_id: int) -> UserLanguageValues:
+    """
+    :returns: Pydantic WebAppOptions Model with options
+
+    :raises HTTPBotUserNotFoundError:
+    :raises HTTPInternalError:
+    """
+    try:
+        custom_bot_user = await custom_bot_user_db.get_custom_bot_user(bot_id, user_id)
+    except CustomBotUserNotFoundError as e:
+        api_logger.error(
+            f"bot_id={bot_id}: boy user user_id={bot_id} is not found in database",
+            extra=extra_params(bot_id=bot_id, user_id=user_id),
+            exc_info=e,
+        )
+        raise HTTPBotUserNotFoundError(bot_id=bot_id, user_id=user_id)
+    except Exception as e:
+        api_logger.error(
+            f"bot_id={bot_id}: Error while execute get_user_language with bot_id={bot_id} and user_id={user_id}",
+            extra=extra_params(bot_id=bot_id, user_id=user_id),
+            exc_info=e,
+        )
+        raise HTTPInternalError
+
+    return custom_bot_user.user_language.value
+
+
 class APIOrderOption(BaseModel):
     option: OrderOptionSchema
     variants: list[OrderChooseOptionSchema] | None = None
@@ -103,6 +135,14 @@ async def get_order_options_api(bot_id: int) -> list[APIOrderOption]:
             f"bot_id={bot_id}: bot_id={bot_id} is not found in database", extra=extra_params(bot_id=bot_id), exc_info=e
         )
         raise HTTPBotNotFoundError(bot_id=bot_id)
+
+    except Exception as e:
+        api_logger.error(
+            f"bot_id={bot_id}: Error while execute get_bot db_method with bot_id={bot_id}",
+            extra=extra_params(bot_id=bot_id),
+            exc_info=e,
+        )
+        raise HTTPInternalError
 
 
 class HexColorData(BaseModel):

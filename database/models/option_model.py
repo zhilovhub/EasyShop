@@ -1,3 +1,5 @@
+import json
+
 from pydantic import BaseModel, ConfigDict, Field, validate_call
 
 from enum import Enum
@@ -15,6 +17,7 @@ from sqlalchemy import (
     TypeDecorator,
     Unicode,
     Dialect,
+    ARRAY,
     JSON,
 )
 from sqlalchemy.ext.asyncio import AsyncEngine
@@ -25,12 +28,27 @@ from database.models import Base
 from database.models.dao import Dao
 from database.exceptions.exceptions import KwargsException
 
+from database.enums import UserLanguage, UserLanguageValues
+
 from logs.config import extra_params
 
 
 # TODO Create handle_exception_func
 class OptionNotFoundError(KwargsException):
     """Raised when provided option not found in database"""
+
+
+DEFAULT_START_MESSAGES = {
+    UserLanguageValues.RUSSIAN.value: "Здравствуйте, <b>{name}</b>! Для открытия магазина нажмите на кнопку магазин",
+    UserLanguageValues.ENGLISH.value: "Hello, <b>{name}</b>! To open a store, click on the store button",
+    UserLanguageValues.HEBREW.value: "שלום, <b>{name}</b>! כדי לפתוח את החנות, לחץ על כפתור החנות",
+}
+
+DEFAULT_DEF_MESSAGES = {
+    UserLanguageValues.RUSSIAN.value: "Приветствую, этот бот создан с помощью @{bot_username}",
+    UserLanguageValues.ENGLISH.value: "Greetings, this bot was created using @{bot_username}",
+    UserLanguageValues.HEBREW.value: "ברכות, הבוט הזה נוצר עם @{bot_username}",
+}
 
 
 class CurrencyCodesValues(Enum):
@@ -101,13 +119,14 @@ class Option(Base):
     __tablename__ = "options"
 
     id = Column(BigInteger, primary_key=True)
-    start_msg = Column(String, nullable=False)
-    default_msg = Column(String, nullable=False)
+    start_msg = Column(JSON, nullable=False, default=json.dumps(DEFAULT_START_MESSAGES))
+    default_msg = Column(JSON, nullable=False, default=json.dumps(DEFAULT_DEF_MESSAGES))
     post_order_msg = Column(String, nullable=True)
     auto_reduce = Column(Boolean, nullable=False, default=False)
 
     theme_params = Column(JSON)
     web_app_button = Column(String, nullable=False)
+    languages = Column(ARRAY(UserLanguage), nullable=False, default=[UserLanguageValues.RUSSIAN])
 
     currency_code = Column(CurrencyCodes, nullable=False)
     currency_symbol = Column(CurrencySymbols, nullable=False)
@@ -122,13 +141,15 @@ class Option(Base):
 class OptionSchemaWithoutId(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
-    start_msg: str
-    default_msg: str
+    start_msg: dict = DEFAULT_START_MESSAGES
+    default_msg: dict = DEFAULT_DEF_MESSAGES
     post_order_msg: str | None = None
     auto_reduce: bool = False
 
     theme_params: ThemeParamsSchema = ThemeParamsSchema()
     web_app_button: str
+
+    languages: list[UserLanguageValues] = [UserLanguageValues.RUSSIAN]
 
     currency_code: CurrencyCodesValues = CurrencyCodesValues.RUSSIAN_RUBLE
     currency_symbol: CurrencySymbolsValues = CurrencySymbolsValues.RUSSIAN_RUBLE

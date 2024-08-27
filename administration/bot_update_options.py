@@ -1,6 +1,5 @@
 import asyncio
 
-from aiogram import Bot
 
 from database.models.models import Database
 from database.models.bot_model import BotDao
@@ -27,18 +26,11 @@ async def main() -> None:
     for bot in all_bots:
         if not bot.options_id:
             bg_color = bot.settings.get("bg_color", None)
-            start_msg = bot.settings.get("start_msg", MessageTexts.DEFAULT_START_MESSAGE.value)
-            default_msg = bot.settings.get(
-                "default_msg",
-                f"Приветствую, этот бот создан с помощью @{(await Bot(token=bot.token).get_me()).username}",
-            )
             auto_reduce = bot.settings.get("auto_reduce", True)
             web_app_button = bot.settings.get("web_app_button", MessageTexts.OPEN_WEB_APP_BUTTON_TEXT.value)
             post_order_msg = bot.settings.get("post_order_msg", None)
 
             options = OptionSchemaWithoutId(
-                start_msg=start_msg,
-                default_msg=default_msg,
                 post_order_msg=post_order_msg,
                 auto_reduce=auto_reduce,
                 bg_color=bg_color,

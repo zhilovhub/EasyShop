@@ -130,11 +130,15 @@ async def send_order_data_to_bot_api(
     :raises HTTPInternalError:
     """
     try:
-        await check_admin_authorization(order_data.bot_id, authorization_data, custom_bot_validate=True)
-        order_data.order_type = OrderType.CUSTOM_BOT_ORDER.value
-    except HTTPUnauthorizedError:
         await check_admin_authorization(order_data.bot_id, authorization_data, custom_bot_validate=False)
         order_data.order_type = OrderType.MAIN_BOT_TEST_ORDER.value
+    except HTTPUnauthorizedError:
+        try:
+            await check_admin_authorization(order_data.bot_id, authorization_data, custom_bot_validate=True)
+            order_data.order_type = OrderType.CUSTOM_BOT_ORDER.value
+        except:
+            api_logger.debug("custom bot user unauthorized")
+            raise
     except (HTTPUnauthorizedError, HTTPBotNotFoundError) as e:
         raise e
     try:

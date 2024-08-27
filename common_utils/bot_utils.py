@@ -3,7 +3,6 @@ from database.models.bot_model import BotIntegrityError, BotSchemaWithoutId
 from database.models.option_model import OptionSchemaWithoutId
 from database.models.order_option_model import OrderOptionSchemaWithoutId, OrderOptionDao, OrderOptionTypeValues
 
-from bot.main import bot
 from bot.utils.message_texts import MessageTexts
 
 from datetime import datetime
@@ -99,8 +98,6 @@ async def create_bot_options() -> int:
     """
     new_option_id = await option_db.add_option(
         OptionSchemaWithoutId(
-            start_msg=MessageTexts.DEFAULT_START_MESSAGE.value,
-            default_msg=f"Приветствую, этот бот создан с помощью @{(await bot.get_me()).username}",
             web_app_button=MessageTexts.OPEN_WEB_APP_BUTTON_TEXT.value,
         )
     )

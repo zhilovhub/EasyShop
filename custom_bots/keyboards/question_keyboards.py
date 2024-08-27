@@ -5,12 +5,15 @@ from pydantic import ValidationError, ConfigDict, Field, BaseModel
 from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup, ReplyKeyboardMarkup, KeyboardButton
 
 from common_utils.keyboards.keyboard_utils import callback_json_validator
+from database.enums import UserLanguageValues
 
 
 class ReplyBackQuestionMenuKeyboard:
     class Callback(BaseModel):
         class ActionEnum(Enum):
             BACK_TO_MAIN_MENU = "🔙 Назад"
+            BACK_TO_MAIN_MENU_ENG = "🔙 Back"
+            BACK_TO_MAIN_MENU_HEB = "🔙 חזרה"
 
         model_config = ConfigDict(from_attributes=True, populate_by_name=True)
 
@@ -20,12 +23,19 @@ class ReplyBackQuestionMenuKeyboard:
         bot_id: int
 
     @staticmethod
-    def get_keyboard() -> ReplyKeyboardMarkup:
+    def get_keyboard(lang: UserLanguageValues) -> ReplyKeyboardMarkup:
         actions = ReplyBackQuestionMenuKeyboard.Callback.ActionEnum
 
-        return ReplyKeyboardMarkup(
-            keyboard=[[KeyboardButton(text=actions.BACK_TO_MAIN_MENU.value)]], resize_keyboard=True
-        )
+        def _get_button_text():
+            match lang:
+                case UserLanguageValues.RUSSIAN:
+                    return actions.BACK_TO_MAIN_MENU.value
+                case UserLanguageValues.HEBREW:
+                    return actions.BACK_TO_MAIN_MENU_HEB.value
+                case UserLanguageValues.ENGLISH | _:
+                    return actions.BACK_TO_MAIN_MENU_ENG.value
+
+        return ReplyKeyboardMarkup(keyboard=[[KeyboardButton(text=_get_button_text())]], resize_keyboard=True)
 
 
 class InlineOrderQuestionKeyboard:

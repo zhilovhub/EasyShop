@@ -99,6 +99,11 @@ class HTTPBotNotFoundError(HTTPItemNotFoundError):
         super().__init__(detail_message="Bot not found.", bot_id=bot_id)
 
 
+class HTTPBotUserNotFoundError(HTTPItemNotFoundError):
+    def __init__(self, user_id: int | None = None, bot_id: int | None = None):
+        super().__init__(detail_message="Bot user not found.", user_id=user_id, bot_id=bot_id)
+
+
 class HTTPCategoryNotFoundError(HTTPItemNotFoundError):
     def __init__(self, category_id: int | None = None, bot_id: int | None = None):
         super().__init__(detail_message="Category not found.", category_id=category_id, bot_id=bot_id)

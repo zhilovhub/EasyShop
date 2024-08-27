@@ -6,6 +6,7 @@ from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup, ReplyKeybo
 
 from common_utils.keyboards.utils import get_product_by_id
 from common_utils.keyboards.keyboard_utils import callback_json_validator
+from database.enums import UserLanguageValues
 
 from database.models.order_model import OrderItem
 
@@ -20,7 +21,9 @@ class ReplyGetReviewMarkKeyboard:
             THREE = "3️⃣"
             FOUR = "4️⃣"
             FIVE = "5️⃣"
-            BACK = "Назад 🔙"
+            BACK = "🔙 Назад"
+            BACK_ENG = "🔙 Back"
+            BACK_HEB = "🔙 חזרה"
 
         model_config = ConfigDict(from_attributes=True, populate_by_name=True)
 
@@ -28,8 +31,16 @@ class ReplyGetReviewMarkKeyboard:
         a: ActionEnum
 
     @staticmethod
-    def get_keyboard() -> ReplyKeyboardMarkup:
+    def get_keyboard(lang: UserLanguageValues) -> ReplyKeyboardMarkup:
         actions = ReplyGetReviewMarkKeyboard.Callback.ActionEnum
+
+        match lang:
+            case UserLanguageValues.RUSSIAN:
+                text = actions.BACK.value
+            case UserLanguageValues.HEBREW:
+                text = actions.BACK_HEB.value
+            case UserLanguageValues.ENGLISH | _:
+                text = actions.BACK_ENG.value
 
         return ReplyKeyboardMarkup(
             keyboard=[
@@ -41,7 +52,7 @@ class ReplyGetReviewMarkKeyboard:
                     KeyboardButton(text=actions.FIVE.value),
                 ],
                 [
-                    KeyboardButton(text=actions.BACK.value),
+                    KeyboardButton(text=text),
                 ],
             ],
             resize_keyboard=True,
@@ -52,7 +63,9 @@ class ReplyGetReviewMarkKeyboard:
 class ReplyReviewBackKeyboard:
     class Callback(BaseModel):
         class ActionEnum(Enum):
-            BACK = "Назад 🔙"
+            BACK = "🔙 Назад"
+            BACK_ENG = "🔙 Back"
+            BACK_HEB = "🔙 חזרה"
 
         model_config = ConfigDict(from_attributes=True, populate_by_name=True)
 
@@ -60,13 +73,21 @@ class ReplyReviewBackKeyboard:
         a: ActionEnum
 
     @staticmethod
-    def get_keyboard() -> ReplyKeyboardMarkup:
+    def get_keyboard(lang: UserLanguageValues) -> ReplyKeyboardMarkup:
         actions = ReplyReviewBackKeyboard.Callback.ActionEnum
+
+        match lang:
+            case UserLanguageValues.RUSSIAN:
+                text = actions.BACK.value
+            case UserLanguageValues.HEBREW:
+                text = actions.BACK_HEB.value
+            case UserLanguageValues.ENGLISH | _:
+                text = actions.BACK_ENG.value
 
         return ReplyKeyboardMarkup(
             keyboard=[
                 [
-                    KeyboardButton(text=actions.BACK.value),
+                    KeyboardButton(text=text),
                 ],
             ],
             resize_keyboard=True,

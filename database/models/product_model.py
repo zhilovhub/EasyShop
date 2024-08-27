@@ -1,7 +1,7 @@
 from enum import Enum
 from typing import Optional, Annotated
 from pydantic import BaseModel, Field, validate_call, ConfigDict, model_validator
-from aiogram.utils.formatting import Text, Bold, Italic, Pre, Underline
+from aiogram.utils.formatting import Text, Bold, Italic, Underline, BlockQuote
 
 from sqlalchemy import BigInteger, Column, String, ForeignKey, Integer, JSON
 from sqlalchemy import select, insert, delete, update, and_, desc, asc
@@ -9,6 +9,7 @@ from sqlalchemy.ext.asyncio import AsyncEngine
 from sqlalchemy.dialects.postgresql import ARRAY
 from sqlalchemy.dialects.postgresql import insert as upsert
 
+from database.enums import UserLanguageValues
 from database.models import Base
 from database.models.dao import Dao
 from database.models.bot_model import Bot
@@ -113,7 +114,9 @@ class ProductWithoutId(BaseModel):
 class ProductSchema(ProductWithoutId):
     id: int
 
-    def convert_to_notification_text(self, count: int, used_extra_options: list = None) -> Text:
+    def convert_to_notification_text(
+        self, count: int, used_extra_options: list = None, lang: UserLanguageValues = UserLanguageValues.RUSSIAN
+    ) -> Text:
         """
         Converts ProductSchema to text for notification
         """
@@ -132,17 +135,41 @@ class ProductSchema(ProductWithoutId):
             return Text(Bold(f"{self.name} {self.price}₽ x {count}шт"), options_text)
         return Bold(f"{self.name} {self.price}₽ x {count}шт")
 
-    def convert_to_product_page_text(self) -> Text:
-        res = Text(
-            Italic(Bold("📦 Карточка товара.\n\n")),
-            "🔤 Название: ",
-            Bold(f"{self.name}"),
-            "\n\n📝 Описание:\n",
-            Pre(f"{self.description}"),
-            "\n\n",
-            "💰 Цена: ",
-            Bold(f"{self.price}₽"),
-        )
+    def convert_to_product_page_text(self, lang: UserLanguageValues = UserLanguageValues.RUSSIAN) -> Text:
+        match lang:
+            case UserLanguageValues.RUSSIAN:
+                res = Text(
+                    Italic(Bold("📦 Карточка товара.\n\n")),
+                    "🔤 Название: ",
+                    Bold(f"{self.name}"),
+                    "\n\n📝 Описание:\n",
+                    BlockQuote(f"{self.description}"),
+                    "\n\n",
+                    "💰 Цена: ",
+                    Bold(f"{self.price}₽"),
+                )
+            case UserLanguageValues.HEBREW:
+                res = Text(
+                    Italic(Bold("📦 כרטיס מוצר.\n\n")),
+                    "🔤 שם פריט: ",
+                    Bold(f"{self.name}"),
+                    "\n\n📝 תיאור:\n",
+                    BlockQuote(f"{self.description}"),
+                    "\n\n",
+                    "💰 מחיר: ",
+                    Bold(f"{self.price}₽"),
+                )
+            case UserLanguageValues.ENGLISH | _:
+                res = Text(
+                    Italic(Bold("📦 Product card.\n\n")),
+                    "🔤 Name: ",
+                    Bold(f"{self.name}"),
+                    "\n\n📝 Description:\n",
+                    BlockQuote(f"{self.description}"),
+                    "\n\n",
+                    "💰 Price: ",
+                    Bold(f"{self.price}₽"),
+                )
         return res
 
 

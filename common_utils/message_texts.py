@@ -4,6 +4,7 @@ from typing import Any
 from aiogram.utils.formatting import Bold, Text
 
 from database.config import order_option_db
+from database.enums import UserLanguageValues
 from database.models.order_model import OrderSchema, OrderItemExtraOption
 from database.models.product_model import ProductSchema
 
@@ -24,6 +25,7 @@ class MessageTexts(Enum):
         products: list[tuple[ProductSchema, int, list[OrderItemExtraOption] | None]],
         username: str = "@username",
         is_admin: bool = False,
+        lang: UserLanguageValues = UserLanguageValues.RUSSIAN,
     ) -> dict[str, Any]:
         """
         Translate OrderSchema into the text for notifications
@@ -31,6 +33,7 @@ class MessageTexts(Enum):
         :param username: the username of the person created an order
         :param is_admin: True if the order is from Admin test web app and False if from custom bot
         :param list products: [(ProductSchema, amount, [OrderItemExtraOption(), ...]), ...]
+        :param lang: text language
         """
 
         products_converted = []
@@ -40,7 +43,9 @@ class MessageTexts(Enum):
             products_converted.append(
                 Text(
                     f"{ind}. ",
-                    product_schema.convert_to_notification_text(count=amount, used_extra_options=extra_options),
+                    product_schema.convert_to_notification_text(
+                        count=amount, used_extra_options=extra_options, lang=lang
+                    ),
                 )
             )
             product_price = product_schema.price
@@ -64,38 +69,54 @@ class MessageTexts(Enum):
                 f"{order_option.emoji} {order_option.option_name}: ", Bold(value if value else "Не указано"), "\n"
             )
 
+        match lang:
+            case UserLanguageValues.RUSSIAN:
+                your_order = "Ваш заказ "
+                new_order = "Новый заказ "
+                from_user = "от пользователя "
+                products_list = "Список товаров"
+                summary = "Итого"
+                status = "Статус"
+            case UserLanguageValues.HEBREW:
+                your_order = "ההזמנה שלך "
+                new_order = "ההזמנה שלך "
+                from_user = "מהמשתמש "
+                products_list = "רשימת מוצרים"
+                summary = "סך הכל"
+                status = "סטטוס"
+            case UserLanguageValues.ENGLISH | _:
+                your_order = "Your order "
+                new_order = "New order "
+                from_user = "from user "
+                products_list = "Products list"
+                summary = "Summary"
+                status = "Status"
+
         if not is_admin:
             result = Text(
-                "Ваш заказ ",
+                your_order,
                 Bold(f"#{order.id}\n\n"),
-                "Список товаров: \n\n",
-                *products_text,
-                "\n\n",
-                "Итого: ",
-                Bold(f"{total_price}₽\n\n"),
-            )
-            result += order_options_text
-            result += Text(
-                "\n\n " "Статус: ",
-                Bold(order.translate_order_status()),
             )
         else:
             result = Text(
-                "Новый заказ ",
+                new_order,
                 Bold(f"#{order.id}\n"),
-                "от пользователя ",
+                from_user,
                 Bold(username),
                 "\n\n",
-                "Список товаров:\n\n",
-                *products_text,
-                "\n\n",
-                "Итого: ",
-                Bold(f"{total_price}₽\n\n"),
             )
-            result += order_options_text
-            result += Text(
-                "\n\n" "Статус: ",
-                Bold(order.translate_order_status()),
-            )
+
+        result += Text(
+            f"{products_list}: \n\n",
+            *products_text,
+            "\n\n",
+            f"{summary}: ",
+            Bold(f"{total_price}₽\n\n"),
+        )
+        result += order_options_text
+        result += Text(
+            f"\n\n {status}: ",
+            Bold(order.translate_order_status(lang)),
+        )
 
         return result.as_kwargs()

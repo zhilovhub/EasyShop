@@ -5,6 +5,7 @@ from pydantic import ValidationError, ConfigDict, Field, BaseModel
 from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 
 from common_utils.keyboards.keyboard_utils import callback_json_validator
+from database.enums import UserLanguageValues
 
 from database.models.order_model import OrderStatusValues
 
@@ -43,14 +44,35 @@ class InlineOrderCustomBotKeyboard:
             return False
 
     @staticmethod
-    def get_keyboard(order_id: str, msg_id: int = 0, chat_id: int = 0) -> InlineKeyboardMarkup:
+    def get_keyboard(
+        order_id: str, msg_id: int = 0, chat_id: int = 0, lang: UserLanguageValues = UserLanguageValues.RUSSIAN
+    ) -> InlineKeyboardMarkup:
         actions = InlineOrderCustomBotKeyboard.Callback.ActionEnum
+
+        def _get_button_text(action: actions):
+            match action:
+                case actions.ASK_QUESTION:
+                    match lang:
+                        case UserLanguageValues.RUSSIAN:
+                            return "Задать вопрос"
+                        case UserLanguageValues.HEBREW:
+                            return "שאל שאלה"
+                        case UserLanguageValues.ENGLISH | _:
+                            return "Ask a question"
+                case actions.PRE_CANCEL:
+                    match lang:
+                        case UserLanguageValues.RUSSIAN:
+                            return "Отменить заказ"
+                        case UserLanguageValues.HEBREW:
+                            return "בטל הזמנה"
+                        case UserLanguageValues.ENGLISH | _:
+                            return "Cancel order"
 
         return InlineKeyboardMarkup(
             inline_keyboard=[
                 [
                     InlineKeyboardButton(
-                        text="Задать вопрос",
+                        text=_get_button_text(actions.ASK_QUESTION),
                         callback_data=InlineOrderCustomBotKeyboard.callback_json(
                             actions.ASK_QUESTION, order_id, msg_id, chat_id
                         ),
@@ -58,7 +80,7 @@ class InlineOrderCustomBotKeyboard:
                 ],
                 [
                     InlineKeyboardButton(
-                        text="Отменить заказ",
+                        text=_get_button_text(actions.PRE_CANCEL),
                         callback_data=InlineOrderCustomBotKeyboard.callback_json(
                             actions.PRE_CANCEL, order_id, msg_id, chat_id
                         ),
@@ -187,14 +209,35 @@ class InlineOrderCancelKeyboard:
             return False
 
     @staticmethod
-    def get_keyboard(order_id: str, msg_id: int = 0, chat_id: int = 0) -> InlineKeyboardMarkup:
+    def get_keyboard(
+        order_id: str, msg_id: int = 0, chat_id: int = 0, lang: UserLanguageValues = UserLanguageValues.RUSSIAN
+    ) -> InlineKeyboardMarkup:
         actions = InlineOrderCancelKeyboard.Callback.ActionEnum
+
+        def _get_button_text(action: actions) -> str:
+            match action:
+                case actions.CANCEL:
+                    match lang:
+                        case UserLanguageValues.RUSSIAN:
+                            return "Точно отменить?"
+                        case UserLanguageValues.HEBREW:
+                            return "בטוח לבטל?"
+                        case UserLanguageValues.ENGLISH:
+                            return "Confirm deletion?"
+                case actions.BACK_TO_ORDER_STATUSES:
+                    match lang:
+                        case UserLanguageValues.RUSSIAN:
+                            return "🔙 Назад"
+                        case UserLanguageValues.HEBREW:
+                            return "🔙 חזרה"
+                        case UserLanguageValues.ENGLISH:
+                            return "🔙 Back"
 
         return InlineKeyboardMarkup(
             inline_keyboard=[
                 [
                     InlineKeyboardButton(
-                        text="Точно отменить?",
+                        text=_get_button_text(actions.CANCEL),
                         callback_data=InlineOrderCancelKeyboard.callback_json(
                             actions.CANCEL, order_id, msg_id, chat_id
                         ),
@@ -202,7 +245,7 @@ class InlineOrderCancelKeyboard:
                 ],
                 [
                     InlineKeyboardButton(
-                        text="🔙 Назад",
+                        text=_get_button_text(actions.BACK_TO_ORDER_STATUSES),
                         callback_data=InlineOrderCancelKeyboard.callback_json(
                             actions.BACK_TO_ORDER_STATUSES, order_id, msg_id, chat_id
                         ),
@@ -244,16 +287,24 @@ class InlineCreateReviewKeyboard:
 
     @staticmethod
     def get_keyboard(
-        order_id: str,
-        chat_id: int = 0,
+        order_id: str, chat_id: int = 0, lang: UserLanguageValues = UserLanguageValues.RUSSIAN
     ) -> InlineKeyboardMarkup:
         actions = InlineCreateReviewKeyboard.Callback.ActionEnum
+
+        def _get_button_text():
+            match lang:
+                case UserLanguageValues.RUSSIAN:
+                    return "Оставить отзыв"
+                case UserLanguageValues.HEBREW:
+                    return "להשאיר משוב"
+                case UserLanguageValues.ENGLISH | _:
+                    return "Leave a review"
 
         return InlineKeyboardMarkup(
             inline_keyboard=[
                 [
                     InlineKeyboardButton(
-                        text="Оставить отзыв",
+                        text=_get_button_text(),
                         callback_data=InlineCreateReviewKeyboard.callback_json(
                             actions.CREATE_REVIEW, order_id, chat_id
                         ),

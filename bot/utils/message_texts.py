@@ -179,6 +179,10 @@ class MessageTexts(Enum):
                 )
 
     @staticmethod
+    def need_minimum_one_language() -> str:
+        return "Хотя бы 1 язык должен быть выбран"
+
+    @staticmethod
     def bot_post_already_started_message(post_message_type: PostMessageType) -> str:
         match post_message_type:
             case PostMessageType.MAILING:

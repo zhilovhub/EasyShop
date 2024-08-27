@@ -4,6 +4,7 @@ from datetime import datetime
 from aiogram.types import ChatMemberUpdated, ChatMemberLeft, ChatMemberAdministrator, ChatMemberBanned, CallbackQuery
 from aiogram.filters import IS_MEMBER, IS_NOT_MEMBER, ChatMemberUpdatedFilter
 from aiogram.enums.chat_type import ChatType
+from aiogram.utils.formatting import Text
 
 from common_utils.keyboards.keyboards import InlineBotMenuKeyboard
 from common_utils.keyboards.channel_keyboards import InlineJoinContestKeyboard
@@ -12,7 +13,8 @@ from custom_bots.multibot import main_bot
 from custom_bots.handlers.routers import multi_bot_channel_router
 from custom_bots.utils.custom_message_texts import CustomMessageTexts
 
-from database.config import channel_user_db, channel_db, contest_db, bot_db
+from database.config import channel_user_db, channel_db, contest_db, bot_db, custom_bot_user_db, option_db
+from database.enums import UserLanguageValues
 from database.models.channel_model import ChannelSchema
 from database.models.contest_model import ContestUserNotFoundError, ContestNotFoundError
 from database.models.channel_user_model import ChannelUserSchemaWithoutId, ChannelUserNotFoundError
@@ -106,6 +108,9 @@ async def my_chat_member_handler(my_chat_member: ChatMemberUpdated) -> Any:
 
     channel_schema = ChannelSchema(channel_id=my_chat_member.chat.id, bot_id=bot_id, added_by_admin=performed_by_admin)
 
+    # TODO select language from main bot
+    lang = UserLanguageValues.RUSSIAN
+
     # Bot added
     if isinstance(my_chat_member.old_chat_member, (ChatMemberLeft, ChatMemberBanned)) and isinstance(
         my_chat_member.new_chat_member, ChatMemberAdministrator
@@ -114,8 +119,10 @@ async def my_chat_member_handler(my_chat_member: ChatMemberUpdated) -> Any:
         custom_bot_logger.info(f"Bot @{custom_bot_username} added to @{channel_username}")
 
         await main_bot.send_message(
+            **CustomMessageTexts.get_bot_added_to_channel_message(
+                lang, custom_bot_username, channel_username
+            ).as_kwargs(),
             chat_id=custom_bot.created_by,
-            text=CustomMessageTexts.BOT_ADDED_TO_CHANNEL_MESSAGE.value.format(custom_bot_username, channel_username),
             reply_markup=await InlineBotMenuKeyboard.get_keyboard(custom_bot.bot_id, custom_bot.created_by),
         )
     # Bot removed
@@ -127,9 +134,9 @@ async def my_chat_member_handler(my_chat_member: ChatMemberUpdated) -> Any:
 
         await main_bot.send_message(
             chat_id=custom_bot.created_by,
-            text=CustomMessageTexts.BOT_REMOVED_FROM_CHANNEL_MESSAGE.value.format(
-                custom_bot_username, channel_username
-            ),
+            **CustomMessageTexts.get_removed_from_channel_message(
+                lang, custom_bot_username, channel_username
+            ).as_kwargs(),
             reply_markup=await InlineBotMenuKeyboard.get_keyboard(custom_bot.bot_id, custom_bot.created_by),
         )
     elif isinstance(my_chat_member.new_chat_member, ChatMemberAdministrator):
@@ -138,15 +145,17 @@ async def my_chat_member_handler(my_chat_member: ChatMemberUpdated) -> Any:
         annotations = ChatMemberAdministrator.__annotations__
         # members = [attr for attr in dir(ChatMemberAdministrator) if not callable(
         #     getattr(ChatMemberAdministrator, attr)) and not attr.startswith("__")]
-        final_message_text = f"Права бота в канале @{channel_username} изменены:\n\n"
+        final_message_text = CustomMessageTexts.get_bot_rights_channel_message(
+            lang, custom_bot_username, channel_username
+        )
         for member in annotations.keys():
             if member.startswith("can") is False:
                 continue
             status = "✅" if getattr(new_user, member) else "❌"
             if getattr(old_user, member) == getattr(new_user, member):
-                final_message_text += f"{member} {status}\n"
+                final_message_text += Text(f"{member} {status}\n")
             else:
-                final_message_text += f"{member} =====> {status}\n"
+                final_message_text += Text(f"{member} =====> {status}\n")
 
         await main_bot.send_message(
             chat_id=custom_bot.created_by,
@@ -162,14 +171,23 @@ async def channel_menu_callback_handler(query: CallbackQuery):
     bot_id = callback_data.bot_id
 
     custom_bot = await bot_db.get_bot(bot_id)
+    custom_bot_options = await option_db.get_option(custom_bot.options_id)
+    lang = UserLanguageValues.ENGLISH
+    try:
+        custom_bot_user = await custom_bot_user_db.get_custom_bot_user(custom_bot.bot_id, query.from_user.id)
+        lang = custom_bot_user.user_language
+    except:
+        custom_bot_logger.warning("cant get custom bot user language, setting shops default")
+        if custom_bot_options.languages:
+            lang = custom_bot_options.languages[0]
 
     if query.message.chat.type == ChatType.PRIVATE.value:
-        return await query.answer("Работает только в канале.", show_alert=True)
+        return await query.answer(CustomMessageTexts.get_work_only_in_channel_text(lang), show_alert=True)
 
     try:
         contest = await contest_db.get_contest_by_post_message_id(callback_data.post_message_id)
     except ContestNotFoundError:
-        return await query.answer("Конкурс уже завершен.", show_alert=True)
+        return await query.answer(CustomMessageTexts.get_contest_finished_text(lang), show_alert=True)
 
     match callback_data.a:
         case callback_data.ActionEnum.JOIN_CONTEST:
@@ -185,9 +203,9 @@ async def channel_menu_callback_handler(query: CallbackQuery):
                         custom_bot.bot_id, len(contest_members), callback_data.post_message_id
                     )
                 )
-                return await query.answer("Теперь вы участвуете в конкурсе.", show_alert=True)
+                return await query.answer(CustomMessageTexts.get_contest_join_text(lang), show_alert=True)
             else:
-                return await query.answer("Вы уже участвуете в этом конкурсе.", show_alert=True)
+                return await query.answer(CustomMessageTexts.get_contest_already_joined_text(lang), show_alert=True)
         case _:
             custom_bot_logger.warning(
                 "Unknown callback in channel contest kb",

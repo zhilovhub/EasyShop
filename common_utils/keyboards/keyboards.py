@@ -17,6 +17,7 @@ from common_utils.keyboards.keyboard_utils import (
 )
 
 from database.config import user_role_db, order_option_db, order_choose_option_db, option_db, bot_db
+from database.enums import UserLanguageValues
 from database.models.user_role_model import UserRoleValues
 from database.models.bot_model import BotPaymentTypeValues
 from database.models.option_model import CurrencyCodesValues
@@ -171,6 +172,7 @@ class InlineBotSettingsMenuKeyboard:
             BOT_EDIT_EXPLANATION_TEXT = "explain_text"
             PAYMENT_METHOD = "payment_method"
             EDIT_THEME = "edit_theme"
+            SELECT_SHOP_LANGUAGE = "shop_lang"
             EDIT_ORDER_OPTIONS = "edit_ord_op"
 
             BACK_TO_BOT_MENU = "back_menu"
@@ -219,6 +221,12 @@ class InlineBotSettingsMenuKeyboard:
                     InlineKeyboardButton(
                         text="🎨 Изменить цвета магазина",
                         callback_data=InlineBotSettingsMenuKeyboard.callback_json(actions.EDIT_THEME, bot_id),
+                    )
+                ],
+                [
+                    InlineKeyboardButton(
+                        text="🌐 Выбрать язык магазина",
+                        callback_data=InlineBotSettingsMenuKeyboard.callback_json(actions.SELECT_SHOP_LANGUAGE, bot_id),
                     )
                 ],
                 [
@@ -1125,6 +1133,8 @@ class InlineModeProductKeyboardButton:
     class Callback(BaseModel):
         class ActionEnum(Enum):
             SHOP = "🛍 Открыть страницу товара"
+            SHOP_ENG = "🛍 Open product page"
+            SHOP_HEB = "🛍 פתח את דף המוצר"
 
         model_config = ConfigDict(from_attributes=True, populate_by_name=True)
 
@@ -1132,14 +1142,23 @@ class InlineModeProductKeyboardButton:
         a: ActionEnum
 
     @staticmethod
-    def get_keyboard(product_id: int, bot_username) -> InlineKeyboardMarkup:
+    def get_keyboard(product_id: int, bot_username, lang: UserLanguageValues) -> InlineKeyboardMarkup:
         actions = InlineModeProductKeyboardButton.Callback.ActionEnum
+
+        def _get_button_text():
+            match lang:
+                case UserLanguageValues.RUSSIAN:
+                    return actions.SHOP.value
+                case UserLanguageValues.HEBREW:
+                    return actions.SHOP_HEB.value
+                case UserLanguageValues.ENGLISH | _:
+                    return actions.SHOP_ENG.value
 
         return InlineKeyboardMarkup(
             inline_keyboard=[
                 [
                     InlineKeyboardButton(
-                        text=actions.SHOP.value, url=make_product_deep_link_url(product_id, bot_username)
+                        text=_get_button_text(), url=make_product_deep_link_url(product_id, bot_username)
                     )
                 ],
             ]
@@ -1171,18 +1190,28 @@ class InlineBotMainWebAppButton:
     class Callback(BaseModel):
         class ActionEnum(Enum):
             SHOP = "🛍 Открыть магазин"
+            SHOP_ENG = "🛍 Open Shop"
+            SHOP_HEB = "🛍 חנות פתוחה"
 
         model_config = ConfigDict(from_attributes=True, populate_by_name=True)
 
-        n: str = Field(default="inline_main_web_app", frozen=True)
+        n: str = Field(default="inline_shop_web_app", frozen=True)
         a: ActionEnum
 
     @staticmethod
-    def get_keyboard(bot_id: int) -> InlineKeyboardMarkup:
+    def get_keyboard(bot_id: int, lang: UserLanguageValues = UserLanguageValues.RUSSIAN) -> InlineKeyboardMarkup:
         actions = InlineBotMainWebAppButton.Callback.ActionEnum
+
+        match lang:
+            case UserLanguageValues.RUSSIAN:
+                text = actions.SHOP.value
+            case UserLanguageValues.HEBREW:
+                text = actions.SHOP_HEB.value
+            case UserLanguageValues.ENGLISH | _:
+                text = actions.SHOP_ENG.value
 
         return InlineKeyboardMarkup(
             inline_keyboard=[
-                [InlineKeyboardButton(text=actions.SHOP.value, web_app=make_webapp_info(bot_id))],
+                [InlineKeyboardButton(text=text, web_app=make_webapp_info(bot_id))],
             ]
         )

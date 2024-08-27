@@ -8,6 +8,8 @@ from database.models.dao import Dao
 from database.models.bot_model import Bot
 from database.exceptions.exceptions import KwargsException
 
+from database.enums import UserLanguage, UserLanguageValues
+
 from logs.config import extra_params
 
 
@@ -21,6 +23,7 @@ class CustomBotUser(Base):
     bot_id = Column(ForeignKey(Bot.bot_id, ondelete="CASCADE"), primary_key=True)
     user_id = Column(BigInteger, primary_key=True)
     balance = Column(BigInteger, default=0)
+    user_language = Column(UserLanguage, nullable=False, default=UserLanguageValues.RUSSIAN)
 
 
 class CustomBotUserSchema(BaseModel):
@@ -29,6 +32,7 @@ class CustomBotUserSchema(BaseModel):
     bot_id: int
     user_id: int
     balance: int | None = 0
+    user_language: UserLanguageValues = UserLanguageValues.RUSSIAN
 
 
 class CustomBotUserDao(Dao):
@@ -92,12 +96,14 @@ class CustomBotUserDao(Dao):
         )
 
     @validate_call(validate_return=True)
-    async def add_custom_bot_user(self, bot_id: int, user_id: int) -> None:
+    async def add_custom_bot_user(
+        self, bot_id: int, user_id: int, lang: UserLanguageValues = UserLanguageValues.RUSSIAN
+    ) -> None:
         """
         :raises IntegrityError:
         """
         async with self.engine.begin() as conn:
-            await conn.execute(insert(CustomBotUser).values(bot_id=bot_id, user_id=user_id))
+            await conn.execute(insert(CustomBotUser).values(bot_id=bot_id, user_id=user_id, user_language=lang))
         await self.engine.dispose()
 
         self.logger.debug(f"bot_id={bot_id}: added user {user_id}", extra=extra_params(user_id=user_id, bot_id=bot_id))

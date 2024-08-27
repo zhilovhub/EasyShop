@@ -8,10 +8,12 @@ from aiogram.handlers import PreCheckoutQueryHandler
 from common_utils.keyboards.order_manage_keyboards import InlineOrderStatusesKeyboard, InlineOrderCustomBotKeyboard
 
 from custom_bots.multibot import PREV_ORDER_MSGS, main_bot
+from custom_bots.utils.custom_message_texts import CustomMessageTexts
+from database.enums import UserLanguageValues
 
 from database.models.order_model import OrderStatusValues
 from database.models.payment_model import PaymentSchemaWithoutId
-from database.config import pay_db, bot_db, order_db, product_db
+from database.config import pay_db, bot_db, order_db, product_db, custom_bot_user_db
 
 from common_utils.message_texts import MessageTexts as CommonMessageTexts
 
@@ -27,9 +29,12 @@ class PreCheckHandler(PreCheckoutQueryHandler):
     async def handle(self) -> Any:
         bot_id = "cant get"
         from_user = self.event.from_user
+        lang = UserLanguageValues.ENGLISH
         try:
             custom_bot = await bot_db.get_bot_by_token(self.bot.token)
             bot_id = custom_bot.bot_id
+            custom_bot_user = await custom_bot_user_db.get_custom_bot_user(bot_id, from_user.id)
+            lang = custom_bot_user.user_language
             payload = json.loads(self.event.invoice_payload)
             extra_data = self.event.order_info
             custom_bot_logger.info(
@@ -56,6 +61,7 @@ class PreCheckHandler(PreCheckoutQueryHandler):
                     product.count += item.amount
                     await product_db.update_product(product)
 
+                # TODO add main bot lang
                 text = await CommonMessageTexts.generate_order_notification_text(
                     order=order,
                     products=products,
@@ -68,6 +74,7 @@ class PreCheckHandler(PreCheckoutQueryHandler):
                     products=products,
                     username="@" + from_user.username if from_user.username else from_user.full_name,
                     is_admin=False,
+                    lang=custom_bot_user.user_language,
                 )
 
                 await main_bot.edit_message_text(
@@ -78,6 +85,7 @@ class PreCheckHandler(PreCheckoutQueryHandler):
                         order.id, msg_id_data[order.id][2], from_user.id, current_status=order.status
                     ),
                 )
+                # TODO set main bot lang
                 await main_bot.send_message(
                     chat_id=msg_id_data[order.id][0],
                     text=f"Новый статус заказа <b>#{order.id}</b>\n<b>{order.translate_order_status()}</b>",
@@ -86,7 +94,9 @@ class PreCheckHandler(PreCheckoutQueryHandler):
                 await self.bot.edit_message_text(
                     chat_id=self.from_user.id,
                     message_id=msg_id_data[order.id][2],
-                    reply_markup=InlineOrderCustomBotKeyboard.get_keyboard(order.id),
+                    reply_markup=InlineOrderCustomBotKeyboard.get_keyboard(
+                        order.id, lang=custom_bot_user.user_language
+                    ),
                     **user_text,
                 )
 
@@ -100,13 +110,20 @@ class PreCheckHandler(PreCheckoutQueryHandler):
                 extra=extra_params(user_id=from_user.id, bot_id=bot_id),
             )
             await self.update.pre_checkout_query.answer(
-                ok=False, error_message="Произошла неопознанная ошибка, мы уже работаем над этим."
+                ok=False, error_message=CustomMessageTexts.get_pre_checkout_unknown_error(lang)
             )
             raise
 
 
 @payment_router.message(F.successful_payment)
 async def process_successfully_payment(message: Message):
+    lang = UserLanguageValues.ENGLISH
+    try:
+        bot = await bot_db.get_bot_by_token(message.bot.token)
+        custom_bot_user = await custom_bot_user_db.get_custom_bot_user(bot.bot_id, message.from_user.id)
+        lang = custom_bot_user.user_language
+    except:
+        custom_bot_logger.warning("Cant get user language in success payment", exc_info=True)
     payment = message.successful_payment
     payload = json.loads(payment.invoice_payload)
     custom_bot = await bot_db.get_bot_by_token(message.bot.token)
@@ -126,4 +143,4 @@ async def process_successfully_payment(message: Message):
         )
         pay_id = await pay_db.add_payment(db_payment)
 
-    await message.answer(f"✅ Оплата прошла успешно. [payment_id: {pay_id}]")
+    await message.answer(**CustomMessageTexts.get_success_payment_message(lang, pay_id).as_kwargs())

@@ -1169,7 +1169,9 @@ async def editing_start_message_handler(message: Message, state: FSMContext):
                     custom_bot.options_id = new_options_id
                     await bot_db.update_bot(custom_bot)
                     options = await option_db.get_option(new_options_id)
-                options.start_msg = message_text
+                # TODO add select lang
+                raise Exception("IN DEV CREATING MULTI LANGUAGE MESSAGE EDITING")
+                # options.start_msg = message_text
                 await option_db.update_option(options)
 
                 await message.answer("Стартовое сообщение изменено!", reply_markup=ReplyBotMenuKeyboard.get_keyboard())
@@ -1212,7 +1214,9 @@ async def editing_default_message_handler(message: Message, state: FSMContext):
                     custom_bot.options_id = new_options_id
                     await bot_db.update_bot(custom_bot)
                     options = await option_db.get_option(new_options_id)
-                options.default_msg = message_text
+                # TODO add select lang
+                raise Exception("IN DEV CREATING MULTI LANGUAGE MESSAGE EDITING")
+                # options.default_msg = message_text
                 await option_db.update_option(options)
 
                 await message.answer("Сообщение-затычка изменена!", reply_markup=ReplyBotMenuKeyboard.get_keyboard())

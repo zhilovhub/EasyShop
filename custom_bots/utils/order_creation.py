@@ -6,7 +6,7 @@ from aiogram.enums import ParseMode
 from custom_bots.multibot import main_bot, PREV_ORDER_MSGS, API_URL
 from custom_bots.utils.custom_message_texts import CustomMessageTexts
 
-from database.config import order_db, product_db, bot_db, option_db
+from database.config import order_db, product_db, bot_db, option_db, custom_bot_user_db
 from database.models.order_model import OrderSchema, OrderStatusValues
 from database.models.option_model import OptionNotFoundError
 from database.models.bot_model import BotPaymentTypeValues
@@ -26,6 +26,7 @@ async def order_creation_process(order: OrderSchema, order_user_data: Chat) -> s
     custom_bot = await bot_db.get_bot(bot_id)
     custom_bot_tg = Bot(custom_bot.token)
     custom_bot_options = await option_db.get_option(custom_bot.options_id)
+    custom_bot_user = await custom_bot_user_db.get_custom_bot_user(custom_bot.bot_id, order.from_user)
 
     if custom_bot.payment_type in (BotPaymentTypeValues.TG_PROVIDER, BotPaymentTypeValues.STARS):
         order.status = OrderStatusValues.WAITING_PAYMENT
@@ -62,9 +63,13 @@ async def order_creation_process(order: OrderSchema, order_user_data: Chat) -> s
                 if product_schema.count < amount:
                     products_not_enough.append(product_schema)
 
-    text = await CommonMessageTexts.generate_order_notification_text(order, products, username, False)
+    text = await CommonMessageTexts.generate_order_notification_text(
+        order, products, username, False, lang=custom_bot_user.user_language
+    )
     msg = await custom_bot_tg.send_message(
-        chat_id=user_id, reply_markup=InlineOrderCustomBotKeyboard.get_keyboard(order.id), **text
+        chat_id=user_id,
+        reply_markup=InlineOrderCustomBotKeyboard.get_keyboard(order.id, lang=custom_bot_user.user_language),
+        **text,
     )
 
     msg_id_data = PREV_ORDER_MSGS.get_data()
@@ -123,7 +128,9 @@ async def order_creation_process(order: OrderSchema, order_user_data: Chat) -> s
             await custom_bot_tg.send_message(user_id, CustomMessageTexts.ERROR_IN_CREATING_INVOICE.value)
             order.status = OrderStatusValues.CANCELLED
             await order_db.update_order(order)
-            text = await CommonMessageTexts.generate_order_notification_text(order, products, username, False)
+            text = await CommonMessageTexts.generate_order_notification_text(
+                order, products, username, False, lang=custom_bot_user.user_language
+            )
             await custom_bot_tg.edit_message_text(chat_id=user_id, message_id=msg.message_id, **text, reply_markup=None)
             admin_text = await CommonMessageTexts.generate_order_notification_text(order, products, username, True)
             await main_msg.edit_text(

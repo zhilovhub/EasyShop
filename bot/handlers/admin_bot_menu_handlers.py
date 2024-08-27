@@ -30,6 +30,7 @@ from bot.keyboards.main_menu_keyboards import (
     InlineBackFromRefKeyboard,
     ReplyBotMenuKeyboard,
     ReplyBackBotMenuKeyboard,
+    InlineSelectLanguageKb
 )
 from bot.keyboards.stock_menu_keyboards import InlineStockMenuKeyboard, InlineWebStockKeyboard
 from bot.keyboards.post_message_keyboards import InlinePostMessageMenuKeyboard
@@ -60,6 +61,7 @@ from common_utils.keyboards.order_manage_keyboards import (
     InlineOrderCustomBotKeyboard,
     InlineCreateReviewKeyboard,
 )
+from custom_bots.utils.custom_message_texts import CustomMessageTexts
 from database.config import (
     bot_db,
     product_db,
@@ -73,6 +75,7 @@ from database.config import (
     order_option_db,
     channel_db,
 )
+from database.enums.language import AVAILABLE_LANGUAGES
 from database.models.bot_model import BotIntegrityError, BotNotFoundError
 from database.models.order_model import OrderSchema, OrderNotFoundError, OrderStatusValues
 from database.models.option_model import OptionNotFoundError
@@ -114,6 +117,7 @@ async def process_web_app_request(event: Message):
         try:
             bot_id = int(data["bot_id"])
             custom_bot = await bot_db.get_bot(bot_id)
+            custom_bot_options = await option_db.get_option(custom_bot.options_id)
         except BotNotFoundError as e:
             logger.error("error while picking product for publish bot not found", exc_info=e)
             raise e
@@ -128,11 +132,12 @@ async def process_web_app_request(event: Message):
                 reply_markup=await InlineChannelsListKeyboard.get_keyboard(custom_bot.bot_id),
             )
         custom_bot_data = await Bot(token=custom_bot.token).get_me()
+        # TODO add language select for multi lang shops
         message = await event.answer_photo(
             photo=FSInputFile(f"{common_settings.FILES_PATH}{product.picture[0]}"),
             caption=MessageTexts.generate_publish_product(product),
             reply_markup=InlineModeProductKeyboardButton.get_keyboard(
-                product_id=product_id, bot_username=custom_bot_data.username
+                product_id=product_id, bot_username=custom_bot_data.username, lang=custom_bot_options.languages[0]
             ),
         )
         await message.reply(
@@ -205,6 +210,7 @@ async def publish_product_in_channel(query: CallbackQuery):
     callback_data = InlineChannelPublishAcceptKeyboard.Callback.model_validate_json(query.data)
     bot_id = callback_data.bot_id
     custom_bot = await bot_db.get_bot(bot_id)
+    custom_bot_options = await option_db.get_option(custom_bot.options_id)
     custom_tg_bot = Bot(token=custom_bot.token)
 
     match callback_data.a:
@@ -226,12 +232,15 @@ async def publish_product_in_channel(query: CallbackQuery):
                 await query.message.delete()
                 return
             await query.message.delete()
+            # TODO add language select for multi lang shops
             await custom_tg_bot.send_photo(
                 chat_id=callback_data.chid,
                 photo=FSInputFile(f"{common_settings.FILES_PATH}{product.picture[0]}"),
                 caption=MessageTexts.generate_publish_product(product),
                 reply_markup=InlineModeProductKeyboardButton.get_keyboard(
-                    product_id=callback_data.pid, bot_username=(await custom_tg_bot.get_me()).username
+                    product_id=callback_data.pid,
+                    bot_username=(await custom_tg_bot.get_me()).username,
+                    lang=custom_bot_options.languages[0],
                 ),
             )
 
@@ -257,9 +266,10 @@ async def handle_reply_to_question(message: Message, state: FSMContext):
         return await message.answer(f"Заказ с номером №{order_id} не найден")
 
     custom_bot = await bot_db.get_bot_by_created_by(created_by=message.from_user.id)
+    custom_bot_user = await custom_bot_user_db.get_custom_bot_user(custom_bot.bot_id, order.from_user)
     await Bot(token=custom_bot.token, default=BOT_PROPERTIES).send_message(
         chat_id=order.from_user,
-        text=f"Поступил ответ на вопрос по заказу <b>#{order.id}</b> 👇\n\n" f"<i>{message.text}</i>",
+        **CustomMessageTexts.get_response_text(custom_bot_user.user_language, order_id, message.text).as_kwargs(),
         reply_to_message_id=question_messages_data[question_message_id]["question_from_custom_bot_message_id"],
     )
     await message.answer("Ответ отправлен")
@@ -284,6 +294,8 @@ async def handler_order_cancel_callback(query: CallbackQuery, state: FSMContext)
     bot_token = bot_data.token
 
     callback_data = InlineOrderCancelKeyboard.Callback.model_validate_json(query.data)
+
+    custom_bot_user = await custom_bot_user_db.get_custom_bot_user(bot_data.bot_id, callback_data.chat_id)
 
     try:
         order = await order_db.get_order(callback_data.order_id)
@@ -311,7 +323,9 @@ async def handler_order_cancel_callback(query: CallbackQuery, state: FSMContext)
                 for product_id, product_item in order.items.items()
             ]
 
-            text = await CommonMessageTexts.generate_order_notification_text(order, products)
+            text = await CommonMessageTexts.generate_order_notification_text(
+                order, products, lang=custom_bot_user.user_language
+            )
 
             # await Bot(bot_token, default=BOT_PROPERTIES).edit_message_text(
             #     order.convert_to_notification_text(products=products),
@@ -376,6 +390,8 @@ async def handle_callback(query: CallbackQuery, state: FSMContext):
 
     callback_data = InlineOrderStatusesKeyboard.Callback.model_validate_json(query.data)
 
+    custom_bot_user = await custom_bot_user_db.get_custom_bot_user(bot_data.bot_id, callback_data.chat_id)
+
     try:
         order = await order_db.get_order(callback_data.order_id)
     except OrderNotFoundError as e:
@@ -387,7 +403,10 @@ async def handle_callback(query: CallbackQuery, state: FSMContext):
         case callback_data.ActionEnum.PRE_CANCEL:
             await query.message.edit_reply_markup(
                 reply_markup=InlineOrderCancelKeyboard.get_keyboard(
-                    callback_data.order_id, callback_data.msg_id, callback_data.chat_id
+                    callback_data.order_id,
+                    callback_data.msg_id,
+                    callback_data.chat_id,
+                    lang=custom_bot_user.user_language,
                 )
             )
         case (
@@ -420,12 +439,16 @@ async def handle_callback(query: CallbackQuery, state: FSMContext):
             #     chat_id=callback_data.chat_id,
             #     message_id=callback_data.msg_id
             # )
-            text = await CommonMessageTexts.generate_order_notification_text(order, products)
+            text = await CommonMessageTexts.generate_order_notification_text(
+                order, products, lang=custom_bot_user.user_language
+            )
             await Bot(bot_token, default=BOT_PROPERTIES).edit_message_text(
                 **text,
                 reply_markup=None
                 if callback_data.a == callback_data.ActionEnum.FINISH
-                else InlineOrderCustomBotKeyboard.get_keyboard(order.id, callback_data.msg_id, callback_data.chat_id),
+                else InlineOrderCustomBotKeyboard.get_keyboard(
+                    order.id, callback_data.msg_id, callback_data.chat_id, lang=custom_bot_user.user_language
+                ),
                 chat_id=callback_data.chat_id,
                 message_id=callback_data.msg_id,
             )
@@ -442,7 +465,11 @@ async def handle_callback(query: CallbackQuery, state: FSMContext):
 
             msg = await Bot(bot_token, default=BOT_PROPERTIES).send_message(
                 chat_id=callback_data.chat_id,
-                text=f"Новый статус заказа <b>#{order.id}</b>\n<b>{order.translate_order_status()}</b>",
+                **CustomMessageTexts.get_new_order_status_text(
+                    lang=custom_bot_user.user_language,
+                    order_id=order.id,
+                    status=order.translate_order_status(custom_bot_user.user_language),
+                ).as_kwargs(),
             )
             try:
                 options = await option_db.get_option(bot_data.options_id)
@@ -466,9 +493,9 @@ async def handle_callback(query: CallbackQuery, state: FSMContext):
                 await Bot(bot_token, default=BOT_PROPERTIES).send_message(
                     reply_to_message_id=msg.message_id,
                     chat_id=callback_data.chat_id,
-                    text="Вы можете оставить отзыв ❤️",
+                    **CustomMessageTexts.get_yuo_can_add_review_text(custom_bot_user.user_language).as_kwargs(),
                     reply_markup=InlineCreateReviewKeyboard.get_keyboard(
-                        order_id=order.id, chat_id=callback_data.chat_id
+                        order_id=order.id, chat_id=callback_data.chat_id, lang=custom_bot_user.user_language
                     ),
                 )
 
@@ -723,6 +750,7 @@ async def bot_settings_callback_handler(query: CallbackQuery, state: FSMContext)
     bot_id = callback_data.bot_id
     user_bot = await bot_db.get_bot(bot_id)
     custom_bot_data = await Bot(token=user_bot.token).get_me()
+    bot_options = await option_db.get_option(user_bot.bot_id)
 
     match callback_data.a:
         case callback_data.ActionEnum.EDIT_ORDER_OPTIONS:
@@ -750,19 +778,6 @@ async def bot_settings_callback_handler(query: CallbackQuery, state: FSMContext)
             await query.answer()
             await state.set_state(States.EDITING_DEFAULT_MESSAGE)
             await state.set_data(state_data)
-        # case callback_data.ActionEnum.EDIT_BG_COLOR:
-        #     await query.message.answer(
-        #         "Введите цвет фона в формате (#FFFFFF или telegram - для использования дефолтных цветов телеграма), "
-        #         "который будет отображаться у пользователей Вашего бота на странице магазина: ",
-        #         reply_markup=ReplyBackBotMenuKeyboard.get_keyboard(),
-        #     )
-        #     await query.message.answer(
-        #         "Или воспользуйтесь выбором цвета на палитре.",
-        #         reply_markup=SelectHexColorWebAppInlineKeyboard.get_keyboard(),
-        #     )
-        #     await query.answer()
-        #     await state.set_state(States.EDITING_BG_COLOR)
-        #     await state.set_data(state_data)
         case callback_data.ActionEnum.PAYMENT_METHOD:
             await query.message.edit_text(
                 MessageTexts.PAYMENT_METHOD_SETTINGS.value.format(custom_bot_data.username),
@@ -773,10 +788,48 @@ async def bot_settings_callback_handler(query: CallbackQuery, state: FSMContext)
                 f"🎨 Кастомизация для бота @{custom_bot_data.username}.",
                 reply_markup=InlineThemeSettingsMenuKeyboard.get_keyboard(bot_id),
             )
+        case callback_data.ActionEnum.SELECT_SHOP_LANGUAGE:
+            await query.message.edit_text(
+                f"🌐 Выбор языка магазина для бота @{custom_bot_data.username}.",
+                reply_markup=InlineSelectLanguageKb.get_keyboard(bot_id, AVAILABLE_LANGUAGES, bot_options.languages),
+            )
         case callback_data.ActionEnum.BACK_TO_BOT_MENU:
             await query.message.edit_text(
                 MessageTexts.BOT_MENU_MESSAGE.value.format(custom_bot_data.username),
                 reply_markup=await InlineBotMenuKeyboard.get_keyboard(user_bot.bot_id, query.from_user.id),
+            )
+
+
+@admin_bot_menu_router.callback_query(lambda query: InlineSelectLanguageKb.callback_validator(query.data))
+async def bot_settings_callback_handler(query: CallbackQuery, state: FSMContext):
+    """Обрабатывает выбор языков кастомного бота"""
+
+    state_data = await state.get_data()
+
+    callback_data = InlineSelectLanguageKb.Callback.model_validate_json(query.data)
+    selected_lang = callback_data.selected
+
+    bot_id = callback_data.bot_id
+    user_bot = await bot_db.get_bot(bot_id)
+    custom_bot_data = await Bot(token=user_bot.token).get_me()
+    bot_options = await option_db.get_option(user_bot.bot_id)
+
+    match callback_data.a:
+        case callback_data.ActionEnum.BACK:
+            await query.message.edit_text(
+                MessageTexts.BOT_MENU_MESSAGE.value.format(custom_bot_data.username),
+                reply_markup=await InlineBotSettingsMenuKeyboard.get_keyboard(callback_data.bot_id),
+            )
+        case callback_data.ActionEnum.SELECT:
+            if selected_lang in bot_options.languages:
+                if len(bot_options.languages) <= 1:
+                    return await query.answer(MessageTexts.need_minimum_one_language(), show_alert=True)
+                bot_options.languages.remove(selected_lang)
+            else:
+                bot_options.languages.append(selected_lang)
+            await option_db.update_option(bot_options)
+            await query.message.edit_reply_markup(
+                reply_markup=InlineSelectLanguageKb.get_keyboard(bot_id, AVAILABLE_LANGUAGES, bot_options.languages)
             )
 
 

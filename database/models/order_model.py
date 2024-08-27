@@ -8,6 +8,7 @@ from sqlalchemy import select, update, delete, insert
 from sqlalchemy.ext.asyncio import AsyncEngine
 
 from common_utils.non_actual_data_fix import non_actual_data_fix
+from database.enums import UserLanguageValues
 
 from database.models import Base
 from database.models.dao import Dao
@@ -103,20 +104,53 @@ class OrderSchema(BaseModel):
     order_options: dict
     time: str | None = None
 
-    def translate_order_status(self) -> str:
+    def translate_order_status(self, lang: UserLanguageValues = UserLanguageValues.RUSSIAN) -> str:
+        status_dict = {
+            OrderStatusValues.BACKLOG.value: {
+                UserLanguageValues.RUSSIAN.value: "⏳ В обработке",
+                UserLanguageValues.ENGLISH.value: "⏳ Backlog",
+                UserLanguageValues.HEBREW.value: "⏳ בעיבוד",
+            },
+            OrderStatusValues.WAITING_PAYMENT.value: {
+                UserLanguageValues.RUSSIAN.value: "💳 Ожидает оплаты",
+                UserLanguageValues.ENGLISH.value: "💳 Waiting for payment",
+                UserLanguageValues.HEBREW.value: "💳 מצפה לתשלום",
+            },
+            OrderStatusValues.CANCELLED.value: {
+                UserLanguageValues.RUSSIAN.value: "❌ Отменен",
+                UserLanguageValues.ENGLISH.value: "❌ Canceled",
+                UserLanguageValues.HEBREW.value: "❌ בוטל",
+            },
+            OrderStatusValues.PROCESSING.value: {
+                UserLanguageValues.RUSSIAN.value: "🚛 Выполняется",
+                UserLanguageValues.ENGLISH.value: "🚛 In progress",
+                UserLanguageValues.HEBREW.value: "🚛 מנהל",
+            },
+            OrderStatusValues.FINISHED.value: {
+                UserLanguageValues.RUSSIAN.value: "✅ Завершен",
+                UserLanguageValues.ENGLISH.value: "✅ Completed",
+                UserLanguageValues.HEBREW.value: "✅ הושלם",
+            },
+            "unknown": {
+                UserLanguageValues.RUSSIAN.value: "❓ Неизвестен",
+                UserLanguageValues.ENGLISH.value: "❓ Unknown",
+                UserLanguageValues.HEBREW.value: "❓ לא ידוע",
+            },
+        }
+        lang = lang.value
         match self.status:
             case OrderStatusValues.BACKLOG:
-                return "⏳ В обработке"
+                return status_dict[OrderStatusValues.BACKLOG.value][lang]
             case OrderStatusValues.WAITING_PAYMENT:
-                return "💳 Ожидает оплаты"
+                return status_dict[OrderStatusValues.WAITING_PAYMENT.value][lang]
             case OrderStatusValues.CANCELLED:
-                return "❌ Отменен"
+                return status_dict[OrderStatusValues.CANCELLED.value][lang]
             case OrderStatusValues.PROCESSING:
-                return "🚛 Выполняется"
+                return status_dict[OrderStatusValues.PROCESSING.value][lang]
             case OrderStatusValues.FINISHED:
-                return "✅ Завершен"
+                return status_dict[OrderStatusValues.FINISHED.value][lang]
             case _:
-                return "❓ Неизвестен"
+                return status_dict["unknown"][lang]
 
 
 class OrderDao(Dao):

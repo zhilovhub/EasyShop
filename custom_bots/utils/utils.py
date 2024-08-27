@@ -5,7 +5,7 @@ from aiogram.types import Chat, User
 from typing import Any, Union, Dict
 
 
-def format_locales(text: str, user: User, chat: Chat, reply_to_user: User = None) -> str:
+def format_locales(text: str, user: User, chat: Chat, reply_to_user: User = None, bot_data: User = None) -> str:
     if text is None:
         return "Empty message"
     data_dict = {
@@ -16,6 +16,8 @@ def format_locales(text: str, user: User, chat: Chat, reply_to_user: User = None
         "user_id": user.id,
         "chat": chat.full_name,
     }
+    if bot_data:
+        data_dict.update({"bot_username": bot_data.username})
     if reply_to_user:
         data_dict.update(
             {

@@ -95,6 +95,7 @@ deploy_backend_job:
           - api/**/*
           - bot/**/*
           - common_utils/**/*
+          - custom_bots/**/*
           - database/**/*
           - logs/**/*
           - server/**/*

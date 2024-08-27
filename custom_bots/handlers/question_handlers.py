@@ -8,9 +8,10 @@ from custom_bots.multibot import main_bot, CustomUserStates, QUESTION_MESSAGES
 from custom_bots.handlers.routers import multi_bot_router
 from custom_bots.keyboards.question_keyboards import InlineOrderQuestionKeyboard, ReplyBackQuestionMenuKeyboard
 from custom_bots.keyboards.custom_bot_menu_keyboards import ReplyCustomBotMenuKeyboard
+from custom_bots.utils.custom_message_texts import CustomMessageTexts
 from custom_bots.utils.question_utils import is_able_to_ask
 
-from database.config import bot_db, order_db
+from database.config import bot_db, order_db, custom_bot_user_db
 from database.models.order_model import OrderNotFoundError
 
 from logs.config import custom_bot_logger, extra_params
@@ -21,11 +22,20 @@ async def handle_waiting_for_question_state(message: Message, state: FSMContext)
     state_data = await state.get_data()
 
     user_id = message.from_user.id
+    bot = await bot_db.get_bot_by_token(message.bot.token)
+    custom_bot_user = await custom_bot_user_db.get_custom_bot_user(bot.bot_id, user_id)
+
+    back_actions = ReplyBackQuestionMenuKeyboard.Callback.ActionEnum
 
     match message.text:
-        case ReplyBackQuestionMenuKeyboard.Callback.ActionEnum.BACK_TO_MAIN_MENU.value:
+        case (
+            back_actions.BACK_TO_MAIN_MENU.value
+            | back_actions.BACK_TO_MAIN_MENU_ENG.value
+            | back_actions.BACK_TO_MAIN_MENU_HEB.value
+        ):
             await message.answer(
-                "Возвращаюсь в главное меню...", reply_markup=ReplyCustomBotMenuKeyboard.get_keyboard()
+                **CustomMessageTexts.get_back_to_menu_text(custom_bot_user.user_language).as_kwargs(),
+                reply_markup=ReplyCustomBotMenuKeyboard.get_keyboard(custom_bot_user.user_language),
             )
         case _:
             if not state_data or "order_id" not in state_data:
@@ -38,15 +48,16 @@ async def handle_waiting_for_question_state(message: Message, state: FSMContext)
             order_id = state_data["order_id"]
 
             await message.reply(
-                f"Вы уверены что хотите отправить это сообщение вопросом к заказу " f"<b>#{order_id}</b>?",
+                **CustomMessageTexts.get_order_question_confirm_text(
+                    custom_bot_user.user_language, order_id
+                ).as_kwargs(),
                 reply_markup=InlineOrderQuestionKeyboard.get_keyboard(
                     order_id=order_id, msg_id=message.message_id, chat_id=message.chat.id
                 ),
             )
             await message.answer(
-                "\n\nПосле отправки вопроса, Вы сможете отправить следующий <b>минимум через 1 час</b> или "
-                "<b>после ответа администратора</b>",
-                reply_markup=ReplyCustomBotMenuKeyboard.get_keyboard(),
+                **CustomMessageTexts.get_wait_for_question_message(custom_bot_user.user_language).as_kwargs(),
+                reply_markup=ReplyCustomBotMenuKeyboard.get_keyboard(custom_bot_user.user_language),
             )
 
     await state.set_state(CustomUserStates.MAIN_MENU)
@@ -61,6 +72,7 @@ async def ask_question_callback(query: CallbackQuery, state: FSMContext):
     order_id = callback_data.order_id
     user_id = query.from_user.id
     bot_data = await bot_db.get_bot_by_token(query.bot.token)
+    custom_bot_user = await custom_bot_user_db.get_custom_bot_user(bot_data.bot_id, user_id)
 
     match callback_data.a:
         case callback_data.ActionEnum.APPROVE:
@@ -72,13 +84,16 @@ async def ask_question_callback(query: CallbackQuery, state: FSMContext):
                     extra=extra_params(user_id=user_id, order_id=order_id),
                     exc_info=e,
                 )
-                await query.answer("Заказ удалён администратором", show_alert=True)
+                await query.answer(
+                    CustomMessageTexts.get_order_removed_by_admin(custom_bot_user.user_language), show_alert=True
+                )
                 return await query.message.edit_reply_markup(None)
 
             try:
                 if not await is_able_to_ask(query, state_data, user_id, order_id):
                     return
 
+                # TODO translate in main bot
                 message = await main_bot.send_message(
                     chat_id=bot_data.created_by,
                     text=f"Новый вопрос по заказу <b>#{order_id}</b> от пользователя "
@@ -121,11 +136,11 @@ async def ask_question_callback(query: CallbackQuery, state: FSMContext):
 
                 await state.set_state(CustomUserStates.MAIN_MENU)
                 return await query.answer(
-                    "Не удалось отправить Ваш вопрос. Администраторы уже уведомлены", show_alert=True
+                    CustomMessageTexts.get_cant_send_question(custom_bot_user.user_language), show_alert=True
                 )
 
             await query.message.edit_text(
-                "Ваш вопрос отправлен, ожидайте ответа от администратора магазина в этом чате", reply_markup=None
+                CustomMessageTexts.get_question_sent(custom_bot_user.user_language), reply_markup=None
             )
 
             state_data["last_question_time"] = time.time()
@@ -134,9 +149,11 @@ async def ask_question_callback(query: CallbackQuery, state: FSMContext):
             await state.set_data(state_data)
 
         case callback_data.a.CANCEL:
-            cancel_text = "Отправка вопроса администратору отменена"
+            cancel_text = CustomMessageTexts.get_question_sent_cancel(custom_bot_user.user_language)
             await query.answer(cancel_text, show_alert=True)
-            await query.message.answer(cancel_text, reply_markup=ReplyCustomBotMenuKeyboard.get_keyboard())
+            await query.message.answer(
+                cancel_text, reply_markup=ReplyCustomBotMenuKeyboard.get_keyboard(custom_bot_user.user_language)
+            )
             await query.message.edit_reply_markup(reply_markup=None)
 
             await state.set_state(CustomUserStates.MAIN_MENU)
