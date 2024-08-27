@@ -1,6 +1,6 @@
 {
   "name": "lvov",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "private": true,
   "dependencies": {
     "@telegram-apps/sdk": "^1.1.3",
