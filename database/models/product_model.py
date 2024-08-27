@@ -107,7 +107,7 @@ class ProductWithoutId(BaseModel):
     article: str = Field(frozen=True)
     price: int
     count: int
-    picture: Optional[list[str] | None] = None
+    picture: list[str] = []
     extra_options: Optional[list[ProductExtraOption]] = []
 
 
