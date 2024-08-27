@@ -8,16 +8,22 @@ from bot.main import bot, storage, dp, include_routers, setup_storage_and_schedu
 from common_utils.storage.storage import AlchemyStorageAsync
 
 
-@pytest.fixture
+@pytest.fixture(scope="class")
 async def dispatcher() -> Dispatcher:
     await setup_storage_and_schedulers()
     include_routers()
     return dp  # Используем реальный instance диспатчера из main.py, чтобы проверить боевые условия
 
 
+@pytest.fixture(autouse=True)
+async def clear_scheduler() -> None:
+    yield
+    # TODO clear scheduler
+
 @pytest.fixture
-def main_storage() -> AlchemyStorageAsync:
-    return storage  # Используем реальный instance storage из main.py, чтобы проверить боевые условия
+async def main_storage() -> AlchemyStorageAsync:
+    yield storage  # Используем реальный instance storage из main.py, чтобы проверить боевые условия
+    await storage.clear_table()
 
 
 @pytest.fixture

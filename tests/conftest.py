@@ -1,3 +1,5 @@
+import asyncio
+
 import pytest
 
 from common_utils.config import settings, database_settings
@@ -10,7 +12,14 @@ from logs.config import test_logger
 
 
 @pytest.fixture(scope="session")
-def check_example_and_test_env_files():
+def event_loop():
+    loop = asyncio.get_event_loop()
+    yield loop
+    loop.close()
+
+
+@pytest.fixture(scope="session")
+def check_example_and_test_env_files(event_loop):
     """Checks that .env-example equals to .test.env"""
     with open(
             ".env-example", "r", encoding="utf-8"  # fmt: skip
@@ -49,5 +58,7 @@ def database():
 
 
 @pytest.fixture
-def user_db(database: Database) -> UserDao:
-    return database.get_user_dao()
+async def user_db(database: Database) -> UserDao:
+    user_db = database.get_user_dao()
+    yield user_db
+    await user_db.clear_table()

@@ -49,6 +49,38 @@ class TestStartCommand:
         user_raw_state = await main_storage.get_state(_get_storage_key(tg_user))
         assert user_raw_state == States.WAITING_FOR_TOKEN.state
 
+    async def test_start_command_without_subscription(
+        self,
+        user_db: UserDao,
+        tg_main_bot: Bot,
+        dispatcher: Dispatcher,
+        main_storage: AlchemyStorageAsync,
+        tg_user: User,
+        tg_chat: Chat,
+    ):
+        messages = await _propagate_message_event(
+            tg_main_bot, dispatcher, main_storage, tg_user, tg_chat, text="/start", raw_state=None
+        )
+
+        assert len(messages) == 3
+
+        assert messages[0].forward_from_message_id == 4
+        assert messages[0].reply_markup is None
+
+        assert messages[1].forward_from_message_id == 6
+        assert messages[1].reply_markup is None
+
+        assert messages[2].forward_from_message_id is None
+        assert messages[2].reply_markup.model_dump() == ShortDescriptionKeyboard.get_keyboard().model_dump()
+
+        user_from_database = await user_db.get_user(tg_user.id)
+        assert user_from_database.status == UserStatusValues.TRIAL
+        assert 2 < (user_from_database.subscribed_until - datetime.datetime.now()).days < 32
+        assert len(user_from_database.subscription_job_ids) == 3
+
+        user_raw_state = await main_storage.get_state(_get_storage_key(tg_user))
+        assert user_raw_state == States.WAITING_FOR_TOKEN.state
+
 
 def _get_storage_key(tg_user: User) -> StorageKey:
     """Returns Storage Key to get states from the storage"""
