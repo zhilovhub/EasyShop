@@ -6,7 +6,7 @@ from aiogram.types import Message, CallbackQuery
 from aiogram.filters import StateFilter
 from aiogram.fsm.context import FSMContext
 
-from bot.main import _scheduler
+from bot.main import scheduler
 from bot.utils import MessageTexts
 from bot.states import States
 from bot.handlers.routers import post_message_router
@@ -240,7 +240,7 @@ async def _start_confirm(
                     )
                     await send_post_messages(custom_bot, post_message, media_files, query.from_user.id)
                 else:
-                    job_id = await _scheduler.add_scheduled_job(
+                    job_id = await scheduler.add_scheduled_job(
                         func=send_post_messages,
                         run_date=post_message.send_date,
                         args=[custom_bot, post_message, media_files, query.from_user.id],
@@ -261,7 +261,7 @@ async def _start_confirm(
                     contest = await contest_db.get_contest_by_bot_id(bot_id=post_message.bot_id)
                     if contest.finish_job_id:
                         try:
-                            await _scheduler.del_job(contest.finish_job_id)
+                            await scheduler.del_job(contest.finish_job_id)
                         except Exception as e:
                             logger.warning(
                                 f"user_id={query.message.chat.id}: Job ID {post_message.job_id} not found",
@@ -273,7 +273,7 @@ async def _start_confirm(
                                 exc_info=e,
                             )
 
-                    job_id = await _scheduler.add_scheduled_job(
+                    job_id = await scheduler.add_scheduled_job(
                         pre_finish_contest, contest.finish_date, [contest.contest_id]
                     )
                     contest.finish_job_id = job_id
@@ -315,7 +315,7 @@ async def _start_confirm(
                         )
 
                 else:
-                    job_id = await _scheduler.add_scheduled_job(
+                    job_id = await scheduler.add_scheduled_job(
                         func=send_post_message,
                         run_date=post_message.send_date,
                         args=[custom_bot, channel_id, post_message, media_files, PostActionType.RELEASE],

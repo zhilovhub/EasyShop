@@ -26,8 +26,8 @@ dp = Dispatcher(storage=storage)
 
 stock_manager = Stoke(db_engine)
 
-_scheduler = Scheduler(database_settings.SCHEDULER_URL, "postgres", database_settings.TIMEZONE)
-subscription: Subscription = Subscription(database=db_engine, custom_scheduler=_scheduler)
+scheduler = Scheduler(database_settings.SCHEDULER_URL, "postgres", database_settings.TIMEZONE)
+subscription: Subscription = Subscription(database=db_engine, custom_scheduler=scheduler)
 
 cache_resources_file_id_store = JsonStore(
     file_path=common_settings.RESOURCES_PATH.format("cache.json"), json_store_name="RESOURCES_FILE_ID_STORE"

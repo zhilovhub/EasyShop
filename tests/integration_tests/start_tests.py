@@ -84,11 +84,7 @@ class TestStartCommand:
 
 def _get_storage_key(tg_user: User) -> StorageKey:
     """Returns Storage Key to get states from the storage"""
-    return StorageKey(
-        bot_id=0,
-        chat_id=tg_user.id,
-        user_id=tg_user.id
-    )
+    return StorageKey(bot_id=0, chat_id=tg_user.id, user_id=tg_user.id)
 
 
 async def _propagate_message_event(

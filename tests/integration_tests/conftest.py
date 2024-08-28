@@ -3,7 +3,7 @@ import pytest
 from aiogram import Dispatcher, Bot
 from aiogram.types import User, Chat
 
-from bot.main import bot, storage, dp, include_routers, setup_storage_and_schedulers
+from bot.main import bot, storage, dp, include_routers, setup_storage_and_schedulers, scheduler
 
 from common_utils.storage.storage import AlchemyStorageAsync
 
@@ -18,7 +18,8 @@ async def dispatcher() -> Dispatcher:
 @pytest.fixture(autouse=True)
 async def clear_scheduler() -> None:
     yield
-    # TODO clear scheduler
+    scheduler.clear_table()
+
 
 @pytest.fixture
 async def main_storage() -> AlchemyStorageAsync:
