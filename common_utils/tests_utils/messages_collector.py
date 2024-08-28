@@ -12,12 +12,10 @@ def messages_collector(expected_types: Optional[list] = None) -> Callable:
     """
 
     def _messages_collector(func: Callable) -> Callable:
-        async def wrapper_func(*args, is_unit_test: bool = False, **kwargs) -> tuple[Any, list[Message]]:
+        async def wrapper_func(*args, **kwargs) -> tuple[Any, list[Message]]:
             """
 
             :param args: arguments for the method
-            :param is_unit_test: True if method is considered a unit test
-                otherwise the test is considired to be an integration test
             :param kwargs: parametered arguments for the method
             """
             if expected_types:  # Custom Dependency Injection (not to provide arguments that function doesn't expect)
@@ -26,11 +24,11 @@ def messages_collector(expected_types: Optional[list] = None) -> Callable:
             messages = []
             returned_value = None
             async for result in func(*args, **kwargs):
-                if isinstance(result, Message) and not is_unit_test:  # case №1
+                if isinstance(result, Message):  # case №1
                     messages.append(result)
-                elif isinstance(result, list) and not is_unit_test:  # case №2
+                elif isinstance(result, list):  # case №2
                     messages.extend(result)
-                elif isinstance(result, tuple) and not is_unit_test:  # case №3
+                elif isinstance(result, tuple):  # case №3
                     returned_value = result[0]
                     messages.extend(result[1])
                 else:
