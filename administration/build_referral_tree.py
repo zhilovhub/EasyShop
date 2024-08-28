@@ -10,7 +10,11 @@ from database.models.referral_invite_model import ReferralInviteDao
 from logs.config import db_logger
 
 
-database: Database = Database(sqlalchemy_url="postgresql+asyncpg://database_module:Fewe34_!dfm44GG@92.118.114.106:5432/easybots_db", logger=db_logger, unique_id="util")
+database: Database = Database(
+    sqlalchemy_url="postgresql+asyncpg://database_module:Fewe34_!dfm44GG@92.118.114.106:5432/easybots_db",
+    logger=db_logger,
+    unique_id="util",
+)
 referral_invite_db: ReferralInviteDao = database.get_referral_invite_dao()
 
 
@@ -28,10 +32,9 @@ async def main() -> None:
                 came_from = temp_invite.came_from
                 chain.append(came_from)
                 temp_invite = await referral_invite_db.get_invite_by_user_id(came_from)
-            chains.append(" -> ".join([await _convert_id_to_username(bot, cache, x) for x in  chain[::-1]]))
+            chains.append(" -> ".join([await _convert_id_to_username(bot, cache, x) for x in chain[::-1]]))
 
         print(f"{ind}/{len(all_invites)}: invite has been handled")
-
 
     print(*chains, sep="\n")
 

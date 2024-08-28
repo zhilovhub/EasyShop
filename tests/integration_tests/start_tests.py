@@ -1,5 +1,5 @@
 import datetime
-from typing import Optional
+from typing import Optional, Any
 
 from aiogram import Dispatcher, Bot
 from aiogram.types import User, Chat, Message
@@ -55,7 +55,13 @@ class TestStartCommand:
         tg_chat: Chat,
     ):
         messages = await _propagate_message_event(
-            tg_main_bot, dispatcher, main_storage, tg_user, tg_chat, text="/start", raw_state=States.SUBSCRIBE_ENDED.state
+            tg_main_bot,
+            dispatcher,
+            main_storage,
+            tg_user,
+            tg_chat,
+            text="/start",
+            raw_state=States.SUBSCRIBE_ENDED.state,
         )
 
         assert len(messages) == 4
@@ -63,7 +69,9 @@ class TestStartCommand:
         self._check_start_default_message(messages)
 
         assert messages[3].html_text == MessageTexts.SUBSCRIBE_END_NOTIFY.value
-        assert messages[3].reply_markup.model_dump() == InlineSubscriptionContinueKeyboard.get_keyboard(None).model_dump()
+        assert (
+            messages[3].reply_markup.model_dump() == InlineSubscriptionContinueKeyboard.get_keyboard(None).model_dump()
+        )
 
         user_from_database = await user_db.get_user(tg_user.id)
         assert user_from_database.status == UserStatusValues.SUBSCRIPTION_ENDED
@@ -104,7 +112,7 @@ async def _propagate_message_event(
 
     :return: sorted (by message_id) list of Message object
     """
-    result: list[Message] = await dispatcher.propagate_event(
+    result: tuple[Any, list[Message]] = await dispatcher.propagate_event(
         update_type="message",
         event=MockMessage(bot=tg_main_bot, chat=tg_chat, from_user=tg_user, text=text),
         bot=tg_main_bot,
@@ -115,4 +123,4 @@ async def _propagate_message_event(
         raw_state=raw_state,
     )
 
-    return sorted(result, key=lambda x: x.message_id)
+    return sorted(result[1], key=lambda x: x.message_id)

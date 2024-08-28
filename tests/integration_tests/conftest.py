@@ -38,12 +38,7 @@ def tg_main_bot() -> Bot:
 
 @pytest.fixture
 def tg_user() -> User:
-    return User(
-        id=6456011436,
-        is_bot=False,
-        first_name="Artem",
-        username="test_user"
-    )
+    return User(id=6456011436, is_bot=False, first_name="Artem", username="test_user")
 
 
 @pytest.fixture
