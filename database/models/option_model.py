@@ -246,3 +246,10 @@ class OptionDao(Dao):  # TODO write tests
             await conn.execute(delete(Option).where(Option.id == option_id))
 
         self.logger.debug(f"option_id={option_id}: deleted option {option_id}", extra=extra_params(option_id=option_id))
+
+    @validate_call(validate_return=True)
+    async def clear_table(self) -> None:
+        """
+        Often used in tests
+        """
+        await super().clear_table(Option)

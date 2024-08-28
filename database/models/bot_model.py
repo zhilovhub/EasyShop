@@ -304,3 +304,10 @@ class BotDao(Dao):
         await self.engine.dispose()
 
         self.logger.debug(f"bot_id={bot_id}: bot {bot_id} is deleted", extra=extra_params(bot_id=bot_id))
+
+    @validate_call(validate_return=True)
+    async def clear_table(self) -> None:
+        """
+        Often used in tests
+        """
+        await super().clear_table(Bot)

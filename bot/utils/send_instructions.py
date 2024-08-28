@@ -30,7 +30,7 @@ async def greetings_message(bot: Bot, custom_bot_id: int | None, message: Messag
 
     if custom_bot_id and subscription.is_user_subscribed(user_id=chat_id):
         yield await bot.send_message(
-            chat_id=chat_id, text="✅ У Вас уже есть бот", reply_markup=ReplyBotMenuKeyboard.get_keyboard()
+            chat_id=chat_id, text=MessageTexts.ALREADY_HAS_BOT.value, reply_markup=ReplyBotMenuKeyboard.get_keyboard()
         )
 
 

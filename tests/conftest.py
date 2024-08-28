@@ -4,8 +4,10 @@ import pytest
 
 from common_utils.config import settings, database_settings
 from common_utils.config.env_config import Mode
+from database.models.bot_model import BotDao
 
 from database.models.models import Database, Base
+from database.models.option_model import OptionDao
 from database.models.user_model import UserDao
 
 from logs.config import test_logger
@@ -62,3 +64,17 @@ async def user_db(database: Database) -> UserDao:
     user_db = database.get_user_dao()
     yield user_db
     await user_db.clear_table()
+
+
+@pytest.fixture
+async def bot_db(database: Database) -> BotDao:
+    bot_db = database.get_bot_dao()
+    yield bot_db
+    await bot_db.clear_table()
+
+
+@pytest.fixture
+async def option_db(database: Database) -> OptionDao:
+    option_db = database.get_option_dao()
+    yield option_db
+    await option_db.clear_table()

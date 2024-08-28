@@ -21,8 +21,9 @@ def messages_collector(expected_types: Optional[list] = None) -> Callable:
             if expected_types:  # Custom Dependency Injection (not to provide arguments that function doesn't expect)
                 kwargs = {key: value for key, value in filter(lambda x: type(x[1]) in expected_types, kwargs.items())}
 
-            messages = []
             returned_value = None
+            messages = []
+
             async for result in func(*args, **kwargs):
                 if isinstance(result, Message):  # case №1
                     messages.append(result)

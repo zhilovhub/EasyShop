@@ -6,10 +6,14 @@ from aiogram.types import User, Chat, Message
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.storage.base import StorageKey
 
+from bot.keyboards.main_menu_keyboards import ReplyBotMenuKeyboard
 from bot.keyboards.subscription_keyboards import InlineSubscriptionContinueKeyboard
 from bot.states import States
 from bot.keyboards.start_keyboards import ShortDescriptionKeyboard
 from bot.utils import MessageTexts
+from common_utils.keyboards.keyboards import InlineBotMenuKeyboard
+from database.models.bot_model import BotSchema
+from database.models.option_model import OptionSchema
 
 from database.models.user_model import UserDao, UserStatusValues, UserSchema
 
@@ -19,7 +23,7 @@ from tests.mock_objects.updates import MockMessage
 
 
 class TestStartCommand:
-    async def test_start_command_as_new_user(
+    async def est_start_command_as_new_user(
         self,
         user_db: UserDao,
         tg_main_bot: Bot,
@@ -41,10 +45,14 @@ class TestStartCommand:
         assert 2 < (user_from_database.subscribed_until - datetime.datetime.now()).days < 32
         assert len(user_from_database.subscription_job_ids) == 3
 
-        user_raw_state = await main_storage.get_state(_get_storage_key(tg_user))
+        storage_key = _get_storage_key(tg_user)
+        user_raw_state = await main_storage.get_state(storage_key)
         assert user_raw_state == States.WAITING_FOR_TOKEN.state
 
-    async def test_start_command_without_subscription(
+        user_state_data = await main_storage.get_data(storage_key)
+        assert user_state_data == {"bot_id": -1}
+
+    async def est_start_command_without_subscription(
         self,
         add_subscribe_ended_user: UserSchema,
         user_db: UserDao,
@@ -78,8 +86,58 @@ class TestStartCommand:
         assert user_from_database.subscribed_until < datetime.datetime.now()
         assert not user_from_database.subscription_job_ids
 
-        user_raw_state = await main_storage.get_state(_get_storage_key(tg_user))
+        storage_key = _get_storage_key(tg_user)
+        user_raw_state = await main_storage.get_state(storage_key)
         assert user_raw_state == States.SUBSCRIBE_ENDED.state
+
+        user_state_data = await main_storage.get_data(storage_key)
+        assert user_state_data == {"bot_id": -1}
+
+    async def test_start_command_with_bot(
+        self,
+        add_subscribed_user: UserSchema,
+        add_option: OptionSchema,
+        add_bot: BotSchema,
+        user_db: UserDao,
+        tg_main_bot: Bot,
+        tg_custom_bot: Bot,
+        dispatcher: Dispatcher,
+        main_storage: AlchemyStorageAsync,
+        tg_user: User,
+        tg_chat: Chat,
+    ):
+        messages = await _propagate_message_event(
+            tg_main_bot,
+            dispatcher,
+            main_storage,
+            tg_user,
+            tg_chat,
+            text="/start",
+            raw_state=States.EDITING_CUSTOM_COLOR.state,
+        )
+
+        assert len(messages) == 5
+
+        self._check_start_default_message(messages)
+
+        print("HAAA", messages[3])
+        assert messages[3].html_text == MessageTexts.ALREADY_HAS_BOT.value
+        assert messages[3].reply_markup.model_dump() == ReplyBotMenuKeyboard.get_keyboard().model_dump()
+
+        custom_bot_username = (await tg_custom_bot.get_me()).username
+        assert messages[4].html_text == MessageTexts.BOT_MENU_MESSAGE.value.format(custom_bot_username)
+        assert messages[4].reply_markup.model_dump() == (await InlineBotMenuKeyboard.get_keyboard(add_bot.bot_id, tg_user.id))[0].model_dump()
+
+        user_from_database = await user_db.get_user(tg_user.id)
+        assert user_from_database.status == add_subscribed_user.status
+        assert user_from_database.subscribed_until < add_subscribed_user.subscribed_until
+
+        storage_key = _get_storage_key(tg_user)
+        user_raw_state = await main_storage.get_state(storage_key)
+        assert user_raw_state == States.BOT_MENU.state
+
+        user_state_data = await main_storage.get_data(storage_key)
+        assert user_state_data == {"bot_id": add_bot.bot_id}
 
     @staticmethod
     def _check_start_default_message(messages: list[Message]) -> None:

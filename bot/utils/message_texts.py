@@ -68,6 +68,8 @@ class MessageTexts(Enum):
 
     OPEN_WEB_APP_BUTTON_TEXT = "Открыть магазин"
 
+    ALREADY_HAS_BOT = "✅ У Вас уже есть бот"
+
     BOT_INITIALIZING_MESSAGE = (
         "Ваш бот с именем <b>«{}»</b>\nи id <b>@{}</b> найден!\n\n"
         "Веб магазин в нем проиницализируется в течение <b>5 минут</b>"
