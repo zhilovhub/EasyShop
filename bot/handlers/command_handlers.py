@@ -192,25 +192,29 @@ async def _handle_admin_invite_link(message: Message, state: FSMContext, deep_li
         return await message.answer("🚫 Пригласительная ссылка не найдена.")
 
 
+@messages_collector()
 async def _send_bot_menu(user_id: int, state: FSMContext, user_bots: list | None):
     user_status = (await user_db.get_user(user_id)).status
 
     if user_status == UserStatusValues.SUBSCRIPTION_ENDED:  # TODO do not send it from States.WAITING_PAYMENT_APPROVE
-        await bot.send_message(
+        yield await bot.send_message(
             user_id,
             MessageTexts.SUBSCRIBE_END_NOTIFY.value,
             reply_markup=InlineSubscriptionContinueKeyboard.get_keyboard(bot_id=None),
         )
         await state.set_state(States.SUBSCRIBE_ENDED)
-        return await state.set_data({"bot_id": -1})
+        await state.set_data({"bot_id": -1})
+        return
 
     if not user_bots:
-        return await state.set_data({"bot_id": -1})
+        await state.set_state(States.WAITING_FOR_TOKEN)  # Просто ожидаем токен, так как ботов у человека нет
+        await state.set_data({"bot_id": -1})
+        return
     else:
         bot_id = user_bots[0].bot_id
         user_bot = Bot(user_bots[0].token)
         user_bot_data = await user_bot.get_me()
-        await bot.send_message(
+        yield await bot.send_message(
             user_id,
             MessageTexts.BOT_MENU_MESSAGE.value.format(user_bot_data.username),
             reply_markup=await InlineBotMenuKeyboard.get_keyboard(user_bots[0].bot_id, user_id),
@@ -302,11 +306,7 @@ async def _check_if_new_user(
     # Отправляем инструкцию. Если у человека есть бот, к инструкции добавится клавиатурное (не inline) меню бота.
     yield await greetings_message(bot, user_bots[0].bot_id if user_bots else None, message)
 
-    if not user_bots:
-        await state.set_state(States.WAITING_FOR_TOKEN)  # Просто ожидаем токен, так как ботов у человека нет
-        await state.set_data({"bot_id": -1})
-    else:
-        await _send_bot_menu(user_id, state, user_bots)  # Присылаем inline меню бота, так как у человека бот есть
+    yield await _send_bot_menu(user_id, state, user_bots)  # Присылаем inline меню бота, так как у человека бот есть
 
 
 @commands_router.message(CommandStart())

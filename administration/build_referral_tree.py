@@ -15,7 +15,7 @@ referral_invite_db: ReferralInviteDao = database.get_referral_invite_dao()
 
 
 async def main() -> None:
-    bot = Bot("6851803815:AAH8SF9kkkmlt9IJcO2NmhRk9NsG5HVyy04")
+    bot = Bot(main_telegram_bot_settings.TELEGRAM_TOKEN)
     cache = {}
 
     all_invites = await referral_invite_db.get_all_invites()

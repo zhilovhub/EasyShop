@@ -3,6 +3,7 @@ import asyncio
 from aiogram import Bot
 from aiogram.types import Message
 
+from bot.main import subscription
 from bot.utils import MessageTexts
 from bot.keyboards.start_keyboards import ShortDescriptionKeyboard
 from bot.keyboards.main_menu_keyboards import ReplyBotMenuKeyboard
@@ -27,7 +28,7 @@ async def greetings_message(bot: Bot, custom_bot_id: int | None, message: Messag
         **MessageTexts.generate_menu_start_text(), reply_markup=ShortDescriptionKeyboard.get_keyboard()
     )
 
-    if custom_bot_id:
+    if custom_bot_id and subscription.is_user_subscribed(user_id=chat_id):
         yield await bot.send_message(
             chat_id=chat_id, text="✅ У Вас уже есть бот", reply_markup=ReplyBotMenuKeyboard.get_keyboard()
         )
