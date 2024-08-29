@@ -5,7 +5,9 @@ import pytest
 from aiogram import Dispatcher, Bot
 from aiogram.types import User, Chat
 
+from bot.keyboards.main_menu_keyboards import ReplyBotMenuKeyboard
 from bot.main import bot, storage, dp, include_routers, setup_storage_and_schedulers, scheduler
+from common_utils.keyboards.remove_keyboard import OurReplyKeyboardRemove
 
 from common_utils.storage.storage import AlchemyStorageAsync
 from database.models.bot_model import BotSchema, BotDao
@@ -25,6 +27,12 @@ async def dispatcher() -> Dispatcher:
 async def clear_scheduler() -> None:
     yield
     scheduler.clear_table()
+
+
+@pytest.fixture(autouse=True)
+async def clear_keyboards_triggers() -> None:
+    for keyboard in (ReplyBotMenuKeyboard, OurReplyKeyboardRemove):
+        keyboard.has_been_triggered = False
 
 
 @pytest.fixture

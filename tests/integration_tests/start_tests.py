@@ -8,9 +8,9 @@ from aiogram.fsm.storage.base import StorageKey
 
 from bot.utils import MessageTexts
 from bot.states import States
+from bot.keyboards.start_keyboards import ShortDescriptionKeyboard
 from bot.keyboards.main_menu_keyboards import ReplyBotMenuKeyboard
 from bot.keyboards.subscription_keyboards import InlineSubscriptionContinueKeyboard
-from bot.keyboards.start_keyboards import ShortDescriptionKeyboard
 
 from common_utils.storage.storage import AlchemyStorageAsync
 from common_utils.keyboards.keyboards import InlineBotMenuKeyboard
@@ -76,7 +76,7 @@ class TestStartCommand:
             raw_state=States.SUBSCRIBE_ENDED.state,
         )
 
-        assert len(messages) == 4
+        assert len(messages) == 5
 
         self._check_start_default_message(messages)
 
@@ -84,6 +84,8 @@ class TestStartCommand:
         assert (
             messages[3].reply_markup.model_dump() == InlineSubscriptionContinueKeyboard.get_keyboard(None).model_dump()
         )
+
+        assert messages[4].html_text == MessageTexts.SUBSCRIBE_END_NOTIFY_PART_2.value
 
         assert not ReplyBotMenuKeyboard.has_been_triggered
         assert OurReplyKeyboardRemove.has_been_triggered
@@ -136,8 +138,8 @@ class TestStartCommand:
             == (await InlineBotMenuKeyboard.get_keyboard(add_bot.bot_id, tg_user.id)).model_dump()
         )
 
-        assert not ReplyBotMenuKeyboard.has_been_triggered
-        assert OurReplyKeyboardRemove.has_been_triggered
+        assert ReplyBotMenuKeyboard.has_been_triggered
+        assert not OurReplyKeyboardRemove.has_been_triggered
 
         user_from_database = await user_db.get_user(tg_user.id)
         assert user_from_database == add_subscribed_user

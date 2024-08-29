@@ -31,14 +31,15 @@ async def greetings_message(
         **MessageTexts.generate_menu_start_text(), reply_markup=ShortDescriptionKeyboard.get_keyboard()
     )
 
-    if custom_bot_id and subscription.is_user_subscribed(user_id=chat_id):
-        yield await bot.send_message(
-            chat_id=chat_id, text=MessageTexts.ALREADY_HAS_BOT.value, reply_markup=ReplyBotMenuKeyboard.get_keyboard()
-        )
-    elif not is_first_message:  # Присылаем, что у пользователя нет бота, только если это не первое сообщение боту
-        yield await bot.send_message(
-            chat_id=chat_id, text=MessageTexts.HAS_NO_BOT_YET.value, reply_markup=OurReplyKeyboardRemove()
-        )
+    if await subscription.is_user_subscribed(user_id=chat_id):
+        if custom_bot_id:
+            yield await bot.send_message(
+                chat_id=chat_id, text=MessageTexts.ALREADY_HAS_BOT.value, reply_markup=ReplyBotMenuKeyboard.get_keyboard()
+            )
+        elif not is_first_message:  # Присылаем, что у пользователя нет бота, только если это не первое сообщение боту
+            yield await bot.send_message(
+                chat_id=chat_id, text=MessageTexts.HAS_NO_BOT_YET.value, reply_markup=OurReplyKeyboardRemove()
+            )
 
 
 # async def send_instructions(
