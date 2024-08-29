@@ -41,7 +41,7 @@ class TestStartCommand:
 
         self._check_start_default_message(messages)
 
-        assert ReplyBotMenuKeyboard.has_been_triggered
+        assert not ReplyBotMenuKeyboard.has_been_triggered
         assert not OurReplyKeyboardRemove.has_been_triggered
 
         user_from_database = await user_db.get_user(tg_user.id)

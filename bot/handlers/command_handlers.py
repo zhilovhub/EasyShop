@@ -297,7 +297,6 @@ async def _check_if_new_user(
                 username=message.from_user.username,
                 registered_at=datetime.utcnow(),
                 status=UserStatusValues.NEW,
-                locale="default",
                 subscribed_until=None,
             )
         )
