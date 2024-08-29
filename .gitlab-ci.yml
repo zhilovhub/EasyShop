@@ -3,7 +3,7 @@ stages:
   - deploy
 
 variables:
-#  GIT_CLEAN_FLAGS: -ffdx -e venv/
+  GIT_CLEAN_FLAGS: -ffdx -e venv/
   GIT_DEPTH: "3"
 
 workflow:
