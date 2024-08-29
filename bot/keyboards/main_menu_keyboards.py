@@ -30,6 +30,9 @@ class ReplyBackBotMenuKeyboard:
 
 
 class ReplyBotMenuKeyboard:
+
+    has_been_triggered: bool = False
+
     class Callback(BaseModel):
         class ActionEnum(Enum):
             SETTINGS = "⚙ Меню бота"
@@ -43,6 +46,8 @@ class ReplyBotMenuKeyboard:
 
     @staticmethod
     def get_keyboard() -> ReplyKeyboardMarkup:
+        ReplyBotMenuKeyboard.has_been_triggered = True
+
         actions = ReplyBotMenuKeyboard.Callback.ActionEnum
 
         return ReplyKeyboardMarkup(

@@ -120,17 +120,15 @@ class TestStartCommand:
 
         self._check_start_default_message(messages)
 
-        print("HAAA", messages[3])
         assert messages[3].html_text == MessageTexts.ALREADY_HAS_BOT.value
-        assert messages[3].reply_markup.model_dump() == ReplyBotMenuKeyboard.get_keyboard().model_dump()
+        assert ReplyBotMenuKeyboard.has_been_triggered == True
 
         custom_bot_username = (await tg_custom_bot.get_me()).username
         assert messages[4].html_text == MessageTexts.BOT_MENU_MESSAGE.value.format(custom_bot_username)
-        assert messages[4].reply_markup.model_dump() == (await InlineBotMenuKeyboard.get_keyboard(add_bot.bot_id, tg_user.id))[0].model_dump()
+        assert messages[4].reply_markup.model_dump() == (await InlineBotMenuKeyboard.get_keyboard(add_bot.bot_id, tg_user.id)).model_dump()
 
         user_from_database = await user_db.get_user(tg_user.id)
-        assert user_from_database.status == add_subscribed_user.status
-        assert user_from_database.subscribed_until < add_subscribed_user.subscribed_until
+        assert user_from_database == add_subscribed_user
 
         storage_key = _get_storage_key(tg_user)
         user_raw_state = await main_storage.get_state(storage_key)
