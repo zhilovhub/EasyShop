@@ -84,34 +84,34 @@ pytest_job:
     paths:
       - venv/
 
-deploy_front_job:
-  stage: deploy
-  variables:
-    SCRIPT_FILE: front_autopull.sh
-  extends:
-    - .set_ssh_script
-    - .autopull_script
-  rules:
-    - changes:
-        paths:
-          - web_app/**/*
-
-deploy_backend_job:
-  stage: deploy
-  variables:
-    SCRIPT_FILE: autopull.sh
-  extends:
-    - .set_ssh_script
-    - .autopull_script
-  rules:
-    - changes:
-        paths:
-          - administration/**/*
-          - api/**/*
-          - bot/**/*
-          - common_utils/**/*
-          - custom_bots/**/*
-          - database/**/*
-          - logs/**/*
-          - server/**/*
-          - tech_support/**/*
+#deploy_front_job:
+#  stage: deploy
+#  variables:
+#    SCRIPT_FILE: front_autopull.sh
+#  extends:
+#    - .set_ssh_script
+#    - .autopull_script
+#  rules:
+#    - changes:
+#        paths:
+#          - web_app/**/*
+#
+#deploy_backend_job:
+#  stage: deploy
+#  variables:
+#    SCRIPT_FILE: autopull.sh
+#  extends:
+#    - .set_ssh_script
+#    - .autopull_script
+#  rules:
+#    - changes:
+#        paths:
+#          - administration/**/*
+#          - api/**/*
+#          - bot/**/*
+#          - common_utils/**/*
+#          - custom_bots/**/*
+#          - database/**/*
+#          - logs/**/*
+#          - server/**/*
+#          - tech_support/**/*

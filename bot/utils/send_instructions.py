@@ -11,7 +11,7 @@ from bot.keyboards.main_menu_keyboards import ReplyBotMenuKeyboard
 from common_utils.tests_utils import messages_collector
 from common_utils.keyboards.remove_keyboard import OurReplyKeyboardRemove
 
-
+# test
 @messages_collector()
 async def greetings_message(
     bot: Bot, custom_bot_id: int | None, message: Message, chat_id: int | None = None, is_first_message: bool = False
