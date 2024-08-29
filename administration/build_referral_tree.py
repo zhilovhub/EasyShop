@@ -11,7 +11,7 @@ from logs.config import db_logger
 
 
 database: Database = Database(
-    sqlalchemy_url="postgresql+asyncpg://database_module:Fewe34_!dfm44GG@92.118.114.106:5432/easybots_db",
+    sqlalchemy_url="",
     logger=db_logger,
     unique_id="util",
 )

@@ -34,7 +34,9 @@ async def greetings_message(
     if await subscription.is_user_subscribed(user_id=chat_id):
         if custom_bot_id:
             yield await bot.send_message(
-                chat_id=chat_id, text=MessageTexts.ALREADY_HAS_BOT.value, reply_markup=ReplyBotMenuKeyboard.get_keyboard()
+                chat_id=chat_id,
+                text=MessageTexts.ALREADY_HAS_BOT.value,
+                reply_markup=ReplyBotMenuKeyboard.get_keyboard(),
             )
         elif not is_first_message:  # Присылаем, что у пользователя нет бота, только если это не первое сообщение боту
             yield await bot.send_message(

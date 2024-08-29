@@ -204,9 +204,7 @@ async def _send_bot_menu(user_id: int, state: FSMContext, user_bots: list | None
             reply_markup=InlineSubscriptionContinueKeyboard.get_keyboard(bot_id=None),
         )
         yield await bot.send_message(
-            user_id,
-            MessageTexts.SUBSCRIBE_END_NOTIFY_PART_2.value,
-            reply_markup=OurReplyKeyboardRemove()
+            user_id, MessageTexts.SUBSCRIBE_END_NOTIFY_PART_2.value, reply_markup=OurReplyKeyboardRemove()
         )
         await state.set_state(States.SUBSCRIBE_ENDED)
         await state.set_data({"bot_id": -1})
