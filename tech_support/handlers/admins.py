@@ -1,15 +1,15 @@
 from datetime import datetime
 
-from tech_support.handlers.routers import admins_router
+from common_utils.keyboards.remove_keyboard import OurReplyKeyboardRemove
 
-from aiogram.types import Message, CallbackQuery, ReplyKeyboardRemove
+from aiogram.types import Message, CallbackQuery
 from aiogram.fsm.context import FSMContext
 
+from tech_support.bot import bot, ADMIN_MESSAGES
+from tech_support.utils.states import AdminStates
+from tech_support.handlers.routers import admins_router
 from tech_support.keyboards.keyboards import AnswerKeyboard, ReplyCancelKeyboard, AnswerUserButton
 from tech_support.utils.message_texts import MessageTexts as TechMessageTexts
-
-from tech_support.utils.states import AdminStates
-from tech_support.bot import bot, ADMIN_MESSAGES
 
 
 @admins_router.callback_query(lambda query: AnswerKeyboard.callback_validator(query.data))
@@ -53,7 +53,7 @@ async def handle_answer_to_user(message: Message, state: FSMContext):
             ):
                 await message.answer(
                     **TechMessageTexts.get_canceled_sending_message_text(lang).as_kwargs(),
-                    reply_markup=ReplyKeyboardRemove(),
+                    reply_markup=OurReplyKeyboardRemove(),
                 )
                 await state.clear()
                 return
@@ -67,5 +67,5 @@ async def handle_answer_to_user(message: Message, state: FSMContext):
         message_id=message.message_id,
         reply_markup=AnswerUserButton.get_keyboard(lang),
     )
-    await message.reply("Сообщение отправлено клиенту", reply_markup=ReplyKeyboardRemove())
+    await message.reply("Сообщение отправлено клиенту", reply_markup=OurReplyKeyboardRemove())
     await state.clear()

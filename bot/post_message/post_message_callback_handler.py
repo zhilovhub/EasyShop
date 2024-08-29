@@ -3,7 +3,7 @@ from aiogram.enums import ParseMode
 from aiogram.types import CallbackQuery, FSInputFile
 from aiogram.fsm.context import FSMContext
 
-from bot.main import bot, _scheduler
+from bot.main import bot, scheduler
 from bot.utils import MessageTexts
 from bot.states import States
 from bot.graphs.graphs import generate_contest_users_graph
@@ -52,7 +52,7 @@ async def _cancel_send(
     post_message.is_running = False
 
     try:
-        await _scheduler.del_job_by_id(post_message.job_id)
+        await scheduler.del_job_by_id(post_message.job_id)
     except Exception as e:
         logger.warning(
             f"user_id={user_id}: Job ID {post_message.job_id} not found",
@@ -98,7 +98,7 @@ async def _cancel_send(
             path_to_graph = await generate_contest_users_graph(contest.contest_id)
             if contest.finish_job_id:
                 try:
-                    await _scheduler.del_job(contest.finish_job_id)
+                    await scheduler.del_job(contest.finish_job_id)
                 except:  # noqa
                     pass
 

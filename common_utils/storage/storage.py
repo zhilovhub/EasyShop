@@ -105,5 +105,15 @@ class AlchemyStorageAsync(BaseStorage, ABC):
         logger.debug(f"cleared state for user {key.user_id} in chat {key.chat_id}.")
         return None
 
+    async def clear_table(self) -> None:
+        """
+        Often used in tests
+        """
+        async with self.engine.begin() as conn:
+            await conn.execute(delete(self.storage_table))
+        await self.engine.dispose()
+
+        logger.debug(f"Table {self.storage_table.name} has been cleared")
+
     async def close(self) -> None:
         pass

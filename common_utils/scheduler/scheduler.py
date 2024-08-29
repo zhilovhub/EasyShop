@@ -21,6 +21,7 @@ class Scheduler:
         )
         self.jobstore_alias = jobstore_alias
         self.timezone = timezone
+        self.table_name = tablename
         # self.scheduler.add_job(func=print, trigger='interval', args=['Test'], seconds=5, jobstore=self.jobstore_alias)
 
     async def start(self):
@@ -96,3 +97,11 @@ class Scheduler:
         logger.debug(
             "Scheduler has been stopped",
         )
+
+    def clear_table(self) -> None:
+        """
+        Often used in tests
+        """
+        self.scheduler.remove_all_jobs(jobstore=self.jobstore_alias)
+
+        logger.debug(f"Table {self.table_name} has been cleared")

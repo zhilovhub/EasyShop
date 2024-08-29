@@ -42,6 +42,24 @@ class ReferralInviteDao(Dao):
         super().__init__(engine, logger)
 
     @validate_call(validate_return=True)
+    async def get_all_invites(self) -> list[ReferralInviteSchema]:
+        """
+        :return: All invitations
+        """
+        async with self.engine.begin() as conn:
+            raw_res = await conn.execute(select(ReferralInviteModel))
+        await self.engine.dispose()
+
+        raw_res = raw_res.fetchall()
+        res = []
+        for referral_invite in raw_res:
+            res.append(ReferralInviteSchema.model_validate(referral_invite))
+
+        self.logger.debug(f"There are {len(res)} referral invitations")
+
+        return res
+
+    @validate_call(validate_return=True)
     async def get_invite_by_user_id(self, user_id: int) -> ReferralInviteSchema:
         """
         :param user_id: user_id from search

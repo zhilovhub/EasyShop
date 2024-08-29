@@ -1,16 +1,15 @@
-from tech_support.handlers.routers import users_router
-
 from aiogram.filters import CommandStart, Command
-from aiogram.types import Message, User, CallbackQuery, ReplyKeyboardRemove
+from aiogram.types import Message, User, CallbackQuery
 from aiogram.fsm.context import FSMContext
 
-from tech_support.keyboards.keyboards import MainUserKeyboard, FAQKeyboard, ReplyCancelKeyboard
-from tech_support.utils.message_texts import MessageTexts as TechMessageTexts
-
-from tech_support.utils.states import UserStates
-from tech_support.utils.send_messages import send_message_to_admins
+from common_utils.keyboards.remove_keyboard import OurReplyKeyboardRemove
 
 from tech_support.bot import bot
+from tech_support.utils.states import UserStates
+from tech_support.handlers.routers import users_router
+from tech_support.keyboards.keyboards import MainUserKeyboard, FAQKeyboard, ReplyCancelKeyboard
+from tech_support.utils.message_texts import MessageTexts as TechMessageTexts
+from tech_support.utils.send_messages import send_message_to_admins
 
 
 @users_router.callback_query(lambda query: MainUserKeyboard.callback_validator(query.data))
@@ -78,7 +77,7 @@ async def _output_faq(user: User, lang: str, state: FSMContext):
         await bot.send_message(
             chat_id=user.id,
             **TechMessageTexts.get_canceled_sending_message_text(lang).as_kwargs(),
-            reply_markup=ReplyKeyboardRemove(),
+            reply_markup=OurReplyKeyboardRemove(),
         )
         await state.clear()
     await bot.send_message(
@@ -106,7 +105,7 @@ async def handle_sending_suggestion_to_admins(message: Message, state: FSMContex
             ):
                 await message.answer(
                     **TechMessageTexts.get_canceled_sending_message_text(lang).as_kwargs(),
-                    reply_markup=ReplyKeyboardRemove(),
+                    reply_markup=OurReplyKeyboardRemove(),
                 )
                 await state.clear()
                 return
@@ -125,7 +124,7 @@ async def handle_sending_question_to_admins(message: Message, state: FSMContext)
             ):
                 await message.answer(
                     **TechMessageTexts.get_canceled_sending_message_text(lang).as_kwargs(),
-                    reply_markup=ReplyKeyboardRemove(),
+                    reply_markup=OurReplyKeyboardRemove(),
                 )
                 await state.clear()
                 return

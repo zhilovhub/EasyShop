@@ -1,7 +1,7 @@
 from datetime import datetime
 
 from aiogram import F, Bot
-from aiogram.types import Message, ReplyKeyboardRemove, CallbackQuery
+from aiogram.types import Message, CallbackQuery
 from aiogram.filters import CommandStart, Command, CommandObject, StateFilter
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.storage.base import StorageKey
@@ -29,8 +29,10 @@ from bot.keyboards.start_keyboards import (
 from bot.middlewaries.subscription_middleware import CheckSubscriptionMiddleware
 
 from common_utils.ref_utils import send_ref_user_info
+from common_utils.tests_utils import messages_collector
 from common_utils.subscription import config
 from common_utils.keyboards.keyboards import InlineBotMenuKeyboard
+from common_utils.keyboards.remove_keyboard import OurReplyKeyboardRemove
 from common_utils.subscription.subscription import UserHasAlreadyStartedTrial
 from common_utils.exceptions.bot_exceptions import UnknownDeepLinkArgument
 from common_utils.broadcasting.broadcasting import send_event, EventTypes
@@ -191,25 +193,32 @@ async def _handle_admin_invite_link(message: Message, state: FSMContext, deep_li
         return await message.answer("🚫 Пригласительная ссылка не найдена.")
 
 
+@messages_collector()
 async def _send_bot_menu(user_id: int, state: FSMContext, user_bots: list | None):
     user_status = (await user_db.get_user(user_id)).status
 
     if user_status == UserStatusValues.SUBSCRIPTION_ENDED:  # TODO do not send it from States.WAITING_PAYMENT_APPROVE
-        await bot.send_message(
+        yield await bot.send_message(
             user_id,
             MessageTexts.SUBSCRIBE_END_NOTIFY.value,
             reply_markup=InlineSubscriptionContinueKeyboard.get_keyboard(bot_id=None),
         )
+        yield await bot.send_message(
+            user_id, MessageTexts.SUBSCRIBE_END_NOTIFY_PART_2.value, reply_markup=OurReplyKeyboardRemove()
+        )
         await state.set_state(States.SUBSCRIBE_ENDED)
-        return await state.set_data({"bot_id": -1})
+        await state.set_data({"bot_id": -1})
+        return
 
     if not user_bots:
-        return await state.set_data({"bot_id": -1})
+        await state.set_state(States.WAITING_FOR_TOKEN)  # Просто ожидаем токен, так как ботов у человека нет
+        await state.set_data({"bot_id": -1})
+        return
     else:
         bot_id = user_bots[0].bot_id
         user_bot = Bot(user_bots[0].token)
         user_bot_data = await user_bot.get_me()
-        await bot.send_message(
+        yield await bot.send_message(
             user_id,
             MessageTexts.BOT_MENU_MESSAGE.value.format(user_bot_data.username),
             reply_markup=await InlineBotMenuKeyboard.get_keyboard(user_bots[0].bot_id, user_id),
@@ -264,14 +273,16 @@ async def deep_link_start_command_handler(message: Message, state: FSMContext, c
         raise UnknownDeepLinkArgument(arg=deep_link_params)
 
 
+@messages_collector()
 async def _check_if_new_user(
     message: Message,
     state: FSMContext,
     trial_duration: int = config.TRIAL_DURATION_IN_DAYS,
     is_ref: bool = False,
     came_from: int = None,
-) -> None:
+):
     user_id = message.from_user.id
+    is_first_message = False
 
     try:  # Проверка, есть ли такой пользователь (если нет то это новый пользователь)
         await user_db.get_user(user_id)
@@ -284,10 +295,10 @@ async def _check_if_new_user(
                 username=message.from_user.username,
                 registered_at=datetime.utcnow(),
                 status=UserStatusValues.NEW,
-                locale="default",
                 subscribed_until=None,
             )
         )
+        is_first_message = True
 
         if is_ref:
             logger.info(f"adding user {user_id} to referral system...")
@@ -298,16 +309,15 @@ async def _check_if_new_user(
     user_bots = await user_role_db.get_user_bots(user_id)
 
     # Отправляем инструкцию. Если у человека есть бот, к инструкции добавится клавиатурное (не inline) меню бота.
-    await greetings_message(bot, user_bots[0].bot_id if user_bots else None, message)
+    yield await greetings_message(
+        bot, user_bots[0].bot_id if user_bots else None, message, is_first_message=is_first_message
+    )
 
-    if not user_bots:
-        await state.set_state(States.WAITING_FOR_TOKEN)  # Просто ожидаем токен, так как ботов у человека нет
-        await state.set_data({"bot_id": -1})
-    else:
-        await _send_bot_menu(user_id, state, user_bots)  # Присылаем inline меню бота, так как у человека бот есть
+    yield await _send_bot_menu(user_id, state, user_bots)  # Присылаем inline меню бота, так как у человека бот есть
 
 
 @commands_router.message(CommandStart())
+@messages_collector(expected_types=[Message, FSMContext])
 async def start_command_handler(message: Message, state: FSMContext):
     """
     1. Встречает пользователя, проверяет, есть ли он в базе данных. Если нет, то создаёт, так как видимо пользователь
@@ -318,7 +328,7 @@ async def start_command_handler(message: Message, state: FSMContext):
         3.2 Если нет ботов, то переводит в состояние WAITING_FOR_TOKEN
     """
 
-    await _check_if_new_user(message, state)  # Проверяем, новый ли пользователь
+    yield await _check_if_new_user(message, state)  # Проверяем, новый ли пользователь
 
 
 @commands_router.message(Command("rm_admin"), StateFilter(States.BOT_MENU))
@@ -354,7 +364,7 @@ async def rm_admin_command_handler(message: Message, state: FSMContext, command:
         ),
     )
 
-    await bot.send_message(user_id, "Вы больше не администратор этого бота.", reply_markup=ReplyKeyboardRemove())
+    await bot.send_message(user_id, "Вы больше не администратор этого бота.", reply_markup=OurReplyKeyboardRemove())
 
     await remove_bot_admin(user_id, message, user_state)
 

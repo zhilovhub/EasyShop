@@ -4,7 +4,7 @@ from typing import List
 from aiogram import Bot
 from aiogram.enums import ContentType
 from aiogram.types import CallbackQuery, FSInputFile, User, Message
-from aiogram.types import ReplyKeyboardRemove, InlineKeyboardMarkup, InlineKeyboardButton
+from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.storage.base import StorageKey
 from aiogram.utils.formatting import Text, Bold, Italic
@@ -21,6 +21,7 @@ from bot.keyboards.subscription_keyboards import InlineSubscriptionContinueKeybo
 from common_utils.config import common_settings, main_telegram_bot_settings
 from common_utils.keyboards.keyboards import InlineBotMenuKeyboard
 from common_utils.broadcasting.broadcasting import send_event, EventTypes
+from common_utils.keyboards.remove_keyboard import OurReplyKeyboardRemove
 
 from database.config import user_db, bot_db, referral_invite_db
 from database.models.user_model import UserSchema, UserStatusValues
@@ -163,7 +164,7 @@ async def waiting_payment_pay_handler(message: Message, state: FSMContext):
         "Ваши данные отправлены на модерацию, ожидайте изменения статуса оплаты",
         reply_markup=ReplyBackBotMenuKeyboard.get_keyboard()
         if user_status in (UserStatusValues.SUBSCRIBED, UserStatusValues.TRIAL)
-        else ReplyKeyboardRemove(),
+        else OurReplyKeyboardRemove(),
     )
     await state.set_state(States.WAITING_PAYMENT_APPROVE)
     await state.set_data(state_data)
@@ -329,7 +330,7 @@ async def approve_pay_callback(query: CallbackQuery):
         await bot.send_message(
             user_id,
             "Чтобы получить бота с магазином, воспользуйтесь инструкцией выше 👆",
-            reply_markup=ReplyKeyboardRemove(),
+            reply_markup=OurReplyKeyboardRemove(),
         )
     await query.answer("Оплата подтверждена", show_alert=True)
 

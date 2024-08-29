@@ -41,6 +41,7 @@ def payments(user: UserSchema):
 
 
 @pytest.fixture
-async def add_payments(payments: list[PaymentSchema], payment_db: PaymentDao):
+async def add_payments(payments: list[PaymentSchema], payment_db: PaymentDao) -> list[PaymentSchema]:
     for payment in payments:
         await payment_db.add_payment(payment)
+    return payments

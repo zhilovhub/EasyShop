@@ -4,11 +4,11 @@ from datetime import datetime
 from aiogram import Bot, Dispatcher
 from aiogram.types import BotCommand, BotCommandScopeAllPrivateChats
 
-from common_utils.storage import support_bot_storage
-from common_utils.cache_json.cache_json import JsonStore
-from common_utils.bot_settings_config import BOT_PROPERTIES
-from common_utils.start_message import send_start_message_to_admins
 from common_utils.config import tech_support_settings, common_settings, main_telegram_bot_settings
+from common_utils.start_message import send_start_message_to_admins
+from common_utils.bot_settings_config import BOT_PROPERTIES
+from common_utils.cache_json.cache_json import JsonStore
+from common_utils.storage.tech_support_storage import support_bot_storage
 
 from logs.config import tech_support_logger
 

@@ -64,10 +64,25 @@ test-pep8-job:
     - pip install ruff
     - ruff format --check
     - ruff check
-#  cache:  # TODO wanted to cache venv
-#    key: python-venv
-#    paths:
-#      - venv/*
+
+pytest_job:
+  image:
+    name: python:3.10.0-alpine
+    pull_policy: if-not-present
+  extends:
+    - .interruptable_job
+  allow_failure: true
+  stage: test
+  script:
+    - python -m venv venv
+    - source venv/bin/activate
+    - pip list
+    - pip install -r bot/requirements.txt
+    - pip list
+  cache:
+    key: pytest_job_cache
+    paths:
+      - venv/
 
 deploy_front_job:
   stage: deploy

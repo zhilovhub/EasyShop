@@ -26,8 +26,8 @@ dp = Dispatcher(storage=storage)
 
 stock_manager = Stoke(db_engine)
 
-_scheduler = Scheduler(database_settings.SCHEDULER_URL, "postgres", database_settings.TIMEZONE)
-subscription: Subscription = Subscription(database=db_engine, custom_scheduler=_scheduler)
+scheduler = Scheduler(database_settings.SCHEDULER_URL, "postgres", database_settings.TIMEZONE)
+subscription: Subscription = Subscription(database=db_engine, custom_scheduler=scheduler)
 
 cache_resources_file_id_store = JsonStore(
     file_path=common_settings.RESOURCES_PATH.format("cache.json"), json_store_name="RESOURCES_FILE_ID_STORE"
@@ -49,6 +49,40 @@ START_MESSAGE_ANALYTICS = JsonStore(
     file_path=common_settings.RESOURCES_PATH.format("start_message_analytics.json"),
     json_store_name="START_MESSAGE_ANALYTICS",
 )
+
+
+def include_routers():
+    from bot.handlers import (
+        admin_bot_menu_router,
+        channel_menu_router,
+        custom_bot_editing_router,
+        commands_router,
+        subscribe_router,
+        stock_menu_router,
+        post_message_router,
+        admin_group_commands_router,
+        payment_router,
+    )
+
+    dp.include_router(admin_group_commands_router)  # не знаю почему не работает если ставить не первым
+
+    dp.include_router(commands_router)  # should be first
+    dp.include_router(payment_router)
+    dp.include_router(custom_bot_editing_router)  # should be before admin_bot_menu
+    dp.include_router(admin_bot_menu_router)
+    dp.include_router(stock_menu_router)
+    dp.include_router(channel_menu_router)
+    dp.include_router(subscribe_router)
+    dp.include_router(post_message_router)
+
+    logger.info("All the routers are included")
+
+
+async def setup_storage_and_schedulers():
+    await storage.connect()
+    await subscription.start_scheduler()
+
+    logger.info("Databases and schedulers are connected")
 
 
 async def on_start():
@@ -77,10 +111,8 @@ async def on_start():
     except TelegramBadRequest as e:
         logger.warning(f"Error while setting command to chat_id = {common_settings.ADMIN_GROUP_ID}", exc_info=e)
 
-    await storage.connect()
     await db_engine.connect()
-
-    await subscription.start_scheduler()
+    await setup_storage_and_schedulers()
 
     logger.info("onStart finished. Bot online")
 
@@ -90,28 +122,7 @@ async def on_start():
 
 
 if __name__ == "__main__":
-    from bot.handlers import (
-        admin_bot_menu_router,
-        channel_menu_router,
-        custom_bot_editing_router,
-        commands_router,
-        subscribe_router,
-        stock_menu_router,
-        post_message_router,
-        admin_group_commands_router,
-        payment_router,
-    )
-
-    dp.include_router(admin_group_commands_router)  # не знаю почему не работает если ставить не первым
-
-    dp.include_router(commands_router)  # should be first
-    dp.include_router(payment_router)
-    dp.include_router(custom_bot_editing_router)  # should be before admin_bot_menu
-    dp.include_router(admin_bot_menu_router)
-    dp.include_router(stock_menu_router)
-    dp.include_router(channel_menu_router)
-    dp.include_router(subscribe_router)
-    dp.include_router(post_message_router)
+    include_routers()
 
     for log_file in ("all.log", "err.log"):
         with open(common_settings.LOGS_PATH + log_file, "a") as log:
