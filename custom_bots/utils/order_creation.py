@@ -125,7 +125,10 @@ async def order_creation_process(order: OrderSchema, order_user_data: Chat) -> s
             else:
                 await custom_bot_tg.send_invoice(chat_id=user_id, **params)
         except TelegramBadRequest as ex:
-            await custom_bot_tg.send_message(user_id, CustomMessageTexts.ERROR_IN_CREATING_INVOICE.value)
+            await custom_bot_tg.send_message(
+                user_id,
+                **CustomMessageTexts.get_error_in_creating_invoice_text(custom_bot_user.user_language).as_kwargs(),
+            )
             order.status = OrderStatusValues.CANCELLED
             await order_db.update_order(order)
             text = await CommonMessageTexts.generate_order_notification_text(

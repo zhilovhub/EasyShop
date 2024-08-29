@@ -2,7 +2,7 @@ import asyncio
 from typing import Callable, Dict, Any, Awaitable
 
 from aiogram import BaseMiddleware, Bot
-from aiogram.types import CallbackQuery, Message, ChatMemberUpdated
+from aiogram.types import CallbackQuery, Message, ChatMemberUpdated, InlineQuery
 from aiogram.exceptions import TelegramAPIError, TelegramRetryAfter
 
 from common_utils.config import main_telegram_bot_settings
@@ -14,7 +14,7 @@ from logs.config import logger
 
 
 async def notify_about_error(
-    event: CallbackQuery | Message | ChatMemberUpdated,
+    event: CallbackQuery | Message | ChatMemberUpdated | InlineQuery,
     error_message: str,
     bot: Bot = Bot(main_telegram_bot_settings.TELEGRAM_TOKEN, default=BOT_PROPERTIES),
 ):
@@ -29,7 +29,7 @@ class ErrorMiddleware(BaseMiddleware):
     async def __call__(
         self,
         handler: Callable[[CallbackQuery | Message, Dict[str, Any]], Awaitable[Any]],
-        event: CallbackQuery | Message | ChatMemberUpdated,
+        event: CallbackQuery | Message | ChatMemberUpdated | InlineQuery,
         data: Dict[str, Any],
     ) -> Any:
         try:

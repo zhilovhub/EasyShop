@@ -114,9 +114,7 @@ class ProductWithoutId(BaseModel):
 class ProductSchema(ProductWithoutId):
     id: int
 
-    def convert_to_notification_text(
-        self, count: int, used_extra_options: list = None, lang: UserLanguageValues = UserLanguageValues.RUSSIAN
-    ) -> Text:
+    def convert_to_notification_text(self, count: int, used_extra_options: list = None) -> Text:
         """
         Converts ProductSchema to text for notification
         """

@@ -5,11 +5,10 @@ from aiogram.exceptions import TelegramUnauthorizedError
 from aiogram.types import InlineQueryResultArticle, InputTextMessageContent
 
 from bot.handlers.admin_bot_menu_handlers import send_new_order_notify
-from common_utils.config import cryptography_settings
-from common_utils.token_encryptor import TokenEncryptor
-from custom_bots.multibot import web, session, OTHER_BOTS_URL, main_bot
+from custom_bots.multibot import web, session, main_bot
 from custom_bots.utils.utils import is_bot_token
 from custom_bots.utils.order_creation import order_creation_process
+from custom_bots.utils import restart_custom_bot
 
 from common_utils.order_utils.order_type import OrderType
 from common_utils.order_utils.order_utils import create_order
@@ -38,27 +37,7 @@ async def add_bot_handler(request):
     except TelegramUnauthorizedError:
         return web.Response(status=400, text="Unauthorized telegram token.")
 
-    await new_bot.delete_webhook(drop_pending_updates=True)
-    custom_bot_logger.debug(f"bot_id={bot_id}: webhook is deleted", extra=extra_params(bot_id=bot_id))
-
-    token_encryptor: TokenEncryptor = TokenEncryptor(cryptography_settings.TOKEN_SECRET_KEY)
-    result = await new_bot.set_webhook(
-        OTHER_BOTS_URL.format(encrypted_bot_token=token_encryptor.encrypt_token(bot_token=bot.token)),
-        allowed_updates=[
-            "message",
-            "my_chat_member",
-            "callback_query",
-            "chat_member",
-            "channel_post",
-            "inline_query",
-            "pre_checkout_query",
-            "shipping_query",
-        ],
-    )
-    if result:
-        custom_bot_logger.debug(f"bot_id={bot_id}: webhook is set", extra=extra_params(bot_id=bot_id))
-    else:
-        custom_bot_logger.warning(f"bot_id={bot_id}: webhook's setting is failed", extra=extra_params(bot_id=bot_id))
+    await restart_custom_bot(bot, session)
 
     return web.Response(text=f"Started bot with token ({bot.token}) and username (@{new_bot_data.username})")
 

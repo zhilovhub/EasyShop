@@ -97,7 +97,7 @@ class CustomBotUserDao(Dao):
 
     @validate_call(validate_return=True)
     async def add_custom_bot_user(
-        self, bot_id: int, user_id: int, lang: UserLanguageValues = UserLanguageValues.RUSSIAN
+        self, bot_id: int, user_id: int, lang: UserLanguageValues = UserLanguageValues.ENGLISH
     ) -> None:
         """
         :raises IntegrityError:

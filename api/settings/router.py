@@ -13,8 +13,6 @@ from database.models.order_option_model import OrderOptionSchema, OrderOptionTyp
 from database.models.order_choose_option_model import OrderChooseOptionSchema
 from database.models.custom_bot_user_model import CustomBotUserNotFoundError, UserLanguageValues
 
-from database.enums import UserLanguageValues
-
 from api.utils import HTTPBotNotFoundError, HTTPInternalError, RESPONSES_DICT, HTTPBotUserNotFoundError
 
 from common_utils.themes import ThemeParamsSchema

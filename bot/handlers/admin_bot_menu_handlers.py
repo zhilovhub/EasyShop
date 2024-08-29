@@ -30,7 +30,7 @@ from bot.keyboards.main_menu_keyboards import (
     InlineBackFromRefKeyboard,
     ReplyBotMenuKeyboard,
     ReplyBackBotMenuKeyboard,
-    InlineSelectLanguageKb
+    InlineSelectLanguageKb,
 )
 from bot.keyboards.stock_menu_keyboards import InlineStockMenuKeyboard, InlineWebStockKeyboard
 from bot.keyboards.post_message_keyboards import InlinePostMessageMenuKeyboard
@@ -801,10 +801,8 @@ async def bot_settings_callback_handler(query: CallbackQuery, state: FSMContext)
 
 
 @admin_bot_menu_router.callback_query(lambda query: InlineSelectLanguageKb.callback_validator(query.data))
-async def bot_settings_callback_handler(query: CallbackQuery, state: FSMContext):
+async def custom_bot_language_callback_handler(query: CallbackQuery):
     """Обрабатывает выбор языков кастомного бота"""
-
-    state_data = await state.get_data()
 
     callback_data = InlineSelectLanguageKb.Callback.model_validate_json(query.data)
     selected_lang = callback_data.selected

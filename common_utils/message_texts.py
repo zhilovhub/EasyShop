@@ -4,7 +4,7 @@ from typing import Any
 from aiogram.utils.formatting import Bold, Text
 
 from database.config import order_option_db
-from database.enums import UserLanguageValues
+from database.enums import UserLanguageValues, UserLanguageEmoji
 from database.models.order_model import OrderSchema, OrderItemExtraOption
 from database.models.product_model import ProductSchema
 
@@ -18,6 +18,28 @@ class MessageTexts(Enum):
 📌 Если что-то срочное или есть какие-то технические вопросы:
 СТО: @Ilyyasha
     """  # noqa
+
+    @staticmethod
+    def get_first_select_language_message(lang: UserLanguageValues) -> Text:
+        match lang:
+            case UserLanguageValues.RUSSIAN:
+                return Text(
+                    "Выбран язык по умолчанию ",
+                    Bold(f"({UserLanguageEmoji.RUSSIAN.value})"),
+                    "\n\n👇 Выберите доступный в боте язык",
+                )
+            case UserLanguageValues.HEBREW:
+                return Text(
+                    "שפת ברירת המחדל נבחרה",
+                    Bold(f"({UserLanguageEmoji.HEBREW.value})"),
+                    "\n\n👇 בחר שפה זמינה בבוט",
+                )
+            case UserLanguageValues.ENGLISH | _:
+                return Text(
+                    "Default language selected ",
+                    Bold(f"({UserLanguageEmoji.ENGLISH.value})"),
+                    "\n\n👇 Select the language available in the bot",
+                )
 
     @staticmethod
     async def generate_order_notification_text(
@@ -43,9 +65,7 @@ class MessageTexts(Enum):
             products_converted.append(
                 Text(
                     f"{ind}. ",
-                    product_schema.convert_to_notification_text(
-                        count=amount, used_extra_options=extra_options, lang=lang
-                    ),
+                    product_schema.convert_to_notification_text(count=amount, used_extra_options=extra_options),
                 )
             )
             product_price = product_schema.price

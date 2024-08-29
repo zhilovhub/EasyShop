@@ -2,6 +2,7 @@ from sqlalchemy import NullPool
 from sqlalchemy.ext.asyncio import create_async_engine
 
 from database.models.bot_model import BotDao
+from database.models.pickle_storage_model import PickleStorageDao
 from database.models.user_model import UserDao
 from database.models.order_model import OrderDao
 from database.models.option_model import OptionDao
@@ -53,6 +54,7 @@ class Database:
         self.channel_user_dao = ChannelUserDao(self.engine, self.logger)
         self.channel_post_dao = ChannelPostDao(self.engine, self.logger)
         self.order_option_dao = OrderOptionDao(self.engine, self.logger)
+        self.pickle_store_dao = PickleStorageDao(self.engine, self.logger)
         self.product_review_dao = ProductReviewDao(self.engine, self.logger)
         self.custom_bot_user_dao = CustomBotUserDao(self.engine, self.logger)
         self.order_choose_option_dao = OrderChooseOptionDao(self.engine, self.logger)
@@ -106,6 +108,9 @@ class Database:
 
     def get_order_option_dao(self) -> OrderOptionDao:
         return self.order_option_dao
+
+    def get_pickle_store_dao(self) -> PickleStorageDao:
+        return self.pickle_store_dao
 
     def get_post_message_dao(self) -> PostMessageDao:
         return self.post_message_dao

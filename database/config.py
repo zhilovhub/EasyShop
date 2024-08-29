@@ -17,6 +17,7 @@ from database.models.channel_post_model import ChannelPostDao
 from database.models.channel_user_model import ChannelUserDao
 from database.models.post_message_model import PostMessageDao
 from database.models.order_option_model import OrderOptionDao
+from database.models.pickle_storage_model import PickleStorageDao
 from database.models.product_review_model import ProductReviewDao
 from database.models.custom_bot_user_model import CustomBotUserDao
 from database.models.post_message_media_files import PostMessageMediaFileDao
@@ -39,6 +40,7 @@ contest_db: ContestDao = db_engine.get_contest_dao()
 category_db: CategoryDao = db_engine.get_category_dao()
 user_role_db: UserRoleDao = db_engine.get_user_role_dao()
 order_option_db: OrderOptionDao = db_engine.get_order_option_dao()
+pickle_store_db: PickleStorageDao = db_engine.get_pickle_store_dao()
 partnership_db: PartnershipDao = db_engine.get_partnership_dao()
 post_message_db: PostMessageDao = db_engine.get_post_message_dao()
 channel_user_db: ChannelUserDao = db_engine.get_channel_user_dao()

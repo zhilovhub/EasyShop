@@ -116,14 +116,7 @@ class PreCheckHandler(PreCheckoutQueryHandler):
 
 
 @payment_router.message(F.successful_payment)
-async def process_successfully_payment(message: Message):
-    lang = UserLanguageValues.ENGLISH
-    try:
-        bot = await bot_db.get_bot_by_token(message.bot.token)
-        custom_bot_user = await custom_bot_user_db.get_custom_bot_user(bot.bot_id, message.from_user.id)
-        lang = custom_bot_user.user_language
-    except:
-        custom_bot_logger.warning("Cant get user language in success payment", exc_info=True)
+async def process_successfully_payment(message: Message, lang: UserLanguageValues):
     payment = message.successful_payment
     payload = json.loads(payment.invoice_payload)
     custom_bot = await bot_db.get_bot_by_token(message.bot.token)

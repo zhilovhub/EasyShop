@@ -3,7 +3,7 @@ import json
 from aiogram import F, Bot
 from aiogram.types import Message
 
-from custom_bots.multibot import CustomUserStates
+from custom_bots.multibot import CustomUserStates, main_bot
 from custom_bots.utils.utils import format_locales
 from custom_bots.handlers.routers import multi_bot_router
 from custom_bots.utils.order_creation import order_creation_process
@@ -16,7 +16,7 @@ from common_utils.order_utils.order_type import OrderType
 from common_utils.order_utils.order_utils import create_order
 
 from database.enums import UserLanguageValues
-from database.config import bot_db, option_db, custom_bot_user_db
+from database.config import bot_db, option_db
 from database.models.bot_model import BotNotFoundError
 from database.models.option_model import OptionNotFoundError
 from database.models.product_model import NotEnoughProductsInStockToReduce
@@ -25,26 +25,17 @@ from logs.config import custom_bot_logger, extra_params
 
 
 @multi_bot_router.message(F.web_app_data)
-async def process_web_app_request(event: Message):
+async def process_web_app_request(event: Message, lang: UserLanguageValues):
     user_id = event.from_user.id
     order_user_data = await event.bot.get_chat(user_id)
-
-    bot = await bot_db.get_bot_by_token(event.bot.token)
-    custom_bot_user = await custom_bot_user_db.get_custom_bot_user(bot.bot_id, event.from_user.id)
 
     try:
         order = await create_order(event.from_user.id, event.web_app_data.data, OrderType.CUSTOM_BOT_ORDER)
         await order_creation_process(order, order_user_data)
     except NotEnoughProductsInStockToReduce as e:
-        await event.answer(
-            **CustomMessageTexts.get_not_enough_in_stock_err_message(
-                custom_bot_user.user_language, e.product.name
-            ).as_kwargs()
-        )
+        await event.answer(**CustomMessageTexts.get_not_enough_in_stock_err_message(lang, e.product.name).as_kwargs())
     except Exception as e:
-        await event.answer(
-            **CustomMessageTexts.get_order_creation_err_message(custom_bot_user.user_language).as_kwargs()
-        )
+        await event.answer(**CustomMessageTexts.get_order_creation_err_message(lang).as_kwargs())
 
         try:
             data = json.loads(event.web_app_data.data)
@@ -66,19 +57,16 @@ async def process_web_app_request(event: Message):
 
 
 @multi_bot_router.message(CustomUserStates.MAIN_MENU)
-async def main_menu_handler(message: Message):
-    lang = UserLanguageValues.ENGLISH
+async def main_menu_handler(message: Message, lang: UserLanguageValues):
     try:
         bot = await bot_db.get_bot_by_token(message.bot.token)
-        custom_bot_data = await message.bot.get_me()
-        custom_bot_user = await custom_bot_user_db.get_custom_bot_user(bot.bot_id, message.from_user.id)
-        lang = custom_bot_user.user_language
     except BotNotFoundError:
         custom_bot_logger.warning(
             f"bot_token={message.bot.token}: this bot is not in db", extra=extra_params(bot_token=message.bot.token)
         )
         await Bot(message.bot.token).delete_webhook()
         return await message.answer(**CustomMessageTexts.get_bot_not_init_message(lang).as_kwargs())
+    main_bot_data = await main_bot.get_me()
 
     shop_actions = ReplyCustomBotMenuKeyboard.Callback.ActionEnum
     match message.text:
@@ -99,8 +87,6 @@ async def main_menu_handler(message: Message):
             default_msg = options.default_msg
 
             await message.answer(
-                format_locales(
-                    default_msg[custom_bot_user.user_language.value], message.from_user, message.chat, custom_bot_data
-                ),
+                format_locales(default_msg[lang.value], message.from_user, message.chat, bot_data=main_bot_data),
                 reply_markup=ReplyCustomBotMenuKeyboard.get_keyboard(lang),
             )

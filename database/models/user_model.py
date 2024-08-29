@@ -8,6 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncEngine
 
 from pydantic import BaseModel, Field, ConfigDict, validate_call
 
+from database.enums import UserLanguage, UserLanguageValues
 from database.models import Base
 from database.models.dao import Dao
 from database.exceptions.exceptions import KwargsException
@@ -67,7 +68,7 @@ class User(Base):
     subscribed_until = Column(DateTime)
     registered_at = Column(DateTime, nullable=False)
     settings = Column(JSON)
-    locale = Column(String(10), nullable=False)
+    locale = Column(UserLanguage, nullable=False, default=UserLanguageValues.RUSSIAN.value)
     balance = Column(BigInteger, default=0)
     subscription_job_ids = Column(ARRAY(String))
 
@@ -81,7 +82,7 @@ class UserSchema(BaseModel):
     subscribed_until: datetime | None
     registered_at: datetime = Field(frozen=True)
     settings: dict | None = None
-    locale: str = Field(max_length=10, default="default")
+    locale: UserLanguageValues = UserLanguageValues.RUSSIAN
     balance: int | None = 0
     subscription_job_ids: list[str] | None = None
 

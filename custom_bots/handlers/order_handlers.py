@@ -22,7 +22,7 @@ from common_utils.keyboards.order_manage_keyboards import (
 )
 from common_utils.message_texts import MessageTexts as CommonMessageTexts
 
-from database.config import product_review_db, order_db, product_db, bot_db, custom_bot_user_db
+from database.config import product_review_db, order_db, product_db, bot_db
 from database.enums import UserLanguageValues
 from database.models.bot_model import BotNotFoundError
 from database.models.order_model import OrderStatusValues, OrderNotFoundError
@@ -33,16 +33,13 @@ from logs.config import custom_bot_logger, extra_params
 
 
 @multi_bot_router.callback_query(lambda query: InlineOrderCancelKeyboard.callback_validator(query.data))
-async def handle_cancel_order_callback(query: CallbackQuery):
+async def handle_cancel_order_callback(query: CallbackQuery, lang: UserLanguageValues):
     callback_data = InlineOrderCancelKeyboard.Callback.model_validate_json(query.data)
     user_id = query.from_user.id
     order_id = callback_data.order_id
-    lang = UserLanguageValues.ENGLISH
 
     try:
         order = await order_db.get_order(order_id)
-        custom_bot_user = await custom_bot_user_db.get_custom_bot_user(order.bot_id, user_id)
-        lang = custom_bot_user.user_language
     except OrderNotFoundError:
         custom_bot_logger.warning(
             f"user_id={user_id}: unable to change the status of order_id={order_id}",
@@ -54,7 +51,7 @@ async def handle_cancel_order_callback(query: CallbackQuery):
     match callback_data.a:
         case callback_data.ActionEnum.BACK_TO_ORDER_STATUSES:
             await query.message.edit_reply_markup(
-                reply_markup=InlineOrderCustomBotKeyboard.get_keyboard(order_id, lang=custom_bot_user.user_language)
+                reply_markup=InlineOrderCustomBotKeyboard.get_keyboard(order_id, lang=lang)
             )
         case callback_data.ActionEnum.CANCEL:
             if order.status == OrderStatusValues.CANCELLED:
@@ -90,6 +87,7 @@ async def handle_cancel_order_callback(query: CallbackQuery):
                 message_id=msg_id_data[order_id][1],
                 reply_markup=None,
             )
+            # TODO translate to main bot language
             await main_bot.send_message(
                 chat_id=msg_id_data[order_id][0],
                 text=f"Новый статус заказа <b>#{order_id}</b>\n<b>{order.translate_order_status(lang)}</b>",
@@ -104,18 +102,15 @@ async def handle_cancel_order_callback(query: CallbackQuery):
 
 
 @multi_bot_router.callback_query(lambda query: InlineOrderCustomBotKeyboard.callback_validator(query.data))
-async def handle_order_callback(query: CallbackQuery, state: FSMContext):
+async def handle_order_callback(query: CallbackQuery, state: FSMContext, lang: UserLanguageValues):
     callback_data = InlineOrderCustomBotKeyboard.Callback.model_validate_json(query.data)
     state_data = await state.get_data()
 
     order_id = callback_data.order_id
     user_id = query.from_user.id
-    lang = UserLanguageValues.ENGLISH
 
     try:
-        order = await order_db.get_order(order_id)
-        custom_bot_user = await custom_bot_user_db.get_custom_bot_user(order.bot_id, user_id)
-        lang = custom_bot_user.user_language
+        await order_db.get_order(order_id)
     except OrderNotFoundError:
         custom_bot_logger.warning(
             f"user_id={user_id}: tried to ask the question regarding order by order_id={order_id} is not found",
@@ -145,22 +140,19 @@ async def handle_order_callback(query: CallbackQuery, state: FSMContext):
             await query.answer()
             await query.message.answer(
                 **CustomMessageTexts.get_ask_question_message(lang).as_kwargs(),
-                reply_markup=ReplyBackQuestionMenuKeyboard.get_keyboard(custom_bot_user.user_language),
+                reply_markup=ReplyBackQuestionMenuKeyboard.get_keyboard(lang),
             )
             await state.set_state(CustomUserStates.WAITING_FOR_QUESTION)
             await state.set_data(state_data)
 
 
 @multi_bot_router.callback_query(lambda query: InlineCreateReviewKeyboard.callback_validator(query.data))
-async def create_order_review(query: CallbackQuery):
+async def create_order_review(query: CallbackQuery, lang: UserLanguageValues):
     callback_data = InlineCreateReviewKeyboard.Callback.model_validate_json(query.data)
     order_id = callback_data.order_id
     user_id = query.from_user.id
-    lang = UserLanguageValues.ENGLISH
     try:
         order = await order_db.get_order(order_id)
-        custom_bot_user = await custom_bot_user_db.get_custom_bot_user(order.bot_id, user_id)
-        lang = custom_bot_user.user_language
     except OrderNotFoundError:
         custom_bot_logger.warning(
             f"user_id={user_id}: tried to tried to create reviw to order_id={order_id} is not found",
@@ -178,15 +170,13 @@ async def create_order_review(query: CallbackQuery):
 
 
 @multi_bot_router.callback_query(lambda query: InlinePickReviewProductKeyboard.callback_validator(query.data))
-async def get_product_id(query: CallbackQuery, state: FSMContext):
+async def get_product_id(query: CallbackQuery, state: FSMContext, lang: UserLanguageValues):
     callback_data = InlinePickReviewProductKeyboard.Callback.model_validate_json(query.data)
-    lang = UserLanguageValues.RUSSIAN
+
     match callback_data.a:
         case callback_data.ActionEnum.PICK_PRODUCT:
             try:
-                bot = await bot_db.get_bot_by_token(query.message.bot.token)
-                custom_bot_user = await custom_bot_user_db.get_custom_bot_user(bot.bot_id, query.from_user.id)
-                lang = custom_bot_user.user_language
+                await bot_db.get_bot_by_token(query.message.bot.token)
             except BotNotFoundError:
                 custom_bot_logger.warning(
                     f"bot_token={query.message.bot.token}: this bot is not in db",
@@ -213,13 +203,9 @@ async def get_product_id(query: CallbackQuery, state: FSMContext):
 
 
 @multi_bot_router.message(StateFilter(CustomUserStates.WAITING_FOR_REVIEW_MARK))
-async def get_review_mark(message: Message, state: FSMContext):
-    lang = UserLanguageValues.RUSSIAN
-
+async def get_review_mark(message: Message, state: FSMContext, lang: UserLanguageValues):
     try:
-        bot = await bot_db.get_bot_by_token(message.bot.token)
-        custom_bot_user = await custom_bot_user_db.get_custom_bot_user(bot.bot_id, message.from_user.id)
-        lang = custom_bot_user.user_language
+        await bot_db.get_bot_by_token(message.bot.token)
     except BotNotFoundError:
         custom_bot_logger.warning(
             f"bot_token={message.bot.token}: this bot is not in db", extra=extra_params(bot_token=message.bot.token)
@@ -263,13 +249,10 @@ async def get_review_mark(message: Message, state: FSMContext):
 
 
 @multi_bot_router.message(StateFilter(CustomUserStates.WAITING_FOR_REVIEW_TEXT))
-async def get_review_text(message: Message, state: FSMContext):
+async def get_review_text(message: Message, state: FSMContext, lang: UserLanguageValues):
     state_data = await state.get_data()
-    lang = UserLanguageValues.RUSSIAN
     try:
         bot = await bot_db.get_bot_by_token(message.bot.token)
-        custom_bot_user = await custom_bot_user_db.get_custom_bot_user(bot.bot_id, message.from_user.id)
-        lang = custom_bot_user.user_language
     except BotNotFoundError:
         custom_bot_logger.warning(
             f"bot_token={message.bot.token}: this bot is not in db", extra=extra_params(bot_token=message.bot.token)

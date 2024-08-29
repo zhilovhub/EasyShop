@@ -5,7 +5,7 @@ from aiogram.types import InlineQuery, InlineQueryResultArticle, InputTextMessag
 from custom_bots.multibot import API_URL, custom_bot_logger
 from custom_bots.utils.custom_message_texts import CustomMessageTexts
 
-from database.config import product_db, bot_db, option_db, custom_bot_user_db
+from database.config import product_db, bot_db
 from database.enums import UserLanguageValues
 from database.models.product_model import ProductFilter
 
@@ -13,7 +13,7 @@ from common_utils.keyboards.keyboards import InlineModeProductKeyboardButton
 
 
 @inline_mode_router.inline_query()
-async def handle_inline_query(query: InlineQuery):
+async def handle_inline_query(query: InlineQuery, lang: UserLanguageValues):
     if not query.offset:
         prev_offset = 0
     else:
@@ -21,16 +21,6 @@ async def handle_inline_query(query: InlineQuery):
 
     custom_bot_object = await bot_db.get_bot_by_token(query.bot.token)
     custom_bot_data = await query.bot.get_me()
-    custom_bot_options = await option_db.get_option(custom_bot_object.bot_id)
-
-    lang = UserLanguageValues.RUSSIAN
-    try:
-        custom_bot_user = await custom_bot_user_db.get_custom_bot_user(custom_bot_object.bot_id, query.from_user.id)
-        lang = custom_bot_user.user_language
-    except:
-        custom_bot_logger.warning("cant get custom bot user language, setting shops default")
-        if custom_bot_options.languages:
-            lang = custom_bot_options.languages[0]
 
     if query.query.strip():
         filters = [

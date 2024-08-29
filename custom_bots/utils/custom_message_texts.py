@@ -100,7 +100,15 @@ class CustomMessageTexts(Enum):
                     " changed:\n\n",
                 )
 
-    ERROR_IN_CREATING_INVOICE = "Произошла ошибка при создании платежа, администратор магазина уведомлен."
+    @staticmethod
+    def get_error_in_creating_invoice_text(lang: UserLanguageValues) -> Text:
+        match lang:
+            case UserLanguageValues.RUSSIAN:
+                return Text("Произошла ошибка при создании платежа, администратор магазина уведомлен")
+            case UserLanguageValues.HEBREW:
+                return Text("אירעה שגיאה בעת יצירת התשלום, מנהל החנות קיבל הודעה")
+            case UserLanguageValues.ENGLISH | _:
+                return Text("An error occurred when creating the payment, the store administrator has been notified")
 
     @staticmethod
     def get_inline_not_found_texts(lang: UserLanguageValues) -> dict:
@@ -163,19 +171,19 @@ class CustomMessageTexts(Enum):
         match lang:
             case UserLanguageValues.RUSSIAN:
                 return Text(
-                    "Выбран язык по умолчанию ",
+                    "Текущий язык ",
                     Bold(f"({UserLanguageEmoji.RUSSIAN.value})"),
                     "\n\n👇 Для смены языка нажмите на кнопки ниже.",
                 )
             case UserLanguageValues.HEBREW:
                 return Text(
-                    "שפת ברירת המחדל נבחרה",
+                    "שפה נוכחית ",
                     Bold(f"({UserLanguageEmoji.HEBREW.value})"),
                     "\n\n👇 כדי לשנות את השפה, לחץ על הכפתורים למטה.",
                 )
             case UserLanguageValues.ENGLISH | _:
                 return Text(
-                    "Default language selected ",
+                    "Current language ",
                     Bold(f"({UserLanguageEmoji.ENGLISH.value})"),
                     "\n\n👇 To change the language, click on the buttons below.",
                 )

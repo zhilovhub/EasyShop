@@ -21,3 +21,5 @@ numpy
 
 pydantic-settings
 cryptography
+
+cloudpickle

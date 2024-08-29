@@ -17,7 +17,7 @@ from common_utils.keyboards.keyboard_utils import (
 )
 
 from database.config import user_role_db, order_option_db, order_choose_option_db, option_db, bot_db
-from database.enums import UserLanguageValues
+from database.enums import UserLanguageValues, UserLanguageEmoji
 from database.models.user_role_model import UserRoleValues
 from database.models.bot_model import BotPaymentTypeValues
 from database.models.option_model import CurrencyCodesValues
@@ -1215,3 +1215,62 @@ class InlineBotMainWebAppButton:
                 [InlineKeyboardButton(text=text, web_app=make_webapp_info(bot_id))],
             ]
         )
+
+
+class FirstTimeInlineSelectLanguageKb:
+    class Callback(BaseModel):
+        class ActionEnum(Enum):
+            SELECT = "s"
+
+        model_config = ConfigDict(from_attributes=True, populate_by_name=True)
+
+        n: str = Field(default="fls", frozen=True)
+        s: UserLanguageValues
+        id: str
+        a: ActionEnum
+
+    @staticmethod
+    @callback_json_validator
+    def callback_json(action: Callback.ActionEnum, selected: UserLanguageValues, pickled_uuid: str) -> str:
+        return FirstTimeInlineSelectLanguageKb.Callback(a=action, s=selected, id=pickled_uuid).model_dump_json(
+            by_alias=True
+        )
+
+    @staticmethod
+    def callback_validator(json_string: str) -> bool:
+        try:
+            FirstTimeInlineSelectLanguageKb.Callback.model_validate_json(json_string)
+            return True
+        except ValidationError:
+            return False
+
+    @staticmethod
+    def get_keyboard(
+        pickled_uuid: str,
+        languages: list[UserLanguageValues],
+    ) -> InlineKeyboardMarkup:
+        def get_button_text(lang: UserLanguageValues) -> str:
+            match lang:
+                case UserLanguageValues.RUSSIAN:
+                    return f"Русский {UserLanguageEmoji.RUSSIAN.value}"
+                case UserLanguageValues.ENGLISH:
+                    return f"English {UserLanguageEmoji.ENGLISH.value}"
+                case UserLanguageValues.HEBREW:
+                    return f"עברית {UserLanguageEmoji.HEBREW.value}"
+
+        actions = FirstTimeInlineSelectLanguageKb.Callback.ActionEnum
+
+        buttons = []
+        for language in languages:
+            buttons.append(
+                [
+                    InlineKeyboardButton(
+                        text=get_button_text(language),
+                        callback_data=FirstTimeInlineSelectLanguageKb.callback_json(
+                            actions.SELECT, pickled_uuid=pickled_uuid, selected=language
+                        ),
+                    )
+                ]
+            )
+
+        return InlineKeyboardMarkup(inline_keyboard=buttons)

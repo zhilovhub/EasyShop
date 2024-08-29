@@ -13,7 +13,7 @@ from custom_bots.multibot import main_bot
 from custom_bots.handlers.routers import multi_bot_channel_router
 from custom_bots.utils.custom_message_texts import CustomMessageTexts
 
-from database.config import channel_user_db, channel_db, contest_db, bot_db, custom_bot_user_db, option_db
+from database.config import channel_user_db, channel_db, contest_db, bot_db, user_db
 from database.enums import UserLanguageValues
 from database.models.channel_model import ChannelSchema
 from database.models.contest_model import ContestUserNotFoundError, ContestNotFoundError
@@ -108,8 +108,8 @@ async def my_chat_member_handler(my_chat_member: ChatMemberUpdated) -> Any:
 
     channel_schema = ChannelSchema(channel_id=my_chat_member.chat.id, bot_id=bot_id, added_by_admin=performed_by_admin)
 
-    # TODO select language from main bot
-    lang = UserLanguageValues.RUSSIAN
+    user = await user_db.get_user(custom_bot.created_by)
+    lang = user.locale
 
     # Bot added
     if isinstance(my_chat_member.old_chat_member, (ChatMemberLeft, ChatMemberBanned)) and isinstance(
@@ -165,21 +165,11 @@ async def my_chat_member_handler(my_chat_member: ChatMemberUpdated) -> Any:
 
 
 @multi_bot_channel_router.callback_query(lambda query: InlineJoinContestKeyboard.callback_validator(query.data))
-async def channel_menu_callback_handler(query: CallbackQuery):
+async def channel_menu_callback_handler(query: CallbackQuery, lang: UserLanguageValues):
     callback_data = InlineJoinContestKeyboard.Callback.model_validate_json(query.data)
 
     bot_id = callback_data.bot_id
-
     custom_bot = await bot_db.get_bot(bot_id)
-    custom_bot_options = await option_db.get_option(custom_bot.options_id)
-    lang = UserLanguageValues.ENGLISH
-    try:
-        custom_bot_user = await custom_bot_user_db.get_custom_bot_user(custom_bot.bot_id, query.from_user.id)
-        lang = custom_bot_user.user_language
-    except:
-        custom_bot_logger.warning("cant get custom bot user language, setting shops default")
-        if custom_bot_options.languages:
-            lang = custom_bot_options.languages[0]
 
     if query.message.chat.type == ChatType.PRIVATE.value:
         return await query.answer(CustomMessageTexts.get_work_only_in_channel_text(lang), show_alert=True)

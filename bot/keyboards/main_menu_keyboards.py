@@ -205,9 +205,7 @@ class InlineSelectLanguageKb:
 
     @staticmethod
     def get_keyboard(
-        bot_id: int,
-        languages: list[UserLanguageValues],
-        selected_languages: list[UserLanguageValues]
+        bot_id: int, languages: list[UserLanguageValues], selected_languages: list[UserLanguageValues]
     ) -> InlineKeyboardMarkup:
         def get_button_text(lang: UserLanguageValues) -> str:
             match lang:
@@ -246,9 +244,7 @@ class InlineSelectLanguageKb:
             [
                 InlineKeyboardButton(
                     text="🔙 Назад",
-                    callback_data=InlineSelectLanguageKb.callback_json(
-                        actions.BACK, bot_id=bot_id, selected=None
-                    ),
+                    callback_data=InlineSelectLanguageKb.callback_json(actions.BACK, bot_id=bot_id, selected=None),
                 )
             ]
         )
