@@ -6,24 +6,25 @@ from aiogram.types import User, Chat, Message
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.storage.base import StorageKey
 
+from bot.utils import MessageTexts
+from bot.states import States
 from bot.keyboards.main_menu_keyboards import ReplyBotMenuKeyboard
 from bot.keyboards.subscription_keyboards import InlineSubscriptionContinueKeyboard
-from bot.states import States
 from bot.keyboards.start_keyboards import ShortDescriptionKeyboard
-from bot.utils import MessageTexts
-from common_utils.keyboards.keyboards import InlineBotMenuKeyboard
-from database.models.bot_model import BotSchema
-from database.models.option_model import OptionSchema
-
-from database.models.user_model import UserDao, UserStatusValues, UserSchema
 
 from common_utils.storage.storage import AlchemyStorageAsync
+from common_utils.keyboards.keyboards import InlineBotMenuKeyboard
+from common_utils.keyboards.remove_keyboard import OurReplyKeyboardRemove
+
+from database.models.bot_model import BotSchema
+from database.models.user_model import UserDao, UserStatusValues, UserSchema
+from database.models.option_model import OptionSchema
 
 from tests.mock_objects.updates import MockMessage
 
 
 class TestStartCommand:
-    async def est_start_command_as_new_user(
+    async def test_start_command_as_new_user(
         self,
         user_db: UserDao,
         tg_main_bot: Bot,
@@ -40,6 +41,9 @@ class TestStartCommand:
 
         self._check_start_default_message(messages)
 
+        assert ReplyBotMenuKeyboard.has_been_triggered
+        assert not OurReplyKeyboardRemove.has_been_triggered
+
         user_from_database = await user_db.get_user(tg_user.id)
         assert user_from_database.status == UserStatusValues.TRIAL
         assert 2 < (user_from_database.subscribed_until - datetime.datetime.now()).days < 32
@@ -52,7 +56,7 @@ class TestStartCommand:
         user_state_data = await main_storage.get_data(storage_key)
         assert user_state_data == {"bot_id": -1}
 
-    async def est_start_command_without_subscription(
+    async def test_start_command_without_subscription(
         self,
         add_subscribe_ended_user: UserSchema,
         user_db: UserDao,
@@ -80,6 +84,9 @@ class TestStartCommand:
         assert (
             messages[3].reply_markup.model_dump() == InlineSubscriptionContinueKeyboard.get_keyboard(None).model_dump()
         )
+
+        assert not ReplyBotMenuKeyboard.has_been_triggered
+        assert OurReplyKeyboardRemove.has_been_triggered
 
         user_from_database = await user_db.get_user(tg_user.id)
         assert user_from_database.status == UserStatusValues.SUBSCRIPTION_ENDED
@@ -121,11 +128,16 @@ class TestStartCommand:
         self._check_start_default_message(messages)
 
         assert messages[3].html_text == MessageTexts.ALREADY_HAS_BOT.value
-        assert ReplyBotMenuKeyboard.has_been_triggered == True
 
         custom_bot_username = (await tg_custom_bot.get_me()).username
         assert messages[4].html_text == MessageTexts.BOT_MENU_MESSAGE.value.format(custom_bot_username)
-        assert messages[4].reply_markup.model_dump() == (await InlineBotMenuKeyboard.get_keyboard(add_bot.bot_id, tg_user.id)).model_dump()
+        assert (
+            messages[4].reply_markup.model_dump()
+            == (await InlineBotMenuKeyboard.get_keyboard(add_bot.bot_id, tg_user.id)).model_dump()
+        )
+
+        assert not ReplyBotMenuKeyboard.has_been_triggered
+        assert OurReplyKeyboardRemove.has_been_triggered
 
         user_from_database = await user_db.get_user(tg_user.id)
         assert user_from_database == add_subscribed_user
@@ -136,6 +148,45 @@ class TestStartCommand:
 
         user_state_data = await main_storage.get_data(storage_key)
         assert user_state_data == {"bot_id": add_bot.bot_id}
+
+    async def test_start_command_without_bot(
+        self,
+        add_subscribed_user: UserSchema,
+        user_db: UserDao,
+        tg_main_bot: Bot,
+        dispatcher: Dispatcher,
+        main_storage: AlchemyStorageAsync,
+        tg_user: User,
+        tg_chat: Chat,
+    ):
+        messages = await _propagate_message_event(
+            tg_main_bot,
+            dispatcher,
+            main_storage,
+            tg_user,
+            tg_chat,
+            text="/start",
+            raw_state=None,
+        )
+
+        assert len(messages) == 4
+
+        self._check_start_default_message(messages)
+
+        assert messages[3].html_text == MessageTexts.HAS_NO_BOT_YET.value
+
+        assert not ReplyBotMenuKeyboard.has_been_triggered
+        assert OurReplyKeyboardRemove.has_been_triggered
+
+        user_from_database = await user_db.get_user(tg_user.id)
+        assert user_from_database == add_subscribed_user
+
+        storage_key = _get_storage_key(tg_user)
+        user_raw_state = await main_storage.get_state(storage_key)
+        assert user_raw_state == States.WAITING_FOR_TOKEN.state
+
+        user_state_data = await main_storage.get_data(storage_key)
+        assert user_state_data == {"bot_id": -1}
 
     @staticmethod
     def _check_start_default_message(messages: list[Message]) -> None:

@@ -1,6 +1,7 @@
-from aiogram.types import Message, ReplyKeyboardRemove
+from aiogram.types import Message
 
 from common_utils.config import tech_support_settings
+from common_utils.keyboards.remove_keyboard import OurReplyKeyboardRemove
 
 from tech_support.bot import bot, ADMIN_MESSAGES
 from tech_support.keyboards.keyboards import AnswerKeyboard
@@ -36,6 +37,6 @@ async def send_message_to_admins(
         except Exception as e:
             tech_support_logger.warning("cant copy message to tech support admin", exc_info=e)
     await message.reply(
-        **TechMessageTexts.get_sended_message_text(lang).as_kwargs(), reply_markup=ReplyKeyboardRemove()
+        **TechMessageTexts.get_sended_message_text(lang).as_kwargs(), reply_markup=OurReplyKeyboardRemove()
     )
     ADMIN_MESSAGES.update_data(messages_data)

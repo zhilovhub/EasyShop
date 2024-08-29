@@ -1,7 +1,7 @@
 import re
 
 from aiogram import Bot
-from aiogram.types import Message, CallbackQuery, ReplyKeyboardRemove, InputMediaPhoto, FSInputFile
+from aiogram.types import Message, CallbackQuery, InputMediaPhoto, FSInputFile
 from aiogram.exceptions import TelegramBadRequest
 from aiogram.fsm.context import FSMContext
 
@@ -17,6 +17,12 @@ from bot.keyboards.main_menu_keyboards import (
 )
 from common_utils.bot_utils import create_bot_options
 
+from common_utils.themes import (
+    THEME_EXAMPLE_PRESET_DARK,
+    THEME_EXAMPLE_PRESET_LIGHT,
+    ThemeParamsSchema,
+    is_valid_hex_code,
+)
 from common_utils.config import common_settings
 from common_utils.invoice import create_invoice_params
 from common_utils.keyboards.keyboards import (
@@ -33,12 +39,7 @@ from common_utils.keyboards.keyboards import (
     InlinePresetsForThemesMenuKeyboard,
     InlineEditThemeColorMenuKeyboard,
 )
-from common_utils.themes import (
-    THEME_EXAMPLE_PRESET_DARK,
-    THEME_EXAMPLE_PRESET_LIGHT,
-    ThemeParamsSchema,
-    is_valid_hex_code,
-)
+from common_utils.keyboards.remove_keyboard import OurReplyKeyboardRemove
 
 from database.config import bot_db, option_db, order_option_db, order_choose_option_db
 from database.models.bot_model import BotPaymentTypeValues
@@ -1368,7 +1369,7 @@ async def delete_bot_handler(message: Message, state: FSMContext):
             custom_bot.status = "Deleted"
             await bot_db.del_bot(custom_bot.bot_id)
 
-            await message.answer("Бот удален", reply_markup=ReplyKeyboardRemove())
+            await message.answer("Бот удален", reply_markup=OurReplyKeyboardRemove())
             await greetings_message(bot, None, message)
             await state.set_state(States.WAITING_FOR_TOKEN)
             await state.set_data({"bot_id": -1})

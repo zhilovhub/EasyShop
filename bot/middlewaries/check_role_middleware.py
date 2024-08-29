@@ -2,7 +2,9 @@ from typing import Callable, Dict, Any, Awaitable
 
 from aiogram import BaseMiddleware
 from aiogram.fsm.context import FSMContext
-from aiogram.types import CallbackQuery, Message, ReplyKeyboardRemove
+from aiogram.types import CallbackQuery, Message
+
+from common_utils.keyboards.remove_keyboard import OurReplyKeyboardRemove
 
 from database.config import user_role_db
 from database.models.user_role_model import UserRoleValues, UserRoleNotFoundError
@@ -45,6 +47,6 @@ class CheckRoleMiddleware(BaseMiddleware):
                 return await event.answer(message_text, show_alert=True)
             else:
                 await state.set_data(empty_bot_state_data)
-                return await event.answer(message_text, reply_markup=ReplyKeyboardRemove())
+                return await event.answer(message_text, reply_markup=OurReplyKeyboardRemove())
 
         return await handler(event, data)

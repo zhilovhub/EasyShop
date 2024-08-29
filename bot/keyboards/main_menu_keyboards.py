@@ -30,7 +30,6 @@ class ReplyBackBotMenuKeyboard:
 
 
 class ReplyBotMenuKeyboard:
-
     has_been_triggered: bool = False
 
     class Callback(BaseModel):

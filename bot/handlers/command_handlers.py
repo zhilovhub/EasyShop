@@ -1,7 +1,7 @@
 from datetime import datetime
 
 from aiogram import F, Bot
-from aiogram.types import Message, ReplyKeyboardRemove, CallbackQuery
+from aiogram.types import Message, CallbackQuery
 from aiogram.filters import CommandStart, Command, CommandObject, StateFilter
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.storage.base import StorageKey
@@ -29,12 +29,13 @@ from bot.keyboards.start_keyboards import (
 from bot.middlewaries.subscription_middleware import CheckSubscriptionMiddleware
 
 from common_utils.ref_utils import send_ref_user_info
+from common_utils.tests_utils import messages_collector
 from common_utils.subscription import config
 from common_utils.keyboards.keyboards import InlineBotMenuKeyboard
+from common_utils.keyboards.remove_keyboard import OurReplyKeyboardRemove
 from common_utils.subscription.subscription import UserHasAlreadyStartedTrial
 from common_utils.exceptions.bot_exceptions import UnknownDeepLinkArgument
 from common_utils.broadcasting.broadcasting import send_event, EventTypes
-from common_utils.tests_utils import messages_collector
 
 from database.config import user_db, bot_db, user_role_db, referral_invite_db
 from database.models.bot_model import BotNotFoundError
@@ -278,6 +279,7 @@ async def _check_if_new_user(
     came_from: int = None,
 ):
     user_id = message.from_user.id
+    is_first_message = False
 
     try:  # Проверка, есть ли такой пользователь (если нет то это новый пользователь)
         await user_db.get_user(user_id)
@@ -294,6 +296,7 @@ async def _check_if_new_user(
                 subscribed_until=None,
             )
         )
+        is_first_message = True
 
         if is_ref:
             logger.info(f"adding user {user_id} to referral system...")
@@ -304,7 +307,9 @@ async def _check_if_new_user(
     user_bots = await user_role_db.get_user_bots(user_id)
 
     # Отправляем инструкцию. Если у человека есть бот, к инструкции добавится клавиатурное (не inline) меню бота.
-    yield await greetings_message(bot, user_bots[0].bot_id if user_bots else None, message)
+    yield await greetings_message(
+        bot, user_bots[0].bot_id if user_bots else None, message, is_first_message=is_first_message
+    )
 
     yield await _send_bot_menu(user_id, state, user_bots)  # Присылаем inline меню бота, так как у человека бот есть
 
@@ -357,7 +362,7 @@ async def rm_admin_command_handler(message: Message, state: FSMContext, command:
         ),
     )
 
-    await bot.send_message(user_id, "Вы больше не администратор этого бота.", reply_markup=ReplyKeyboardRemove())
+    await bot.send_message(user_id, "Вы больше не администратор этого бота.", reply_markup=OurReplyKeyboardRemove())
 
     await remove_bot_admin(user_id, message, user_state)
 

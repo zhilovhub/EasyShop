@@ -70,6 +70,8 @@ class MessageTexts(Enum):
 
     ALREADY_HAS_BOT = "✅ У Вас уже есть бот"
 
+    HAS_NO_BOT_YET = "❌ Вы всё ещё не создали бота"
+
     BOT_INITIALIZING_MESSAGE = (
         "Ваш бот с именем <b>«{}»</b>\nи id <b>@{}</b> найден!\n\n"
         "Веб магазин в нем проиницализируется в течение <b>5 минут</b>"

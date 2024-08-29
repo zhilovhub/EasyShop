@@ -87,10 +87,7 @@ async def add_subscribed_user(subscribed_user: UserSchema, user_db: UserDao) -> 
 
 @pytest.fixture
 def option_schema() -> OptionSchema:
-    return OptionSchema(
-        id=1,
-        web_app_button="default"
-    )
+    return OptionSchema(id=1, web_app_button="default")
 
 
 @pytest.fixture
@@ -113,7 +110,7 @@ def bot_schema(tg_user: User, tg_custom_bot: Bot, option_schema: OptionSchema) -
         created_at=datetime.datetime.now(),
         created_by=tg_user.id,
         options_id=option_schema.id,
-        locale="default"
+        locale="default",
     )
 
 
