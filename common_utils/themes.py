@@ -65,20 +65,20 @@ class ThemeParamsSchema(BaseModel):
 # TODO edit after designing color themes
 # Пример пресозданной нами темы, которую можно предлагать клиенту
 THEME_EXAMPLE_PRESET_DARK = ThemeParamsSchema(
-    bg_color="#000",
-    text_color="#fff",
-    hint_color="#e3e3e3",
-    link_color="#893fff",
-    button_color="#893fff",
-    button_text_color="#fff",
-    secondary_bg_color="#000",
+    bg_color="#17212b",
+    text_color="#f5f5f5",
+    hint_color="#0000",
+    link_color="#0000",
+    button_color="#9edcff",
+    button_text_color="#ffffff",
+    secondary_bg_color="#232e3c",
     header_bg_color="#000",
-    accent_text_color="#893fff",
+    accent_text_color="#000",
     section_bg_color="#000",
-    section_header_text_color="#e3e3e3",
-    section_separator_color="#e3e3e3",
-    subtitle_text_color="#e3e3e3",
-    destructive_text_color="#ff4949",
+    section_header_text_color="#000",
+    section_separator_color="#0000",
+    subtitle_text_color="#000",
+    destructive_text_color="#000",
 )
 
 THEME_EXAMPLE_PRESET_LIGHT = ThemeParamsSchema(
