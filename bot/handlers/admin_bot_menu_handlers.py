@@ -750,7 +750,7 @@ async def bot_settings_callback_handler(query: CallbackQuery, state: FSMContext)
     bot_id = callback_data.bot_id
     user_bot = await bot_db.get_bot(bot_id)
     custom_bot_data = await Bot(token=user_bot.token).get_me()
-    bot_options = await option_db.get_option(user_bot.bot_id)
+    bot_options = await option_db.get_option(user_bot.options_id)
 
     match callback_data.a:
         case callback_data.ActionEnum.EDIT_ORDER_OPTIONS:

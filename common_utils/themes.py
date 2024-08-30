@@ -81,6 +81,7 @@ THEME_EXAMPLE_PRESET_DARK = ThemeParamsSchema(
     destructive_text_color="#000",
 )
 
+
 THEME_EXAMPLE_PRESET_LIGHT = ThemeParamsSchema(
     bg_color="#fff",
     text_color="#000",
