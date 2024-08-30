@@ -144,3 +144,10 @@ class PaymentDao(Dao):
             f"user_id={updated_payment.from_user}: updated payment {updated_payment}",
             extra=extra_params(payment_id=updated_payment.id, user_id=updated_payment.from_user),
         )
+
+    @validate_call(validate_return=True)
+    async def clear_table(self) -> None:
+        """
+        Often used in tests
+        """
+        await super().clear_table(Payment)
