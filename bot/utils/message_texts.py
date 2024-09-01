@@ -1,8 +1,9 @@
 from typing import List
 from datetime import datetime
 from enum import Enum
-from aiogram.utils.formatting import Text, Bold
+from aiogram.utils.formatting import Text, Bold, Underline
 
+from common_utils.keyboards.keyboard_utils import get_webapp_shop_url
 from database.models.product_model import ProductSchema
 from database.models.order_option_model import OrderOptionSchema
 from database.models.post_message_model import PostMessageType
@@ -187,6 +188,20 @@ class MessageTexts(Enum):
     @staticmethod
     def need_minimum_one_language() -> str:
         return "Хотя бы 1 язык должен быть выбран"
+
+    @staticmethod
+    def get_web_app_url(bot_id: int) -> str:
+        return Text(
+            Bold("🛍 Ссылка на Ваш веб-магазин\n\n"),
+            get_webapp_shop_url(bot_id=bot_id),
+            "\n\n\n",
+            Bold("🌍 Где можно применить?\n\n"),
+            "Эту ссылку можно использовать для создания закрепленного сообщения с кнопкой в группе/канале, ",
+            Bold(Underline("как на фотографии.\n\n")),
+            "Любой Ваш подписчик увидит эту кнопку и по нажатии на неё ",
+            Bold("сразу"),
+            " попадет в магазин",
+        ).as_html()
 
     @staticmethod
     def bot_post_already_started_message(post_message_type: PostMessageType) -> str:

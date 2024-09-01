@@ -7,13 +7,13 @@ from sqlalchemy.exc import IntegrityError
 from aiogram import F, Bot
 from aiogram.enums import ParseMode
 from aiogram.types import Message, CallbackQuery, FSInputFile
-from aiogram.exceptions import TelegramUnauthorizedError
+from aiogram.exceptions import TelegramUnauthorizedError, TelegramBadRequest
 from aiogram.fsm.context import FSMContext
 from aiogram.utils.token import validate_token, TokenValidationError
 from aiogram.fsm.storage.base import StorageKey
 from aiogram.utils.formatting import Text, Bold, Italic
 
-from bot.main import bot, QUESTION_MESSAGES
+from bot.main import bot, QUESTION_MESSAGES, cache_resources_file_id_store
 from bot.utils import MessageTexts
 from bot.states.states import States
 from bot.handlers.routers import admin_bot_menu_router
@@ -753,6 +753,8 @@ async def bot_settings_callback_handler(query: CallbackQuery, state: FSMContext)
     bot_options = await option_db.get_option(user_bot.options_id)
 
     match callback_data.a:
+        case callback_data.ActionEnum.GET_WEBAPP_URL:
+            await _send_pinned_image(query, bot_id)
         case callback_data.ActionEnum.EDIT_ORDER_OPTIONS:
             order_options = await order_option_db.get_all_order_options(bot_id)
             await query.message.edit_text(
@@ -958,3 +960,22 @@ async def send_order_change_status_notify(order: OrderSchema):
     text = f"Новый статус заказ <b>#{order.id}</b>\n<b>{order.status}</b>"
     await bot.send_message(user_bot.created_by, text)
     await bot.send_message(order.from_user, text)
+
+
+async def _send_pinned_image(query: CallbackQuery, bot_id: int) -> None:
+    file_ids = cache_resources_file_id_store.get_data()
+    file_name = "pinned_webapp.png"
+
+    try:
+        await query.message.answer_photo(
+            caption=MessageTexts.get_web_app_url(bot_id=bot_id),
+            photo=file_ids[file_name],
+        )
+    except (TelegramBadRequest, KeyError) as e:
+        logger.info(f"error while sending {file_name}.... cache is empty, sending raw files {e}")
+        photo_message = await query.message.answer_photo(
+            caption=MessageTexts.get_web_app_url(bot_id=bot_id),
+            photo=FSInputFile(common_settings.RESOURCES_PATH.format(file_name)),
+        )
+        file_ids[file_name] = photo_message.photo[-1].file_id
+        cache_resources_file_id_store.update_data(file_ids)

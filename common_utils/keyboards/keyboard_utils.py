@@ -28,11 +28,15 @@ def make_select_hex_web_app_info() -> WebAppInfo:
     )
 
 
-def make_webapp_info(bot_id: int) -> WebAppInfo:
-    return WebAppInfo(
-        url=f"{custom_telegram_bot_settings.WEB_APP_URL}:{custom_telegram_bot_settings.WEB_APP_PORT}"
+def get_webapp_shop_url(bot_id: int) -> str:
+    return (
+        f"{custom_telegram_bot_settings.WEB_APP_URL}:{custom_telegram_bot_settings.WEB_APP_PORT}"
         f"/app/catalog/?bot_id={bot_id}"
     )
+
+
+def make_webapp_info(bot_id: int) -> WebAppInfo:
+    return WebAppInfo(url=get_webapp_shop_url(bot_id))
 
 
 def make_product_deep_link_url(product_id: int, bot_username: str) -> str:

@@ -175,6 +175,8 @@ class InlineBotSettingsMenuKeyboard:
             SELECT_SHOP_LANGUAGE = "shop_lang"
             EDIT_ORDER_OPTIONS = "edit_ord_op"
 
+            GET_WEBAPP_URL = "get_web_url"
+
             BACK_TO_BOT_MENU = "back_menu"
 
         model_config = ConfigDict(from_attributes=True, populate_by_name=True)
@@ -239,6 +241,12 @@ class InlineBotSettingsMenuKeyboard:
                     InlineKeyboardButton(
                         text="💳 Изменить способ оплаты",
                         callback_data=InlineBotSettingsMenuKeyboard.callback_json(actions.PAYMENT_METHOD, bot_id),
+                    ),
+                ],
+                [
+                    InlineKeyboardButton(
+                        text="🛍 Получить ссылку на магазин",
+                        callback_data=InlineBotSettingsMenuKeyboard.callback_json(actions.GET_WEBAPP_URL, bot_id),
                     ),
                 ],
                 [
