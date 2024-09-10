@@ -27,6 +27,7 @@ from bot.keyboards.start_keyboards import (
     CALLBACK_TO_STRING_NAME,
 )
 from bot.middlewaries.subscription_middleware import CheckSubscriptionMiddleware
+from common_utils.config import CommonSettings
 
 from common_utils.ref_utils import send_ref_user_info
 from common_utils.tests_utils import messages_collector
@@ -377,6 +378,34 @@ async def clear_command_handler(message: Message, state: FSMContext) -> None:
     """
     await user_db.del_user(user_id=message.from_user.id)
     await CheckSubscriptionMiddleware().__call__(start_command_handler, message, state)  # noqa
+
+
+@commands_router.message(Command("ban"))
+async def ban_command_handler(message: Message):
+    """
+    ONLY FOR TECH ADMINS: ставит пользователю (по UID) статус Banned в бд.
+    """
+    if message.from_user.id not in CommonSettings().TECH_ADMINS:
+        return
+
+    params = message.text.split(maxsplit=1)
+    if len(params) != 2:
+        return await message.answer("необходимо указать UID")
+
+    if not params[-1].isnumeric():
+        return await message.answer("UID должно быть числом")
+
+    try:
+        user = await user_db.get_user(int(params[-1]))
+        user.status = UserStatusValues.BANNED
+        await user_db.update_user(user)
+        return await message.answer("Пользователь забанен в основном боте")
+    except UserNotFoundError:
+        user = UserSchema(
+            user_id=int(params[-1]), status=UserStatusValues.BANNED, registered_at=datetime.now(), subscribed_until=None
+        )
+        await user_db.add_user(user)
+        return await message.answer("Добавлен новый пользователь со статусом BANNED")
 
 
 @commands_router.message(F.text == "/check_subscription")
